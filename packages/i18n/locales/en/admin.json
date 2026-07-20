@@ -58,7 +58,8 @@
     "branding": "Branding",
     "payments": "Payments",
     "reports": "Reports",
-    "audit": "Audit Log"
+    "audit": "Audit Log",
+    "profile": "Profile"
   },
   "perm": {
     "users_manage": "Users",
@@ -104,6 +105,22 @@
     "createUser": "Add user",
     "creating": "Adding...",
     "createError": "Could not create user."
+  },
+  "profile": {
+    "title": "Super Admin Profile",
+    "subtitle": "Manage your admin account and password here. Admin accounts are not shown in Users.",
+    "role": "Role",
+    "status": "Status",
+    "active": "active",
+    "inactive": "inactive",
+    "permissions": "Permissions",
+    "noPermissions": "No module permissions assigned.",
+    "passwordTitle": "Password",
+    "newPassword": "New password",
+    "passwordSaving": "Updating...",
+    "passwordSave": "Change password",
+    "passwordUpdated": "Password changed.",
+    "passwordError": "Could not change password."
   },
   "orders": {
     "title": "Orders",
@@ -167,11 +184,6 @@
     "accountActive": "Account active",
     "saving": "Saving…",
     "saveChanges": "Save changes",
-    "passwordTitle": "Password",
-    "newPassword": "New password",
-    "passwordSaving": "Updating...",
-    "passwordSave": "Change password",
-    "passwordError": "Could not change password.",
     "roles": "Roles",
     "primary": "(primary)",
     "revokeRole": "Revoke role",

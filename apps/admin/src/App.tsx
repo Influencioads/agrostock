@@ -30,6 +30,7 @@ import { CommunityModerationPage } from './pages/CommunityModerationPage';
 import { ReviewsModerationPage } from './pages/ReviewsModerationPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 export function App() {
   return (
@@ -65,6 +66,7 @@ export function App() {
         <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/audit" element={<AuditPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<OverviewPage />} />
           </Route>
         </Routes>

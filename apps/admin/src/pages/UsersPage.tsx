@@ -9,7 +9,7 @@ import { useI18n } from '../i18n';
 import { useFormat } from '../lib/useFormat';
 
 /** Enum tokens, not labels — filtering compares tokens so it survives translation. */
-const ROLE_FILTERS = ['all', 'buyer', 'seller', 'transporter', 'loaderco', 'worker', 'admin'];
+const ROLE_FILTERS = ['all', 'buyer', 'seller', 'transporter', 'loaderco', 'worker'];
 const CREATE_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'] as const;
 const kycTone: Record<string, BadgeTone> = { verified: 'green', pending: 'warn', rejected: 'error' };
 

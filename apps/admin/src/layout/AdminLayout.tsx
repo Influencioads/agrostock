@@ -47,6 +47,7 @@ const MODULES: Mod[] = [
   { to: '/payments', key: 'payments', icon: 'wallet', group: 'Company', perm: 'finance_manage' },
   { to: '/reports', key: 'reports', icon: 'chart', group: 'Company', perm: 'reports_view' },
   { to: '/audit', key: 'audit', icon: 'admin', group: 'Company', perm: 'audit_view' },
+  { to: '/profile', key: 'profile', icon: 'admin', group: 'Company' },
 ];
 
 const GROUPS = ['Platform', 'Marketplace', 'Messaging', 'Logistics', 'Company'];

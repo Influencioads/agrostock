@@ -211,6 +211,13 @@ export class ResetUserPasswordDto {
   password!: string;
 }
 
+export class UpdateOwnPasswordDto {
+  @ApiProperty({ minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password!: string;
+}
+
 export class SetUserRoleDto {
   @ApiProperty({ enum: Role }) @IsEnum(Role) role!: Role;
 }
@@ -240,8 +247,9 @@ export class AdminService {
   ) {}
 
   users(role?: string, search?: string) {
-    const where: Prisma.UserWhereInput = {};
-    if (role && role !== 'all') where.role = role as never;
+    const where: Prisma.UserWhereInput = {
+      role: role && role !== 'all' ? { equals: role as Role, not: Role.admin } : { not: Role.admin },
+    };
     if (search)
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -252,6 +260,28 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
       select: { id: true, name: true, email: true, role: true, country: true, kycStatus: true, createdAt: true },
     });
+  }
+
+  async profile(adminId: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminId },
+      select: { id: true, name: true, email: true, role: true, roles: true, adminPermissions: true, active: true, country: true, kycStatus: true, createdAt: true },
+    });
+    if (!admin || admin.role !== Role.admin) throw new NotFoundException('Admin profile not found');
+    return admin;
+  }
+
+  async updateOwnPassword(adminId: string, dto: UpdateOwnPasswordDto) {
+    const admin = await this.prisma.user.findUnique({ where: { id: adminId }, select: { id: true, role: true } });
+    if (!admin || admin.role !== Role.admin) throw new NotFoundException('Admin profile not found');
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const updated = await this.prisma.user.update({
+      where: { id: adminId },
+      data: { passwordHash },
+      select: { id: true, name: true, email: true, role: true, roles: true, adminPermissions: true, active: true, country: true, kycStatus: true, createdAt: true },
+    });
+    await this.audit.log({ actorId: adminId, action: 'admin.profile.password_update', entityType: 'User', entityId: adminId });
+    return updated;
   }
 
   /**
@@ -344,18 +374,6 @@ export class AdminService {
       meta: { email: dto.email, role: dto.role ?? Role.buyer },
     });
     return user;
-  }
-
-  async resetUserPassword(id: string, dto: ResetUserPasswordDto, adminId: string) {
-    await this.requireUser(id);
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { passwordHash },
-      select: { id: true, name: true, email: true, role: true, roles: true, active: true, country: true, kycStatus: true },
-    });
-    await this.audit.log({ actorId: adminId, action: 'user.password_reset', entityType: 'User', entityId: id });
-    return updated;
   }
 
   /** Grant an extra role (added to `roles[]`, leaving the primary role intact). */
@@ -1112,6 +1130,16 @@ export class AdminController {
     return this.admin.users(role, search);
   }
 
+  @Get('profile')
+  profile(@CurrentUser() admin: AuthUser) {
+    return this.admin.profile(admin.id);
+  }
+
+  @Patch('profile/password')
+  updateOwnPassword(@CurrentUser() admin: AuthUser, @Body() body: UpdateOwnPasswordDto) {
+    return this.admin.updateOwnPassword(admin.id, body);
+  }
+
   @Post('users')
   @RequirePermissions('users_manage')
   createUser(@CurrentUser() admin: AuthUser, @Body() body: CreateUserDto) {
@@ -1128,12 +1156,6 @@ export class AdminController {
   @RequirePermissions('users_manage')
   updateUser(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.admin.updateUser(id, body, admin.id);
-  }
-
-  @Patch('users/:id/password')
-  @RequirePermissions('users_manage')
-  resetUserPassword(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: ResetUserPasswordDto) {
-    return this.admin.resetUserPassword(id, body, admin.id);
   }
 
   @Post('users/:id/roles')

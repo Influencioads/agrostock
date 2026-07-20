@@ -169,7 +169,7 @@ function CategoryMegaMenu() {
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   // Anchor + sizing for the portaled panel (fixed-positioned on document.body).
-  const [pos, setPos] = useState<{ right: number; height: number; top?: number; bottom?: number } | null>(null);
+  const [pos, setPos] = useState<{ left?: number; right?: number; height: number; top?: number; bottom?: number } | null>(null);
 
   // The panel is rendered through a portal on document.body so it escapes the
   // hero section's `overflow-hidden` (which was clipping the lower categories)
@@ -186,14 +186,15 @@ function CategoryMegaMenu() {
       const gap = 8;
       const margin = 12;
       const maxH = 460;
+      const mobile = window.innerWidth < 640;
       const spaceBelow = vh - r.bottom - margin;
       const spaceAbove = r.top - margin;
-      const right = Math.max(8, window.innerWidth - r.right);
+      const inline = mobile ? { left: 8, right: 8 } : { right: Math.max(8, window.innerWidth - r.right) };
       // Prefer opening downward; flip up only when it gives meaningfully more room.
       if (spaceBelow >= 320 || spaceBelow >= spaceAbove) {
-        setPos({ right, top: r.bottom + gap, height: Math.min(maxH, spaceBelow) });
+        setPos({ ...inline, top: r.bottom + gap, height: Math.min(maxH, spaceBelow) });
       } else {
-        setPos({ right, bottom: vh - r.top + gap, height: Math.min(maxH, spaceAbove) });
+        setPos({ ...inline, bottom: vh - r.top + gap, height: Math.min(maxH, spaceAbove) });
       }
     };
     place();
@@ -294,13 +295,13 @@ function CategoryMegaMenu() {
       {open && pos && createPortal(
         <div
           ref={panelRef}
-          style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, right: pos.right, zIndex: 60 }}
-          className="w-[min(92vw,660px)] overflow-hidden rounded-xl border border-surface-border bg-white text-ink shadow-[0_24px_60px_rgba(11,61,46,0.22)]"
+          style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, right: pos.right, zIndex: 60 }}
+          className="overflow-hidden rounded-xl border border-surface-border bg-white text-ink shadow-[0_24px_60px_rgba(11,61,46,0.22)] sm:w-[min(92vw,660px)]"
         >
           {/* Fixed 3-column grid, height-capped so the last rows stay reachable. */}
-          <div className="grid grid-cols-3" style={{ height: pos.height }}>
+          <div className="grid grid-cols-1 overflow-y-auto sm:grid-cols-3 sm:overflow-hidden" style={{ height: pos.height }}>
             {/* Column 1 — categories */}
-            <div className="flex min-h-0 flex-col border-e border-surface-border">
+            <div className="flex min-h-0 flex-col border-b border-surface-border sm:border-b-0 sm:border-e">
               <div className={colHead}>{t('hero.colCategory', { defaultValue: 'Categories' })}</div>
               <div className="flex-1 overflow-y-auto p-1.5">
                 {categories.map((c) => {
@@ -323,7 +324,7 @@ function CategoryMegaMenu() {
             </div>
 
             {/* Column 2 — subcategories */}
-            <div className="flex min-h-0 flex-col border-e border-surface-border">
+            <div className="flex min-h-0 flex-col border-b border-surface-border sm:border-b-0 sm:border-e">
               <div className={colHead}>
                 {cat ? cat : t('hero.colSubcategory', { defaultValue: 'Subcategory' })}
               </div>
@@ -422,27 +423,27 @@ export function Hero() {
       <div className="pointer-events-none absolute -end-20 top-10 h-96 w-96 rounded-full bg-brand-leaf/20 blur-3xl" />
       <div className="pointer-events-none absolute -end-10 bottom-0 h-80 w-80 rounded-full bg-mango/10 blur-3xl" />
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 lg:grid-cols-2 lg:px-6 lg:py-20">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-14 lg:grid-cols-2 lg:px-6 lg:py-20">
         {/* ── left ── */}
-        <Stagger onView={false}>
+        <Stagger onView={false} className="min-w-0">
           <StaggerItem>
           <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-3 py-1 text-xs font-semibold text-mint">
             {t('hero.trustedBy')}
           </span>
           </StaggerItem>
           <StaggerItem>
-          <h1 className="mt-5 font-display text-5xl font-extrabold leading-[1.05] lg:text-6xl">
+          <h1 className="mt-5 max-w-full break-words font-display text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-6xl">
             {t('hero.title1')}{' '}
             <span className="bg-mango-gradient bg-clip-text text-transparent">{t('hero.title2')}</span>
           </h1>
           </StaggerItem>
           <StaggerItem>
-          <p className="mt-5 max-w-lg text-lg text-mint/80">{t('hero.subtitle')}</p>
+          <p className="mt-5 max-w-lg text-base text-mint/80 sm:text-lg">{t('hero.subtitle')}</p>
           </StaggerItem>
 
           {/* buy / sell search card */}
           <StaggerItem>
-          <div className="mt-7 max-w-xl rounded-xl bg-white p-4 text-ink shadow-card">
+          <div className="mt-7 w-full max-w-xl rounded-xl bg-white p-4 text-ink shadow-card">
             <div className="mb-3 grid grid-cols-2 gap-1 rounded-lg bg-brand-surface p-1">
               {(['buy', 'sell'] as const).map((m) => (
                 <button
@@ -457,8 +458,8 @@ export function Hero() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2">
-              <label className="flex flex-1 items-center gap-2 rounded-md border border-surface-border px-3">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+              <label className="flex min-w-0 items-center gap-2 rounded-md border border-surface-border px-3">
                 <Icon name="search" size={18} className="text-ink-soft" />
                 <input
                   value={q}
@@ -468,8 +469,10 @@ export function Hero() {
                   className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft"
                 />
               </label>
-              <CategoryMegaMenu />
-              <Button onClick={() => navigate('/market')}>{t('common:search')}</Button>
+              <div className="flex min-w-0 gap-2 sm:contents">
+                <CategoryMegaMenu />
+                <Button className="flex-1 sm:flex-none" onClick={() => navigate('/market')}>{t('common:search')}</Button>
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {(t('hero.chips', { returnObjects: true }) as string[]).map((c) => (
@@ -486,11 +489,11 @@ export function Hero() {
           </StaggerItem>
 
           <StaggerItem>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button size="lg" variant="outline" className="border-white/30 bg-white/5 text-white hover:bg-white/10" onClick={() => navigate('/market')} leftIcon={<Icon name="bag" size={18} />}>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+            <Button size="lg" variant="outline" className="w-full border-white/30 bg-white/5 text-white hover:bg-white/10 sm:w-auto" onClick={() => navigate('/market')} leftIcon={<Icon name="bag" size={18} />}>
               {t('hero.explore')}
             </Button>
-            <Button size="lg" variant="accent" leftIcon={<Icon name="store" size={18} />} onClick={() => navigate('/login')}>
+            <Button size="lg" variant="accent" className="w-full sm:w-auto" leftIcon={<Icon name="store" size={18} />} onClick={() => navigate('/login')}>
               {t('hero.list')}
             </Button>
           </div>
@@ -543,11 +546,11 @@ export function Hero() {
 
       {/* trust strip */}
       <div className="relative border-t border-white/10 bg-black/10">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 py-4 text-sm font-semibold text-mint lg:grid-cols-4 lg:px-6">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-3 px-4 py-4 text-xs font-semibold text-mint sm:grid-cols-2 sm:text-sm lg:grid-cols-4 lg:px-6">
           {trust.map((tr) => (
-            <div key={tr.label} className="flex items-center justify-center gap-2 lg:justify-start">
+            <div key={tr.label} className="flex min-w-0 items-center justify-center gap-2 lg:justify-start">
               <Icon name={tr.icon} size={17} className="text-brand-leaf" />
-              {tr.label}
+              <span className="min-w-0 break-words">{tr.label}</span>
             </div>
           ))}
         </div>
@@ -609,7 +612,7 @@ export function Categories() {
   return (
     <Section>
       <SectionHeader title={t('section.categories')} action={t('common:viewAll')} onAction={() => navigate('/market')} />
-      <Stagger className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+      <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         {categories.map((c) => (
           <StaggerItem key={c.name}>
             <button
@@ -619,7 +622,7 @@ export function Categories() {
               <span className="flex h-12 w-12 items-center justify-center rounded-lg text-2xl" style={{ background: c.tint }}>
                 {c.emoji}
               </span>
-              <span className="text-sm font-bold text-ink">{c.name}</span>
+              <span className="max-w-full break-words text-center text-sm font-bold text-ink">{c.name}</span>
               <span className="text-xs text-ink-soft">{c.count}</span>
             </button>
           </StaggerItem>

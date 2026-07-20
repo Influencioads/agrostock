@@ -8,6 +8,7 @@ function serviceForUsers() {
     user: {
       findUnique: vi.fn(async () => null),
       findFirst: vi.fn(async () => null),
+      findMany: vi.fn(async () => []),
       create: vi.fn(async ({ data, select }) => ({
         id: 'u1',
         name: data.name,
@@ -74,18 +75,32 @@ describe('AdminService user CRUD', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('resets a user password with a new hash', async () => {
-    const { svc, prisma, audit } = serviceForUsers();
-    prisma.user.findUnique.mockResolvedValueOnce({ id: 'u1', role: 'buyer', roles: [] });
+  it('does not include admin accounts in the normal users list', async () => {
+    const { svc, prisma } = serviceForUsers();
 
-    const out = await svc.resetUserPassword('u1', { password: 'newpass123' }, 'admin1');
+    await svc.users();
+
+    expect(prisma.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          role: { not: 'admin' },
+        }),
+      }),
+    );
+  });
+
+  it('changes the signed-in admin profile password with a new hash', async () => {
+    const { svc, prisma, audit } = serviceForUsers();
+    prisma.user.findUnique.mockResolvedValueOnce({ id: 'admin1', role: 'admin', roles: [] });
+
+    const out = await svc.updateOwnPassword('admin1', { password: 'newpass123' });
 
     const data = prisma.user.update.mock.calls[0][0].data;
     expect(data.passwordHash).not.toBe('newpass123');
     await expect(bcrypt.compare('newpass123', data.passwordHash)).resolves.toBe(true);
     expect(out).not.toHaveProperty('passwordHash');
     expect(audit.log).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: 'admin1', action: 'user.password_reset', entityType: 'User', entityId: 'u1' }),
+      expect.objectContaining({ actorId: 'admin1', action: 'admin.profile.password_update', entityType: 'User', entityId: 'admin1' }),
     );
   });
 });

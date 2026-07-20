@@ -19,18 +19,18 @@ export function SiteHeader() {
       <div className="bg-brand-evergreen text-mint">
         {/* Separators are their own flex items: nesting them inside the following
             span made a wrapped line start with a stray "·". */}
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-1.5 text-[12.5px]">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 py-1.5 text-center text-[11px] leading-snug sm:gap-x-3 sm:px-4 sm:text-[12.5px]">
           {(t('ribbon', { returnObjects: true }) as string[]).map((r, i) => (
-            <span key={i} className="flex items-center gap-3">
+            <span key={i} className="flex max-w-full min-w-0 items-center justify-center gap-2">
               {i > 0 && <span aria-hidden="true" className="text-mango">·</span>}
-              {r}
+              <span className="min-w-0 break-words">{r}</span>
             </span>
           ))}
         </div>
       </div>
 
       {/* main bar */}
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:px-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 lg:px-6">
         {/* Hamburger holds the nav + auth actions below `lg`, where no language fits
             the full row. */}
         <MobileNav />
@@ -38,8 +38,13 @@ export function SiteHeader() {
         {/* `shrink-0`: the logo was the only shrinkable child of this row, so it was
             what got crushed when translated labels grew (170px of mark squeezed
             into 130px). */}
-        <Link to="/" className="shrink-0">
-          <BrandMark logoSrc={logoSrc} size="md" glyphClassName="shadow-cta" />
+        <Link to="/" className="min-w-0 shrink">
+          <BrandMark
+            logoSrc={logoSrc}
+            size="md"
+            glyphClassName="shadow-cta"
+            className="max-w-[190px] overflow-hidden sm:max-w-none"
+          />
         </Link>
 
         {/* Measures itself and folds any overflow into «More» — see PrimaryNav. */}
@@ -49,7 +54,7 @@ export function SiteHeader() {
           {/* display currency */}
           <CurrencySelect className="hidden sm:block" />
           {/* language */}
-          <LanguageSelect />
+          <LanguageSelect className="hidden sm:block" />
 
           {user ? (
             <>
