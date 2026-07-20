@@ -1,0 +1,215 @@
+{
+  "auction": {
+    "closed_no_bids": {
+      "body": "Die Auktion „{{product}}“ wurde ohne Gebote geschlossen.",
+      "title": "Auktion beendet"
+    },
+    "outbid": {
+      "body": "Jemand hat ein höheres Gebot für „{{product}}“ abgegeben. Das aktuelle Höchstgebot liegt bei {{amount}}.",
+      "title": "Sie wurden überboten."
+    },
+    "sold": {
+      "body": "“{{product}}” schloss bei {{amount}} — {{buyer}} ist der erfolgreiche Käufer.",
+      "title": "Ihre Auktion wurde verkauft"
+    },
+    "won": {
+      "body": "Ihr Gebot von {{amount}} hat „{{product}}“ gewonnen. Schließen Sie Ihre Bestellung ab, um sich den Betrag zu sichern.",
+      "title": "Sie haben die Auktion gewonnen"
+    }
+  },
+  "buyer_bid": {
+    "awarded": {
+      "body": "Ihr Gebot für {{reference}} wurde angenommen. Bestellung {{orderReference}} ist offen.",
+      "title": "Sie haben den Zuschlag bei einem Käufergebot erhalten."
+    },
+    "new_seller_bid": {
+      "body": "Ein Verkäufer bot {{amount}} pro {{unit}} am {{reference}}.",
+      "title": "Neues Verkäufergebot"
+    },
+    "outbid": {
+      "body": "Ein anderer Verkäufer hat Sie mit {{reference}} unterboten.",
+      "title": "Sie wurden überboten."
+    }
+  },
+  "common": {
+    "reason_suffix": "Grund: {{reason}}"
+  },
+  "community": {
+    "dm": {
+      "title": "Neue Direktnachricht"
+    },
+    "message": {
+      "title": "Neue Community-Mitteilung"
+    }
+  },
+  "enum": {
+    "order_status": {
+      "cancelled": "Abgesagt",
+      "delivered": "Geliefert",
+      "dispatched": "Versendet",
+      "dispute": "Disput",
+      "enquiry": "Anfrage",
+      "in_transit": "Unterwegs",
+      "packed": "Verpackt",
+      "paid": "Bezahlt",
+      "processing": "Verarbeitung",
+      "quote": "Zitat"
+    },
+    "role": {
+      "buyer": "Käufer",
+      "loader": "Verladefirma",
+      "seller": "Verkäufer",
+      "transporter": "Transporter",
+      "worker": "Arbeitnehmer"
+    },
+    "support_status": {
+      "closed": "Geschlossen",
+      "open": "Offen",
+      "pending": "Ausstehend",
+      "resolved": "Gelöst"
+    }
+  },
+  "hire": {
+    "accepted": {
+      "body": "{{actor}} hat Ihre Einstellungsanfrage {{reference}} angenommen.",
+      "title": "Einstellungsanfrage angenommen"
+    },
+    "declined": {
+      "body": "{{actor}} hat Ihre Einstellungsanfrage abgelehnt {{reference}}.",
+      "title": "Einstellungsanfrage abgelehnt"
+    },
+    "request": {
+      "body": "{{requester}} möchte dich einstellen{{detail}}.",
+      "title": "Anfrage für neue Mitarbeiter"
+    }
+  },
+  "kyc": {
+    "rejected": {
+      "body": "Ihre Bestätigung wurde nicht genehmigt. Bitte überprüfen Sie diese und reichen Sie sie erneut ein.",
+      "title": "Die Überprüfung bedarf der Aufmerksamkeit"
+    },
+    "verified": {
+      "body": "Ihr Konto ist nun verifiziert – alle Handelsfunktionen sind freigeschaltet.",
+      "title": "Identität verifiziert"
+    }
+  },
+  "market": {
+    "approved": {
+      "body": "“{{market}}” ist jetzt gelistet — Käufer und Verkäufer können sich daran anhängen.",
+      "title": "Marktzulassung"
+    },
+    "declined": {
+      "body": "Ihr vorgeschlagener Markt „{{market}}“ wurde nicht genehmigt.",
+      "title": "Marktvorschlag abgelehnt"
+    }
+  },
+  "order": {
+    "delivered_buyer": {
+      "body": "Bestellung {{reference}} wurde zugestellt.",
+      "title": "Geliefert"
+    },
+    "delivered_seller": {
+      "body": "Bestellung {{reference}} wurde zugestellt. Sie können jetzt eine Rechnung erstellen.",
+      "title": "Geliefert"
+    },
+    "dispatched": {
+      "body": "{{cargo}} ist unterwegs. Teilen Sie Ihre Lieferung OTP dem Fahrer bei Ankunft mit.",
+      "title": "Bestellung versandt"
+    },
+    "load_assigned": {
+      "body": "Abholung {{cargo}} von {{fromCity}} — bitte den Verkäufer nach der Abholung OTP fragen.",
+      "title": "Neue Last zugewiesen"
+    },
+    "new_enquiry": {
+      "body": "{{buyer}} hat sich nach {{product}} erkundigt.",
+      "title": "Neue Anfrage"
+    },
+    "picked_up": {
+      "body": "Bestellung {{reference}} ist unterwegs.",
+      "title": "Waren abgeholt"
+    },
+    "seller_responded": {
+      "body": "{{seller}} zitierte {{amount}} für {{product}}.",
+      "title": "Der Verkäufer hat geantwortet"
+    },
+    "status_changed": {
+      "body": "Die Reihenfolge ist jetzt {{status}}.",
+      "title": "Bestellung {{reference}} — {{status}}"
+    }
+  },
+  "product": {
+    "approved": {
+      "body": "“{{product}}” ist jetzt im Marketplace verfügbar.",
+      "title": "Eintrag genehmigt"
+    },
+    "rejected": {
+      "body": "“{{product}}” wurde nicht genehmigt.",
+      "title": "Die Auflistung muss geändert werden"
+    }
+  },
+  "review": {
+    "received": {
+      "body": "{{author}} hat Ihnen eine {{stars}}★ Bewertung hinterlassen.",
+      "title": "Sie haben eine neue Bewertung erhalten."
+    }
+  },
+  "role_request": {
+    "approved": {
+      "body": "Dein Antrag, ein {{role}} zu werden, wurde genehmigt. Wechsle die Rolle in der Konsole, um loszulegen.",
+      "title": "Du bist jetzt eine {{role}}"
+    },
+    "declined": {
+      "body": "Ihr Antrag, ein {{role}} zu werden, wurde abgelehnt.",
+      "title": "Rollenanfrage abgelehnt"
+    }
+  },
+  "support": {
+    "assigned_agent": {
+      "title": "Ihnen wurde ein Ticket zugewiesen"
+    },
+    "assigned_user": {
+      "title": "Ein Mitarbeiter bearbeitet derzeit Ihre Anfrage."
+    },
+    "reply": {
+      "title": "Der Support antwortete"
+    },
+    "resolved": {
+      "title": "Ihr Ticket wurde bearbeitet – bewerten Sie den Support."
+    },
+    "status": {
+      "title": "Ticket {{status}}"
+    },
+    "ticket_new": {
+      "title": "Neues Support-Ticket"
+    },
+    "user_reply": {
+      "title": "Der Nutzer antwortete"
+    }
+  },
+  "wallet": {
+    "escrow_release": {
+      "body": "{{amount}} wurde Ihrem Wallet gutgeschrieben.",
+      "title": "Zahlung erhalten"
+    },
+    "invoice": {
+      "body": "{{issuer}} hat {{number}} für {{amount}} ausgestellt.",
+      "title": "Neue Rechnung"
+    },
+    "payout_approved": {
+      "body": "Ihre Auszahlung von {{amount}} wurde genehmigt und ausgezahlt.",
+      "title": "Auszahlung gesendet"
+    },
+    "payout_declined": {
+      "body": "Ihr Auszahlungsantrag wurde abgelehnt.",
+      "title": "Auszahlung abgelehnt"
+    },
+    "refund": {
+      "body": "{{amount}} wurde Ihrem Wallet gutgeschrieben.",
+      "title": "Rückerstattung bearbeitet"
+    },
+    "topup": {
+      "body": "{{amount}} wurde Ihrer Brieftasche hinzugefügt.",
+      "title": "hinzugefügte Gelder"
+    }
+  }
+}

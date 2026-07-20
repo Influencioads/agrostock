@@ -1,0 +1,68 @@
+{
+  "hire_status": {
+    "accepted": "Aceptado",
+    "cancelled": "Cancelado",
+    "declined": "Rechazado",
+    "pending": "Pendiente"
+  },
+  "hire_target": {
+    "loaderco": "Compañía de cargadoras",
+    "transporter": "Transportador",
+    "worker": "Obrero"
+  },
+  "kyc": {
+    "pending": "Pendiente",
+    "rejected": "Rechazado",
+    "verified": "Verificado"
+  },
+  "order_status": {
+    "cancelled": "Cancelado",
+    "delivered": "Entregado",
+    "dispute": "Disputar",
+    "in_transit": "En tránsito",
+    "paid": "Depósito en garantía",
+    "processing": "Tratamiento",
+    "quote": "Cotización enviada",
+    "shipped": "Enviado"
+  },
+  "role": {
+    "admin": "Administración",
+    "buyer": "Comprador",
+    "loaderco": "Compañía de cargadoras",
+    "seller": "Vendedor",
+    "transporter": "Transportador",
+    "worker": "Obrero"
+  },
+  "support_category": {
+    "account_kyc": "Cuenta y KYC",
+    "auction_bid": "Subasta / puja",
+    "buyer_order": "Problema de pedido del comprador",
+    "global_office": "Oficina global",
+    "import_export": "Importación/exportación",
+    "loader": "Cargador/trabajador",
+    "other": "Otro",
+    "payment_safedeal": "Pago / Transacción segura",
+    "product_listing": "Listado de productos",
+    "seller_order": "Problema con el pedido del vendedor",
+    "technical": "Problema técnico",
+    "transport": "Transporte",
+    "wallet_payout": "Monedero / pago"
+  },
+  "support_priority": {
+    "high": "Alto",
+    "low": "Bajo",
+    "medium": "Medio",
+    "urgent": "Urgente"
+  },
+  "support_status": {
+    "all": "Todo",
+    "assigned": "Asignado",
+    "closed": "Cerrado",
+    "escalated": "Intensificado",
+    "in_progress": "En curso",
+    "new": "Nuevo",
+    "resolved": "Resuelto",
+    "waiting_support": "Esperando apoyo",
+    "waiting_user": "Esperando por ti"
+  }
+}

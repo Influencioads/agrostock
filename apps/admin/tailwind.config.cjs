@@ -1,0 +1,8 @@
+const preset = require('@agrotraders/config/tailwind-preset.cjs');
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  presets: [preset],
+  darkMode: 'class',
+  content: ['./index.html', './src/**/*.{ts,tsx}', '../../packages/ui/src/**/*.{ts,tsx}'],
+};

@@ -1,0 +1,26 @@
+{
+  "auctions": {
+    "already_ended": "Cette vente aux enchères est déjà terminée.",
+    "bid_race": "Une autre offre a été acceptée avant la première — veuillez réessayer avec un montant plus élevé.",
+    "bid_too_low": "Votre enchère est inférieure à l'enchère la plus élevée actuelle — essayez un montant plus élevé.",
+    "ended": "Cette vente aux enchères est terminée.",
+    "not_found": "Vente aux enchères introuvable.",
+    "not_owner": "Il ne s'agit pas de votre vente aux enchères.",
+    "own_auction": "Vous ne pouvez pas enchérir sur votre propre vente aux enchères."
+  },
+  "auth": {
+    "account_missing": "Ce compte n'existe plus.",
+    "email_taken": "Cette adresse e-mail est déjà enregistrée.",
+    "invalid_credentials": "Adresse e-mail ou mot de passe invalide.",
+    "not_a_refresh_token": "Votre session a expiré — veuillez vous reconnecter.",
+    "refresh_invalid": "Votre session a expiré — veuillez vous reconnecter."
+  },
+  "net": {
+    "offline": "Impossible de contacter le serveur. L'API est-elle en cours d'exécution ?",
+    "rate_limited": "Trop de tentatives — veuillez patienter une minute et réessayer."
+  },
+  "unknown": "Une erreur s'est produite. Veuillez réessayer.",
+  "validation": {
+    "failed": "Veuillez cocher les champs surlignés."
+  }
+}

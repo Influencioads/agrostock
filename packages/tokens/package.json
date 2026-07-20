@@ -1,0 +1,21 @@
+{
+  "name": "@agrotraders/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AgroTraders design tokens (colors, type, radii) — green + mango/orange accent.",
+  "main": "index.cjs",
+  "module": "index.mjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs",
+      "default": "./index.cjs"
+    }
+  },
+  "scripts": {
+    "lint": "echo \"(tokens) no lint\"",
+    "typecheck": "echo \"(tokens) no typecheck\""
+  }
+}

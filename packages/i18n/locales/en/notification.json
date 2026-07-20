@@ -1,0 +1,215 @@
+{
+  "common": {
+    "reason_suffix": "Reason: {{reason}}"
+  },
+  "enum": {
+    "order_status": {
+      "enquiry": "Enquiry",
+      "quote": "Quote",
+      "processing": "Processing",
+      "paid": "Paid",
+      "packed": "Packed",
+      "dispatched": "Dispatched",
+      "in_transit": "In transit",
+      "delivered": "Delivered",
+      "dispute": "Dispute",
+      "cancelled": "Cancelled"
+    },
+    "support_status": {
+      "open": "Open",
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "role": {
+      "buyer": "buyer",
+      "seller": "seller",
+      "transporter": "transporter",
+      "loader": "loading company",
+      "worker": "worker"
+    }
+  },
+  "order": {
+    "new_enquiry": {
+      "title": "New enquiry",
+      "body": "{{buyer}} enquired about {{product}}."
+    },
+    "seller_responded": {
+      "title": "Seller responded",
+      "body": "{{seller}} quoted {{amount}} for {{product}}."
+    },
+    "status_changed": {
+      "title": "Order {{reference}} — {{status}}",
+      "body": "The order is now {{status}}."
+    },
+    "dispatched": {
+      "title": "Order dispatched",
+      "body": "{{cargo}} is on its way. Share your delivery OTP with the driver on arrival."
+    },
+    "load_assigned": {
+      "title": "New load assigned",
+      "body": "Pick up {{cargo}} from {{fromCity}} — ask the seller for the pickup OTP."
+    },
+    "picked_up": {
+      "title": "Goods picked up",
+      "body": "Order {{reference}} is in transit."
+    },
+    "delivered_buyer": {
+      "title": "Delivered",
+      "body": "Order {{reference}} was delivered."
+    },
+    "delivered_seller": {
+      "title": "Delivered",
+      "body": "Order {{reference}} was delivered. You can now raise an invoice."
+    }
+  },
+  "wallet": {
+    "topup": {
+      "title": "Funds added",
+      "body": "{{amount}} was added to your wallet."
+    },
+    "escrow_release": {
+      "title": "Payment received",
+      "body": "{{amount}} was released to your wallet."
+    },
+    "refund": {
+      "title": "Refund processed",
+      "body": "{{amount}} was refunded to your wallet."
+    },
+    "invoice": {
+      "title": "New invoice",
+      "body": "{{issuer}} issued {{number}} for {{amount}}."
+    },
+    "payout_approved": {
+      "title": "Payout sent",
+      "body": "Your withdrawal of {{amount}} has been approved and paid out."
+    },
+    "payout_declined": {
+      "title": "Payout declined",
+      "body": "Your payout request was declined."
+    }
+  },
+  "auction": {
+    "outbid": {
+      "title": "You've been outbid",
+      "body": "Someone placed a higher bid on “{{product}}”. The current top bid is {{amount}}."
+    },
+    "won": {
+      "title": "You won the auction",
+      "body": "Your {{amount}} bid won “{{product}}”. Complete your order to secure it."
+    },
+    "sold": {
+      "title": "Your auction sold",
+      "body": "“{{product}}” closed at {{amount}} — {{buyer}} is the winning buyer."
+    },
+    "closed_no_bids": {
+      "title": "Auction closed",
+      "body": "“{{product}}” closed without any bids."
+    }
+  },
+  "buyer_bid": {
+    "awarded": {
+      "title": "You won a buyer bid",
+      "body": "Your bid on {{reference}} was awarded. Order {{orderReference}} is open."
+    },
+    "new_seller_bid": {
+      "title": "New seller bid",
+      "body": "A seller bid {{amount}} per {{unit}} on {{reference}}."
+    },
+    "outbid": {
+      "title": "You were outbid",
+      "body": "Another seller undercut you on {{reference}}."
+    }
+  },
+  "review": {
+    "received": {
+      "title": "You received a new review",
+      "body": "{{author}} left you a {{stars}}★ review."
+    }
+  },
+  "hire": {
+    "request": {
+      "title": "New hire request",
+      "body": "{{requester}} wants to hire you{{detail}}."
+    },
+    "accepted": {
+      "title": "Hire request accepted",
+      "body": "{{actor}} accepted your hire request {{reference}}."
+    },
+    "declined": {
+      "title": "Hire request declined",
+      "body": "{{actor}} declined your hire request {{reference}}."
+    }
+  },
+  "kyc": {
+    "verified": {
+      "title": "Identity verified",
+      "body": "Your account is now verified — full trading features are unlocked."
+    },
+    "rejected": {
+      "title": "Verification needs attention",
+      "body": "Your verification was not approved. Please review and resubmit."
+    }
+  },
+  "market": {
+    "approved": {
+      "title": "Market approved",
+      "body": "“{{market}}” is now listed — buyers and sellers can attach to it."
+    },
+    "declined": {
+      "title": "Market proposal declined",
+      "body": "Your proposed market “{{market}}” wasn't approved."
+    }
+  },
+  "product": {
+    "approved": {
+      "title": "Listing approved",
+      "body": "“{{product}}” is now live in the marketplace."
+    },
+    "rejected": {
+      "title": "Listing needs changes",
+      "body": "“{{product}}” wasn't approved."
+    }
+  },
+  "role_request": {
+    "approved": {
+      "title": "You're now a {{role}}",
+      "body": "Your request to become a {{role}} was approved. Switch roles from the console to get started."
+    },
+    "declined": {
+      "title": "Role request declined",
+      "body": "Your request to become a {{role}} was declined."
+    }
+  },
+  "community": {
+    "message": {
+      "title": "New community message"
+    },
+    "dm": {
+      "title": "New direct message"
+    }
+  },
+  "support": {
+    "ticket_new": {
+      "title": "New support ticket"
+    },
+    "reply": {
+      "title": "Support replied"
+    },
+    "user_reply": {
+      "title": "User replied"
+    },
+    "assigned_agent": {
+      "title": "Ticket assigned to you"
+    },
+    "assigned_user": {
+      "title": "An agent is now handling your request"
+    },
+    "status": {
+      "title": "Ticket {{status}}"
+    },
+    "resolved": {
+      "title": "Your ticket was resolved — rate your support"
+    }
+  }
+}

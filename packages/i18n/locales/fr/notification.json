@@ -1,0 +1,214 @@
+{
+  "auction": {
+    "closed_no_bids": {
+      "body": "« {{product}} » clôturé sans aucune enchère.",
+      "title": "Vente aux enchères terminée"
+    },
+    "outbid": {
+      "body": "Quelqu'un a surenchéri sur « {{product}} ». L'enchère la plus élevée est actuellement de {{amount}}.",
+      "title": "Votre offre a été surenchérie."
+    },
+    "sold": {
+      "body": "« {{product}} » a clôturé à {{amount}} — {{buyer}} est l’acheteur gagnant.",
+      "title": "Votre enchère a été vendue"
+    },
+    "won": {
+      "title": "Vous avez remporté l'enchère"
+    }
+  },
+  "buyer_bid": {
+    "awarded": {
+      "body": "Votre enchère sur {{reference}} a été acceptée. La commande {{orderReference}} est ouverte.",
+      "title": "Vous avez remporté une enchère d'acheteur"
+    },
+    "new_seller_bid": {
+      "body": "Un vendeur a enchéri {{amount}} par {{unit}} sur {{reference}}.",
+      "title": "Nouvelle offre du vendeur"
+    },
+    "outbid": {
+      "body": "Un autre vendeur vous propose un prix inférieur de {{reference}}.",
+      "title": "Vous avez été surenchéri."
+    }
+  },
+  "common": {
+    "reason_suffix": "Raison : {{reason}}"
+  },
+  "community": {
+    "dm": {
+      "title": "Nouveau message direct"
+    },
+    "message": {
+      "title": "Nouveau message communautaire"
+    }
+  },
+  "enum": {
+    "order_status": {
+      "cancelled": "Annulé",
+      "delivered": "Livré",
+      "dispatched": "Expédié",
+      "dispute": "Différend",
+      "enquiry": "Enquête",
+      "in_transit": "En transit",
+      "packed": "Emballé",
+      "paid": "Payé",
+      "processing": "Traitement",
+      "quote": "Citation"
+    },
+    "role": {
+      "buyer": "acheteur",
+      "loader": "entreprise de chargement",
+      "seller": "vendeur",
+      "transporter": "transporteur",
+      "worker": "travailleur"
+    },
+    "support_status": {
+      "closed": "Fermé",
+      "open": "Ouvrir",
+      "pending": "En attente",
+      "resolved": "Résolu"
+    }
+  },
+  "hire": {
+    "accepted": {
+      "body": "{{actor}} a accepté votre demande d'embauche {{reference}}.",
+      "title": "Demande d'embauche acceptée"
+    },
+    "declined": {
+      "body": "{{actor}} a refusé votre demande d'embauche {{reference}}.",
+      "title": "Demande d'embauche refusée"
+    },
+    "request": {
+      "body": "{{requester}} veut vous embaucher{{detail}}.",
+      "title": "Demande de nouvel employé"
+    }
+  },
+  "kyc": {
+    "rejected": {
+      "body": "Votre vérification n'a pas été approuvée. Veuillez la vérifier et la soumettre à nouveau.",
+      "title": "La vérification nécessite une attention particulière."
+    },
+    "verified": {
+      "body": "Votre compte est désormais vérifié — toutes les fonctionnalités de trading sont débloquées.",
+      "title": "Identité vérifiée"
+    }
+  },
+  "market": {
+    "approved": {
+      "body": "« {{market}} » est désormais répertorié — les acheteurs et les vendeurs peuvent s'y associer.",
+      "title": "Approuvé par le marché"
+    },
+    "declined": {
+      "body": "Votre proposition de marché « {{market}} » n'a pas été approuvée.",
+      "title": "La proposition de marché a été refusée."
+    }
+  },
+  "order": {
+    "delivered_buyer": {
+      "body": "La commande {{reference}} a été livrée.",
+      "title": "Livré"
+    },
+    "delivered_seller": {
+      "body": "La commande {{reference}} a été livrée. Vous pouvez maintenant émettre une facture.",
+      "title": "Livré"
+    },
+    "dispatched": {
+      "body": "Votre colis {{cargo}} est en route. Partagez votre numéro de livraison OTP avec le livreur à son arrivée.",
+      "title": "Commande expédiée"
+    },
+    "load_assigned": {
+      "body": "Récupérez {{cargo}} auprès de {{fromCity}} — demandez au vendeur le point de retrait OTP.",
+      "title": "Nouvelle charge affectée"
+    },
+    "new_enquiry": {
+      "body": "{{buyer}} s'est renseigné sur {{product}}.",
+      "title": "Nouvelle demande"
+    },
+    "picked_up": {
+      "body": "La commande {{reference}} est en transit.",
+      "title": "Marchandises récupérées"
+    },
+    "seller_responded": {
+      "body": "{{seller}} a cité {{amount}} pour {{product}}.",
+      "title": "Le vendeur a répondu"
+    },
+    "status_changed": {
+      "body": "La commande est maintenant de {{status}}.",
+      "title": "Commande {{reference}} — {{status}}"
+    }
+  },
+  "product": {
+    "approved": {
+      "body": "« {{product}} » est désormais disponible sur la plateforme.",
+      "title": "Annonce approuvée"
+    },
+    "rejected": {
+      "body": "« {{product}} » n'a pas été approuvé.",
+      "title": "L'annonce nécessite des modifications"
+    }
+  },
+  "review": {
+    "received": {
+      "body": "{{author}} vous a laissé un avis {{stars}}★.",
+      "title": "Vous avez reçu un nouvel avis"
+    }
+  },
+  "role_request": {
+    "approved": {
+      "body": "Votre demande pour devenir un {{role}} a été approuvée. Changez de rôle depuis la console pour commencer.",
+      "title": "Vous êtes maintenant un {{role}}"
+    },
+    "declined": {
+      "body": "Votre demande pour devenir un {{role}} a été refusée.",
+      "title": "Demande de rôle refusée"
+    }
+  },
+  "support": {
+    "assigned_agent": {
+      "title": "Billet attribué à vous"
+    },
+    "assigned_user": {
+      "title": "Un agent traite actuellement votre demande."
+    },
+    "reply": {
+      "title": "Le service d'assistance a répondu"
+    },
+    "resolved": {
+      "title": "Votre ticket a été résolu — évaluez votre assistance"
+    },
+    "status": {
+      "title": "Billet {{status}}"
+    },
+    "ticket_new": {
+      "title": "Nouveau ticket d'assistance"
+    },
+    "user_reply": {
+      "title": "L'utilisateur a répondu"
+    }
+  },
+  "wallet": {
+    "escrow_release": {
+      "body": "{{amount}} a été versé dans votre portefeuille.",
+      "title": "Paiement reçu"
+    },
+    "invoice": {
+      "body": "{{issuer}} a émis {{number}} pour {{amount}}.",
+      "title": "Nouvelle facture"
+    },
+    "payout_approved": {
+      "body": "Votre retrait de {{amount}} a été approuvé et payé.",
+      "title": "Paiement effectué"
+    },
+    "payout_declined": {
+      "body": "Votre demande de paiement a été refusée.",
+      "title": "Le versement a été refusé."
+    },
+    "refund": {
+      "body": "{{amount}} a été remboursé sur votre portefeuille.",
+      "title": "Remboursement effectué"
+    },
+    "topup": {
+      "body": "{{amount}} a été ajouté à votre portefeuille.",
+      "title": "Fonds ajoutés"
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "hire_status": {
+    "accepted": "مقبول",
+    "cancelled": "تم الإلغاء",
+    "declined": "انخفض",
+    "pending": "قيد الانتظار"
+  },
+  "hire_target": {
+    "loaderco": "شركة لودر",
+    "transporter": "ناقل",
+    "worker": "عامل"
+  },
+  "kyc": {
+    "pending": "قيد الانتظار",
+    "rejected": "مرفوض",
+    "verified": "تم التحقق"
+  },
+  "order_status": {
+    "cancelled": "تم الإلغاء",
+    "delivered": "تم التوصيل",
+    "dispute": "ينازع",
+    "in_transit": "في مرحلة انتقالية",
+    "paid": "تم الاحتفاظ بالضمان",
+    "processing": "يعالج",
+    "quote": "تم إرسال عرض السعر",
+    "shipped": "تم الشحن"
+  },
+  "role": {
+    "admin": "مسؤل",
+    "buyer": "المشتري",
+    "loaderco": "شركة لودر",
+    "seller": "بائع",
+    "transporter": "ناقل",
+    "worker": "عامل"
+  },
+  "support_category": {
+    "account_kyc": "الحساب & KYC",
+    "auction_bid": "مزاد / عرض",
+    "buyer_order": "إصدار طلب المشتري",
+    "global_office": "المكتب العالمي",
+    "import_export": "استيراد / تصدير",
+    "loader": "عامل تحميل",
+    "other": "آخر",
+    "payment_safedeal": "الدفع / صفقة آمنة",
+    "product_listing": "قائمة المنتجات",
+    "seller_order": "مشكلة في طلب البائع",
+    "technical": "مشكلة فنية",
+    "transport": "ينقل",
+    "wallet_payout": "محفظة / دفع"
+  },
+  "support_priority": {
+    "high": "عالي",
+    "low": "قليل",
+    "medium": "واسطة",
+    "urgent": "عاجل"
+  },
+  "support_status": {
+    "all": "الجميع",
+    "assigned": "مُكَلَّف",
+    "closed": "مغلق",
+    "escalated": "تصاعدت الأمور",
+    "in_progress": "في تَقَدم",
+    "new": "جديد",
+    "resolved": "تم حل المشكلة",
+    "waiting_support": "في انتظار الدعم",
+    "waiting_user": "في انتظاركم"
+  }
+}

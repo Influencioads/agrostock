@@ -1,0 +1,26 @@
+{
+  "unknown": "Something went wrong. Please try again.",
+  "net": {
+    "offline": "Cannot reach the server. Is the API running?",
+    "rate_limited": "Too many attempts — please wait a minute and try again."
+  },
+  "auth": {
+    "invalid_credentials": "Invalid email or password.",
+    "email_taken": "That email is already registered.",
+    "refresh_invalid": "Your session has expired — please sign in again.",
+    "not_a_refresh_token": "Your session has expired — please sign in again.",
+    "account_missing": "This account no longer exists."
+  },
+  "auctions": {
+    "not_found": "Auction not found.",
+    "ended": "This auction has ended.",
+    "already_ended": "This auction has already ended.",
+    "own_auction": "You cannot bid on your own auction.",
+    "bid_too_low": "Your bid is below the current highest bid — try a higher amount.",
+    "bid_race": "Another bid landed first — please try again with a higher amount.",
+    "not_owner": "This is not your auction."
+  },
+  "validation": {
+    "failed": "Please check the highlighted fields."
+  }
+}

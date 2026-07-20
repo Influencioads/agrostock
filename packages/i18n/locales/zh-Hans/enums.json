@@ -1,0 +1,68 @@
+{
+  "hire_status": {
+    "accepted": "公认",
+    "cancelled": "取消",
+    "declined": "拒绝",
+    "pending": "待办的"
+  },
+  "hire_target": {
+    "loaderco": "装载机公司",
+    "transporter": "运输车",
+    "worker": "工人"
+  },
+  "kyc": {
+    "pending": "待办的",
+    "rejected": "已拒绝",
+    "verified": "已验证"
+  },
+  "order_status": {
+    "cancelled": "取消",
+    "delivered": "发表",
+    "dispute": "争议",
+    "in_transit": "在途中",
+    "paid": "托管账户",
+    "processing": "加工",
+    "quote": "报价已发送",
+    "shipped": "已发货"
+  },
+  "role": {
+    "admin": "行政",
+    "buyer": "买方",
+    "loaderco": "装载机公司",
+    "seller": "卖方",
+    "transporter": "运输车",
+    "worker": "工人"
+  },
+  "support_category": {
+    "account_kyc": "账户 & KYC",
+    "auction_bid": "拍卖/竞价",
+    "buyer_order": "买方订单问题",
+    "global_office": "全球办公室",
+    "import_export": "进出口",
+    "loader": "装载机/工人",
+    "other": "其他",
+    "payment_safedeal": "付款/安全交易",
+    "product_listing": "产品列表",
+    "seller_order": "卖家订单问题",
+    "technical": "技术问题",
+    "transport": "运输",
+    "wallet_payout": "钱包/支付"
+  },
+  "support_priority": {
+    "high": "高的",
+    "low": "低的",
+    "medium": "中等的",
+    "urgent": "紧迫的"
+  },
+  "support_status": {
+    "all": "全部",
+    "assigned": "已分配",
+    "closed": "关闭",
+    "escalated": "升级",
+    "in_progress": "进行中",
+    "new": "新的",
+    "resolved": "已解决",
+    "waiting_support": "等待支持",
+    "waiting_user": "等你"
+  }
+}

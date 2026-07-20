@@ -1,0 +1,215 @@
+{
+  "auction": {
+    "closed_no_bids": {
+      "body": "“{{product}}”在没有收到任何报价的情况下结束。",
+      "title": "拍卖已结束"
+    },
+    "outbid": {
+      "body": "有人对“{{product}}”出了更高的价。目前最高出价为“{{amount}}”。",
+      "title": "您的出价已被他人超越。"
+    },
+    "sold": {
+      "body": "“{{product}}”以“{{amount}}”成交——“{{buyer}}”是中标买家。",
+      "title": "您的拍卖已售出"
+    },
+    "won": {
+      "body": "您的{{amount}}出价赢得了“{{product}}”。请完成订单以确保获得该商品。",
+      "title": "你赢得了拍卖"
+    }
+  },
+  "buyer_bid": {
+    "awarded": {
+      "body": "您对{{reference}}的出价已成功。订单{{orderReference}}开放。",
+      "title": "您赢得了买家竞标"
+    },
+    "new_seller_bid": {
+      "body": "卖家对 {{reference}} 出价 {{amount}} 每 {{unit}}。",
+      "title": "新卖家出价"
+    },
+    "outbid": {
+      "body": "另一个卖家以低于你的价格{{reference}}出售。",
+      "title": "你出价失败了。"
+    }
+  },
+  "common": {
+    "reason_suffix": "原因：{{reason}}"
+  },
+  "community": {
+    "dm": {
+      "title": "新私信"
+    },
+    "message": {
+      "title": "新社区消息"
+    }
+  },
+  "enum": {
+    "order_status": {
+      "cancelled": "取消",
+      "delivered": "发表",
+      "dispatched": "已派送",
+      "dispute": "争议",
+      "enquiry": "询问",
+      "in_transit": "在途中",
+      "packed": "包装",
+      "paid": "有薪酬的",
+      "processing": "加工",
+      "quote": "引用"
+    },
+    "role": {
+      "buyer": "买方",
+      "loader": "装卸公司",
+      "seller": "卖方",
+      "transporter": "运输机",
+      "worker": "工人"
+    },
+    "support_status": {
+      "closed": "关闭",
+      "open": "打开",
+      "pending": "待办的",
+      "resolved": "已解决"
+    }
+  },
+  "hire": {
+    "accepted": {
+      "body": "{{actor}} 已接受您的雇佣请求 {{reference}}。",
+      "title": "招聘申请已接受"
+    },
+    "declined": {
+      "body": "{{actor}} 拒绝了您的招聘请求 {{reference}}。",
+      "title": "招聘请求被拒绝"
+    },
+    "request": {
+      "body": "{{requester}} 想雇用你{{detail}}。",
+      "title": "新员工招聘申请"
+    }
+  },
+  "kyc": {
+    "rejected": {
+      "body": "您的验证未获批准。请检查并重新提交。",
+      "title": "核实工作需要关注"
+    },
+    "verified": {
+      "body": "您的账户已通过验证——所有交易功能已解锁。",
+      "title": "身份验证"
+    }
+  },
+  "market": {
+    "approved": {
+      "body": "“{{market}}”现已上线——买家和卖家可以附加到它。",
+      "title": "市场认可"
+    },
+    "declined": {
+      "body": "您提议的市场“{{market}}”未获批准。",
+      "title": "市场提案被拒绝"
+    }
+  },
+  "order": {
+    "delivered_buyer": {
+      "body": "订单{{reference}}已送达。",
+      "title": "发表"
+    },
+    "delivered_seller": {
+      "body": "订单{{reference}}已交付。您现在可以开具发票。",
+      "title": "发表"
+    },
+    "dispatched": {
+      "body": "{{cargo}} 正在运送途中。送货员到达后，请与他/她分享您的送货信息 OTP。",
+      "title": "订单已发货"
+    },
+    "load_assigned": {
+      "body": "从 {{fromCity}} 取货 {{cargo}} — 向卖家询问取货 OTP 的事宜。",
+      "title": "新分配的负载"
+    },
+    "new_enquiry": {
+      "body": "{{buyer}}询问了{{product}}。",
+      "title": "新查询"
+    },
+    "picked_up": {
+      "body": "订单{{reference}}正在运输途中。",
+      "title": "已提取货物"
+    },
+    "seller_responded": {
+      "body": "{{seller}} 引用 {{amount}} 为 {{product}}。",
+      "title": "卖家已回复"
+    },
+    "status_changed": {
+      "body": "订单现在为{{status}}。",
+      "title": "顺序 {{reference}} — {{status}}"
+    }
+  },
+  "product": {
+    "approved": {
+      "body": "“{{product}}”现已在市场上线。",
+      "title": "上市已获批准"
+    },
+    "rejected": {
+      "body": "“{{product}}”未获批准。",
+      "title": "房源信息需要更改"
+    }
+  },
+  "review": {
+    "received": {
+      "body": "{{author}} 给你留下了 {{stars}}★ 的评价。",
+      "title": "您收到了一份新的评价"
+    }
+  },
+  "role_request": {
+    "approved": {
+      "body": "您成为{{role}}的申请已获批准。请从控制台切换角色以开始使用。",
+      "title": "你现在是{{role}}"
+    },
+    "declined": {
+      "body": "您成为{{role}}的申请已被拒绝。",
+      "title": "角色请求被拒绝"
+    }
+  },
+  "support": {
+    "assigned_agent": {
+      "title": "分配给您的工单"
+    },
+    "assigned_user": {
+      "title": "目前已有客服人员正在处理您的请求。"
+    },
+    "reply": {
+      "title": "客服回复"
+    },
+    "resolved": {
+      "title": "您的问题已解决——请评价您的支持服务"
+    },
+    "status": {
+      "title": "票 {{status}}"
+    },
+    "ticket_new": {
+      "title": "新支持工单"
+    },
+    "user_reply": {
+      "title": "用户回复"
+    }
+  },
+  "wallet": {
+    "escrow_release": {
+      "body": "{{amount}} 已发放至您的钱包。",
+      "title": "已收到付款"
+    },
+    "invoice": {
+      "body": "{{issuer}} 签发 {{number}} 用于 {{amount}}。",
+      "title": "新发票"
+    },
+    "payout_approved": {
+      "body": "您提现的 {{amount}} 已获批准并已支付。",
+      "title": "已支付款项"
+    },
+    "payout_declined": {
+      "body": "您的提款申请已被拒绝。",
+      "title": "赔付拒绝"
+    },
+    "refund": {
+      "body": "{{amount}} 已退还至您的钱包。",
+      "title": "退款已处理"
+    },
+    "topup": {
+      "body": "{{amount}} 已添加到您的钱包。",
+      "title": "新增资金"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: theme('colors.surface.bg');
+  color: theme('colors.ink.DEFAULT');
+}
+
+.font-display {
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+}
+.font-numeric {
+  font-family: 'IBM Plex Sans', ui-monospace, monospace;
+}

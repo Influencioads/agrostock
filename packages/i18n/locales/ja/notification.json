@@ -1,0 +1,215 @@
+{
+  "auction": {
+    "closed_no_bids": {
+      "body": "「{{product}}」は入札なしで終了しました。",
+      "title": "オークションは終了しました"
+    },
+    "outbid": {
+      "body": "「{{product}}」にさらに高い入札がありました。現在の最高入札額は{{amount}}です。",
+      "title": "入札で負けました"
+    },
+    "sold": {
+      "body": "「{{product}}」は{{amount}}で決済されました。{{buyer}}が落札者です。",
+      "title": "オークションが落札されました"
+    },
+    "won": {
+      "body": "あなたの入札額{{amount}}が「{{product}}」を獲得しました。注文を完了して確定してください。",
+      "title": "オークションで落札されました"
+    }
+  },
+  "buyer_bid": {
+    "awarded": {
+      "body": "{{reference}}への入札が落札されました。注文{{orderReference}}は受付中です。",
+      "title": "あなたは入札で落札しました"
+    },
+    "new_seller_bid": {
+      "body": "売り手は{{reference}}に対して{{unit}}あたり{{amount}}の入札を行った。",
+      "title": "新規出品者入札"
+    },
+    "outbid": {
+      "body": "別の販売者が{{reference}}であなたより安く販売しています。",
+      "title": "あなたは入札で負けました"
+    }
+  },
+  "common": {
+    "reason_suffix": "理由：{{reason}}"
+  },
+  "community": {
+    "dm": {
+      "title": "新しいダイレクトメッセージ"
+    },
+    "message": {
+      "title": "新しいコミュニティメッセージ"
+    }
+  },
+  "enum": {
+    "order_status": {
+      "cancelled": "キャンセル",
+      "delivered": "配達済み",
+      "dispatched": "派遣されました",
+      "dispute": "紛争",
+      "enquiry": "問い合わせ",
+      "in_transit": "輸送中",
+      "packed": "詰め込みました",
+      "paid": "有料",
+      "processing": "処理",
+      "quote": "引用"
+    },
+    "role": {
+      "buyer": "買い手",
+      "loader": "荷積み会社",
+      "seller": "売り手",
+      "transporter": "輸送業者",
+      "worker": "ワーカー"
+    },
+    "support_status": {
+      "closed": "閉店",
+      "open": "開ける",
+      "pending": "保留中",
+      "resolved": "解決済み"
+    }
+  },
+  "hire": {
+    "accepted": {
+      "body": "{{actor}} があなたの採用リクエスト {{reference}} を承認しました。",
+      "title": "採用依頼が承認されました"
+    },
+    "declined": {
+      "body": "{{actor}} はあなたの採用依頼 {{reference}} を拒否しました。",
+      "title": "採用依頼は却下されました"
+    },
+    "request": {
+      "body": "{{requester}}はあなた{{detail}}を雇いたいと思っています。",
+      "title": "新規採用依頼"
+    }
+  },
+  "kyc": {
+    "rejected": {
+      "body": "認証が承認されませんでした。内容をご確認の上、再度送信してください。",
+      "title": "検証には注意が必要です"
+    },
+    "verified": {
+      "body": "アカウントの認証が完了しました。すべての取引機能が利用可能になりました。",
+      "title": "本人確認済み"
+    }
+  },
+  "market": {
+    "approved": {
+      "body": "「{{market}}」が出品されました。購入者と販売者はこれにアクセスできます。",
+      "title": "市場で承認済み"
+    },
+    "declined": {
+      "body": "ご提案いただいた市場「{{market}}」は承認されませんでした。",
+      "title": "市場提案は却下されました"
+    }
+  },
+  "order": {
+    "delivered_buyer": {
+      "body": "注文番号{{reference}}が配達されました。",
+      "title": "配達済み"
+    },
+    "delivered_seller": {
+      "body": "注文番号{{reference}}が配達されました。請求書を発行できるようになりました。",
+      "title": "配達済み"
+    },
+    "dispatched": {
+      "body": "{{cargo}} が配達中です。配達員が到着したら、配達番号 OTP をドライバーに伝えてください。",
+      "title": "注文品発送済み"
+    },
+    "load_assigned": {
+      "body": "{{fromCity}}から{{cargo}}を受け取ります。販売者にOTPの受け取り場所を尋ねてください。",
+      "title": "新しい負荷が割り当てられました"
+    },
+    "new_enquiry": {
+      "body": "{{buyer}}は{{product}}について問い合わせました。",
+      "title": "新規お問い合わせ"
+    },
+    "picked_up": {
+      "body": "注文番号{{reference}}は配送中です。",
+      "title": "商品が回収されました"
+    },
+    "seller_responded": {
+      "body": "{{seller}}は{{amount}}を{{product}}として引用した。",
+      "title": "販売者からの回答"
+    },
+    "status_changed": {
+      "body": "注文番号は{{status}}です。",
+      "title": "注文番号 {{reference}} — {{status}}"
+    }
+  },
+  "product": {
+    "approved": {
+      "body": "「{{product}}」がマーケットプレイスで販売開始されました。",
+      "title": "掲載が承認されました"
+    },
+    "rejected": {
+      "body": "「{{product}}」は承認されませんでした。",
+      "title": "リストの変更が必要"
+    }
+  },
+  "review": {
+    "received": {
+      "body": "{{author}}さんがあなたに{{stars}}★のレビューを残しました。",
+      "title": "新しいレビューを受け取りました"
+    }
+  },
+  "role_request": {
+    "approved": {
+      "body": "{{role}}への役割変更申請が承認されました。コンソールから役割を切り替えて開始してください。",
+      "title": "あなたは今{{role}}です"
+    },
+    "declined": {
+      "body": "{{role}} への参加申請は却下されました。",
+      "title": "役割リクエストは却下されました"
+    }
+  },
+  "support": {
+    "assigned_agent": {
+      "title": "あなたに割り当てられたチケット"
+    },
+    "assigned_user": {
+      "title": "担当者がお客様のリクエストに対応しております。"
+    },
+    "reply": {
+      "title": "サポートからの返信"
+    },
+    "resolved": {
+      "title": "チケットは解決しました。サポートの評価をお願いします。"
+    },
+    "status": {
+      "title": "チケット{{status}}"
+    },
+    "ticket_new": {
+      "title": "新しいサポートチケット"
+    },
+    "user_reply": {
+      "title": "ユーザーが返信しました"
+    }
+  },
+  "wallet": {
+    "escrow_release": {
+      "body": "{{amount}}があなたのウォレットにリリースされました。",
+      "title": "お支払いを受け取りました"
+    },
+    "invoice": {
+      "body": "{{issuer}}は{{amount}}に対して{{number}}を発行しました。",
+      "title": "新しい請求書"
+    },
+    "payout_approved": {
+      "body": "{{amount}}の出金が承認され、支払われました。",
+      "title": "支払いが送金されました"
+    },
+    "payout_declined": {
+      "body": "お支払い請求は却下されました。",
+      "title": "支払いは拒否されました"
+    },
+    "refund": {
+      "body": "{{amount}}がウォレットに返金されました。",
+      "title": "返金処理済み"
+    },
+    "topup": {
+      "body": "{{amount}}がウォレットに追加されました。",
+      "title": "資金が追加されました"
+    }
+  }
+}

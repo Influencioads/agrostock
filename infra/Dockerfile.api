@@ -1,0 +1,28 @@
+# AgroTraders API (NestJS + Prisma) — multi-stage build.
+# The API uses shared workspace packages, so install/build from the repo root.
+# Build context = repo root:  docker build -f infra/Dockerfile.api -t agrotraders-api .
+
+FROM node:20-alpine AS build
+RUN apk add --no-cache openssl libc6-compat
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+WORKDIR /repo
+COPY . .
+RUN pnpm install --filter "@agrotraders/api..." --no-frozen-lockfile
+RUN pnpm --filter @agrotraders/types build
+RUN pnpm --filter @agrotraders/i18n build
+# generate the Prisma client first — nest build (tsc) needs its types
+RUN pnpm --filter @agrotraders/api exec prisma generate
+RUN pnpm --filter @agrotraders/api build
+
+FROM node:20-alpine AS runtime
+RUN apk add --no-cache openssl libc6-compat
+WORKDIR /repo
+ENV NODE_ENV=production
+COPY --from=build /repo/node_modules ./node_modules
+COPY --from=build /repo/apps/api ./apps/api
+COPY --from=build /repo/packages/i18n ./packages/i18n
+COPY --from=build /repo/packages/types ./packages/types
+WORKDIR /repo/apps/api
+RUN chmod +x ./docker-entrypoint.sh
+EXPOSE 3000
+ENTRYPOINT ["./docker-entrypoint.sh"]

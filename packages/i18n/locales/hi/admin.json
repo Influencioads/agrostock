@@ -1,0 +1,805 @@
+{
+  "account": {
+    "fallbackName": "प्लेटफ़ॉर्म एडमिन",
+    "logOut": "लॉग आउट",
+    "staff": "कर्मचारी",
+    "superAdmin": "सुपर एडमिन"
+  },
+  "adsAdmin": {
+    "awaiting": "मंजूरी का इंतजार",
+    "clicks": "{{count}} क्लिक",
+    "confirmReject": "अस्वीकृति की पुष्टि करें",
+    "filter": {
+      "all": "सभी",
+      "approved": "अनुमत",
+      "pending": "लंबित",
+      "rejected": "अस्वीकार कर दिया"
+    },
+    "impressions": "इंप्रेशन (दिखाया गया सेट)",
+    "listingFallback": "लिस्टिंग",
+    "live": "रहना",
+    "liveNow": "अब सीधा प्रसारण हो रहा है",
+    "noneAwaiting": "कोई अभियान समीक्षा के लिए लंबित नहीं है।",
+    "noneFilter": "कोई {{filter}} अभियान नहीं।",
+    "nothingHere": "यहाँ कुछ भी नहीं है",
+    "paused": "रुका हुआ",
+    "pending": "लंबित",
+    "perDaySubmitted": "{{amount}}/दिन · सबमिट किया गया",
+    "queueCleared": "कतार खाली हो गई",
+    "reasonExample": "इस श्रेणी के लिए बजट बहुत अधिक है",
+    "reasonLabel": "कारण: {{reason}}",
+    "reasonPlaceholder": "कारण (विक्रेता को दिखाया गया)",
+    "rejected": "अस्वीकार कर दिया",
+    "rejecting": "अस्वीकार करते हुए…",
+    "sellerFallback": "विक्रेता",
+    "sub": "प्रायोजित लिस्टिंग। एक स्वीकृत, अप्रतिबंधित अभियान मार्केटप्लेस पर चल रहा है।",
+    "views": "{{count}} व्यूज़"
+  },
+  "apiBadge": {
+    "connecting": "कनेक्ट हो रहा है…",
+    "live": "लाइव एपीआई",
+    "offline": "ऑफलाइन",
+    "offlineMock": "ऑफ़लाइन (मॉक)"
+  },
+  "auctionsAdmin": {
+    "bidBook": "बोली पुस्तिका ({{count}})",
+    "bidderFallback": "बोलीदाता",
+    "bidsCount": "{{count}} बोलियाँ",
+    "closeNow": "अभी बंद करें",
+    "drawerTitle": "नीलामी",
+    "ends": "समाप्ति {{date}}",
+    "high": "उच्च {{amount}}",
+    "noBids": "अभी तक कोई बोली नहीं लगी है।",
+    "none": "फिलहाल कोई नीलामी नहीं हो रही है।",
+    "sub": "इस प्लेटफॉर्म पर होने वाली हर नीलामी — बोली पुस्तिका देखने के लिए क्लिक करें।",
+    "void": "नीलामी रद्द"
+  },
+  "audit": {
+    "actionPh": "फ़िल्टर कार्रवाई (जैसे वॉलेट, केवाईसी, ऑर्डर)...",
+    "detail": "विवरण",
+    "empty": "कोई भी ऑडिट प्रविष्टि मेल नहीं खाती।",
+    "entityPh": "इकाई प्रकार (उपयोगकर्ता, आदेश…)",
+    "entriesCount": "{{count}} प्रविष्टियाँ",
+    "system": "प्रणाली"
+  },
+  "bell": {
+    "app": "अनुप्रयोग",
+    "aria": "सूचनाएं",
+    "ariaSettings": "सेटिंग्स",
+    "caughtUp": "आप सभी अपडेट्स से अवगत हैं।",
+    "mail": "मेल",
+    "markAllRead": "सभी को पढ़ा दिखाएं",
+    "notifications": "सूचनाएं",
+    "push": "धकेलना",
+    "settings": "अधिसूचना सेटिंग्स"
+  },
+  "bidsAdmin": {
+    "award": "पुरस्कार",
+    "buyerLine": "खरीदार: {{name}}",
+    "cancelReq": "आवश्यकता रद्द करें",
+    "colActions": "कार्रवाई",
+    "colBest": "श्रेष्ठ",
+    "colBuyer": "क्रेता",
+    "colQty": "मात्रा",
+    "colReq": "मांग",
+    "colSellerBids": "विक्रेता बोली लगाता है",
+    "colStatus": "स्थिति",
+    "drawerTitle": "खरीदार की बोली",
+    "noSellerBids": "अभी तक किसी विक्रेता ने बोली नहीं लगाई है।",
+    "none": "किसी भी खरीदार की बोली मेल नहीं खाती।",
+    "reqFallback": "मांग",
+    "sellerBidsCount": "विक्रेता की बोली ({{count}})",
+    "sellerFallback": "विक्रेता",
+    "status": {
+      "all": "सभी",
+      "awarded": "पुरस्कार",
+      "cancelled": "रद्द कर दिया गया",
+      "closed": "बंद किया हुआ",
+      "open": "खुला",
+      "submitted": "प्रस्तुत किया गया"
+    },
+    "sub": "रिवर्स ऑक्शन — खरीदार एक शर्त रखते हैं, विक्रेता उसे जीतने के लिए बोली लगाते हैं।",
+    "view": "देखना"
+  },
+  "brand": {
+    "tagline": "कमांड सेंटर"
+  },
+  "brandingAdmin": {
+    "assets": {
+      "appIcon": {
+        "hint": "मोबाइल लॉन्चर आइकन के लिए इसे 512px PNG फ़ाइल के रूप में संग्रहीत किया गया है।",
+        "title": "ऐप आइकन"
+      },
+      "favicon": {
+        "hint": "स्टोरफ्रंट और इस पैनल के लिए ब्राउज़र टैब आइकन। इसे 180px PNG फ़ाइल के रूप में सहेजा गया है।",
+        "title": "फ़ेविकॉन"
+      },
+      "logo": {
+        "hint": "यह साइट के हेडर, फुटर और इस साइडबार में दिखाया गया है। वर्गाकार आकार सबसे अच्छा रहता है; इसे 512px तक के आकार में WebP फ़ाइल के रूप में संग्रहीत किया जा सकता है।",
+        "title": "प्रतीक चिन्ह"
+      }
+    },
+    "custom": "रिवाज़",
+    "default": "गलती करना",
+    "noteBody": "लॉन्चर आइकन और स्प्लैश स्क्रीन नेटिव बिल्ड में ही शामिल होते हैं। यहां अपलोड करने से आर्टवर्क सेव हो जाता है और वेब स्क्रीन अपडेट हो जाती है, लेकिन मोबाइल ऐप इसे अगले स्टोर बिल्ड के कट होने के बाद ही उठा पाता है।",
+    "noteTitle": "ऐप का आइकन इंस्टॉल किए गए फोन तक नहीं पहुंचता है।",
+    "replace": "प्रतिस्थापित करें",
+    "reset": "वितथ पर ले जाएं",
+    "resetFailed": "रीसेट नहीं हो सका",
+    "upload": "अपलोड करें",
+    "uploadFailed": "अपलोड विफल"
+  },
+  "catAdmin": {
+    "addCategory": "श्रेणी जोड़ना",
+    "addSub": "उप",
+    "catName": "श्रेणी नाम",
+    "collapse": "गिर जाना",
+    "confirmDeleteCat": "श्रेणी “{{name}}” को हटाएँ? इसकी उपश्रेणियाँ भी हटा दी जाएँगी।",
+    "confirmDeleteSub": "उपश्रेणी “{{name}}” हटाएं?",
+    "delete": "मिटाना",
+    "deleteSub": "उपश्रेणी हटाएं",
+    "edit": "संपादन करना",
+    "editSub": "उपश्रेणी संपादित करें",
+    "emojiHint": "नाम के आगे केवल एक इमोजी दिखाई देगा।",
+    "emojiLabel": "इमोजी (वैकल्पिक)",
+    "empty": "अभी तक कोई श्रेणियां नहीं हैं। पहली श्रेणी जोड़ें।",
+    "expand": "बढ़ाना",
+    "modalAddCategory": "श्रेणी जोड़ना",
+    "modalAddSub": "{{name}} में उपश्रेणी जोड़ें",
+    "modalEditCategory": "श्रेणी संपादित करें",
+    "modalEditSub": "उपश्रेणी संपादित करें",
+    "phCat": "उदाहरण के लिए फल",
+    "phSub": "उदाहरण के लिए बासमती चावल",
+    "productsCount": "{{count}} उत्पाद",
+    "save": "बचाना",
+    "saving": "बचत हो रही है…",
+    "subName": "उपश्रेणी का नाम",
+    "subStats": "{{subs}} उपश्रेणियाँ · {{products}} उत्पाद"
+  },
+  "cmsAdmin": {
+    "draft": "मसौदा",
+    "publish": "प्रकाशित करना",
+    "published": "प्रकाशित",
+    "sub": "सार्वजनिक साइट की सामग्री और लैंडिंग पेज का प्रबंधन करें।",
+    "unpublish": "अप्रकाशित करें"
+  },
+  "communityMod": {
+    "action": "कार्रवाई",
+    "banAuthor": "प्रतिबंध लेखक",
+    "createBtn": "चैनल बनाएं",
+    "createChannel": "आधिकारिक चैनल बनाएं",
+    "creating": "सृजन करना…",
+    "default": "गलती करना",
+    "delete": "मिटाना",
+    "dismiss": "नकार देना",
+    "fDescription": "विवरण",
+    "fEmoji": "इमोजी",
+    "fName": "नाम",
+    "glance": "समुदाय पर एक नजर",
+    "groupStats": "{{members}} सदस्य · {{posts}} पोस्ट · {{messages}} संदेश",
+    "groupsCount": "समूह ({{count}})",
+    "inGroup": "{{name}} में",
+    "metric": {
+      "groups": "समूह",
+      "messages": "संदेशों",
+      "openReports": "खुली रिपोर्टें",
+      "posts": "पदों",
+      "requirements": "आवश्यकताएं"
+    },
+    "noPosts": "कोई पोस्ट नहीं।",
+    "noReports": "कोई खुली रिपोर्ट नहीं 🎉",
+    "pin": "नत्थी करना",
+    "pinned": "पिन किए गए",
+    "recentPosts": "हाल के पोस्ट",
+    "reported": "रिपोर्ट की गई सामग्री",
+    "reportedBy": "रिपोर्टकर्ता: {{name}} · लक्ष्य: {{id}}",
+    "tab": {
+      "analytics": "एनालिटिक्स",
+      "feed": "खिलाना",
+      "groups": "समूह",
+      "reports": "रिपोर्टों"
+    },
+    "unpin": "अनपिन"
+  },
+  "companies": {
+    "approveListing": "सूची को स्वीकृत करें",
+    "colActions": "कार्रवाई",
+    "colCompany": "कंपनी",
+    "colListing": "लिस्टिंग",
+    "crew": "क्रू ({{count}})",
+    "detail": "कंपनी का विवरण",
+    "drivers": "ड्राइवरों",
+    "fleet": "बेड़ा ({{count}})",
+    "jobs": "नौकरियाँ",
+    "lanes": "लेन",
+    "lanesN": "लेन ({{count}})",
+    "listed": "सूचीबद्ध",
+    "loadersSub": "प्रत्येक लोडर कंपनी — क्रू, टीमें, काम, रेट कार्ड और सार्वजनिक लिस्टिंग अनुमोदन।",
+    "none": "कोई कंपनी नहीं मिली।",
+    "rateCard": "रेट कार्ड ({{count}})",
+    "recentTrips": "हाल की यात्राएँ ({{count}})",
+    "searchPlaceholder": "खोज कंपनियां…",
+    "tabCompanies": "कंपनियों",
+    "tabHires": "भर्ती अनुरोध",
+    "teams": "टीमें",
+    "teamsN": "टीमें ({{count}})",
+    "transportSub": "प्रत्येक परिवहन कंपनी — बेड़ा, लेन, ट्रिप और सार्वजनिक लिस्टिंग अनुमोदन।",
+    "trips": "ट्रिप्स",
+    "unlist": "असूचीबद्ध",
+    "unlisted": "गैर-सूचीबद्ध",
+    "vehicles": "वाहनों",
+    "workers": "श्रमिकों"
+  },
+  "disputes": {
+    "allSmooth": "सभी ऑर्डर सुचारू रूप से चल रहे हैं।",
+    "amount": "राशि {{amount}}",
+    "badge": "विवाद",
+    "none": "कोई खुला विवाद नहीं",
+    "orderRef": "ऑर्डर क्रमांक {{ref}}",
+    "refund": "खरीदार को रिफंड करें",
+    "release": "विक्रेता को जारी करें",
+    "sub_one": "{{count}} खुले विवाद",
+    "sub_other": "{{count}} खुले विवाद"
+  },
+  "genericError": "कुछ गड़बड़ हुई है। कृपया दोबारा प्रयास करें।",
+  "header": {
+    "fallbackTitle": "व्यवस्थापक",
+    "searchPlaceholder": "उपयोगकर्ताओं, ऑर्डर, उत्पादों आदि की खोज करें…"
+  },
+  "hires": {
+    "empty": "अभी तक कोई भर्ती अनुरोध प्राप्त नहीं हुआ है।",
+    "subtitle": "{{count}} प्रत्यक्ष भर्ती अनुरोध — स्वीकृत अनुरोध ट्रिप या लोडर नौकरियों में परिवर्तित हो जाते हैं।",
+    "title": "किराया संचालन"
+  },
+  "invoicesAdmin": {
+    "colActions": "कार्रवाई",
+    "colFromTo": "से → तक",
+    "colIssued": "जारी किए गए",
+    "colKind": "दयालु",
+    "colNumber": "संख्या",
+    "colStatus": "स्थिति",
+    "colTotal": "कुल",
+    "empty": "कोई भी बिल मेल नहीं खाता।",
+    "markPaid": "मार्क ने भुगतान किया",
+    "pdf": "PDF",
+    "searchPh": "संख्या, जारीकर्ता या प्राप्तकर्ता…",
+    "status": {
+      "all": "सभी",
+      "draft": "मसौदा",
+      "issued": "जारी किए गए",
+      "paid": "चुकाया गया",
+      "void": "खालीपन"
+    },
+    "void": "खालीपन"
+  },
+  "kycAdmin": {
+    "all": "सभी",
+    "allReviewed": "सभी प्रविष्टियों की समीक्षा हो गई। बहुत बढ़िया काम।",
+    "approve": "मंज़ूरी देना",
+    "confirmReject": "अस्वीकृति की पुष्टि करें",
+    "daysAgo": "{{count}} दिन पहले",
+    "docs": "डॉक्स",
+    "docsCount": "{{count}} दस्तावेज़",
+    "hoursAgo": "{{count}} घंटा पहले",
+    "justNow": "बस अब",
+    "noDocs": "अभी तक कोई दस्तावेज़ अपलोड नहीं किया गया है।",
+    "noneFilter": "कोई {{filter}} सबमिशन नहीं।",
+    "nothingHere": "यहाँ कुछ भी नहीं है",
+    "queueCleared": "कतार साफ़ हो गई",
+    "reject": "अस्वीकार करना",
+    "rejectPh": "अस्वीकृति का कारण (वैकल्पिक)",
+    "view": "देखना"
+  },
+  "kycDocs": {
+    "title": "KYC दस्तावेज़"
+  },
+  "login": {
+    "adminOnly": "यह कंसोल केवल प्रशासकों के लिए है।",
+    "commandCentre": "कमांड सेंटर",
+    "demo": "डेमो: admin@agrotraders.org · पासवर्ड123",
+    "email": "ईमेल",
+    "invalid": "अवैध प्रत्यय पत्र।",
+    "password": "पासवर्ड",
+    "signingIn": "इन कर रहे हैं…",
+    "title": "व्यवस्थापक साइन इन"
+  },
+  "marketsAdmin": {
+    "active": "सक्रिय",
+    "addMarket": "बाजार जोड़ें",
+    "approve": "मंज़ूरी देना",
+    "awaiting": "{{count}} समीक्षा की प्रतीक्षा में",
+    "edit": "संपादन करना",
+    "editMarket": "बाज़ार संपादित करें",
+    "fCity": "शहर",
+    "fCountry": "देश",
+    "fFlag": "झंडा इमोजी",
+    "fName": "नाम",
+    "fRegion": "क्षेत्र",
+    "hidden": "छिपा हुआ",
+    "hide": "छिपाना",
+    "pending": "लंबित",
+    "phCity": "दिल्ली",
+    "phCountry": "🇮🇳 भारत",
+    "phFlag": "🇮🇳",
+    "phName": "आज़ादपुर मंडी",
+    "phRegion": "दक्षिण एशिया",
+    "proposals": "विक्रेता प्रस्ताव",
+    "proposedBy": "{{name}} द्वारा प्रस्तावित",
+    "reject": "अस्वीकार करना",
+    "rejected": "अस्वीकार कर दिया",
+    "save": "बचाना",
+    "saveError": "बाजार को बचाया नहीं जा सका - फ़ील्ड की जाँच करें।",
+    "show": "दिखाओ"
+  },
+  "nav": {
+    "ads": "विज्ञापन",
+    "auctions": "नीलामी",
+    "audit": "ऑडिट लॉग",
+    "bids": "खरीदार की बोलियाँ",
+    "branding": "ब्रांडिंग",
+    "categories": "श्रेणियाँ",
+    "cms": "CMS",
+    "community": "समुदाय",
+    "disputes": "विवादों",
+    "invoices": "चालान",
+    "kyc": "KYC समीक्षा",
+    "loaders": "लोडर",
+    "markets": "बाज़ार",
+    "offices": "कार्यालयों",
+    "orders": "आदेश",
+    "overview": "अवलोकन",
+    "payments": "भुगतान",
+    "products": "उत्पादों",
+    "reports": "रिपोर्टों",
+    "reviews": "समीक्षा",
+    "roleRequests": "भूमिका अनुरोध",
+    "safedeal": "सुरक्षित सौदा",
+    "support": "सहायता इनबॉक्स",
+    "team": "टीम",
+    "transport": "परिवहन",
+    "users": "उपयोगकर्ताओं"
+  },
+  "navGroup": {
+    "Company": "कंपनी",
+    "Finance": "वित्त",
+    "Logistics": "रसद",
+    "Marketplace": "बाजार",
+    "Messaging": "संदेश",
+    "Platform": "प्लैटफ़ॉर्म"
+  },
+  "officesAdmin": {
+    "addOffice": "कार्यालय जोड़ें",
+    "delete": "मिटाना",
+    "edit": "संपादन करना",
+    "fCity": "शहर",
+    "fFlag": "झंडा (इमोजी)",
+    "fLanguages": "बोली",
+    "fManager": "प्रबंधक",
+    "fName": "नाम",
+    "fStaff": "कर्मचारी",
+    "fTimezone": "समय क्षेत्र",
+    "fType": "प्रकार",
+    "save": "कार्यालय बचाओ",
+    "saving": "बचत हो रही है…"
+  },
+  "orders": {
+    "details": "विवरण",
+    "subtitle": "{{count}} हालिया ऑर्डर · सेफ-डील द्वारा निगरानी की गई",
+    "title": "आदेश"
+  },
+  "ordersAdmin": {
+    "all": "सभी",
+    "amount": "मात्रा",
+    "apply": "आवेदन करना",
+    "buyer": "क्रेता",
+    "orderTitle": "ऑर्डर क्रमांक {{ref}}",
+    "override": "ओवरराइड स्थिति",
+    "product": "उत्पाद",
+    "searchPh": "संदर्भ/खरीदार/विक्रेता खोजें…",
+    "selectStatus": "स्थिति का चयन करें…",
+    "seller": "विक्रेता",
+    "status": "स्थिति",
+    "timeline": "समयरेखा ({{count}})"
+  },
+  "overview": {
+    "approvalQueue": "अनुमोदन कतार",
+    "gmv": "सकल माल मूल्य",
+    "lastMonths": "पिछले {{count}} महीने",
+    "noRecent": "कोई हालिया गतिविधि नहीं।",
+    "noSettledYet": "अभी तक कोई ऑर्डर फाइनल नहीं हुआ है।",
+    "nothingAwaiting": "समीक्षा के लिए कुछ भी लंबित नहीं है 🎉",
+    "perMonthSettled": "प्रति माह डॉलर · निपटाए गए ऑर्डर",
+    "queue": {
+      "ads": "विज्ञापन अभियान",
+      "kyc": "KYC प्रस्तुतियाँ",
+      "markets": "बाजार प्रस्ताव",
+      "payouts": "भुगतान अनुरोध",
+      "products": "अनुमोदन की प्रतीक्षा कर रहे उत्पाद",
+      "roleRequests": "भूमिका अनुरोध"
+    },
+    "recentActivity": "हालिया प्रशासनिक गतिविधि",
+    "review": "समीक्षा",
+    "reviewQueue": "समीक्षा कतार",
+    "stats": {
+      "disputes": "खुले विवाद",
+      "orders": "आदेश",
+      "products": "उत्पादों",
+      "users": "कुल उपयोगकर्ता"
+    },
+    "system": "प्रणाली",
+    "viewReports": "रिपोर्ट देखें"
+  },
+  "page": {
+    "audit": {
+      "subtitle": "प्रशासक की कार्रवाइयों का अपरिवर्तनीय रिकॉर्ड",
+      "title": "ऑडिट लॉग"
+    },
+    "branding": {
+      "subtitle": "लोगो, ऐप आइकन और फ़ेविकॉन। लोगो और फ़ेविकॉन में किए गए बदलाव तुरंत लागू हो जाते हैं।",
+      "title": "ब्रांडिंग"
+    },
+    "categories": {
+      "subtitle": "{{categories}} श्रेणियाँ · {{subcategories}} उपश्रेणियाँ",
+      "title": "श्रेणियाँ"
+    },
+    "community": {
+      "subtitle": "AgroTraders समुदाय — रिपोर्ट, समूह और गतिविधियाँ",
+      "title": "सामुदायिक मध्यस्थता"
+    },
+    "disputes": {
+      "subtitle": "{{count}} मामले · एस्क्रो द्वारा सुरक्षित",
+      "title": "विवादों"
+    },
+    "invoices": {
+      "subtitle": "प्लेटफ़ॉर्म पर {{count}} इनवॉइस",
+      "title": "चालान"
+    },
+    "kyc": {
+      "subtitle": "{{count}} लंबित",
+      "title": "KYC समीक्षा"
+    },
+    "loaderWorkforce": {
+      "title": "लोडर कार्यबल"
+    },
+    "markets": {
+      "subtitle": "{{count}} व्यापार बाजार — विक्रेता खुद को इनसे जोड़ते हैं और खरीदार इनके आधार पर चयन करते हैं।",
+      "title": "बाज़ार"
+    },
+    "offices": {
+      "subtitle": "{{count}} कार्यालय",
+      "title": "वैश्विक कार्यालय"
+    },
+    "overview": {
+      "subtitle": "AgroTraders · लाइव मार्केटप्लेस स्वास्थ्य",
+      "title": "प्लेटफ़ॉर्म का अवलोकन"
+    },
+    "payments": {
+      "subtitle": "AgroTraders · वॉलेट बैलेंस और लेनदेन खाता बही",
+      "title": "भुगतान एवं भुगतान"
+    },
+    "products": {
+      "subtitle": "{{count}} लिस्टिंग समीक्षा के लिए लंबित हैं",
+      "title": "उत्पाद अनुमोदन"
+    },
+    "reports": {
+      "subtitle": "AgroTraders · हेडलाइन प्लेटफ़ॉर्म मेट्रिक्स",
+      "title": "रिपोर्ट और विश्लेषण"
+    },
+    "reviews": {
+      "subtitle": "ऑर्डर, ट्रिप और जॉब्स के बीच मध्यम स्तर की दो-तरफ़ा समीक्षाएँ",
+      "title": "समीक्षाएँ और रेटिंग"
+    },
+    "transport": {
+      "title": "परिवहन संचालन"
+    }
+  },
+  "payments": {
+    "addMoney": "बटुए में पैसे जोड़ें",
+    "adjust": "समायोजित करना",
+    "amountUsd": "राशि ($)",
+    "apply": "आवेदन करना",
+    "applying": "आवेदन करना…",
+    "balance": "संतुलन {{amount}}",
+    "creditRefund": "क्रेडिट (रिफंड)",
+    "creditTopup": "क्रेडिट (टॉपअप)",
+    "debitPayout": "डेबिट (भुगतान)",
+    "debitWithdraw": "डेबिट (निकासी)",
+    "exportCsv": "निर्यात CSV",
+    "exportPdf": "निर्यात PDF",
+    "exporting": "निर्यात…",
+    "noMatches": "कोई मेल नहीं।",
+    "noPending": "कोई लंबित भुगतान अनुरोध नहीं है।",
+    "noTxns": "इस श्रेणी में कोई लेन-देन नहीं हुआ।",
+    "payoutRequests": "भुगतान अनुरोध",
+    "pendingCount": "{{count}} लंबित",
+    "preset": {
+      "month": "महीना",
+      "today": "आज",
+      "week": "सप्ताह"
+    },
+    "recentTxns": "हाल के लेन-देन",
+    "requested": "अनुरोधित {{date}}",
+    "searchUser": "उपयोगकर्ता को नाम या ईमेल द्वारा खोजें…",
+    "shownCount": "{{count}} दिखाया गया",
+    "stats": {
+      "escrowReleased": "एस्क्रो जारी किया गया",
+      "payouts": "भुगतान",
+      "totalBalance": "वॉलेट में कुल शेष राशि",
+      "wallets": "पर्स"
+    }
+  },
+  "perm": {
+    "ads_moderate": "विज्ञापन",
+    "auctions_manage": "नीलामी",
+    "audit_view": "ऑडिट लॉग",
+    "bids_manage": "खरीदार की बोली",
+    "branding_manage": "ब्रांडिंग",
+    "cms_manage": "CMS पृष्ठ",
+    "community_moderate": "समुदाय",
+    "disputes_manage": "विवादों",
+    "finance_manage": "वित्त (वॉलेट/भुगतान)",
+    "kyc_review": "KYC समीक्षा",
+    "loaders_manage": "लोडर",
+    "markets_manage": "बाज़ार",
+    "offices_manage": "कार्यालयों",
+    "orders_manage": "आदेश",
+    "products_moderate": "उत्पाद और श्रेणियाँ",
+    "reports_view": "रिपोर्टों",
+    "reviews_moderate": "समीक्षाएँ और रेटिंग",
+    "role_requests": "भूमिका अनुरोध",
+    "staff_manage": "कर्मचारी एवं अनुमतियाँ (सुपर-एडमिन)",
+    "support_agent": "सहायता",
+    "transport_manage": "परिवहन",
+    "users_manage": "उपयोगकर्ताओं"
+  },
+  "placeholder": {
+    "body": "यह मॉड्यूल समान लेआउट, टेबल और कंपोनेंट्स साझा करता है। बैकएंड चरण पूरे होने पर लाइव डेटा से वायरिंग जारी रहती है।",
+    "docs": "दस्तावेज़ देखें"
+  },
+  "prodMod": {
+    "allTypes": "सभी प्रकार",
+    "approve": "मंज़ूरी देना",
+    "colActions": "कार्रवाई",
+    "colCategory": "वर्ग",
+    "colPrice": "कीमत",
+    "colProduct": "उत्पाद",
+    "colSeller": "विक्रेता",
+    "colStatus": "स्थिति",
+    "confirm": "पुष्टि करना",
+    "edit": "संपादन करना",
+    "fName": "नाम",
+    "fPrice": "कीमत",
+    "fQty": "मात्रा",
+    "none": "कोई उत्पाद मेल नहीं खाता।",
+    "reasonPlaceholder": "कारण (वैकल्पिक)",
+    "reject": "अस्वीकार करना",
+    "save": "बचाना",
+    "searchPlaceholder": "उत्पादों को खोजना…",
+    "status": {
+      "all": "सभी",
+      "hidden": "छिपा हुआ",
+      "live": "रहना",
+      "pending": "लंबित",
+      "rejected": "अस्वीकार कर दिया"
+    },
+    "sub": "कैटलॉग का संचालन करें — लिस्टिंग को स्वीकृत करें, अस्वीकृत करें, संपादित करें या हटा दें।",
+    "tagAuction": "नीलामी",
+    "tagOffer": "प्रस्ताव",
+    "takedown": "नीचे करें",
+    "type": {
+      "auction": "नीलामी",
+      "offer": "प्रस्ताव",
+      "safedeal": "सुरक्षित सौदा"
+    }
+  },
+  "range": {
+    "allTime": "पूरे समय",
+    "from": "से",
+    "to": "को"
+  },
+  "reports": {
+    "exportCsv": "निर्यात CSV",
+    "months12": "12 महीने",
+    "noSettled": "कोई भी आदेश स्वीकृत नहीं हुआ है।",
+    "noSignups": "इस क्षेत्र में कोई पंजीकरण नहीं हुआ है।",
+    "orderVolume": "ऑर्डर की मात्रा",
+    "ordersByStatus": "स्थिति के अनुसार क्रमबद्ध करें",
+    "perMonthSettled": "प्रति माह डॉलर · निपटाए गए ऑर्डर",
+    "preset": {
+      "month": "पिछला महीना",
+      "quarter": "आख़िरी चौथाई",
+      "year": "पिछले साल"
+    },
+    "signupsPerMonth": "प्रति माह नए पंजीकरण",
+    "stats": {
+      "escrowReleased": "एस्क्रो जारी किया गया",
+      "gmv": "जीएमवी (श्रेणी)",
+      "newUsers": "नए उपयोगकर्ता (श्रेणी)",
+      "orders": "आदेश (श्रेणी)"
+    },
+    "userGrowth": "उपयोगकर्ता वृद्धि",
+    "usersByRole": "भूमिका के अनुसार उपयोगकर्ता"
+  },
+  "reviewsMod": {
+    "adminNote": "प्रशासक का नोट:",
+    "adminNoteLabel": "प्रशासनिक टिप्पणी (वैकल्पिक)",
+    "bodyPh": "समीक्षा का मुख्य भाग…",
+    "confirmDelete": "क्या इस समीक्षा को स्थायी रूप से हटा दिया जाए? इसे वापस नहीं लिया जा सकता।",
+    "delete": "मिटाना",
+    "edit": "संपादन करना",
+    "editedBy": "द्वारा संपादित {{name}}",
+    "empty": "इन फ़िल्टरों से मेल खाने वाली कोई समीक्षा नहीं है।",
+    "hide": "छिपाना",
+    "kind": {
+      "all": "सभी",
+      "assignment": "कार्यभार",
+      "hire": "किराये पर लेना",
+      "loaderjob": "लोडर का काम",
+      "order": "आदेश",
+      "trip": "यात्रा"
+    },
+    "modalTitle": "समीक्षा संपादित करें",
+    "noText": "कोई लिखित समीक्षा नहीं।",
+    "notePh": "इस मॉडरेशन के बारे में आंतरिक नोट…",
+    "rating": "रेटिंग",
+    "remove": "निकालना",
+    "reviewText": "समीक्षा पाठ",
+    "save": "बचाना",
+    "saving": "बचत हो रही है…",
+    "searchPh": "खोज पाठ, मूल्यांकनकर्ता या समीक्षाार्थी…",
+    "starAria": "{{count}} सितारे",
+    "status": {
+      "all": "सभी",
+      "hidden": "छिपा हुआ",
+      "removed": "निकाला गया",
+      "visible": "दृश्यमान"
+    },
+    "subjectLine": "विषय {{kind}} {{id}}",
+    "title": "समीक्षा",
+    "totalCount": "{{count}} कुल",
+    "unhide": "सामने लाएँ"
+  },
+  "roleReq": {
+    "approve": "मंज़ूरी देना",
+    "colAction": "कार्रवाई",
+    "colNote": "टिप्पणी",
+    "colRole": "अनुरोधित भूमिका",
+    "colStatus": "स्थिति",
+    "colUser": "उपयोगकर्ता",
+    "confirmReject": "अस्वीकृति की पुष्टि करें",
+    "decided": "फैसला किया",
+    "filter": {
+      "all": "सभी",
+      "approved": "अनुमत",
+      "pending": "लंबित",
+      "rejected": "अस्वीकार कर दिया"
+    },
+    "liveApi": "लाइव एपीआई",
+    "none": "कोई भूमिका संबंधी अनुरोध स्वीकार नहीं किए जाते।",
+    "reasonPlaceholder": "कारण (वैकल्पिक)",
+    "reject": "अस्वीकार करना",
+    "sub": "उपयोगकर्ता अतिरिक्त डैशबोर्ड का अनुरोध कर रहे हैं। अनुमोदन करने पर उन्हें यह भूमिका प्रदान की जाती है।"
+  },
+  "sd": {
+    "allRoles": "सभी",
+    "colAccount": "खाता",
+    "colBalance": "संतुलन",
+    "colLedger": "खाता बही",
+    "colRole": "भूमिका",
+    "inEscrow": "एस्क्रो में (भुगतान किए गए आदेश)",
+    "ledgerTitle": "वॉलेट खाता बही",
+    "sellerBalances": "विक्रेता शेष",
+    "sub": "कंपनी-व्यापी वित्तीय निगरानी — एस्क्रो, वॉलेट और बैलेंस।",
+    "totalOnPlatform": "प्लेटफ़ॉर्म पर कुल",
+    "txType": {
+      "escrow_hold": "एस्क्रो होल्ड",
+      "escrow_release": "एस्क्रो रिलीज़",
+      "payout": "भुगतान",
+      "refund": "धनवापसी",
+      "topup": "लबालब भरना"
+    },
+    "txnsCount": "लेन-देन ({{count}})",
+    "wallets": "पर्स"
+  },
+  "support": {
+    "noTickets": "कोई टिकट नहीं",
+    "notePlaceholder": "नोट जोड़े…",
+    "replyPlaceholder": "ग्राहक को जवाब दें…",
+    "searchPlaceholder": "रेफ़, ऑर्डर, उपयोगकर्ता…",
+    "subtitle": "{{count}} टिकट",
+    "title": "सहायता इनबॉक्स"
+  },
+  "supportInbox": {
+    "actions": "कार्रवाई",
+    "add": "जोड़ना",
+    "agentPh": "प्रतिनिधि…",
+    "assign": "सौंपना",
+    "assignMe": "मुझे सौंपें",
+    "close": "बंद करना",
+    "detailsHere": "टिकट की जानकारी यहां दी गई है।",
+    "escalate": "आगे बढ़ाएं",
+    "internalNote": "आंतरिक नोट",
+    "order": "आदेश",
+    "product": "उत्पाद",
+    "rating": "रेटिंग: {{score}}/5",
+    "requester": "अनुरोधकर्ता",
+    "resolve": "संकल्प",
+    "safeDeal": "सुरक्षित सौदा",
+    "selectTicket": "एक टिकट चुनें",
+    "waitingUser": "उपयोगकर्ता प्रतीक्षा कर रहा है"
+  },
+  "team": {
+    "accessGranted": "पहुँच ({{count}} प्रदान की गई)",
+    "active": "सक्रिय",
+    "addStaff": "एक कर्मचारी जोड़ें",
+    "addStaffBtn": "कर्मचारी जोड़ें",
+    "adding": "जोड़ रहे हैं…",
+    "clear": "स्पष्ट",
+    "close": "बंद करना",
+    "createError": "कर्मचारी सदस्य नहीं बनाया जा सका।",
+    "deactivate": "निष्क्रिय करें",
+    "email": "ईमेल",
+    "inactive": "निष्क्रिय",
+    "name": "नाम",
+    "needCapability": "टीम के सदस्यों को प्रबंधित करने के लिए आपको स्टाफ और अनुमतियों की क्षमता की आवश्यकता है।",
+    "noModules": "कोई मॉड्यूल स्वीकृत नहीं किया गया",
+    "permissions": "अनुमतियां",
+    "reactivate": "पुन: सक्रिय",
+    "remove": "निकालना",
+    "savePerms": "अनुमतियाँ सहेजें",
+    "saving": "बचत हो रही है…",
+    "selectAll": "सबका चयन करें",
+    "staffCount": "कर्मचारी ({{count}})",
+    "sub": "आंतरिक कर्मचारियों के खातों और मॉड्यूल के अनुसार उनकी पहुंच का प्रबंधन करें।",
+    "superFull": "सुपर-एडमिन — पूर्ण पहुंच",
+    "tempPassword": "अस्थायी पासवर्ड (न्यूनतम 8)",
+    "you": "(आप)"
+  },
+  "userDrawer": {
+    "accountActive": "खाता सक्रिय है",
+    "actBuyOrders": "ऑर्डर (खरीद)",
+    "actHiresReceived": "नियुक्तियाँ प्राप्त हुईं",
+    "actHiresSent": "नियुक्तियाँ भेजी गईं",
+    "actProducts": "उत्पादों",
+    "actSellOrders": "आदेश (बेचना)",
+    "actTrips": "ट्रिप्स",
+    "actVehicles": "वाहनों",
+    "actWorkers": "श्रमिकों",
+    "active": "सक्रिय",
+    "activity": "गतिविधि",
+    "addRole": "एक भूमिका जोड़ें…",
+    "adminOnly": "व्यवस्थापक केवल",
+    "contactEmail": "ई - मेल से संपर्क करे",
+    "country": "देश",
+    "dangerBody": "खाता निष्क्रिय कर दिया जाता है (सॉफ्ट डिलीट)। उपयोगकर्ता अब साइन इन नहीं कर पाएगा।",
+    "dangerZone": "खतरा क्षेत्र",
+    "deactivate": "खाता निष्क्रिय करें",
+    "deleting": "हटा रहा हूँ…",
+    "editDetails": "विवरण संपादित करें",
+    "email": "ईमेल",
+    "grant": "अनुदान",
+    "inactive": "निष्क्रिय",
+    "kycStatus": "KYC स्थिति",
+    "location": "जगह",
+    "market": "बाज़ार",
+    "name": "नाम",
+    "phone": "फ़ोन",
+    "primary": "(प्राथमिक)",
+    "privateContact": "निजी संपर्क",
+    "revokeRole": "भूमिका रद्द करें",
+    "roles": "भूमिकाएँ",
+    "saveChanges": "परिवर्तनों को सुरक्षित करें",
+    "saving": "बचत हो रही है…",
+    "title": "उपयोगकर्ता प्रबंधित करें",
+    "wallet": "बटुआ",
+    "whatsapp": "WhatsApp"
+  },
+  "users": {
+    "filterAll": "सभी",
+    "invite": "उपयोगकर्ता को आमंत्रित करें",
+    "searchPlaceholder": "नाम या ईमेल से खोजें…",
+    "subtitle": "{{shown}} में से {{total}} खाते",
+    "title": "उपयोगकर्ताओं",
+    "view": "देखना"
+  }
+}

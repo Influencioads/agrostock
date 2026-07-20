@@ -1,0 +1,68 @@
+{
+  "hire_status": {
+    "accepted": "Принято",
+    "cancelled": "Отменено",
+    "declined": "Отклонено",
+    "pending": "Ожидает"
+  },
+  "hire_target": {
+    "loaderco": "Погрузочная компания",
+    "transporter": "Перевозчик",
+    "worker": "Рабочий"
+  },
+  "kyc": {
+    "pending": "На проверке",
+    "rejected": "Отклонён",
+    "verified": "Подтверждён"
+  },
+  "order_status": {
+    "cancelled": "Отменено",
+    "delivered": "Доставлено",
+    "dispute": "Спор",
+    "in_transit": "В пути",
+    "paid": "Средства зарезервированы",
+    "processing": "В обработке",
+    "quote": "Отправлено предложение",
+    "shipped": "Отгружено"
+  },
+  "role": {
+    "admin": "Администратор",
+    "buyer": "Покупатель",
+    "loaderco": "Погрузочная компания",
+    "seller": "Продавец",
+    "transporter": "Перевозчик",
+    "worker": "Рабочий"
+  },
+  "support_category": {
+    "account_kyc": "Аккаунт & KYC",
+    "auction_bid": "Аукцион / ставка",
+    "buyer_order": "Проблема заказа (покупатель)",
+    "global_office": "Глобальный офис",
+    "import_export": "Импорт / экспорт",
+    "loader": "Погрузка / рабочие",
+    "other": "Другое",
+    "payment_safedeal": "Оплата / Safe Deal",
+    "product_listing": "Размещение товара",
+    "seller_order": "Проблема заказа (продавец)",
+    "technical": "Техническая проблема",
+    "transport": "Транспорт",
+    "wallet_payout": "Кошелёк / выплаты"
+  },
+  "support_priority": {
+    "high": "Высокий",
+    "low": "Низкий",
+    "medium": "Средний",
+    "urgent": "Срочный"
+  },
+  "support_status": {
+    "all": "Все",
+    "assigned": "Назначено",
+    "closed": "Закрыто",
+    "escalated": "Эскалировано",
+    "in_progress": "В работе",
+    "new": "Новое",
+    "resolved": "Решено",
+    "waiting_support": "Ожидает поддержку",
+    "waiting_user": "Ожидает вашего ответа"
+  }
+}

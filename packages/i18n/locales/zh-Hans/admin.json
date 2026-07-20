@@ -1,0 +1,802 @@
+{
+  "account": {
+    "fallbackName": "平台管理员",
+    "logOut": "退出登录",
+    "staff": "职员",
+    "superAdmin": "超级管理员"
+  },
+  "adsAdmin": {
+    "awaiting": "等待批准",
+    "clicks": "{{count}} 点击",
+    "confirmReject": "确认拒绝",
+    "filter": {
+      "all": "全部",
+      "approved": "得到正式认可的",
+      "pending": "待办的",
+      "rejected": "已拒绝"
+    },
+    "impressions": "印象（所示套装）",
+    "listingFallback": "列表",
+    "live": "居住",
+    "liveNow": "现在直播",
+    "noneAwaiting": "没有待审核的申请项目。",
+    "noneFilter": "没有{{filter}}活动。",
+    "nothingHere": "这里什么也没有",
+    "paused": "暂停",
+    "pending": "待办的",
+    "perDaySubmitted": "{{amount}}/天 · 已提交",
+    "queueCleared": "队列已清空",
+    "reasonExample": "此类别预算过高",
+    "reasonLabel": "原因：{{reason}}",
+    "reasonPlaceholder": "原因（已告知卖家）",
+    "rejected": "已拒绝",
+    "rejecting": "拒绝……",
+    "sellerFallback": "卖方",
+    "sub": "赞助商广告。已获批准且未暂停的广告活动将在市场上投放。",
+    "views": "{{count}} 浏览量"
+  },
+  "apiBadge": {
+    "connecting": "正在连接…",
+    "live": "实时 API",
+    "offline": "离线",
+    "offlineMock": "离线（模拟）"
+  },
+  "auctionsAdmin": {
+    "bidBook": "投标书（{{count}}）",
+    "bidderFallback": "竞标者",
+    "bidsCount": "{{count}} 出价",
+    "closeNow": "立即关闭",
+    "drawerTitle": "拍卖",
+    "ends": "结束 {{date}}",
+    "high": "高 {{amount}}",
+    "noBids": "目前尚无人出价。",
+    "none": "目前没有拍卖活动。",
+    "sub": "平台上的每一次拍卖——点击查看竞价簿。",
+    "void": "无效拍卖"
+  },
+  "audit": {
+    "detail": "细节",
+    "empty": "没有匹配的审计条目。",
+    "entityPh": "实体类型（用户、订单……）",
+    "entriesCount": "{{count}}条目",
+    "system": "系统"
+  },
+  "bell": {
+    "app": "应用程序",
+    "aria": "通知",
+    "ariaSettings": "设置",
+    "caughtUp": "你已经全部跟上了。",
+    "mail": "邮件",
+    "markAllRead": "标记为已读",
+    "notifications": "通知",
+    "push": "推",
+    "settings": "通知设置"
+  },
+  "bidsAdmin": {
+    "award": "奖",
+    "buyerLine": "买家：{{name}}",
+    "cancelReq": "取消要求",
+    "colActions": "行动",
+    "colBest": "最好的",
+    "colBuyer": "买方",
+    "colQty": "数量",
+    "colReq": "要求",
+    "colSellerBids": "卖方出价",
+    "colStatus": "地位",
+    "drawerTitle": "买方出价",
+    "noSellerBids": "目前还没有卖家出价。",
+    "none": "没有买家出价匹配。",
+    "reqFallback": "要求",
+    "sellerBidsCount": "卖方出价（{{count}}）",
+    "sellerFallback": "卖方",
+    "status": {
+      "all": "全部",
+      "awarded": "获奖",
+      "cancelled": "取消",
+      "closed": "关闭",
+      "open": "打开",
+      "submitted": "提交"
+    },
+    "sub": "反向拍卖——买家发布需求，卖家竞价赢得商品。",
+    "view": "看法"
+  },
+  "brand": {
+    "tagline": "指挥中心"
+  },
+  "brandingAdmin": {
+    "assets": {
+      "appIcon": {
+        "hint": "存储为 512px PNG 格式，用作移动启动器图标。",
+        "title": "应用图标"
+      },
+      "favicon": {
+        "hint": "店铺页面和此面板的浏览器标签图标。存储格式为 180px PNG。",
+        "title": "网站图标"
+      },
+      "logo": {
+        "hint": "显示在网站页眉、页脚和侧边栏中。正方形效果最佳；以 WebP 格式存储，最大尺寸为 512 像素。",
+        "title": "标识"
+      }
+    },
+    "custom": "风俗",
+    "default": "默认",
+    "noteBody": "启动器图标和启动画面已集成到原生版本中。上传到此处会保存素材并更新网页，但移动应用只有在下一个应用商店版本发布后才会更新。",
+    "noteTitle": "该应用图标无法显示在已安装的手机上。",
+    "replace": "代替",
+    "reset": "重置为默认值",
+    "resetFailed": "无法重置",
+    "upload": "上传",
+    "uploadFailed": "上传失败"
+  },
+  "catAdmin": {
+    "addCategory": "添加类别",
+    "addSub": "子",
+    "catName": "类别名称",
+    "collapse": "坍塌",
+    "confirmDeleteCat": "删除类别“{{name}}”？其子类别也将被删除。",
+    "confirmDeleteSub": "删除子类别“{{name}}”？",
+    "delete": "删除",
+    "deleteSub": "删除子类别",
+    "edit": "编辑",
+    "editSub": "编辑子类别",
+    "emojiHint": "名称旁边显示一个表情符号。",
+    "emojiLabel": "表情符号（可选）",
+    "empty": "暂无分类。添加第一个分类。",
+    "expand": "扩张",
+    "modalAddCategory": "添加类别",
+    "modalAddSub": "向 {{name}} 添加子类别",
+    "modalEditCategory": "编辑类别",
+    "modalEditSub": "编辑子类别",
+    "phCat": "例如：水果",
+    "phSub": "例如：巴斯马蒂大米",
+    "productsCount": "{{count}} 产品",
+    "save": "节省",
+    "saving": "保存…",
+    "subName": "子类别名称",
+    "subStats": "{{subs}} 子类别 · {{products}} 产品"
+  },
+  "cmsAdmin": {
+    "draft": "草稿",
+    "publish": "发布",
+    "published": "已发布",
+    "sub": "管理公共网站内容和着陆页。",
+    "unpublish": "取消发布"
+  },
+  "communityMod": {
+    "action": "行动",
+    "banAuthor": "封禁作者",
+    "createBtn": "创建频道",
+    "createChannel": "创建官方频道",
+    "creating": "正在创建…",
+    "default": "默认",
+    "delete": "删除",
+    "dismiss": "解雇",
+    "fDescription": "描述",
+    "fEmoji": "表情符号",
+    "fName": "姓名",
+    "glance": "社区概览",
+    "groupStats": "{{members}} 位成员 · {{posts}} 篇帖子 · {{messages}} 条消息",
+    "groupsCount": "组（{{count}}）",
+    "inGroup": "在 {{name}}",
+    "metric": {
+      "groups": "团体",
+      "messages": "消息",
+      "openReports": "打开报告",
+      "posts": "帖子",
+      "requirements": "要求"
+    },
+    "noPosts": "没有帖子。",
+    "noReports": "没有未结案件🎉",
+    "pin": "别针",
+    "pinned": "已置顶",
+    "recentPosts": "最新文章",
+    "reported": "举报内容",
+    "reportedBy": "由 {{name}} · 目标 {{id}} 报告",
+    "tab": {
+      "analytics": "分析",
+      "feed": "喂养",
+      "groups": "团体",
+      "reports": "报告"
+    },
+    "unpin": "取消固定"
+  },
+  "companies": {
+    "approveListing": "批准列表",
+    "colActions": "行动",
+    "colCompany": "公司",
+    "colListing": "列表",
+    "crew": "船员 ({{count}})",
+    "detail": "公司详情",
+    "drivers": "司机",
+    "fleet": "舰队（{{count}}）",
+    "jobs": "工作机会",
+    "lanes": "车道",
+    "lanesN": "车道 ({{count}})",
+    "listed": "列出",
+    "loadersSub": "每家装载机公司——人员、团队、工作、价目表和公开上市批准。",
+    "none": "未找到公司。",
+    "rateCard": "价目表（{{count}}）",
+    "recentTrips": "最近的旅行 ({{count}})",
+    "searchPlaceholder": "搜索公司…",
+    "tabCompanies": "公司",
+    "tabHires": "招聘需求",
+    "teams": "团队",
+    "teamsN": "队伍 ({{count}})",
+    "transportSub": "每家运输公司——车队、线路、行程和公开上市批准。",
+    "trips": "旅行",
+    "unlist": "取消列出",
+    "unlisted": "未公开",
+    "vehicles": "车辆",
+    "workers": "工人"
+  },
+  "disputes": {
+    "allSmooth": "所有订单处理都很顺利。",
+    "amount": "金额 {{amount}}",
+    "badge": "争议",
+    "none": "无未决纠纷",
+    "orderRef": "订单号 #{{ref}}",
+    "refund": "退款给买家",
+    "release": "放行给卖家",
+    "sub_other": "{{count}} 未决争议"
+  },
+  "genericError": "出错了，请重试。",
+  "header": {
+    "fallbackTitle": "行政",
+    "searchPlaceholder": "搜索用户、订单、产品……"
+  },
+  "hires": {
+    "empty": "目前还没有招聘需求。",
+    "subtitle": "{{count}} 直接雇佣请求 — 被接受的请求会转化为行程或装卸工作。",
+    "title": "招聘运营"
+  },
+  "invoicesAdmin": {
+    "colActions": "行动",
+    "colFromTo": "从 → 到",
+    "colIssued": "发布",
+    "colKind": "种类",
+    "colNumber": "数字",
+    "colStatus": "地位",
+    "colTotal": "全部的",
+    "empty": "没有匹配的发票。",
+    "markPaid": "马克付了钱",
+    "pdf": "PDF",
+    "searchPh": "号码、发卡机构或收款机构……",
+    "status": {
+      "all": "全部",
+      "draft": "草稿",
+      "issued": "发布",
+      "paid": "有薪酬的",
+      "void": "空白"
+    },
+    "void": "空白"
+  },
+  "kycAdmin": {
+    "all": "全部",
+    "allReviewed": "所有稿件均已审核。做得好！",
+    "approve": "批准",
+    "confirmReject": "确认拒绝",
+    "daysAgo": "{{count}} 天前",
+    "docs": "文档",
+    "docsCount": "{{count}} 文档",
+    "hoursAgo": "{{count}} 小时前",
+    "justNow": "现在",
+    "noDocs": "尚未上传任何文件。",
+    "noneFilter": "没有 {{filter}} 提交。",
+    "nothingHere": "这里什么也没有",
+    "queueCleared": "队列已清空",
+    "reject": "拒绝",
+    "rejectPh": "拒绝理由（可选）",
+    "view": "看法"
+  },
+  "kycDocs": {
+    "title": "KYC 文档"
+  },
+  "login": {
+    "adminOnly": "此控制台仅供管理员使用。",
+    "commandCentre": "指挥中心",
+    "demo": "演示：admin@agrotraders.org · 密码123",
+    "email": "电子邮件",
+    "invalid": "凭据无效。",
+    "password": "密码",
+    "signingIn": "正在登录……",
+    "title": "管理员登录"
+  },
+  "marketsAdmin": {
+    "active": "积极的",
+    "addMarket": "新增市场",
+    "approve": "批准",
+    "awaiting": "{{count}} 等待审核",
+    "edit": "编辑",
+    "editMarket": "编辑市场",
+    "fCity": "城市",
+    "fCountry": "国家",
+    "fFlag": "旗帜表情符号",
+    "fName": "姓名",
+    "fRegion": "地区",
+    "hidden": "隐",
+    "hide": "隐藏",
+    "pending": "待办的",
+    "phCity": "德里",
+    "phCountry": "🇮🇳 印度",
+    "phFlag": "🇮🇳",
+    "phName": "阿扎德普尔曼迪",
+    "phRegion": "南亚",
+    "proposals": "卖方提案",
+    "proposedBy": "由 {{name}} 提议",
+    "reject": "拒绝",
+    "rejected": "已拒绝",
+    "save": "节省",
+    "saveError": "市场已经无法挽救——请查看相关数据。",
+    "show": "展示"
+  },
+  "nav": {
+    "ads": "广告",
+    "auctions": "拍卖",
+    "audit": "审计日志",
+    "bids": "买家出价",
+    "branding": "品牌推广",
+    "categories": "类别",
+    "cms": "CMS",
+    "community": "社区",
+    "disputes": "争议",
+    "invoices": "发票",
+    "kyc": "KYC 评论",
+    "loaders": "装载机",
+    "markets": "市场",
+    "offices": "办公室",
+    "orders": "订单",
+    "overview": "概述",
+    "payments": "付款",
+    "products": "产品",
+    "reports": "报告",
+    "reviews": "评论",
+    "roleRequests": "角色请求",
+    "safedeal": "安全交易",
+    "support": "支持收件箱",
+    "team": "团队",
+    "transport": "运输",
+    "users": "用户"
+  },
+  "navGroup": {
+    "Company": "公司",
+    "Finance": "金融",
+    "Logistics": "后勤",
+    "Marketplace": "市场",
+    "Messaging": "消息传递",
+    "Platform": "平台"
+  },
+  "officesAdmin": {
+    "addOffice": "办公室",
+    "delete": "删除",
+    "edit": "编辑",
+    "fCity": "城市",
+    "fFlag": "旗帜（表情符号）",
+    "fLanguages": "语言",
+    "fManager": "经理",
+    "fName": "姓名",
+    "fStaff": "职员",
+    "fTimezone": "时区",
+    "fType": "类型",
+    "save": "保存办公室",
+    "saving": "保存…"
+  },
+  "orders": {
+    "details": "细节",
+    "subtitle": "{{count}} 近期订单 · Safe-Deal 监控",
+    "title": "订单"
+  },
+  "ordersAdmin": {
+    "all": "全部",
+    "amount": "数量",
+    "apply": "申请",
+    "buyer": "买方",
+    "orderTitle": "订单号 #{{ref}}",
+    "override": "覆盖状态",
+    "product": "产品",
+    "searchPh": "搜索参考/买家/卖家…",
+    "selectStatus": "选择状态…",
+    "seller": "卖方",
+    "status": "地位",
+    "timeline": "时间线（{{count}}）"
+  },
+  "overview": {
+    "approvalQueue": "审批队列",
+    "gmv": "商品总值",
+    "noRecent": "近期无活动。",
+    "noSettledYet": "目前尚未有已结算订单。",
+    "nothingAwaiting": "暂无待审核事项🎉",
+    "perMonthSettled": "每月已结算订单",
+    "queue": {
+      "ads": "广告宣传活动",
+      "kyc": "KYC 提交",
+      "markets": "市场提案",
+      "payouts": "付款请求",
+      "products": "待审批产品",
+      "roleRequests": "角色请求"
+    },
+    "recentActivity": "近期管理员活动",
+    "review": "审查",
+    "reviewQueue": "审核队列",
+    "stats": {
+      "disputes": "公开争议",
+      "orders": "订单",
+      "products": "产品",
+      "users": "总用户数"
+    },
+    "system": "系统",
+    "viewReports": "查看报告"
+  },
+  "page": {
+    "audit": {
+      "subtitle": "管理员操作的不可更改记录",
+      "title": "审计日志"
+    },
+    "branding": {
+      "subtitle": "徽标、应用图标和网站图标。徽标和网站图标的更改会立即生效。",
+      "title": "品牌推广"
+    },
+    "categories": {
+      "subtitle": "{{categories}} 类别 · {{subcategories}} 子类别",
+      "title": "类别"
+    },
+    "community": {
+      "subtitle": "AgroTraders 社区 — 报告、群组和活动",
+      "title": "社区管理"
+    },
+    "disputes": {
+      "subtitle": "{{count}} 案例 · 托管保护",
+      "title": "争议"
+    },
+    "invoices": {
+      "subtitle": "{{count}} 平台上的发票",
+      "title": "发票"
+    },
+    "kyc": {
+      "subtitle": "{{count}} 待定",
+      "title": "KYC 评论"
+    },
+    "loaderWorkforce": {
+      "title": "装载机劳动力"
+    },
+    "markets": {
+      "subtitle": "{{count}} 交易市场 — 卖家在此聚集，买家在此筛选。",
+      "title": "市场"
+    },
+    "offices": {
+      "subtitle": "{{count}} 办公室",
+      "title": "全球办事处"
+    },
+    "overview": {
+      "subtitle": "AgroTraders · 实时市场健康状况",
+      "title": "平台概述"
+    },
+    "payments": {
+      "subtitle": "AgroTraders · 钱包余额和交易账本",
+      "title": "付款与支付"
+    },
+    "products": {
+      "subtitle": "{{count}} 待审核房源",
+      "title": "产品认证"
+    },
+    "reports": {
+      "subtitle": "AgroTraders · 主要平台指标",
+      "title": "报告与分析"
+    },
+    "reviews": {
+      "subtitle": "对订单、行程和工作进行适度的双向评价",
+      "title": "评论与评分"
+    },
+    "transport": {
+      "title": "运输运营"
+    }
+  },
+  "payments": {
+    "addMoney": "往钱包里充值",
+    "adjust": "调整",
+    "amountUsd": "金额（美元）",
+    "apply": "申请",
+    "applying": "正在申请……",
+    "balance": "平衡 {{amount}}",
+    "creditRefund": "信用（退款）",
+    "creditTopup": "充值",
+    "debitPayout": "借记（支出）",
+    "debitWithdraw": "借记（取款）",
+    "exportCsv": "导出 CSV",
+    "exportPdf": "导出 PDF",
+    "exporting": "出口…",
+    "noMatches": "没有匹配项。",
+    "noPending": "没有待处理的付款申请。",
+    "noTxns": "此范围内没有交易记录。",
+    "payoutRequests": "付款请求",
+    "pendingCount": "{{count}} 待定",
+    "preset": {
+      "month": "月",
+      "today": "今天",
+      "week": "星期"
+    },
+    "recentTxns": "近期交易",
+    "requested": "请求 {{date}}",
+    "searchUser": "按姓名或电子邮件地址搜索用户……",
+    "shownCount": "{{count}} 显示",
+    "stats": {
+      "escrowReleased": "托管账户已释放",
+      "payouts": "派息",
+      "totalBalance": "钱包总余额",
+      "wallets": "钱包"
+    }
+  },
+  "perm": {
+    "ads_moderate": "广告",
+    "auctions_manage": "拍卖",
+    "audit_view": "审计日志",
+    "bids_manage": "买家出价",
+    "branding_manage": "品牌推广",
+    "cms_manage": "CMS 页",
+    "community_moderate": "社区",
+    "disputes_manage": "争议",
+    "finance_manage": "金融（钱包/支付）",
+    "kyc_review": "KYC 评论",
+    "loaders_manage": "装载机",
+    "markets_manage": "市场",
+    "offices_manage": "办公室",
+    "orders_manage": "订单",
+    "products_moderate": "产品及类别",
+    "reports_view": "报告",
+    "reviews_moderate": "评论与评分",
+    "role_requests": "角色请求",
+    "staff_manage": "员工与权限（超级管理员）",
+    "support_agent": "支持",
+    "transport_manage": "运输",
+    "users_manage": "用户"
+  },
+  "placeholder": {
+    "body": "该模块采用相同的布局、表格和组件。随着后端阶段的推进，与实时数据的连接仍在继续。",
+    "docs": "查看文档"
+  },
+  "prodMod": {
+    "allTypes": "所有类型",
+    "approve": "批准",
+    "colActions": "行动",
+    "colCategory": "类别",
+    "colPrice": "价格",
+    "colProduct": "产品",
+    "colSeller": "卖方",
+    "colStatus": "地位",
+    "confirm": "确认",
+    "edit": "编辑",
+    "fName": "姓名",
+    "fPrice": "价格",
+    "fQty": "数量",
+    "none": "没有匹配的产品。",
+    "reasonPlaceholder": "原因（可选）",
+    "reject": "拒绝",
+    "save": "节省",
+    "searchPlaceholder": "搜索产品…",
+    "status": {
+      "all": "全部",
+      "hidden": "隐",
+      "live": "居住",
+      "pending": "待办的",
+      "rejected": "拒绝"
+    },
+    "sub": "审核目录——批准、拒绝、编辑或删除商品信息。",
+    "tagAuction": "拍卖",
+    "tagOffer": "提供",
+    "takedown": "记录下来",
+    "type": {
+      "auction": "拍卖",
+      "offer": "提供",
+      "safedeal": "安全交易"
+    }
+  },
+  "range": {
+    "allTime": "所有时间",
+    "from": "从",
+    "to": "到"
+  },
+  "reports": {
+    "exportCsv": "导出 CSV",
+    "months12": "12个月",
+    "noSettled": "尚未有已结算订单。",
+    "noSignups": "附近无人注册。",
+    "orderVolume": "订单量",
+    "ordersByStatus": "按状态排序",
+    "perMonthSettled": "每月已结算订单",
+    "preset": {
+      "month": "上个月",
+      "quarter": "上个季度",
+      "year": "去年"
+    },
+    "signupsPerMonth": "每月新增注册用户数",
+    "stats": {
+      "escrowReleased": "托管账户已释放",
+      "gmv": "GMV（范围）",
+      "newUsers": "新用户（范围）",
+      "orders": "订单（范围）"
+    },
+    "userGrowth": "用户增长",
+    "usersByRole": "按角色划分的用户"
+  },
+  "reviewsMod": {
+    "adminNote": "管理员备注：",
+    "adminNoteLabel": "管理员备注（可选）",
+    "bodyPh": "审查机构……",
+    "confirmDelete": "永久删除此评论？此操作无法撤销。",
+    "delete": "删除",
+    "edit": "编辑",
+    "editedBy": "由 {{name}} 编辑",
+    "empty": "没有符合这些筛选条件的评论。",
+    "hide": "隐藏",
+    "kind": {
+      "all": "全部",
+      "assignment": "任务",
+      "hire": "聘请",
+      "loaderjob": "装载机作业",
+      "order": "命令",
+      "trip": "旅行"
+    },
+    "modalTitle": "编辑审核",
+    "noText": "没有书面评论。",
+    "notePh": "关于此次调整的内部说明……",
+    "rating": "等级",
+    "remove": "消除",
+    "reviewText": "审阅文本",
+    "save": "节省",
+    "saving": "保存…",
+    "searchPh": "搜索文本、评分者或评论者……",
+    "starAria": "{{count}} 星",
+    "status": {
+      "all": "全部",
+      "hidden": "隐",
+      "removed": "已移除",
+      "visible": "可见的"
+    },
+    "subjectLine": "主题 {{kind}} {{id}}",
+    "title": "评论",
+    "totalCount": "{{count}} 总计",
+    "unhide": "取消隐藏"
+  },
+  "roleReq": {
+    "approve": "批准",
+    "colAction": "行动",
+    "colNote": "笔记",
+    "colRole": "请求的角色",
+    "colStatus": "地位",
+    "colUser": "用户",
+    "confirmReject": "确认拒绝",
+    "decided": "决定",
+    "filter": {
+      "all": "全部",
+      "approved": "得到正式认可的",
+      "pending": "待办的",
+      "rejected": "拒绝"
+    },
+    "liveApi": "实时 API",
+    "none": "不接受任何角色申请。",
+    "reasonPlaceholder": "原因（可选）",
+    "reject": "拒绝",
+    "sub": "用户请求添加额外的仪表盘。批准后授予相应角色。"
+  },
+  "sd": {
+    "allRoles": "全部",
+    "colAccount": "帐户",
+    "colBalance": "平衡",
+    "colLedger": "账簿",
+    "colRole": "角色",
+    "inEscrow": "托管账户（已付款订单）",
+    "ledgerTitle": "钱包账簿",
+    "sellerBalances": "卖方余额",
+    "sub": "公司范围内的财务监管——托管账户、钱包和余额。",
+    "totalOnPlatform": "平台总计",
+    "txType": {
+      "escrow_hold": "托管账户",
+      "escrow_release": "托管释放",
+      "payout": "支付",
+      "refund": "退款",
+      "topup": "充值"
+    },
+    "txnsCount": "交易（{{count}}）",
+    "wallets": "钱包"
+  },
+  "support": {
+    "noTickets": "无票",
+    "notePlaceholder": "添加备注…",
+    "replyPlaceholder": "回复客户…",
+    "searchPlaceholder": "参考号、订单号、用户号……",
+    "subtitle": "{{count}} 门票",
+    "title": "支持收件箱"
+  },
+  "supportInbox": {
+    "actions": "行动",
+    "add": "添加",
+    "agentPh": "代理人…",
+    "assign": "分配",
+    "assignMe": "分配给我",
+    "close": "关闭",
+    "detailsHere": "票务详情请见此处。",
+    "escalate": "升级",
+    "internalNote": "内部说明",
+    "order": "命令",
+    "product": "产品",
+    "rating": "评分：{{score}}/5",
+    "requester": "请求者",
+    "resolve": "解决",
+    "safeDeal": "安全交易",
+    "selectTicket": "选择一张票",
+    "waitingUser": "等待用户"
+  },
+  "team": {
+    "accessGranted": "访问权限（{{count}} 已授予）",
+    "active": "积极的",
+    "addStaff": "添加一名员工",
+    "addStaffBtn": "添加员工",
+    "adding": "添加…",
+    "clear": "清除",
+    "close": "关闭",
+    "createError": "无法创建员工。",
+    "deactivate": "停用",
+    "email": "电子邮件",
+    "inactive": "不活跃",
+    "name": "姓名",
+    "needCapability": "您需要拥有“员工与权限”功能才能管理团队成员。",
+    "noModules": "未授予任何模块",
+    "permissions": "权限",
+    "reactivate": "重新激活",
+    "remove": "消除",
+    "savePerms": "保存权限",
+    "saving": "保存…",
+    "selectAll": "全选",
+    "staffCount": "员工 ({{count}})",
+    "sub": "管理内部员工账户及其模块访问权限。",
+    "superFull": "超级管理员——完全访问权限",
+    "tempPassword": "临时密码（最少 8 个）",
+    "you": "（你）"
+  },
+  "userDrawer": {
+    "accountActive": "账户已激活",
+    "actBuyOrders": "订单（购买）",
+    "actHiresReceived": "招聘人数",
+    "actHiresSent": "招聘人员已发出",
+    "actProducts": "产品",
+    "actSellOrders": "订单（卖出）",
+    "actTrips": "旅行",
+    "actVehicles": "车辆",
+    "actWorkers": "工人",
+    "active": "积极的",
+    "activity": "活动",
+    "addRole": "添加角色…",
+    "adminOnly": "仅限管理员",
+    "contactEmail": "联系邮箱",
+    "country": "国家",
+    "dangerBody": "停用账户（软删除）。用户将无法再登录。",
+    "dangerZone": "危险区域",
+    "deactivate": "停用帐户",
+    "deleting": "正在删除…",
+    "editDetails": "编辑详情",
+    "email": "电子邮件",
+    "grant": "授予",
+    "inactive": "不活跃",
+    "kycStatus": "KYC 状态",
+    "location": "地点",
+    "market": "市场",
+    "name": "姓名",
+    "phone": "电话",
+    "primary": "（基本的）",
+    "privateContact": "私人联系",
+    "revokeRole": "撤销角色",
+    "roles": "角色",
+    "saveChanges": "保存更改",
+    "saving": "保存…",
+    "title": "管理用户",
+    "wallet": "钱包",
+    "whatsapp": "WhatsApp"
+  },
+  "users": {
+    "filterAll": "全部",
+    "invite": "邀请用户",
+    "searchPlaceholder": "搜索姓名或邮箱…",
+    "subtitle": "{{shown}} 共 {{total}} 个账户",
+    "title": "用户",
+    "view": "看法"
+  }
+}

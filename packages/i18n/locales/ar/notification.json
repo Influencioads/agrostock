@@ -1,0 +1,212 @@
+{
+  "auction": {
+    "closed_no_bids": {
+      "body": "تم إغلاق المزاد \"{{product}}\" بدون أي عروض.",
+      "title": "تم إغلاق المزاد"
+    },
+    "outbid": {
+      "body": "قام شخص ما بتقديم عرض أعلى على \"{{product}}\". أعلى عرض حالي هو {{amount}}.",
+      "title": "لقد تم تجاوز عرضك"
+    },
+    "sold": {
+      "body": "تم إغلاق الصفقة عند {{product}} عند {{amount}} — {{buyer}} هو المشتري الفائز.",
+      "title": "تم بيع مزادك"
+    },
+    "won": {
+      "body": "فاز عرضك رقم {{amount}} بالعرض رقم {{product}}. أكمل طلبك لتأكيده.",
+      "title": "لقد فزت بالمزاد"
+    }
+  },
+  "buyer_bid": {
+    "awarded": {
+      "body": "تمت الموافقة على عرضك على {{reference}}. الطلب {{orderReference}} مفتوح.",
+      "title": "لقد فزت بمزايدة المشتري"
+    },
+    "new_seller_bid": {
+      "body": "قام البائع بتقديم عرض بقيمة {{amount}} لكل {{unit}} على {{reference}}.",
+      "title": "عرض بائع جديد"
+    },
+    "outbid": {
+      "body": "قام بائع آخر بتخفيض السعر الذي قدمته في {{reference}}.",
+      "title": "لقد تم تجاوز عرضك"
+    }
+  },
+  "common": {
+    "reason_suffix": "السبب: {{reason}}"
+  },
+  "community": {
+    "dm": {
+      "title": "رسائل مباشرة جديدة"
+    },
+    "message": {
+      "title": "رسائل مجتمعية جديدة"
+    }
+  },
+  "enum": {
+    "order_status": {
+      "cancelled": "تم الإلغاء",
+      "delivered": "تم التوصيل",
+      "dispatched": "مُرسَل",
+      "dispute": "ينازع",
+      "enquiry": "سؤال",
+      "in_transit": "في مرحلة انتقالية",
+      "packed": "معبأة",
+      "paid": "مدفوع",
+      "processing": "يعالج",
+      "quote": "يقتبس"
+    },
+    "role": {
+      "buyer": "المشتري",
+      "loader": "شركة تحميل",
+      "seller": "بائع",
+      "transporter": "ناقلة",
+      "worker": "عامل"
+    },
+    "support_status": {
+      "closed": "مغلق",
+      "open": "يفتح",
+      "pending": "قيد الانتظار",
+      "resolved": "تم حل المشكلة"
+    }
+  },
+  "hire": {
+    "accepted": {
+      "body": "{{actor}} تم قبول طلب التوظيف الخاص بك {{reference}}.",
+      "title": "تم قبول طلب التوظيف"
+    },
+    "declined": {
+      "body": "{{actor}} رفض طلب التوظيف الخاص بك {{reference}}.",
+      "title": "تم رفض طلب التوظيف"
+    },
+    "request": {
+      "body": "{{requester}} يريد توظيفك {{detail}}.",
+      "title": "طلب توظيف جديد"
+    }
+  },
+  "kyc": {
+    "rejected": {
+      "body": "لم تتم الموافقة على طلبك. يرجى مراجعته وإعادة إرساله.",
+      "title": "التحقق يتطلب اهتمامًا"
+    },
+    "verified": {
+      "body": "تم التحقق من حسابك الآن - تم تفعيل جميع ميزات التداول.",
+      "title": "تم التحقق من الهوية"
+    }
+  },
+  "market": {
+    "approved": {
+      "body": "تم إدراج \"{{market}}\" الآن — يمكن للمشترين والبائعين ربطها به.",
+      "title": "معتمد في السوق"
+    },
+    "declined": {
+      "body": "لم تتم الموافقة على السوق المقترح \"{{market}}\".",
+      "title": "رفض عرض السوق"
+    }
+  },
+  "order": {
+    "delivered_buyer": {
+      "title": "تم التوصيل"
+    },
+    "delivered_seller": {
+      "title": "تم التوصيل"
+    },
+    "dispatched": {
+      "body": "رقم الطلبية {{cargo}} في الطريق. شارك رقم طلبك OTP مع السائق عند الوصول.",
+      "title": "تم شحن الطلب"
+    },
+    "load_assigned": {
+      "body": "استلم {{cargo}} من {{fromCity}} — اطلب من البائع الاستلام OTP.",
+      "title": "تم تعيين حمولة جديدة"
+    },
+    "new_enquiry": {
+      "body": "{{buyer}} استفسر عن {{product}}.",
+      "title": "استفسار جديد"
+    },
+    "picked_up": {
+      "title": "تم استلام البضائع"
+    },
+    "seller_responded": {
+      "body": "{{seller}} اقتبس {{amount}} لـ {{product}}.",
+      "title": "رد البائع"
+    },
+    "status_changed": {
+      "body": "الأمر الآن هو {{status}}.",
+      "title": "الطلب {{reference}} — {{status}}"
+    }
+  },
+  "product": {
+    "approved": {
+      "body": "أصبح \"{{product}}\" متاحًا الآن في السوق.",
+      "title": "تمت الموافقة على الإدراج"
+    },
+    "rejected": {
+      "body": "لم تتم الموافقة على \"{{product}}\".",
+      "title": "القائمة بحاجة إلى تغييرات"
+    }
+  },
+  "review": {
+    "received": {
+      "body": "{{author}} ترك لك تقييمًا قدره {{stars}}★.",
+      "title": "لقد تلقيت تقييمًا جديدًا"
+    }
+  },
+  "role_request": {
+    "approved": {
+      "body": "تمت الموافقة على طلبك لتصبح {{role}}. قم بتغيير الأدوار من وحدة التحكم للبدء.",
+      "title": "أنت الآن {{role}}"
+    },
+    "declined": {
+      "body": "تم رفض طلبك للانضمام إلى {{role}}.",
+      "title": "تم رفض طلب الحصول على الدور"
+    }
+  },
+  "support": {
+    "assigned_agent": {
+      "title": "تم تخصيص التذكرة لك"
+    },
+    "assigned_user": {
+      "title": "يقوم أحد الموظفين الآن بمعالجة طلبك."
+    },
+    "reply": {
+      "title": "ردّ فريق الدعم"
+    },
+    "resolved": {
+      "title": "تم حل مشكلتك — قيّم دعمك"
+    },
+    "status": {
+      "title": "التذكرة {{status}}"
+    },
+    "ticket_new": {
+      "title": "تذكرة دعم جديدة"
+    },
+    "user_reply": {
+      "title": "رد المستخدم"
+    }
+  },
+  "wallet": {
+    "escrow_release": {
+      "body": "تم إرسال {{amount}} إلى محفظتك.",
+      "title": "تم استلام الدفعة"
+    },
+    "invoice": {
+      "body": "{{issuer}} أصدر {{number}} لـ {{amount}}.",
+      "title": "فاتورة جديدة"
+    },
+    "payout_approved": {
+      "body": "تمت الموافقة على سحب مبلغ {{amount}} ودفع المبلغ.",
+      "title": "تم إرسال الدفعة"
+    },
+    "payout_declined": {
+      "body": "تم رفض طلب السحب الخاص بك.",
+      "title": "تم رفض الدفع"
+    },
+    "refund": {
+      "body": "تم رد المبلغ {{amount}} إلى محفظتك.",
+      "title": "تمت معالجة عملية استرداد المبلغ"
+    },
+    "topup": {
+      "body": "تمت إضافة {{amount}} إلى محفظتك.",
+      "title": "تمت إضافة الأموال"
+    }
+  }
+}

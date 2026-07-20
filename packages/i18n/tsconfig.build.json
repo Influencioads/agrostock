@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@agrotraders/config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "skipLibCheck": true
+  },
+  // Only the runtime-free modules are compiled for Node (the API imports them):
+  // `index.ts` (constants) and `notifications.ts` (server notification renderer,
+  // which statically imports the locale JSON catalogs). The `init-*` entries are
+  // browser/Metro-only and pull in i18next.
+  "include": ["src/index.ts", "src/notifications.ts"]
+}

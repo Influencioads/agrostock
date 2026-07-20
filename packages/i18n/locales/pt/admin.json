@@ -1,0 +1,805 @@
+{
+  "account": {
+    "fallbackName": "Administrador da plataforma",
+    "logOut": "Sair",
+    "staff": "Funcionários",
+    "superAdmin": "Superadministrador"
+  },
+  "adsAdmin": {
+    "awaiting": "Aguardando aprovação.",
+    "clicks": "{{count}} cliques",
+    "confirmReject": "Confirmar rejeição",
+    "filter": {
+      "all": "Todos",
+      "approved": "Aprovado",
+      "pending": "Pendente",
+      "rejected": "Rejeitado"
+    },
+    "impressions": "Impressões (conjunto mostrado)",
+    "listingFallback": "Anúncio",
+    "live": "Ao vivo",
+    "liveNow": "Ao vivo agora",
+    "noneAwaiting": "Nenhuma campanha aguardando revisão.",
+    "noneFilter": "Nenhuma campanha {{filter}}.",
+    "nothingHere": "Nada aqui",
+    "paused": "Em pausa",
+    "pending": "Pendente",
+    "perDaySubmitted": "{{amount}}/dia · enviado",
+    "queueCleared": "Fila limpa",
+    "reasonExample": "Orçamento muito alto para esta categoria.",
+    "reasonLabel": "Motivo: {{reason}}",
+    "reasonPlaceholder": "Motivo (mostrado ao vendedor)",
+    "rejected": "Rejeitado",
+    "rejecting": "Rejeitando…",
+    "sellerFallback": "Vendedor",
+    "sub": "Anúncios patrocinados. Uma campanha aprovada e ativa é veiculada no marketplace.",
+    "views": "{{count}} visualizações"
+  },
+  "apiBadge": {
+    "connecting": "Conectando…",
+    "live": "API em tempo real",
+    "offline": "offline",
+    "offlineMock": "offline (simulado)"
+  },
+  "auctionsAdmin": {
+    "bidBook": "Livro de lances ({{count}})",
+    "bidderFallback": "Licitante",
+    "bidsCount": "{{count}} lances",
+    "closeNow": "Fechar agora",
+    "drawerTitle": "Leilão",
+    "ends": "Fim {{date}}",
+    "high": "Alto {{amount}}",
+    "noBids": "Ainda não há lances.",
+    "none": "Não há leilões no momento.",
+    "sub": "Todos os leilões na plataforma — clique para consultar o livro de lances.",
+    "void": "Leilão nulo"
+  },
+  "audit": {
+    "detail": "Detalhe",
+    "empty": "Nenhuma das entradas de auditoria corresponde.",
+    "entityPh": "Tipo de entidade (Usuário, Pedido…)",
+    "entriesCount": "{{count}} entradas",
+    "system": "sistema"
+  },
+  "bell": {
+    "app": "Aplicativo",
+    "aria": "Notificações",
+    "ariaSettings": "Configurações",
+    "caughtUp": "Você está totalmente a par de tudo.",
+    "mail": "Correspondência",
+    "markAllRead": "Marque tudo como lido",
+    "notifications": "Notificações",
+    "push": "Empurrar",
+    "settings": "Configurações de notificação"
+  },
+  "bidsAdmin": {
+    "award": "Prêmio",
+    "buyerLine": "Comprador: {{name}}",
+    "cancelReq": "Cancelar requisito",
+    "colActions": "Ações",
+    "colBest": "Melhor",
+    "colBuyer": "Comprador",
+    "colQty": "Quantidade",
+    "colReq": "Exigência",
+    "colSellerBids": "O vendedor faz lances",
+    "colStatus": "Status",
+    "drawerTitle": "Lance do comprador",
+    "noSellerBids": "Nenhum vendedor fez um lance ainda.",
+    "none": "Nenhuma oferta de comprador corresponde.",
+    "reqFallback": "Exigência",
+    "sellerBidsCount": "O vendedor fez um lance ({{count}})",
+    "sellerFallback": "Vendedor",
+    "status": {
+      "all": "todos",
+      "awarded": "premiado",
+      "cancelled": "cancelado",
+      "closed": "fechado",
+      "open": "abrir",
+      "submitted": "submetido"
+    },
+    "sub": "Leilões reversos — os compradores definem uma exigência e os vendedores fazem lances para arrematá-la.",
+    "view": "Visualizar"
+  },
+  "brand": {
+    "tagline": "Centro de Comando"
+  },
+  "brandingAdmin": {
+    "assets": {
+      "appIcon": {
+        "hint": "Armazenado como um PNG de 512px para o ícone do iniciador de aplicativos móveis.",
+        "title": "Ícone do aplicativo"
+      },
+      "favicon": {
+        "hint": "Ícone da aba do navegador para a loja virtual e este painel. Armazenado como um PNG de 180px.",
+        "title": "Favicon"
+      },
+      "logo": {
+        "hint": "Exibido no cabeçalho, rodapé e nesta barra lateral do site. O formato quadrado funciona melhor; armazenado como WebP com até 512px.",
+        "title": "Logotipo"
+      }
+    },
+    "custom": "Personalizado",
+    "default": "Padrão",
+    "noteBody": "Os ícones do iniciador e a tela inicial estão integrados à versão nativa. O upload aqui armazena a arte e atualiza as superfícies da web, mas o aplicativo móvel só a utiliza após a próxima versão da loja ser lançada.",
+    "noteTitle": "O ícone do aplicativo não aparece nos telefones onde está instalado.",
+    "replace": "Substituir",
+    "reset": "Restaurar para as configurações padrão",
+    "resetFailed": "Não foi possível redefinir",
+    "upload": "Carregar",
+    "uploadFailed": "Falha no upload"
+  },
+  "catAdmin": {
+    "addCategory": "Adicionar categoria",
+    "addSub": "Sub",
+    "catName": "Nome da categoria",
+    "collapse": "Colapso",
+    "confirmDeleteCat": "Excluir a categoria “{{name}}”? Suas subcategorias também serão removidas.",
+    "confirmDeleteSub": "Excluir subcategoria “{{name}}”?",
+    "delete": "Excluir",
+    "deleteSub": "Excluir subcategoria",
+    "edit": "Editar",
+    "editSub": "Editar subcategoria",
+    "emojiHint": "Um único emoji é exibido ao lado do nome.",
+    "emojiLabel": "Emoji (opcional)",
+    "empty": "Ainda não existem categorias. Adicione a primeira.",
+    "expand": "Expandir",
+    "modalAddCategory": "Adicionar categoria",
+    "modalAddSub": "Adicionar subcategoria a {{name}}",
+    "modalEditCategory": "Editar categoria",
+    "modalEditSub": "Editar subcategoria",
+    "phCat": "Ex.: Frutas",
+    "phSub": "Exemplo: Arroz Basmati",
+    "productsCount": "{{count}} produtos",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "subName": "Nome da subcategoria",
+    "subStats": "{{subs}} subcategorias · {{products}} produtos"
+  },
+  "cmsAdmin": {
+    "draft": "Rascunho",
+    "publish": "Publicar",
+    "published": "Publicado",
+    "sub": "Gerenciar conteúdo de sites públicos e páginas de destino.",
+    "unpublish": "Despublicar"
+  },
+  "communityMod": {
+    "action": "Ação",
+    "banAuthor": "Banir autor",
+    "createBtn": "Criar canal",
+    "createChannel": "Criar canal oficial",
+    "creating": "Criando…",
+    "default": "padrão",
+    "delete": "Excluir",
+    "dismiss": "Liberar",
+    "fDescription": "Descrição",
+    "fEmoji": "Emoji",
+    "fName": "Nome",
+    "glance": "Comunidade em resumo",
+    "groupStats": "{{members}} membros · {{posts}} publicações · {{messages}} mensagens",
+    "groupsCount": "Grupos ({{count}})",
+    "inGroup": "em {{name}}",
+    "metric": {
+      "groups": "Grupos",
+      "messages": "Mensagens",
+      "openReports": "Abrir relatórios",
+      "posts": "Postagens",
+      "requirements": "Requisitos"
+    },
+    "noPosts": "Nenhuma publicação.",
+    "noReports": "Sem denúncias em aberto 🎉",
+    "pin": "Alfinete",
+    "pinned": "fixado",
+    "recentPosts": "Postagens recentes",
+    "reported": "Conteúdo denunciado",
+    "reportedBy": "Denunciado por {{name}} · alvo {{id}}",
+    "tab": {
+      "analytics": "análises",
+      "feed": "alimentar",
+      "groups": "grupos",
+      "reports": "relatórios"
+    },
+    "unpin": "Desafixar"
+  },
+  "companies": {
+    "approveListing": "Aprovar anúncio",
+    "colActions": "Ações",
+    "colCompany": "Empresa",
+    "colListing": "Anúncio",
+    "crew": "Tripulação ({{count}})",
+    "detail": "Detalhes da empresa",
+    "drivers": "Motoristas",
+    "fleet": "Frota ({{count}})",
+    "jobs": "Empregos",
+    "lanes": "Pistas",
+    "lanesN": "Faixas ({{count}})",
+    "listed": "listado",
+    "loadersSub": "Todas as empresas de carregamento — equipes, trabalhos, tabelas de preços e aprovação para listagem pública.",
+    "none": "Nenhuma empresa encontrada.",
+    "rateCard": "Tabela de preços ({{count}})",
+    "recentTrips": "Viagens recentes ({{count}})",
+    "searchPlaceholder": "Empresas de pesquisa…",
+    "tabCompanies": "Empresas",
+    "tabHires": "Solicitações de contratação",
+    "teams": "Equipes",
+    "teamsN": "Equipes ({{count}})",
+    "transportSub": "Todas as empresas de transporte — frota, rotas, viagens e aprovação para abertura de capital.",
+    "trips": "Viagens",
+    "unlist": "Remover da lista",
+    "unlisted": "não listado",
+    "vehicles": "Veículos",
+    "workers": "Trabalhadores"
+  },
+  "disputes": {
+    "allSmooth": "Todos os pedidos estão sendo processados sem problemas.",
+    "amount": "Quantidade {{amount}}",
+    "badge": "disputa",
+    "none": "Sem disputas em aberto",
+    "orderRef": "Pedido nº {{ref}}",
+    "refund": "Reembolsar o comprador",
+    "release": "Liberar para o vendedor",
+    "sub_many": "{{count}} disputas abertas",
+    "sub_one": "{{count}} disputas abertas",
+    "sub_other": "{{count}} disputas abertas"
+  },
+  "genericError": "Algo deu errado. Por favor, tente novamente.",
+  "header": {
+    "fallbackTitle": "Administrador",
+    "searchPlaceholder": "Pesquisar usuários, pedidos, produtos…"
+  },
+  "hires": {
+    "empty": "Ainda não há pedidos de contratação.",
+    "subtitle": "{{count}} solicitações de contratação direta — as aceitas se convertem em viagens ou trabalhos de carregamento.",
+    "title": "Contratação de Operações"
+  },
+  "invoicesAdmin": {
+    "colActions": "Ações",
+    "colFromTo": "De → Para",
+    "colIssued": "Publicado",
+    "colKind": "Tipo",
+    "colNumber": "Número",
+    "colStatus": "Status",
+    "colTotal": "Total",
+    "empty": "Nenhuma fatura corresponde.",
+    "markPaid": "Mark pagou",
+    "pdf": "PDF",
+    "searchPh": "Número, emissor ou destinatário…",
+    "status": {
+      "all": "todos",
+      "draft": "rascunho",
+      "issued": "publicado",
+      "paid": "pago",
+      "void": "vazio"
+    },
+    "void": "Vazio"
+  },
+  "kycAdmin": {
+    "all": "todos",
+    "allReviewed": "Todas as submissões foram analisadas. Ótimo trabalho.",
+    "approve": "Aprovar",
+    "confirmReject": "Confirmar rejeição",
+    "daysAgo": "{{count}} dias atrás",
+    "docs": "Documentos",
+    "docsCount": "{{count}} documentos",
+    "hoursAgo": "{{count}} hora atrás",
+    "justNow": "agora mesmo",
+    "noDocs": "Nenhum documento foi enviado ainda.",
+    "noneFilter": "Nenhuma submissão {{filter}}.",
+    "nothingHere": "Nada aqui",
+    "queueCleared": "Fila limpa",
+    "reject": "Rejeitar",
+    "rejectPh": "Motivo da rejeição (opcional)",
+    "view": "Visualizar"
+  },
+  "kycDocs": {
+    "title": "KYC documentos"
+  },
+  "login": {
+    "adminOnly": "Este console é exclusivo para administradores.",
+    "commandCentre": "Centro de Comando",
+    "demo": "Demonstração: admin@agrotraders.org · senha123",
+    "email": "E-mail",
+    "invalid": "Credenciais inválidas.",
+    "password": "Senha",
+    "signingIn": "Entrando…",
+    "title": "Login do administrador"
+  },
+  "marketsAdmin": {
+    "active": "Ativo",
+    "addMarket": "Adicionar mercado",
+    "approve": "Aprovar",
+    "awaiting": "{{count}} aguardando revisão",
+    "edit": "Editar",
+    "editMarket": "Editar mercado",
+    "fCity": "Cidade",
+    "fCountry": "País",
+    "fFlag": "Emoji de bandeira",
+    "fName": "Nome",
+    "fRegion": "Região",
+    "hidden": "Escondido",
+    "hide": "Esconder",
+    "pending": "Pendente",
+    "phCity": "Délhi",
+    "phCountry": "🇮🇳 Índia",
+    "phFlag": "🇮🇳",
+    "phName": "Mercado Azadpur",
+    "phRegion": "Sul da Ásia",
+    "proposals": "Propostas do vendedor",
+    "proposedBy": "proposto por {{name}}",
+    "reject": "Rejeitar",
+    "rejected": "Rejeitado",
+    "save": "Salvar",
+    "saveError": "Não foi possível salvar o mercado — verifique os campos.",
+    "show": "Mostrar"
+  },
+  "nav": {
+    "ads": "Anúncios",
+    "auctions": "Leilões",
+    "audit": "Registro de auditoria",
+    "bids": "Lances do comprador",
+    "branding": "Marca",
+    "categories": "Categorias",
+    "cms": "CMS",
+    "community": "Comunidade",
+    "disputes": "Disputas",
+    "invoices": "Faturas",
+    "kyc": "KYC Avaliação",
+    "loaders": "Carregadeiras",
+    "markets": "Mercados",
+    "offices": "Escritórios",
+    "orders": "Pedidos",
+    "overview": "Visão geral",
+    "payments": "Pagamentos",
+    "products": "Produtos",
+    "reports": "Relatórios",
+    "reviews": "Avaliações",
+    "roleRequests": "Solicitações de função",
+    "safedeal": "Negócio seguro",
+    "support": "Caixa de entrada de suporte",
+    "team": "Equipe",
+    "transport": "Transporte",
+    "users": "Usuários"
+  },
+  "navGroup": {
+    "Company": "Empresa",
+    "Finance": "Financiar",
+    "Logistics": "Logística",
+    "Marketplace": "Mercado",
+    "Messaging": "Mensagens",
+    "Platform": "Plataforma"
+  },
+  "officesAdmin": {
+    "addOffice": "Adicionar escritório",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "fCity": "Cidade",
+    "fFlag": "Bandeira (emoji)",
+    "fLanguages": "Línguas",
+    "fManager": "Gerente",
+    "fName": "Nome",
+    "fStaff": "Funcionários",
+    "fTimezone": "Fuso horário",
+    "fType": "Tipo",
+    "save": "Salvar escritório",
+    "saving": "Salvando…"
+  },
+  "orders": {
+    "details": "Detalhes",
+    "subtitle": "{{count}} pedidos recentes · Monitoramento do Safe-Deal",
+    "title": "Pedidos"
+  },
+  "ordersAdmin": {
+    "all": "todos",
+    "amount": "Quantia",
+    "apply": "Aplicar",
+    "buyer": "Comprador",
+    "orderTitle": "Pedido nº {{ref}}",
+    "override": "Status de substituição",
+    "product": "Produto",
+    "searchPh": "Pesquisar referência/comprador/vendedor…",
+    "selectStatus": "Selecione o status…",
+    "seller": "Vendedor",
+    "status": "Status",
+    "timeline": "Linha do tempo ({{count}})"
+  },
+  "overview": {
+    "approvalQueue": "Fila de aprovação",
+    "gmv": "Valor Bruto de Mercadoria",
+    "lastMonths": "últimos {{count}} meses",
+    "noRecent": "Nenhuma atividade recente.",
+    "noSettledYet": "Ainda não há pedidos definidos.",
+    "nothingAwaiting": "Nada aguardando revisão 🎉",
+    "perMonthSettled": "$ por mês · pedidos liquidados",
+    "queue": {
+      "ads": "Campanhas publicitárias",
+      "kyc": "KYC submissões",
+      "markets": "Propostas de mercado",
+      "payouts": "Solicitações de pagamento",
+      "products": "Produtos aguardando aprovação",
+      "roleRequests": "Solicitações de função"
+    },
+    "recentActivity": "Atividade recente do administrador",
+    "review": "Análise",
+    "reviewQueue": "Fila de revisão",
+    "stats": {
+      "disputes": "Disputas abertas",
+      "orders": "Pedidos",
+      "products": "Produtos",
+      "users": "Total de usuários"
+    },
+    "system": "sistema",
+    "viewReports": "Ver relatórios"
+  },
+  "page": {
+    "audit": {
+      "subtitle": "Registro imutável das ações administrativas",
+      "title": "Registro de auditoria"
+    },
+    "branding": {
+      "subtitle": "Logotipo, ícone do aplicativo e favicon. As alterações no logotipo e no favicon entram em vigor imediatamente.",
+      "title": "Marca"
+    },
+    "categories": {
+      "subtitle": "{{categories}} categorias · {{subcategories}} subcategorias",
+      "title": "Categorias"
+    },
+    "community": {
+      "subtitle": "AgroTraders Comunidade — relatórios, grupos e atividades",
+      "title": "Moderação da Comunidade"
+    },
+    "disputes": {
+      "subtitle": "{{count}} casos · protegidos por garantia",
+      "title": "Disputas"
+    },
+    "invoices": {
+      "subtitle": "{{count}} faturas em toda a plataforma",
+      "title": "Faturas"
+    },
+    "kyc": {
+      "subtitle": "{{count}} pendente",
+      "title": "KYC Avaliação"
+    },
+    "loaderWorkforce": {
+      "title": "Equipe de carregamento"
+    },
+    "markets": {
+      "subtitle": "{{count}} mercados comerciais — os vendedores se conectam e os compradores filtram por eles.",
+      "title": "Mercados"
+    },
+    "offices": {
+      "subtitle": "{{count}} escritórios",
+      "title": "Escritórios Globais"
+    },
+    "overview": {
+      "subtitle": "AgroTraders · saúde do mercado ao vivo",
+      "title": "Visão geral da plataforma"
+    },
+    "payments": {
+      "subtitle": "AgroTraders · Saldos da carteira e registro de transações",
+      "title": "Pagamentos e Reembolsos"
+    },
+    "products": {
+      "subtitle": "{{count}} anúncios aguardando revisão",
+      "title": "Aprovações de produtos"
+    },
+    "reports": {
+      "subtitle": "AgroTraders · métricas principais da plataforma",
+      "title": "Relatórios e análises"
+    },
+    "reviews": {
+      "subtitle": "Avaliações bilaterais moderadas em pedidos, viagens e trabalhos.",
+      "title": "Avaliações e classificações"
+    },
+    "transport": {
+      "title": "Operações de Transporte"
+    }
+  },
+  "payments": {
+    "addMoney": "Adicionar dinheiro a uma carteira",
+    "adjust": "Ajustar",
+    "amountUsd": "Valor ($)",
+    "apply": "Aplicar",
+    "applying": "Candidatando-se…",
+    "balance": "saldo {{amount}}",
+    "creditRefund": "Crédito (reembolso)",
+    "creditTopup": "Crédito (recarga)",
+    "debitPayout": "Débito (pagamento)",
+    "debitWithdraw": "Débito (saque)",
+    "exportCsv": "Exportar CSV",
+    "exportPdf": "Exportar PDF",
+    "exporting": "Exportador…",
+    "noMatches": "Nenhum resultado encontrado.",
+    "noPending": "Não há solicitações de pagamento pendentes.",
+    "noTxns": "Nenhuma transação neste intervalo.",
+    "payoutRequests": "Solicitações de pagamento",
+    "pendingCount": "{{count}} pendente",
+    "preset": {
+      "month": "Mês",
+      "today": "Hoje",
+      "week": "Semana"
+    },
+    "recentTxns": "Transações recentes",
+    "requested": "solicitado {{date}}",
+    "searchUser": "Pesquise um usuário pelo nome ou e-mail…",
+    "shownCount": "{{count}} mostrado",
+    "stats": {
+      "escrowReleased": "Depósito em garantia liberado",
+      "payouts": "Pagamentos",
+      "totalBalance": "Saldo total da carteira",
+      "wallets": "Carteiras"
+    }
+  },
+  "perm": {
+    "ads_moderate": "Anúncios",
+    "auctions_manage": "Leilões",
+    "audit_view": "Registro de auditoria",
+    "bids_manage": "Lances do comprador",
+    "branding_manage": "Marca",
+    "cms_manage": "CMS páginas",
+    "community_moderate": "Comunidade",
+    "disputes_manage": "Disputas",
+    "finance_manage": "Finanças (carteiras/pagamentos)",
+    "kyc_review": "KYC revisão",
+    "loaders_manage": "Carregadeiras",
+    "markets_manage": "Mercados",
+    "offices_manage": "Escritórios",
+    "orders_manage": "Pedidos",
+    "products_moderate": "Produtos e categorias",
+    "reports_view": "Relatórios",
+    "reviews_moderate": "Avaliações e classificações",
+    "role_requests": "Solicitações de função",
+    "staff_manage": "Equipe e permissões (superadministrador)",
+    "support_agent": "Apoiar",
+    "transport_manage": "Transporte",
+    "users_manage": "Usuários"
+  },
+  "placeholder": {
+    "body": "Este módulo compartilha o mesmo layout, tabelas e componentes. A conexão com os dados em tempo real continua à medida que as fases de implementação do backend são concluídas.",
+    "docs": "Ver documentação"
+  },
+  "prodMod": {
+    "allTypes": "Todos os tipos",
+    "approve": "Aprovar",
+    "colActions": "Ações",
+    "colCategory": "Categoria",
+    "colPrice": "Preço",
+    "colProduct": "Produto",
+    "colSeller": "Vendedor",
+    "colStatus": "Status",
+    "confirm": "Confirmar",
+    "edit": "Editar",
+    "fName": "Nome",
+    "fPrice": "Preço",
+    "fQty": "Quantidade",
+    "none": "Nenhum produto corresponde.",
+    "reasonPlaceholder": "Motivo (opcional)",
+    "reject": "Rejeitar",
+    "save": "Salvar",
+    "searchPlaceholder": "Pesquisar produtos…",
+    "status": {
+      "all": "todos",
+      "hidden": "escondido",
+      "live": "ao vivo",
+      "pending": "pendente",
+      "rejected": "rejeitado"
+    },
+    "sub": "Modere o catálogo — aprove, rejeite, edite ou remova anúncios.",
+    "tagAuction": "leilão",
+    "tagOffer": "oferecer",
+    "takedown": "Derrubar",
+    "type": {
+      "auction": "leilão",
+      "offer": "oferecer",
+      "safedeal": "negócio seguro"
+    }
+  },
+  "range": {
+    "allTime": "O tempo todo",
+    "from": "De",
+    "to": "Para"
+  },
+  "reports": {
+    "exportCsv": "Exportar CSV",
+    "months12": "12 meses",
+    "noSettled": "Nenhuma ordem definida.",
+    "noSignups": "Não há cadastros disponíveis.",
+    "orderVolume": "Volume de pedidos",
+    "ordersByStatus": "Pedidos por status",
+    "perMonthSettled": "$ por mês · pedidos liquidados",
+    "preset": {
+      "month": "Mês passado",
+      "quarter": "Último trimestre",
+      "year": "Ano passado"
+    },
+    "signupsPerMonth": "Novos cadastros por mês",
+    "stats": {
+      "escrowReleased": "Depósito em garantia liberado",
+      "gmv": "GMV (alcance)",
+      "newUsers": "Novos usuários (intervalo)",
+      "orders": "Pedidos (intervalo)"
+    },
+    "userGrowth": "Crescimento de usuários",
+    "usersByRole": "Usuários por função"
+  },
+  "reviewsMod": {
+    "adminNote": "Nota do administrador:",
+    "adminNoteLabel": "Nota do administrador (opcional)",
+    "bodyPh": "Corpo de revisão…",
+    "confirmDelete": "Excluir esta avaliação permanentemente? Esta ação não pode ser desfeita.",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "editedBy": "editado por {{name}}",
+    "empty": "Nenhuma avaliação corresponde a esses filtros.",
+    "hide": "Esconder",
+    "kind": {
+      "all": "todos",
+      "assignment": "atribuição",
+      "hire": "contratar",
+      "loaderjob": "trabalho de carregadeira",
+      "order": "ordem",
+      "trip": "viagem"
+    },
+    "modalTitle": "Editar revisão",
+    "noText": "Sem avaliação escrita.",
+    "notePh": "Nota interna sobre esta moderação…",
+    "rating": "Avaliação",
+    "remove": "Remover",
+    "reviewText": "Texto de revisão",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "searchPh": "Pesquisar texto, avaliador ou avaliado…",
+    "starAria": "{{count}} estrelas",
+    "status": {
+      "all": "todos",
+      "hidden": "escondido",
+      "removed": "removido",
+      "visible": "visível"
+    },
+    "subjectLine": "assunto {{kind}} {{id}}",
+    "title": "Avaliações",
+    "totalCount": "{{count}} total",
+    "unhide": "Mostrar"
+  },
+  "roleReq": {
+    "approve": "Aprovar",
+    "colAction": "Ação",
+    "colNote": "Observação",
+    "colRole": "Função solicitada",
+    "colStatus": "Status",
+    "colUser": "Usuário",
+    "confirmReject": "Confirmar rejeição",
+    "decided": "decidido",
+    "filter": {
+      "all": "todos",
+      "approved": "aprovado",
+      "pending": "pendente",
+      "rejected": "rejeitado"
+    },
+    "liveApi": "API em tempo real",
+    "none": "Nenhuma solicitação de função.",
+    "reasonPlaceholder": "Motivo (opcional)",
+    "reject": "Rejeitar",
+    "sub": "Usuários que solicitam um painel adicional. A aprovação concede a função."
+  },
+  "sd": {
+    "allRoles": "todos",
+    "colAccount": "Conta",
+    "colBalance": "Equilíbrio",
+    "colLedger": "Livro-razão",
+    "colRole": "Papel",
+    "inEscrow": "Em custódia (pedidos pagos)",
+    "ledgerTitle": "Livro-razão da carteira",
+    "sellerBalances": "Saldos do vendedor",
+    "sub": "Supervisão financeira em toda a empresa — contas de garantia, carteiras e saldos.",
+    "totalOnPlatform": "Total na plataforma",
+    "txType": {
+      "escrow_hold": "retenção de garantia",
+      "escrow_release": "liberação de garantia",
+      "payout": "pagamento",
+      "refund": "reembolso",
+      "topup": "recarga"
+    },
+    "txnsCount": "Transações ({{count}})",
+    "wallets": "Carteiras"
+  },
+  "support": {
+    "noTickets": "Sem ingressos",
+    "notePlaceholder": "Adicionar nota…",
+    "replyPlaceholder": "Responder ao cliente…",
+    "searchPlaceholder": "Referência, pedido, usuário…",
+    "subtitle": "{{count}} ingressos",
+    "title": "Caixa de entrada de suporte"
+  },
+  "supportInbox": {
+    "actions": "Ações",
+    "add": "Adicionar",
+    "agentPh": "Agente…",
+    "assign": "Atribuir",
+    "assignMe": "Atribua-me essa tarefa.",
+    "close": "Fechar",
+    "detailsHere": "Os detalhes do ingresso aparecem aqui.",
+    "escalate": "Aumentar",
+    "internalNote": "Nota interna",
+    "order": "Ordem",
+    "product": "Produto",
+    "rating": "Classificação: {{score}}/5",
+    "requester": "Solicitante",
+    "resolve": "Resolver",
+    "safeDeal": "Negócio seguro",
+    "selectTicket": "Selecione um bilhete",
+    "waitingUser": "Usuário em espera"
+  },
+  "team": {
+    "accessGranted": "Acesso ({{count}} concedido)",
+    "active": "ativo",
+    "addStaff": "Adicionar um membro da equipe",
+    "addStaffBtn": "Adicionar membro da equipe",
+    "adding": "Adicionando…",
+    "clear": "Claro",
+    "close": "Fechar",
+    "createError": "Não foi possível criar um membro da equipe.",
+    "deactivate": "Desativar",
+    "email": "E-mail",
+    "inactive": "inativo",
+    "name": "Nome",
+    "needCapability": "Você precisa da capacidade de gerenciar a equipe e suas permissões para administrar os membros da equipe.",
+    "noModules": "Nenhum módulo concedido",
+    "permissions": "Permissões",
+    "reactivate": "Reativar",
+    "remove": "Remover",
+    "savePerms": "Salvar permissões",
+    "saving": "Salvando…",
+    "selectAll": "Selecionar tudo",
+    "staffCount": "Equipe ({{count}})",
+    "sub": "Gerenciar contas internas da equipe e seus respectivos acessos por módulo.",
+    "superFull": "Superadministrador — acesso total",
+    "tempPassword": "Senha temporária (mínimo 8)",
+    "you": "(você)"
+  },
+  "userDrawer": {
+    "accountActive": "Conta ativa",
+    "actBuyOrders": "Ordens (compra)",
+    "actHiresReceived": "Contratações recebidas",
+    "actHiresSent": "Contratações enviadas",
+    "actProducts": "Produtos",
+    "actSellOrders": "Ordens (venda)",
+    "actTrips": "Viagens",
+    "actVehicles": "Veículos",
+    "actWorkers": "Trabalhadores",
+    "active": "ativo",
+    "activity": "Atividade",
+    "addRole": "Adicionar uma função…",
+    "adminOnly": "somente para administradores",
+    "contactEmail": "E-mail de contato",
+    "country": "País",
+    "dangerBody": "Desativa a conta (exclusão lógica). O usuário não poderá mais fazer login.",
+    "dangerZone": "Zona de perigo",
+    "deactivate": "Desativar conta",
+    "deleting": "Excluindo…",
+    "editDetails": "Editar detalhes",
+    "email": "E-mail",
+    "grant": "Conceder",
+    "inactive": "inativo",
+    "kycStatus": "KYC status",
+    "location": "Localização",
+    "market": "Mercado",
+    "name": "Nome",
+    "phone": "Telefone",
+    "primary": "(primário)",
+    "privateContact": "Contato privado",
+    "revokeRole": "Revogar função",
+    "roles": "Funções",
+    "saveChanges": "Salvar alterações",
+    "saving": "Salvando…",
+    "title": "Gerenciar usuário",
+    "wallet": "Carteira",
+    "whatsapp": "WhatsApp"
+  },
+  "users": {
+    "filterAll": "Todos",
+    "invite": "Convidar usuário",
+    "searchPlaceholder": "Pesquisar por nome ou e-mail…",
+    "subtitle": "{{shown}} de {{total}} contas",
+    "title": "Usuários",
+    "view": "Visualizar"
+  }
+}

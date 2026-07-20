@@ -1,0 +1,49 @@
+{
+  "categories": {
+    "vegetables": "Овощи",
+    "fruits": "Фрукты",
+    "berries": "Ягоды",
+    "herbs-greens": "Зелень",
+    "mushrooms": "Грибы",
+    "grain": "Зерно",
+    "nuts": "Орехи",
+    "packaging": "Упаковка",
+    "animal-feed": "Корма",
+    "meat": "Мясо",
+    "fish": "Рыба",
+    "dairy-products": "Молочные продукты",
+    "live-animals-poultry": "Животные и птица",
+    "eggs": "Яйцо",
+    "seeds-planting-material": "Семена и посадочный материал",
+    "agrochemicals": "Агрохимия",
+    "processed-products": "Продукты переработки",
+    "technical-raw-materials": "Техническое сырьё",
+    "beekeeping-products": "Продукция пчеловодства",
+    "ornamental-plants": "Декоративные культуры",
+    "spare-parts-for-machinery": "Запчасти для сельхозтехники",
+    "agricultural-machinery": "Сельхозтехника",
+    "equipment": "Оборудование",
+    "agricultural-land-facilities": "Сельскохозяйственные земли и объекты"
+  },
+  "markets": {
+    "azadpur-mandi": { "name": "Рынок Азадпур", "city": "Дели", "region": "Южная Азия" },
+    "vashi-apmc": { "name": "Ваши APMC", "city": "Мумбаи", "region": "Южная Азия" },
+    "al-aweer-central-market": { "name": "Центральный рынок Аль-Авир", "city": "Дубай", "region": "Ближний Восток" },
+    "mersin-wholesale-market": { "name": "Оптовый рынок Мерсина", "city": "Мерсин", "region": "Левант" },
+    "odesa-grain-exchange": { "name": "Одесская зерновая биржа", "city": "Одесса", "region": "Чёрное море" },
+    "novorossiysk-grain-terminal": { "name": "Новороссийский зерновой терминал", "city": "Новороссийск", "region": "Чёрное море" },
+    "almaty-dry-port-market": { "name": "Рынок сухого порта Алматы", "city": "Алматы", "region": "Центральная Азия" },
+    "rungis-international": { "name": "Рюнжис Интернэшнл", "city": "Париж", "region": "Европа" },
+    "rotterdam-agri-hub": { "name": "Агрохаб Роттердама", "city": "Роттердам", "region": "Европа" },
+    "santos-trade-terminal": { "name": "Торговый терминал Сантус", "city": "Сантус", "region": "Южная Америка" },
+    "karachi-sabzi-mandi": { "name": "Рынок Сабзи-Манди в Карачи", "city": "Карачи", "region": "Южная Азия" },
+    "ho-chi-minh-agri-market": { "name": "Агрорынок Хошимина", "city": "Хошимин", "region": "Юго-Восточная Азия" }
+  },
+  "cmsPages": {
+    "terms": { "title": "Условия использования", "body": "Условия использования AgroTraders. Замените на ваш юридический текст." },
+    "privacy": { "title": "Политика конфиденциальности", "body": "Политика конфиденциальности AgroTraders. Замените на ваш юридический текст." },
+    "cookies": { "title": "Политика использования cookie", "body": "Политика использования cookie AgroTraders. Замените на ваш юридический текст." },
+    "about": { "title": "О AgroTraders", "body": "Глобальная площадка для торговли сельхозпродукцией." },
+    "seller-handbook": { "title": "Руководство продавца", "body": "Черновик: как продавать на AgroTraders." }
+  }
+}

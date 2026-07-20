@@ -1,0 +1,26 @@
+{
+  "auctions": {
+    "already_ended": "Esta subasta ya ha finalizado.",
+    "bid_race": "Se ha recibido otra oferta primero; por favor, inténtelo de nuevo con una cantidad mayor.",
+    "bid_too_low": "Tu puja está por debajo de la puja más alta actual; intenta con una cantidad mayor.",
+    "ended": "Esta subasta ha finalizado.",
+    "not_found": "Subasta no encontrada.",
+    "not_owner": "Esta no es su subasta.",
+    "own_auction": "No puedes pujar en tu propia subasta."
+  },
+  "auth": {
+    "account_missing": "Esta cuenta ya no existe.",
+    "email_taken": "Ese correo electrónico ya está registrado.",
+    "invalid_credentials": "Correo electrónico o contraseña incorrectos.",
+    "not_a_refresh_token": "Tu sesión ha caducado; por favor, inicia sesión de nuevo.",
+    "refresh_invalid": "Tu sesión ha caducado; por favor, inicia sesión de nuevo."
+  },
+  "net": {
+    "offline": "No se puede acceder al servidor. ¿Está funcionando la API?",
+    "rate_limited": "Demasiados intentos; por favor, espere un minuto e inténtelo de nuevo."
+  },
+  "unknown": "Algo salió mal. Por favor, inténtalo de nuevo.",
+  "validation": {
+    "failed": "Por favor, revise los campos resaltados."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "auctions": {
+    "already_ended": "Diese Auktion ist bereits beendet.",
+    "bid_race": "Ein anderes Gebot ging zuerst ein – bitte versuchen Sie es erneut mit einem höheren Betrag.",
+    "bid_too_low": "Ihr Gebot liegt unter dem aktuellen Höchstgebot – versuchen Sie es mit einem höheren Betrag.",
+    "ended": "Diese Auktion ist beendet.",
+    "not_found": "Auktion nicht gefunden.",
+    "not_owner": "Dies ist nicht Ihre Auktion.",
+    "own_auction": "Sie können nicht auf Ihre eigene Auktion bieten."
+  },
+  "auth": {
+    "account_missing": "Dieses Konto existiert nicht mehr.",
+    "email_taken": "Diese E-Mail-Adresse ist bereits registriert.",
+    "invalid_credentials": "Ungültige E-Mail-Adresse oder ungültiges Passwort.",
+    "not_a_refresh_token": "Ihre Sitzung ist abgelaufen – bitte melden Sie sich erneut an.",
+    "refresh_invalid": "Ihre Sitzung ist abgelaufen – bitte melden Sie sich erneut an."
+  },
+  "net": {
+    "offline": "Der Server ist nicht erreichbar. Läuft die API?",
+    "rate_limited": "Zu viele Versuche – bitte warten Sie eine Minute und versuchen Sie es erneut."
+  },
+  "unknown": "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+  "validation": {
+    "failed": "Bitte überprüfen Sie die markierten Felder."
+  }
+}

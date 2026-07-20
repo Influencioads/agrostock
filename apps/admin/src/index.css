@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+body {
+  margin: 0;
+}
+.font-display {
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+}

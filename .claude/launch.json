@@ -1,0 +1,42 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@agrotraders/web", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "web-verify",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@agrotraders/web", "dev", "--port", "5180"],
+      "port": 5180
+    },
+    {
+      "name": "web-verify-cats",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@agrotraders/web", "dev", "--port", "5186"],
+      "port": 5186
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@agrotraders/admin", "dev"],
+      "port": 5174
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@agrotraders/api", "dev"],
+      "port": 3100,
+      "autoPort": false
+    },
+    {
+      "name": "mobile-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@agrotraders/mobile", "exec", "expo", "start", "--web", "--port", "8082"],
+      "port": 8082
+    }
+  ]
+}

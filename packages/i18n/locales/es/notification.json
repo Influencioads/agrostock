@@ -1,0 +1,215 @@
+{
+  "auction": {
+    "closed_no_bids": {
+      "body": "“{{product}}” cerró sin ninguna oferta.",
+      "title": "La subasta ha finalizado."
+    },
+    "outbid": {
+      "body": "Alguien hizo una oferta más alta por “{{product}}”. La oferta más alta actual es {{amount}}.",
+      "title": "Te han superado en la puja."
+    },
+    "sold": {
+      "body": "“{{product}}” cerró en {{amount}} — {{buyer}} es el comprador ganador.",
+      "title": "Su subasta vendida"
+    },
+    "won": {
+      "body": "Tu puja de {{amount}} ganó “{{product}}”. Completa tu pedido para asegurarlo.",
+      "title": "¡Ganaste la subasta!"
+    }
+  },
+  "buyer_bid": {
+    "awarded": {
+      "body": "Su oferta por {{reference}} fue adjudicada. El pedido {{orderReference}} está abierto.",
+      "title": "¡Ganaste una oferta de comprador!"
+    },
+    "new_seller_bid": {
+      "body": "Un vendedor ofreció {{amount}} por {{unit}} en {{reference}}.",
+      "title": "Nueva oferta del vendedor"
+    },
+    "outbid": {
+      "body": "Otro vendedor te superó en precio en {{reference}}.",
+      "title": "Te superaron en la puja."
+    }
+  },
+  "common": {
+    "reason_suffix": "Motivo: {{reason}}"
+  },
+  "community": {
+    "dm": {
+      "title": "Nuevo mensaje directo"
+    },
+    "message": {
+      "title": "Nuevo mensaje de la comunidad"
+    }
+  },
+  "enum": {
+    "order_status": {
+      "cancelled": "Cancelado",
+      "delivered": "Entregado",
+      "dispatched": "Enviado",
+      "dispute": "Disputar",
+      "enquiry": "Consulta",
+      "in_transit": "En tránsito",
+      "packed": "Lleno",
+      "paid": "Pagado",
+      "processing": "Tratamiento",
+      "quote": "Cita"
+    },
+    "role": {
+      "buyer": "comprador",
+      "loader": "empresa de carga",
+      "seller": "vendedor",
+      "transporter": "transportador",
+      "worker": "obrero"
+    },
+    "support_status": {
+      "closed": "Cerrado",
+      "open": "Abierto",
+      "pending": "Pendiente",
+      "resolved": "Resuelto"
+    }
+  },
+  "hire": {
+    "accepted": {
+      "body": "{{actor}} aceptó su solicitud de contratación {{reference}}.",
+      "title": "Solicitud de contratación aceptada"
+    },
+    "declined": {
+      "body": "{{actor}} rechazó su solicitud de contratación {{reference}}.",
+      "title": "Solicitud de contratación rechazada"
+    },
+    "request": {
+      "body": "{{requester}} quiere contratarte{{detail}}.",
+      "title": "Solicitud de nuevo empleado"
+    }
+  },
+  "kyc": {
+    "rejected": {
+      "body": "Su verificación no fue aprobada. Por favor, revísela y vuelva a enviarla.",
+      "title": "La verificación requiere atención"
+    },
+    "verified": {
+      "body": "Tu cuenta ya está verificada; todas las funciones de trading están desbloqueadas.",
+      "title": "Identidad verificada"
+    }
+  },
+  "market": {
+    "approved": {
+      "body": "“{{market}}” ya está listado; compradores y vendedores pueden adjuntar enlaces a él.",
+      "title": "Aprobado por el mercado"
+    },
+    "declined": {
+      "body": "Su propuesta de mercado “{{market}}” no fue aprobada.",
+      "title": "Rechazada la propuesta de mercado."
+    }
+  },
+  "order": {
+    "delivered_buyer": {
+      "body": "El pedido {{reference}} fue entregado.",
+      "title": "Entregado"
+    },
+    "delivered_seller": {
+      "body": "El pedido {{reference}} ha sido entregado. Ahora puede generar una factura.",
+      "title": "Entregado"
+    },
+    "dispatched": {
+      "body": "{{cargo}} está en camino. Comparte tu pedido OTP con el repartidor cuando llegue.",
+      "title": "Pedido enviado"
+    },
+    "load_assigned": {
+      "body": "Recoge {{cargo}} de {{fromCity}} — pídele al vendedor que recoja OTP.",
+      "title": "Nueva carga asignada"
+    },
+    "new_enquiry": {
+      "body": "{{buyer}} preguntó sobre {{product}}.",
+      "title": "Nueva consulta"
+    },
+    "picked_up": {
+      "body": "El pedido {{reference}} está en tránsito.",
+      "title": "Mercancías recogidas"
+    },
+    "seller_responded": {
+      "body": "{{seller}} cotizó {{amount}} por {{product}}.",
+      "title": "El vendedor respondió"
+    },
+    "status_changed": {
+      "body": "El orden ahora es {{status}}.",
+      "title": "Orden {{reference}} — {{status}}"
+    }
+  },
+  "product": {
+    "approved": {
+      "body": "“{{product}}” ya está disponible en el mercado.",
+      "title": "Anuncio aprobado"
+    },
+    "rejected": {
+      "body": "“{{product}}” no fue aprobado.",
+      "title": "El listado necesita cambios"
+    }
+  },
+  "review": {
+    "received": {
+      "body": "{{author}} te dejó una reseña de {{stars}}★.",
+      "title": "Has recibido una nueva reseña"
+    }
+  },
+  "role_request": {
+    "approved": {
+      "body": "Tu solicitud para convertirte en {{role}} ha sido aprobada. Cambia de rol desde la consola para empezar.",
+      "title": "Ahora eres un {{role}}"
+    },
+    "declined": {
+      "body": "Tu solicitud para convertirte en {{role}} fue rechazada.",
+      "title": "Solicitud de rol rechazada"
+    }
+  },
+  "support": {
+    "assigned_agent": {
+      "title": "Boleto asignado"
+    },
+    "assigned_user": {
+      "title": "Un agente está gestionando su solicitud."
+    },
+    "reply": {
+      "title": "El soporte respondió"
+    },
+    "resolved": {
+      "title": "Tu incidencia se ha resuelto; valora nuestro soporte."
+    },
+    "status": {
+      "title": "Boleto {{status}}"
+    },
+    "ticket_new": {
+      "title": "Nuevo ticket de soporte"
+    },
+    "user_reply": {
+      "title": "El usuario respondió"
+    }
+  },
+  "wallet": {
+    "escrow_release": {
+      "body": "{{amount}} se ha liberado a su billetera.",
+      "title": "Pago recibido"
+    },
+    "invoice": {
+      "body": "{{issuer}} emitió {{number}} por {{amount}}.",
+      "title": "Nueva factura"
+    },
+    "payout_approved": {
+      "body": "Tu retiro de {{amount}} ha sido aprobado y pagado.",
+      "title": "Pago enviado"
+    },
+    "payout_declined": {
+      "body": "Su solicitud de pago fue rechazada.",
+      "title": "El pago fue rechazado"
+    },
+    "refund": {
+      "body": "Se reembolsaron {{amount}} a su billetera.",
+      "title": "Reembolso procesado"
+    },
+    "topup": {
+      "body": "Se ha añadido {{amount}} a tu monedero.",
+      "title": "Fondos añadidos"
+    }
+  }
+}

@@ -1,0 +1,808 @@
+{
+  "account": {
+    "fallbackName": "مسؤول المنصة",
+    "logOut": "تسجيل الخروج",
+    "staff": "طاقم عمل",
+    "superAdmin": "المشرف الرئيسي"
+  },
+  "adsAdmin": {
+    "awaiting": "في انتظار الموافقة",
+    "clicks": "{{count}} نقرات",
+    "confirmReject": "تأكيد الرفض",
+    "filter": {
+      "all": "الجميع",
+      "approved": "موافقة",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض"
+    },
+    "impressions": "انطباعات (المجموعة المعروضة)",
+    "listingFallback": "قائمة",
+    "live": "يعيش",
+    "liveNow": "مباشر الآن",
+    "noneAwaiting": "لا توجد حملات بانتظار المراجعة.",
+    "noneFilter": "لا حملات {{filter}}.",
+    "nothingHere": "لا يوجد شيء هنا",
+    "paused": "توقف مؤقتًا",
+    "pending": "قيد الانتظار",
+    "perDaySubmitted": "{{amount}}/يوم · مُرسَل",
+    "queueCleared": "تم مسح قائمة الانتظار",
+    "reasonExample": "الميزانية مرتفعة للغاية بالنسبة لهذه الفئة",
+    "reasonLabel": "السبب: {{reason}}",
+    "reasonPlaceholder": "السبب (الذي تم عرضه على البائع)",
+    "rejected": "مرفوض",
+    "rejecting": "رفض...",
+    "sellerFallback": "بائع",
+    "sub": "الإعلانات الممولة. يتم تشغيل حملة معتمدة وغير متوقفة في السوق.",
+    "views": "{{count}} مشاهدات"
+  },
+  "apiBadge": {
+    "connecting": "جارٍ الاتصال…",
+    "live": "واجهة برمجة التطبيقات المباشرة",
+    "offline": "غير متصل بالإنترنت",
+    "offlineMock": "غير متصل بالإنترنت (محاكاة)"
+  },
+  "auctionsAdmin": {
+    "bidBook": "كتاب العروض ({{count}})",
+    "bidderFallback": "مقدم العرض",
+    "bidsCount": "{{count}} عروض",
+    "closeNow": "أغلق الآن",
+    "drawerTitle": "مزاد",
+    "ends": "ينتهي {{date}}",
+    "high": "مرتفع {{amount}}",
+    "noBids": "لم يتم تقديم أي عروض حتى الآن.",
+    "none": "لا توجد مزادات في الوقت الحالي.",
+    "sub": "كل مزاد على المنصة - انقر لمعاينة سجل العطاءات.",
+    "void": "مزاد لاغي"
+  },
+  "audit": {
+    "actionPh": "تصفية الإجراءات (مثل المحفظة، والتحقق من الهوية، والطلب)...",
+    "detail": "التفاصيل",
+    "empty": "لا توجد أي إدخالات تدقيق مطابقة.",
+    "entityPh": "نوع الكيان (مستخدم، طلب...)",
+    "entriesCount": "{{count}} مدخلات",
+    "system": "نظام"
+  },
+  "bell": {
+    "app": "برنامج",
+    "aria": "إشعارات",
+    "ariaSettings": "إعدادات",
+    "caughtUp": "لقد اطلعت على كل شيء.",
+    "mail": "بريد",
+    "markAllRead": "تم قراءة جميع الكلمات.",
+    "notifications": "إشعارات",
+    "push": "يدفع",
+    "settings": "إعدادات الإشعارات"
+  },
+  "bidsAdmin": {
+    "award": "جائزة",
+    "buyerLine": "المشتري: {{name}}",
+    "cancelReq": "إلغاء المتطلبات",
+    "colActions": "الإجراءات",
+    "colBest": "أفضل",
+    "colBuyer": "المشتري",
+    "colQty": "الكمية",
+    "colReq": "متطلبات",
+    "colSellerBids": "عروض البائعين",
+    "colStatus": "حالة",
+    "drawerTitle": "عرض المشتري",
+    "noSellerBids": "لم يتقدم أي بائع بعرض حتى الآن.",
+    "none": "لم تتطابق عروض المشترين.",
+    "reqFallback": "متطلبات",
+    "sellerBidsCount": "عروض البائع ({{count}})",
+    "sellerFallback": "بائع",
+    "status": {
+      "all": "الجميع",
+      "awarded": "حائز على جائزة",
+      "cancelled": "تم الإلغاء",
+      "closed": "مغلق",
+      "open": "يفتح",
+      "submitted": "مُقَدَّم"
+    },
+    "sub": "المزادات العكسية - يقوم المشترون بنشر متطلباتهم، ويقوم البائعون بالمزايدة للفوز بها.",
+    "view": "منظر"
+  },
+  "brand": {
+    "tagline": "مركز القيادة"
+  },
+  "brandingAdmin": {
+    "assets": {
+      "appIcon": {
+        "hint": "تم تخزينها كصورة PNG بحجم 512 بكسل لأيقونة مشغل الهاتف المحمول.",
+        "title": "أيقونة التطبيق"
+      },
+      "favicon": {
+        "hint": "أيقونة تبويب المتصفح الخاصة بواجهة المتجر وهذه اللوحة. محفوظة كصورة PNG بحجم 180 بكسل.",
+        "title": "أيقونة الموقع"
+      },
+      "logo": {
+        "hint": "يظهر في رأس الموقع وتذييله وفي الشريط الجانبي. يُفضل استخدام تنسيق المربع؛ ويُخزن بصيغة WebP بدقة تصل إلى 512 بكسل.",
+        "title": "الشعار"
+      }
+    },
+    "custom": "مخصص",
+    "default": "تقصير",
+    "noteBody": "تُدمج أيقونات المشغل وشاشة البداية في الإصدار الأصلي. يؤدي التحميل هنا إلى تخزين العمل الفني وتحديث واجهات الويب، لكن تطبيق الهاتف المحمول لا يتعرف عليه إلا بعد إصدار النسخة التالية من المتجر.",
+    "noteTitle": "لا يصل رمز التطبيق إلى الهواتف المثبتة.",
+    "replace": "يستبدل",
+    "reset": "إعادة الضبط إلى الوضع الافتراضي",
+    "resetFailed": "تعذر إعادة الضبط",
+    "upload": "رفع",
+    "uploadFailed": "فشل التحميل"
+  },
+  "catAdmin": {
+    "addCategory": "إضافة فئة",
+    "addSub": "فرعي",
+    "catName": "اسم الفئة",
+    "collapse": "ينهار",
+    "confirmDeleteCat": "هل تريد حذف الفئة \"{{name}}\"؟ سيتم حذف الفئات الفرعية التابعة لها أيضاً.",
+    "confirmDeleteSub": "حذف الفئة الفرعية \"{{name}}\"؟",
+    "delete": "يمسح",
+    "deleteSub": "حذف الفئة الفرعية",
+    "edit": "يحرر",
+    "editSub": "تعديل الفئة الفرعية",
+    "emojiHint": "يظهر رمز تعبيري واحد بجانب الاسم.",
+    "emojiLabel": "الرموز التعبيرية (اختياري)",
+    "empty": "لا توجد تصنيفات حتى الآن. أضف التصنيف الأول.",
+    "expand": "يوسع",
+    "modalAddCategory": "إضافة فئة",
+    "modalAddSub": "أضف فئة فرعية إلى {{name}}",
+    "modalEditCategory": "تعديل الفئة",
+    "modalEditSub": "تعديل الفئة الفرعية",
+    "phCat": "مثال: الفواكه",
+    "phSub": "مثال: أرز بسمتي",
+    "productsCount": "{{count}} منتجات",
+    "save": "يحفظ",
+    "saving": "توفير…",
+    "subName": "اسم الفئة الفرعية",
+    "subStats": "{{subs}} فئات فرعية · {{products}} منتجات"
+  },
+  "cmsAdmin": {
+    "draft": "مسودة",
+    "publish": "انشر",
+    "published": "نُشر",
+    "sub": "إدارة محتوى الموقع العام وصفحات الهبوط.",
+    "unpublish": "إلغاء النشر"
+  },
+  "communityMod": {
+    "action": "فعل",
+    "banAuthor": "مؤلف الحظر",
+    "createBtn": "إنشاء قناة",
+    "createChannel": "إنشاء قناة رسمية",
+    "creating": "إنشاء...",
+    "default": "تقصير",
+    "delete": "يمسح",
+    "dismiss": "رفض",
+    "fDescription": "وصف",
+    "fEmoji": "الرموز التعبيرية",
+    "fName": "اسم",
+    "glance": "لمحة سريعة عن المجتمع",
+    "groupStats": "{{members}} أعضاء · {{posts}} منشورات · {{messages}} رسائل",
+    "groupsCount": "المجموعات ({{count}})",
+    "inGroup": "في {{name}}",
+    "metric": {
+      "groups": "المجموعات",
+      "messages": "رسائل",
+      "openReports": "التقارير المفتوحة",
+      "posts": "دعامات",
+      "requirements": "متطلبات"
+    },
+    "noPosts": "لا توجد منشورات.",
+    "noReports": "لا توجد تقارير مفتوحة 🎉",
+    "pin": "دبوس",
+    "pinned": "مثبت",
+    "recentPosts": "أحدث المنشورات",
+    "reported": "المحتوى المُبلغ عنه",
+    "reportedBy": "تم الإبلاغ بواسطة {{name}} · الهدف {{id}}",
+    "tab": {
+      "analytics": "التحليلات",
+      "feed": "يٌطعم",
+      "groups": "مجموعات",
+      "reports": "تقرير"
+    },
+    "unpin": "إلغاء التثبيت"
+  },
+  "companies": {
+    "approveListing": "الموافقة على الإدراج",
+    "colActions": "الإجراءات",
+    "colCompany": "شركة",
+    "colListing": "قائمة",
+    "crew": "الطاقم ({{count}})",
+    "detail": "تفاصيل الشركة",
+    "drivers": "السائقين",
+    "fleet": "الأسطول ({{count}})",
+    "jobs": "وظائف",
+    "lanes": "الممرات",
+    "lanesN": "الممرات ({{count}})",
+    "listed": "مدرج",
+    "loadersSub": "كل شركة تحميل - الطاقم، والفرق، والوظائف، وقوائم الأسعار، والموافقة على الإدراج العام.",
+    "none": "لم يتم العثور على أي شركات.",
+    "rateCard": "قائمة الأسعار ({{count}})",
+    "recentTrips": "الرحلات الأخيرة ({{count}})",
+    "searchPlaceholder": "شركات البحث...",
+    "tabCompanies": "شركات",
+    "tabHires": "طلبات التوظيف",
+    "teams": "الفرق",
+    "teamsN": "الفرق ({{count}})",
+    "transportSub": "كل شركة نقل - الأسطول، والمسارات، والرحلات، والموافقة على الإدراج العام.",
+    "trips": "رحلات",
+    "unlist": "إلغاء الإدراج",
+    "unlisted": "غير مدرج",
+    "vehicles": "المركبات",
+    "workers": "العمال"
+  },
+  "disputes": {
+    "allSmooth": "كل الطلبات تسير بسلاسة.",
+    "amount": "المبلغ {{amount}}",
+    "badge": "ينازع",
+    "none": "لا توجد نزاعات مفتوحة",
+    "orderRef": "الطلب{{ref}}",
+    "refund": "رد المبلغ للمشتري",
+    "release": "تسليم إلى البائع",
+    "sub_few": "{{count}} نزاعات مفتوحة",
+    "sub_many": "{{count}} نزاعات مفتوحة",
+    "sub_one": "{{count}} نزاعات مفتوحة",
+    "sub_other": "{{count}} نزاعات مفتوحة",
+    "sub_two": "{{count}} نزاعات مفتوحة",
+    "sub_zero": "{{count}} نزاعات مفتوحة"
+  },
+  "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  "header": {
+    "fallbackTitle": "مسؤل",
+    "searchPlaceholder": "ابحث عن المستخدمين، والطلبات، والمنتجات..."
+  },
+  "hires": {
+    "empty": "لم يتم تقديم أي طلبات توظيف حتى الآن.",
+    "subtitle": "{{count}} طلبات التوظيف المباشر — الطلبات المقبولة تتحول إلى رحلات أو وظائف تحميل.",
+    "title": "عمليات التأجير"
+  },
+  "invoicesAdmin": {
+    "colActions": "الإجراءات",
+    "colFromTo": "من → إلى",
+    "colIssued": "صادر",
+    "colKind": "عطوف",
+    "colNumber": "رقم",
+    "colStatus": "حالة",
+    "colTotal": "المجموع",
+    "empty": "لا توجد فواتير مطابقة.",
+    "markPaid": "دفع مارك",
+    "pdf": "PDF",
+    "searchPh": "الرقم، أو الجهة المصدرة، أو الجهة المستلمة...",
+    "status": {
+      "all": "الجميع",
+      "draft": "مسودة",
+      "issued": "صادر",
+      "paid": "مدفوع",
+      "void": "فارغ"
+    },
+    "void": "فارغ"
+  },
+  "kycAdmin": {
+    "all": "الجميع",
+    "allReviewed": "تمت مراجعة جميع المشاركات. عمل رائع.",
+    "approve": "يعتمد",
+    "confirmReject": "تأكيد الرفض",
+    "daysAgo": "{{count}} أيام مضت",
+    "docs": "المستندات",
+    "docsCount": "{{count}} مستندات",
+    "hoursAgo": "{{count}} ساعة مضت",
+    "justNow": "الآن",
+    "noDocs": "لم يتم تحميل أي مستندات حتى الآن.",
+    "noneFilter": "لا توجد مشاركات من فئة {{filter}}.",
+    "nothingHere": "لا يوجد شيء هنا",
+    "queueCleared": "تم مسح قائمة الانتظار",
+    "reject": "يرفض",
+    "rejectPh": "سبب الرفض (اختياري)",
+    "view": "منظر"
+  },
+  "kycDocs": {
+    "title": "KYC مستندات"
+  },
+  "login": {
+    "adminOnly": "هذه الوحدة مخصصة للمسؤولين فقط.",
+    "commandCentre": "مركز القيادة",
+    "demo": "عرض توضيحي: admin@agrotraders.org · كلمة المرور 123",
+    "email": "بريد إلكتروني",
+    "invalid": "بيانات اعتماد غير صالحة.",
+    "password": "كلمة المرور",
+    "signingIn": "جارٍ تسجيل الدخول…",
+    "title": "تسجيل دخول المسؤول"
+  },
+  "marketsAdmin": {
+    "active": "نشيط",
+    "addMarket": "إضافة سوق",
+    "approve": "يعتمد",
+    "awaiting": "{{count}} في انتظار المراجعة",
+    "edit": "يحرر",
+    "editMarket": "سوق التحرير",
+    "fCity": "مدينة",
+    "fCountry": "دولة",
+    "fFlag": "رمز تعبيري للعلم",
+    "fName": "اسم",
+    "fRegion": "منطقة",
+    "hidden": "مختفي",
+    "hide": "يخفي",
+    "pending": "قيد الانتظار",
+    "phCity": "دلهي",
+    "phCountry": "🇮🇳 الهند",
+    "phFlag": "🇮🇳",
+    "phName": "سوق آزادبور",
+    "phRegion": "جنوب آسيا",
+    "proposals": "عروض البائعين",
+    "proposedBy": "مقترح من قبل {{name}}",
+    "reject": "يرفض",
+    "rejected": "مرفوض",
+    "save": "يحفظ",
+    "saveError": "لم نتمكن من إنقاذ السوق - تحقق من الحقول.",
+    "show": "يعرض"
+  },
+  "nav": {
+    "ads": "إعلانات",
+    "auctions": "المزادات",
+    "audit": "سجل التدقيق",
+    "bids": "عروض المشترين",
+    "branding": "العلامة التجارية",
+    "categories": "فئات",
+    "cms": "CMS",
+    "community": "مجتمع",
+    "disputes": "النزاعات",
+    "invoices": "الفواتير",
+    "kyc": "KYC مراجعة",
+    "loaders": "اللوادر",
+    "markets": "الأسواق",
+    "offices": "المكاتب",
+    "orders": "طلبات",
+    "overview": "ملخص",
+    "payments": "المدفوعات",
+    "products": "منتجات",
+    "reports": "التقارير",
+    "reviews": "التقييمات",
+    "roleRequests": "طلبات الأدوار",
+    "safedeal": "صفقة آمنة",
+    "support": "صندوق دعم العملاء",
+    "team": "فريق",
+    "transport": "ينقل",
+    "users": "المستخدمون"
+  },
+  "navGroup": {
+    "Company": "شركة",
+    "Finance": "تمويل",
+    "Logistics": "الخدمات اللوجستية",
+    "Marketplace": "سوق إلكتروني",
+    "Messaging": "المراسلة",
+    "Platform": "منصة"
+  },
+  "officesAdmin": {
+    "addOffice": "إضافة مكتب",
+    "delete": "يمسح",
+    "edit": "يحرر",
+    "fCity": "مدينة",
+    "fFlag": "العلم (رمز تعبيري)",
+    "fLanguages": "اللغات",
+    "fManager": "مدير",
+    "fName": "اسم",
+    "fStaff": "طاقم عمل",
+    "fTimezone": "المنطقة الزمنية",
+    "fType": "يكتب",
+    "save": "حفظ المكتب",
+    "saving": "توفير…"
+  },
+  "orders": {
+    "details": "تفاصيل",
+    "subtitle": "{{count}} طلبات حديثة · مراقبة Safe-Deal",
+    "title": "طلبات"
+  },
+  "ordersAdmin": {
+    "all": "الجميع",
+    "amount": "كمية",
+    "apply": "يتقدم",
+    "buyer": "المشتري",
+    "orderTitle": "الطلب{{ref}}",
+    "override": "حالة التجاوز",
+    "product": "منتج",
+    "searchPh": "ابحث عن المرجع/المشتري/البائع…",
+    "selectStatus": "حدد الحالة…",
+    "seller": "بائع",
+    "status": "حالة",
+    "timeline": "الجدول الزمني ({{count}})"
+  },
+  "overview": {
+    "approvalQueue": "قائمة انتظار الموافقة",
+    "gmv": "إجمالي قيمة البضائع",
+    "noRecent": "لا توجد أنشطة حديثة.",
+    "noSettledYet": "لم يتم تنفيذ أي طلبات حتى الآن.",
+    "nothingAwaiting": "لا يوجد شيء ينتظر المراجعة 🎉",
+    "perMonthSettled": "دولار شهرياً · الطلبات المُسددة",
+    "queue": {
+      "ads": "الحملات الإعلانية",
+      "kyc": "KYC إرسالات",
+      "markets": "مقترحات السوق",
+      "payouts": "طلبات الدفع",
+      "products": "المنتجات بانتظار الموافقة",
+      "roleRequests": "طلبات الأدوار"
+    },
+    "recentActivity": "آخر أنشطة الإدارة",
+    "review": "مراجعة",
+    "reviewQueue": "قائمة المراجعة",
+    "stats": {
+      "disputes": "النزاعات المفتوحة",
+      "orders": "طلبات",
+      "products": "منتجات",
+      "users": "إجمالي المستخدمين"
+    },
+    "system": "نظام",
+    "viewReports": "عرض التقارير"
+  },
+  "page": {
+    "audit": {
+      "subtitle": "سجل غير قابل للتغيير لإجراءات المسؤول",
+      "title": "سجل التدقيق"
+    },
+    "branding": {
+      "subtitle": "الشعار، وأيقونة التطبيق، وأيقونة الموقع. التغييرات التي تطرأ على الشعار وأيقونة الموقع تُفعّل فوراً.",
+      "title": "العلامة التجارية"
+    },
+    "categories": {
+      "subtitle": "{{categories}} فئات · {{subcategories}} فئات فرعية",
+      "title": "فئات"
+    },
+    "community": {
+      "subtitle": "AgroTraders المجتمع — التقارير والمجموعات والأنشطة",
+      "title": "إدارة المجتمع"
+    },
+    "disputes": {
+      "subtitle": "{{count}} حالات · محمي بواسطة الضمان",
+      "title": "النزاعات"
+    },
+    "invoices": {
+      "subtitle": "{{count}} فواتير عبر المنصة",
+      "title": "الفواتير"
+    },
+    "kyc": {
+      "subtitle": "{{count}} معلق",
+      "title": "KYC مراجعة"
+    },
+    "loaderWorkforce": {
+      "title": "قوة عاملة التحميل"
+    },
+    "markets": {
+      "subtitle": "{{count}} أسواق التجارة — يقوم البائعون بربط أنفسهم ويقوم المشترون بالتصفية من خلال هذه الأسواق.",
+      "title": "الأسواق"
+    },
+    "offices": {
+      "subtitle": "{{count}} مكاتب",
+      "title": "المكاتب العالمية"
+    },
+    "overview": {
+      "subtitle": "AgroTraders · صحة السوق المباشر",
+      "title": "نظرة عامة على المنصة"
+    },
+    "payments": {
+      "subtitle": "AgroTraders · أرصدة المحفظة وسجل المعاملات",
+      "title": "المدفوعات والمستحقات"
+    },
+    "products": {
+      "subtitle": "{{count}} قوائم بانتظار المراجعة",
+      "title": "الموافقات على المنتجات"
+    },
+    "reports": {
+      "subtitle": "AgroTraders · مقاييس المنصة الرئيسية",
+      "title": "التقارير والتحليلات"
+    },
+    "reviews": {
+      "subtitle": "مراجعات ثنائية معتدلة تشمل الطلبات والرحلات والوظائف",
+      "title": "التقييمات والمراجعات"
+    },
+    "transport": {
+      "title": "عمليات النقل"
+    }
+  },
+  "payments": {
+    "addMoney": "أضف نقودًا إلى محفظتك",
+    "adjust": "يُعدِّل",
+    "amountUsd": "المبلغ ($)",
+    "apply": "يتقدم",
+    "applying": "جارٍ التقديم…",
+    "balance": "الرصيد {{amount}}",
+    "creditRefund": "رصيد (استرداد)",
+    "creditTopup": "رصيد (شحن)",
+    "debitPayout": "الخصم (الدفع)",
+    "debitWithdraw": "مدين (سحب)",
+    "exportCsv": "تصدير CSV",
+    "exportPdf": "تصدير PDF",
+    "exporting": "جارٍ التصدير...",
+    "noMatches": "لا توجد نتائج.",
+    "noPending": "لا توجد طلبات دفع معلقة.",
+    "noTxns": "لا توجد معاملات في هذا النطاق.",
+    "payoutRequests": "طلبات الدفع",
+    "pendingCount": "{{count}} معلق",
+    "preset": {
+      "month": "شهر",
+      "today": "اليوم",
+      "week": "أسبوع"
+    },
+    "recentTxns": "المعاملات الأخيرة",
+    "requested": "مطلوب {{date}}",
+    "searchUser": "ابحث عن مستخدم بالاسم أو البريد الإلكتروني…",
+    "shownCount": "{{count}} معروض",
+    "stats": {
+      "escrowReleased": "تم تحرير حساب الضمان",
+      "payouts": "المدفوعات",
+      "totalBalance": "إجمالي رصيد المحفظة",
+      "wallets": "محافظ"
+    }
+  },
+  "perm": {
+    "ads_moderate": "إعلانات",
+    "auctions_manage": "المزادات",
+    "audit_view": "سجل التدقيق",
+    "bids_manage": "عروض المشترين",
+    "branding_manage": "العلامة التجارية",
+    "cms_manage": "CMS صفحات",
+    "community_moderate": "مجتمع",
+    "disputes_manage": "النزاعات",
+    "finance_manage": "التمويل (المحافظ/المدفوعات)",
+    "kyc_review": "KYC مراجعة",
+    "loaders_manage": "اللوادر",
+    "markets_manage": "الأسواق",
+    "offices_manage": "المكاتب",
+    "orders_manage": "طلبات",
+    "products_moderate": "المنتجات والفئات",
+    "reports_view": "التقارير",
+    "reviews_moderate": "التقييمات والمراجعات",
+    "role_requests": "طلبات الأدوار",
+    "staff_manage": "الموظفون والصلاحيات (المشرف الرئيسي)",
+    "support_agent": "يدعم",
+    "transport_manage": "ينقل",
+    "users_manage": "المستخدمون"
+  },
+  "placeholder": {
+    "body": "تتشارك هذه الوحدة نفس التصميم والجداول والمكونات. ويستمر ربط البيانات الحية مع اكتمال مراحل الواجهة الخلفية.",
+    "docs": "عرض الوثائق"
+  },
+  "prodMod": {
+    "allTypes": "جميع الأنواع",
+    "approve": "يعتمد",
+    "colActions": "الإجراءات",
+    "colCategory": "فئة",
+    "colPrice": "سعر",
+    "colProduct": "منتج",
+    "colSeller": "بائع",
+    "colStatus": "حالة",
+    "confirm": "يتأكد",
+    "edit": "يحرر",
+    "fName": "اسم",
+    "fPrice": "سعر",
+    "fQty": "الكمية",
+    "none": "لا توجد منتجات مطابقة.",
+    "reasonPlaceholder": "السبب (اختياري)",
+    "reject": "يرفض",
+    "save": "يحفظ",
+    "searchPlaceholder": "ابحث عن المنتجات…",
+    "status": {
+      "all": "الجميع",
+      "hidden": "مختفي",
+      "live": "يعيش",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض"
+    },
+    "sub": "إدارة الكتالوج - الموافقة على القوائم أو رفضها أو تعديلها أو حذفها.",
+    "tagAuction": "مزاد",
+    "tagOffer": "يعرض",
+    "takedown": "إسقاط",
+    "type": {
+      "auction": "مزاد",
+      "offer": "يعرض",
+      "safedeal": "صفقة آمنة"
+    }
+  },
+  "range": {
+    "allTime": "على مر العصور",
+    "from": "من",
+    "to": "ل"
+  },
+  "reports": {
+    "exportCsv": "تصدير CSV",
+    "months12": "12 شهرًا",
+    "noSettled": "لا توجد أوامر مُنجزة.",
+    "noSignups": "لا توجد عمليات تسجيل في النطاق.",
+    "orderVolume": "حجم الطلبات",
+    "ordersByStatus": "الطلبات حسب الحالة",
+    "perMonthSettled": "دولار شهرياً · أوامر مُسددة",
+    "preset": {
+      "month": "الشهر الماضي",
+      "quarter": "الربع الأخير",
+      "year": "العام الماضي"
+    },
+    "signupsPerMonth": "عدد المشتركين الجدد شهرياً",
+    "stats": {
+      "escrowReleased": "تم تحرير الضمان",
+      "gmv": "GMV (نطاق)",
+      "newUsers": "مستخدمون جدد (نطاق)",
+      "orders": "الطلبات (النطاق)"
+    },
+    "userGrowth": "نمو المستخدمين",
+    "usersByRole": "المستخدمون حسب الدور"
+  },
+  "reviewsMod": {
+    "adminNote": "ملاحظة إدارية:",
+    "adminNoteLabel": "ملاحظة إدارية (اختيارية)",
+    "bodyPh": "هيئة المراجعة...",
+    "confirmDelete": "هل تريد حذف هذا التقييم نهائياً؟ لا يمكن التراجع عن هذا القرار.",
+    "delete": "يمسح",
+    "edit": "يحرر",
+    "editedBy": "تم التحرير بواسطة {{name}}",
+    "empty": "لا توجد تقييمات مطابقة لهذه المعايير.",
+    "hide": "يخفي",
+    "kind": {
+      "all": "الجميع",
+      "assignment": "تكليف",
+      "hire": "يؤجر",
+      "loaderjob": "وظيفة عامل تحميل",
+      "order": "طلب",
+      "trip": "رحلة"
+    },
+    "modalTitle": "تعديل المراجعة",
+    "noText": "لا توجد مراجعة مكتوبة.",
+    "notePh": "ملاحظة داخلية حول هذا الإشراف...",
+    "rating": "تصنيف",
+    "remove": "يزيل",
+    "reviewText": "نص المراجعة",
+    "save": "يحفظ",
+    "saving": "توفير…",
+    "searchPh": "ابحث عن النص أو المُقيِّم أو المُقيَّم...",
+    "starAria": "{{count}} نجوم",
+    "status": {
+      "all": "الجميع",
+      "hidden": "مختفي",
+      "removed": "تمت الإزالة",
+      "visible": "مرئي"
+    },
+    "subjectLine": "الموضوع {{kind}} {{id}}",
+    "title": "التقييمات",
+    "totalCount": "{{count}} إجمالي",
+    "unhide": "إظهار"
+  },
+  "roleReq": {
+    "approve": "يعتمد",
+    "colAction": "فعل",
+    "colNote": "ملحوظة",
+    "colRole": "الدور المطلوب",
+    "colStatus": "حالة",
+    "colUser": "مستخدم",
+    "confirmReject": "تأكيد الرفض",
+    "decided": "مقرر",
+    "filter": {
+      "all": "الجميع",
+      "approved": "موافقة",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض"
+    },
+    "liveApi": "واجهة برمجة التطبيقات المباشرة",
+    "none": "لا توجد طلبات أدوار.",
+    "reasonPlaceholder": "السبب (اختياري)",
+    "reject": "يرفض",
+    "sub": "يطلب المستخدمون لوحة تحكم إضافية. الموافقة تمنح الدور."
+  },
+  "sd": {
+    "allRoles": "الجميع",
+    "colAccount": "حساب",
+    "colBalance": "توازن",
+    "colLedger": "دفتر الأستاذ",
+    "colRole": "دور",
+    "inEscrow": "في حساب الضمان (الطلبات المدفوعة)",
+    "ledgerTitle": "دفتر حسابات المحفظة",
+    "sellerBalances": "أرصدة البائع",
+    "sub": "الرقابة المالية على مستوى الشركة - الضمانات والمحافظ والأرصدة.",
+    "totalOnPlatform": "إجمالي عدد الركاب على المنصة",
+    "txType": {
+      "escrow_hold": "إيداع الضمان",
+      "escrow_release": "تحرير حساب الضمان",
+      "payout": "دفع المبلغ",
+      "refund": "استرداد",
+      "topup": "أعلى"
+    },
+    "txnsCount": "المعاملات ({{count}})",
+    "wallets": "محافظ"
+  },
+  "support": {
+    "noTickets": "لا تذاكر",
+    "notePlaceholder": "أضف ملاحظة…",
+    "replyPlaceholder": "الرد على العميل...",
+    "searchPlaceholder": "المرجع، الطلب، المستخدم…",
+    "subtitle": "{{count}} تذاكر",
+    "title": "صندوق دعم العملاء"
+  },
+  "supportInbox": {
+    "actions": "الإجراءات",
+    "add": "يضيف",
+    "agentPh": "عامل…",
+    "assign": "تعيين",
+    "assignMe": "أسند إليّ",
+    "close": "يغلق",
+    "detailsHere": "تظهر تفاصيل التذكرة هنا.",
+    "escalate": "تصعيد الأمر",
+    "internalNote": "ملاحظة داخلية",
+    "order": "طلب",
+    "product": "منتج",
+    "rating": "التقييم: {{score}}/5",
+    "requester": "مقدم الطلب",
+    "resolve": "حل",
+    "safeDeal": "صفقة آمنة",
+    "selectTicket": "اختر تذكرة",
+    "waitingUser": "المستخدم المنتظر"
+  },
+  "team": {
+    "accessGranted": "تم منح الوصول ({{count}})",
+    "active": "نشيط",
+    "addStaff": "أضف أحد الموظفين",
+    "addStaffBtn": "إضافة عضو فريق عمل",
+    "adding": "إضافة…",
+    "clear": "واضح",
+    "close": "يغلق",
+    "createError": "تعذر إنشاء عضو فريق العمل.",
+    "deactivate": "إلغاء التفعيل",
+    "email": "بريد إلكتروني",
+    "inactive": "غير نشط",
+    "name": "اسم",
+    "needCapability": "أنت بحاجة إلى صلاحية إدارة الموظفين والصلاحيات لإدارة أعضاء الفريق.",
+    "noModules": "لم يتم منح أي وحدات دراسية",
+    "permissions": "الأذونات",
+    "reactivate": "إعادة التنشيط",
+    "remove": "يزيل",
+    "savePerms": "حفظ الأذونات",
+    "saving": "توفير…",
+    "selectAll": "حدد الكل",
+    "staffCount": "الموظفون ({{count}})",
+    "sub": "إدارة حسابات الموظفين الداخليين وصلاحيات الوصول الخاصة بهم لكل وحدة دراسية.",
+    "superFull": "مدير النظام — صلاحيات كاملة",
+    "tempPassword": "كلمة مرور مؤقتة (8 كلمات كحد أدنى)",
+    "you": "(أنت)"
+  },
+  "userDrawer": {
+    "accountActive": "الحساب نشط",
+    "actBuyOrders": "الطلبات (شراء)",
+    "actHiresReceived": "تم استلام التعيينات",
+    "actHiresSent": "تم إرسال التعيينات",
+    "actProducts": "منتجات",
+    "actSellOrders": "أوامر (بيع)",
+    "actTrips": "رحلات",
+    "actVehicles": "المركبات",
+    "actWorkers": "العمال",
+    "active": "نشيط",
+    "activity": "نشاط",
+    "addRole": "أضف دورًا…",
+    "adminOnly": "للمسؤولين فقط",
+    "contactEmail": "البريد الإلكتروني للتواصل",
+    "country": "دولة",
+    "dangerBody": "يؤدي ذلك إلى تعطيل الحساب (حذف مؤقت). لم يعد بإمكان المستخدم تسجيل الدخول.",
+    "dangerZone": "منطقة الخطر",
+    "deactivate": "إلغاء تنشيط الحساب",
+    "deleting": "جارٍ الحذف...",
+    "editDetails": "تعديل التفاصيل",
+    "email": "بريد إلكتروني",
+    "grant": "منحة",
+    "inactive": "غير نشط",
+    "kycStatus": "KYC الحالة",
+    "location": "موقع",
+    "market": "سوق",
+    "name": "اسم",
+    "phone": "هاتف",
+    "primary": "(أساسي)",
+    "privateContact": "اتصال خاص",
+    "revokeRole": "إلغاء الدور",
+    "roles": "الأدوار",
+    "saveChanges": "حفظ التغييرات",
+    "saving": "توفير…",
+    "title": "إدارة المستخدم",
+    "wallet": "محفظة",
+    "whatsapp": "واتساب"
+  },
+  "users": {
+    "filterAll": "الجميع",
+    "invite": "دعوة المستخدم",
+    "searchPlaceholder": "ابحث عن الاسم أو البريد الإلكتروني…",
+    "subtitle": "{{shown}} of {{total}} accounts",
+    "title": "المستخدمون",
+    "view": "منظر"
+  }
+}

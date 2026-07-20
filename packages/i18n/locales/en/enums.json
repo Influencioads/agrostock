@@ -1,0 +1,68 @@
+{
+  "role": {
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "transporter": "Transporter",
+    "loaderco": "Loader Co",
+    "worker": "Worker",
+    "admin": "Admin"
+  },
+  "kyc": {
+    "pending": "Pending",
+    "verified": "Verified",
+    "rejected": "Rejected"
+  },
+  "order_status": {
+    "quote": "Quote sent",
+    "processing": "Processing",
+    "paid": "Escrow held",
+    "shipped": "Shipped",
+    "in_transit": "In transit",
+    "delivered": "Delivered",
+    "dispute": "Dispute",
+    "cancelled": "Cancelled"
+  },
+  "support_category": {
+    "account_kyc": "Account & KYC",
+    "product_listing": "Product listing",
+    "buyer_order": "Buyer order issue",
+    "seller_order": "Seller order issue",
+    "payment_safedeal": "Payment / Safe Deal",
+    "wallet_payout": "Wallet / payout",
+    "auction_bid": "Auction / bid",
+    "transport": "Transport",
+    "loader": "Loader / worker",
+    "import_export": "Import / export",
+    "technical": "Technical issue",
+    "global_office": "Global office",
+    "other": "Other"
+  },
+  "support_status": {
+    "all": "All",
+    "new": "New",
+    "waiting_support": "Waiting for support",
+    "assigned": "Assigned",
+    "in_progress": "In progress",
+    "waiting_user": "Waiting for you",
+    "escalated": "Escalated",
+    "resolved": "Resolved",
+    "closed": "Closed"
+  },
+  "support_priority": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "hire_status": {
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "cancelled": "Cancelled"
+  },
+  "hire_target": {
+    "transporter": "Transporter",
+    "loaderco": "Loader Co",
+    "worker": "Worker"
+  }
+}

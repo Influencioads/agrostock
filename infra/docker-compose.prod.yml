@@ -1,0 +1,102 @@
+# AgroTraders — full production stack (backing services + all apps).
+# Build context is the repo root, so run from there:
+#   docker compose -f infra/docker-compose.prod.yml up -d --build
+#
+name: agrostock-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agrostock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrostock}
+      POSTGRES_DB: ${POSTGRES_DB:-agrostock}
+    ports:
+      # exposed on a non-default host port so you can seed/inspect the prod DB
+      - '5546:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-agrostock}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-agrostock}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-agrostock-secret}
+    volumes:
+      - minio_data:/data
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: production
+      API_PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agrostock}:${POSTGRES_PASSWORD:-agrostock}@postgres:5432/${POSTGRES_DB:-agrostock}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-me-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-agrostock}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-agrostock-secret}
+      S3_BUCKET: ${S3_BUCKET:-agrostock}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8090,http://localhost:8091}
+      UPLOAD_DIR: /repo/apps/api/uploads
+      PRIVATE_UPLOAD_DIR: /repo/apps/api/private-uploads
+    ports:
+      - '3000:3000'
+    volumes:
+      - api_uploads:/repo/apps/api/uploads
+      - api_private_uploads:/repo/apps/api/private-uploads
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+      args:
+        VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '8090:80'
+
+  admin:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.admin
+      args:
+        VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '8091:80'
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  api_uploads:
+  api_private_uploads:

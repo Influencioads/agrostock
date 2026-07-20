@@ -1,0 +1,26 @@
+{
+  "auctions": {
+    "already_ended": "Este leilão já terminou.",
+    "bid_race": "Outra oferta foi aceita primeiro — tente novamente com um valor maior.",
+    "bid_too_low": "Seu lance está abaixo do lance mais alto atual — tente um valor maior.",
+    "ended": "Este leilão terminou.",
+    "not_found": "Leilão não encontrado.",
+    "not_owner": "Este não é o seu leilão.",
+    "own_auction": "Você não pode dar lances no seu próprio leilão."
+  },
+  "auth": {
+    "account_missing": "Esta conta não existe mais.",
+    "email_taken": "Esse endereço de e-mail já está cadastrado.",
+    "invalid_credentials": "E-mail ou senha inválidos.",
+    "not_a_refresh_token": "Sua sessão expirou — faça login novamente.",
+    "refresh_invalid": "Sua sessão expirou — faça login novamente."
+  },
+  "net": {
+    "offline": "Não foi possível conectar ao servidor. A API está em execução?",
+    "rate_limited": "Muitas tentativas foram feitas — aguarde um minuto e tente novamente."
+  },
+  "unknown": "Algo deu errado. Por favor, tente novamente.",
+  "validation": {
+    "failed": "Por favor, verifique os campos destacados."
+  }
+}

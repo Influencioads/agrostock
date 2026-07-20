@@ -1,0 +1,16 @@
+{
+  "isArray": "Esto debe ser una lista.",
+  "isBoolean": "Esto debe ser verdadero o falso.",
+  "isEmail": "Introduce una dirección de correo electrónico válida.",
+  "isIn": "Elija uno de los valores permitidos.",
+  "isInt": "Introduzca un número entero.",
+  "isNotEmpty": "Este campo es obligatorio.",
+  "isNumber": "Introduce un número.",
+  "isString": "Esto debe ser texto.",
+  "isUrl": "Introduzca una URL válida.",
+  "max": "Debe ser como máximo {{constraint}}.",
+  "maxLength": "Debe tener como máximo {{constraint}} caracteres.",
+  "min": "Debe ser al menos {{constraint}}.",
+  "minLength": "Debe tener al menos {{constraint}} caracteres.",
+  "unknown": "Este valor no es válido."
+}

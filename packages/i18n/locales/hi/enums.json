@@ -1,0 +1,68 @@
+{
+  "hire_status": {
+    "accepted": "स्वीकृत",
+    "cancelled": "रद्द कर दिया गया",
+    "declined": "अस्वीकृत",
+    "pending": "लंबित"
+  },
+  "hire_target": {
+    "loaderco": "लोडर कंपनी",
+    "transporter": "ट्रांसपोर्टर",
+    "worker": "मज़दूर"
+  },
+  "kyc": {
+    "pending": "लंबित",
+    "rejected": "अस्वीकार कर दिया",
+    "verified": "सत्यापित"
+  },
+  "order_status": {
+    "cancelled": "रद्द कर दिया गया",
+    "delivered": "पहुंचा दिया",
+    "dispute": "विवाद",
+    "in_transit": "यात्रा में",
+    "paid": "एस्क्रो आयोजित",
+    "processing": "प्रसंस्करण",
+    "quote": "उद्धरण भेजा गया",
+    "shipped": "लादा गया"
+  },
+  "role": {
+    "admin": "व्यवस्थापक",
+    "buyer": "क्रेता",
+    "loaderco": "लोडर कंपनी",
+    "seller": "विक्रेता",
+    "transporter": "ट्रांसपोर्टर",
+    "worker": "मज़दूर"
+  },
+  "support_category": {
+    "account_kyc": "खाता और KYC",
+    "auction_bid": "नीलामी / बोली",
+    "buyer_order": "खरीदार के आदेश में समस्या",
+    "global_office": "वैश्विक कार्यालय",
+    "import_export": "आयात/निर्यात",
+    "loader": "लोडर / कार्यकर्ता",
+    "other": "अन्य",
+    "payment_safedeal": "भुगतान / सुरक्षित सौदा",
+    "product_listing": "उत्पाद सूची",
+    "seller_order": "विक्रेता आदेश संबंधी समस्या",
+    "technical": "तकनीकी समस्या",
+    "transport": "परिवहन",
+    "wallet_payout": "वॉलेट / भुगतान"
+  },
+  "support_priority": {
+    "high": "उच्च",
+    "low": "कम",
+    "medium": "मध्यम",
+    "urgent": "अति आवश्यक"
+  },
+  "support_status": {
+    "all": "सभी",
+    "assigned": "सौंपा गया",
+    "closed": "बंद किया हुआ",
+    "escalated": "तना हुआ",
+    "in_progress": "प्रगति पर है",
+    "new": "नया",
+    "resolved": "हल किया",
+    "waiting_support": "समर्थन की प्रतीक्षा है",
+    "waiting_user": "आपका इंतजार"
+  }
+}

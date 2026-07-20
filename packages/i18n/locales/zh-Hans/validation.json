@@ -1,0 +1,16 @@
+{
+  "isArray": "这一定是份清单。",
+  "isBoolean": "这必须是正确的或错误的。",
+  "isEmail": "请输入有效的电子邮件地址。",
+  "isIn": "请选择一个允许的值。",
+  "isInt": "请输入一个整数。",
+  "isNotEmpty": "此字段是必需的。",
+  "isNumber": "请输入一个数字。",
+  "isString": "这必须是文本。",
+  "isUrl": "请输入有效的网址。",
+  "max": "必须最多为{{constraint}}。",
+  "maxLength": "Must be at most {{constraint}} characters.",
+  "min": "必须至少为{{constraint}}。",
+  "minLength": "Must be at least {{constraint}} characters.",
+  "unknown": "此值无效。"
+}

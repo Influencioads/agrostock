@@ -1,0 +1,801 @@
+{
+  "account": {
+    "fallbackName": "プラットフォーム管理者",
+    "logOut": "ログアウト",
+    "staff": "スタッフ",
+    "superAdmin": "スーパー管理者"
+  },
+  "adsAdmin": {
+    "awaiting": "承認待ち",
+    "clicks": "{{count}}クリック",
+    "confirmReject": "確認して拒否する",
+    "filter": {
+      "all": "全て",
+      "approved": "承認された",
+      "pending": "保留中",
+      "rejected": "拒否されました"
+    },
+    "impressions": "印象（掲載セット）",
+    "listingFallback": "リスト",
+    "live": "ライブ",
+    "liveNow": "ライブ配信中",
+    "noneAwaiting": "審査待ちのキャンペーンはありません。",
+    "noneFilter": "{{filter}}キャンペーンはありません。",
+    "nothingHere": "ここには何もない",
+    "paused": "一時停止",
+    "pending": "保留中",
+    "perDaySubmitted": "{{amount}}/日 · 提出済み",
+    "queueCleared": "キューがクリアされました",
+    "reasonExample": "このカテゴリーには予算が高すぎる",
+    "reasonLabel": "理由：{{reason}}",
+    "reasonPlaceholder": "理由（販売者に提示）",
+    "rejected": "拒否されました",
+    "rejecting": "拒否します…",
+    "sellerFallback": "売り手",
+    "sub": "スポンサー付き掲載。承認済みで一時停止されていないキャンペーンがマーケットプレイス上で実行されます。",
+    "views": "{{count}}ビュー"
+  },
+  "apiBadge": {
+    "connecting": "接続中…",
+    "live": "ライブAPI",
+    "offline": "オフライン",
+    "offlineMock": "オフライン（模擬）"
+  },
+  "auctionsAdmin": {
+    "bidBook": "入札帳（{{count}}）",
+    "bidderFallback": "入札者",
+    "bidsCount": "{{count}} 入札",
+    "closeNow": "今すぐ閉じる",
+    "drawerTitle": "オークション",
+    "ends": "終了 {{date}}",
+    "high": "高{{amount}}",
+    "noBids": "まだ入札はありません。",
+    "none": "現在、オークションは開催されていません。",
+    "sub": "プラットフォーム上のすべてのオークション ― クリックして入札状況を確認できます。",
+    "void": "オークション無効"
+  },
+  "audit": {
+    "detail": "詳細",
+    "empty": "一致する監査記録はありません。",
+    "entityPh": "エンティティタイプ（ユーザー、注文など）",
+    "entriesCount": "{{count}}件",
+    "system": "システム"
+  },
+  "bell": {
+    "app": "アプリ",
+    "aria": "通知",
+    "ariaSettings": "設定",
+    "caughtUp": "すべて追いつきましたね。",
+    "mail": "郵便",
+    "markAllRead": "すべて既読にする",
+    "notifications": "通知",
+    "push": "押す",
+    "settings": "通知設定"
+  },
+  "bidsAdmin": {
+    "award": "賞",
+    "buyerLine": "購入者: {{name}}",
+    "cancelReq": "キャンセル要件",
+    "colActions": "行動",
+    "colBest": "最高",
+    "colBuyer": "買い手",
+    "colQty": "数量",
+    "colReq": "要件",
+    "colSellerBids": "売り手の入札",
+    "colStatus": "状態",
+    "drawerTitle": "購入者入札",
+    "noSellerBids": "出品者からの入札はまだありません。",
+    "none": "買い手の入札額に一致するものはありませんでした。",
+    "reqFallback": "要件",
+    "sellerBidsCount": "出品者の入札額（{{count}}）",
+    "sellerFallback": "売り手",
+    "status": {
+      "all": "全て",
+      "awarded": "受賞",
+      "cancelled": "キャンセル",
+      "closed": "閉店",
+      "open": "開ける",
+      "submitted": "提出済み"
+    },
+    "sub": "逆オークションとは、買い手が希望条件を提示し、売り手がそれを落札するために入札する仕組みです。",
+    "view": "ビュー"
+  },
+  "brand": {
+    "tagline": "指令センター"
+  },
+  "brandingAdmin": {
+    "assets": {
+      "appIcon": {
+        "hint": "モバイルランチャーアイコン用に512ピクセルのPNG画像として保存されます。",
+        "title": "アプリのアイコン"
+      },
+      "favicon": {
+        "hint": "ストアフロントとこのパネルのブラウザタブアイコン。180ピクセルのPNG画像として保存されています。",
+        "title": "ファビコン"
+      },
+      "logo": {
+        "hint": "サイトのヘッダー、フッター、およびこのサイドバーに表示されます。正方形が最適です。WebP形式で最大512ピクセルで保存してください。",
+        "title": "ロゴ"
+      }
+    },
+    "custom": "カスタム",
+    "default": "デフォルト",
+    "noteBody": "ランチャーアイコンとスプラッシュスクリーンはネイティブビルドに組み込まれています。ここにアップロードするとアートワークが保存され、Webサーフェスが更新されますが、モバイルアプリは、次のストアビルドがカットされた後にのみそれを認識します。",
+    "noteTitle": "アプリのアイコンがインストール済みのスマートフォンに表示されません。",
+    "replace": "交換する",
+    "reset": "初期設定に戻す",
+    "resetFailed": "リセットできませんでした",
+    "upload": "アップロード",
+    "uploadFailed": "アップロードに失敗しました"
+  },
+  "catAdmin": {
+    "addCategory": "カテゴリを追加",
+    "addSub": "サブ",
+    "catName": "カテゴリ名",
+    "collapse": "崩壊",
+    "confirmDeleteCat": "カテゴリ「{{name}}」を削除しますか？そのサブカテゴリも削除されます。",
+    "confirmDeleteSub": "サブカテゴリ「{{name}}」を削除しますか？",
+    "delete": "消去",
+    "deleteSub": "サブカテゴリを削除",
+    "edit": "編集",
+    "editSub": "サブカテゴリを編集する",
+    "emojiHint": "名前の横に絵文字が1つ表示されます。",
+    "emojiLabel": "絵文字（任意）",
+    "empty": "まだカテゴリがありません。最初のカテゴリを追加してください。",
+    "expand": "拡大する",
+    "modalAddCategory": "カテゴリを追加",
+    "modalAddSub": "{{name}}にサブカテゴリを追加する",
+    "modalEditCategory": "カテゴリを編集",
+    "modalEditSub": "サブカテゴリを編集する",
+    "phCat": "例：果物",
+    "phSub": "例：バスマティライス",
+    "productsCount": "{{count}}製品",
+    "save": "保存",
+    "saving": "保存中…",
+    "subName": "サブカテゴリ名",
+    "subStats": "{{subs}} サブカテゴリ · {{products}} 製品"
+  },
+  "cmsAdmin": {
+    "draft": "下書き",
+    "publish": "公開",
+    "published": "公開済み",
+    "sub": "公開サイトのコンテンツとランディングページを管理します。",
+    "unpublish": "非公開"
+  },
+  "communityMod": {
+    "action": "アクション",
+    "banAuthor": "バン・オーサー",
+    "createBtn": "チャンネルを作成する",
+    "createChannel": "公式チャンネルを作成する",
+    "creating": "作成…",
+    "default": "デフォルト",
+    "delete": "消去",
+    "dismiss": "却下する",
+    "fDescription": "説明",
+    "fEmoji": "絵文字",
+    "fName": "名前",
+    "glance": "コミュニティ概要",
+    "groupsCount": "グループ ({{count}})",
+    "inGroup": "{{name}}",
+    "metric": {
+      "groups": "グループ",
+      "messages": "メッセージ",
+      "openReports": "未解決の報告",
+      "posts": "投稿",
+      "requirements": "要件"
+    },
+    "noPosts": "投稿はありません。",
+    "noReports": "未解決の報告はありません🎉",
+    "pin": "ピン",
+    "pinned": "ピン留め",
+    "recentPosts": "最近の投稿",
+    "reported": "報告されたコンテンツ",
+    "reportedBy": "{{name}} によって報告されました · ターゲット {{id}}",
+    "tab": {
+      "analytics": "分析",
+      "feed": "餌",
+      "groups": "グループ",
+      "reports": "報道"
+    },
+    "unpin": "ピン留めを解除"
+  },
+  "companies": {
+    "approveListing": "掲載を承認する",
+    "colActions": "行動",
+    "colCompany": "会社",
+    "colListing": "リスト",
+    "crew": "乗組員 ({{count}})",
+    "detail": "会社概要",
+    "drivers": "ドライバー",
+    "fleet": "艦隊 ({{count}})",
+    "jobs": "求人情報",
+    "lanes": "レーン",
+    "lanesN": "レーン（{{count}}）",
+    "listed": "掲載",
+    "loadersSub": "すべての積込業者 ― 乗組員、チーム、仕事内容、料金表、および公開承認。",
+    "none": "該当する企業は見つかりませんでした。",
+    "rateCard": "料金表（{{count}}）",
+    "recentTrips": "最近の旅行（{{count}}）",
+    "searchPlaceholder": "企業検索…",
+    "tabCompanies": "企業",
+    "tabHires": "採用依頼",
+    "teams": "チーム",
+    "teamsN": "チーム（{{count}}）",
+    "transportSub": "すべての運送会社 ― 車両、輸送ルート、運行状況、および上場承認。",
+    "trips": "旅行",
+    "unlist": "リストから削除",
+    "unlisted": "非公開",
+    "vehicles": "車両",
+    "workers": "労働者"
+  },
+  "disputes": {
+    "allSmooth": "すべての注文は順調に処理されています。",
+    "amount": "金額 {{amount}}",
+    "badge": "紛争",
+    "none": "未解決の紛争はありません",
+    "orderRef": "注文番号{{ref}}",
+    "refund": "返金購入者",
+    "release": "売主への引き渡し",
+    "sub_other": "{{count}} 未解決の紛争"
+  },
+  "genericError": "エラーが発生しました。もう一度お試しください。",
+  "header": {
+    "fallbackTitle": "管理者",
+    "searchPlaceholder": "ユーザー、注文、商品などを検索…"
+  },
+  "hires": {
+    "empty": "採用依頼はまだありません。",
+    "subtitle": "{{count}} 直接雇用依頼 — 承認されたものは、出張または荷積み作業の仕事に変わります。",
+    "title": "採用業務"
+  },
+  "invoicesAdmin": {
+    "colActions": "行動",
+    "colFromTo": "出発地 → 目的地",
+    "colIssued": "発行済み",
+    "colKind": "親切",
+    "colNumber": "番号",
+    "colStatus": "状態",
+    "colTotal": "合計",
+    "empty": "該当する請求書がありません。",
+    "markPaid": "マークが支払った",
+    "pdf": "PDF",
+    "searchPh": "番号、発行者または受取人…",
+    "status": {
+      "all": "全て",
+      "draft": "下書き",
+      "issued": "発行済み",
+      "paid": "支払い済み",
+      "void": "空所"
+    },
+    "void": "空所"
+  },
+  "kycAdmin": {
+    "all": "全て",
+    "allReviewed": "提出された作品は全て審査済みです。素晴らしい作品ばかりです。",
+    "approve": "承認する",
+    "confirmReject": "確認して拒否する",
+    "daysAgo": "{{count}}日前",
+    "docs": "ドキュメント",
+    "docsCount": "{{count}} ドキュメント",
+    "hoursAgo": "{{count}}時間前",
+    "justNow": "ちょうど今",
+    "noDocs": "まだ書類はアップロードされていません。",
+    "noneFilter": "{{filter}}件の投稿はありません。",
+    "nothingHere": "ここには何もない",
+    "queueCleared": "キューがクリアされました",
+    "reject": "拒否する",
+    "rejectPh": "不採用理由（任意）",
+    "view": "ビュー"
+  },
+  "kycDocs": {
+    "title": "KYC ドキュメント"
+  },
+  "login": {
+    "adminOnly": "このコンソールは管理者専用です。",
+    "commandCentre": "指令センター",
+    "demo": "デモ：admin@agrotraders.org · password123",
+    "email": "メール",
+    "invalid": "認証情報が無効です。",
+    "password": "パスワード",
+    "signingIn": "ログイン中…",
+    "title": "管理者ログイン"
+  },
+  "marketsAdmin": {
+    "active": "アクティブ",
+    "addMarket": "マーケットを追加",
+    "approve": "承認する",
+    "awaiting": "{{count}} レビュー待ち",
+    "edit": "編集",
+    "editMarket": "マーケットを編集する",
+    "fCity": "市",
+    "fCountry": "国",
+    "fFlag": "国旗の絵文字",
+    "fName": "名前",
+    "fRegion": "地域",
+    "hidden": "隠れた",
+    "hide": "隠れる",
+    "pending": "保留中",
+    "phCity": "デリー",
+    "phCountry": "🇮🇳 インド",
+    "phFlag": "🇮🇳",
+    "phName": "アザドプール・マンディ",
+    "phRegion": "南アジア",
+    "proposals": "売り手からの提案",
+    "proposedBy": "{{name}}によって提案されました",
+    "reject": "拒否する",
+    "rejected": "拒否されました",
+    "save": "保存",
+    "saveError": "市場を救うことはできなかった ― 現場の状況を確認してください。",
+    "show": "見せる"
+  },
+  "nav": {
+    "ads": "広告",
+    "auctions": "オークション",
+    "audit": "監査ログ",
+    "bids": "購入者の入札",
+    "branding": "ブランディング",
+    "categories": "カテゴリー",
+    "cms": "CMS",
+    "community": "コミュニティ",
+    "disputes": "紛争",
+    "invoices": "請求書",
+    "kyc": "KYC レビュー",
+    "loaders": "ローダー",
+    "markets": "市場",
+    "offices": "オフィス",
+    "orders": "注文",
+    "overview": "概要",
+    "payments": "支払い",
+    "products": "製品",
+    "reports": "報告書",
+    "reviews": "レビュー",
+    "roleRequests": "役割リクエスト",
+    "safedeal": "セーフディール",
+    "support": "サポート受信箱",
+    "team": "チーム",
+    "transport": "輸送",
+    "users": "ユーザー"
+  },
+  "navGroup": {
+    "Company": "会社",
+    "Finance": "ファイナンス",
+    "Logistics": "ロジスティクス",
+    "Marketplace": "市場",
+    "Messaging": "メッセージング",
+    "Platform": "プラットフォーム"
+  },
+  "officesAdmin": {
+    "addOffice": "オフィスを追加",
+    "delete": "消去",
+    "edit": "編集",
+    "fCity": "市",
+    "fFlag": "旗（絵文字）",
+    "fLanguages": "言語",
+    "fManager": "マネージャー",
+    "fName": "名前",
+    "fStaff": "スタッフ",
+    "fTimezone": "タイムゾーン",
+    "fType": "タイプ",
+    "save": "オフィスを保存",
+    "saving": "保存中…"
+  },
+  "orders": {
+    "details": "詳細",
+    "subtitle": "{{count}} 最近の注文 · Safe-Deal 監視対象",
+    "title": "注文"
+  },
+  "ordersAdmin": {
+    "all": "全て",
+    "amount": "額",
+    "apply": "適用する",
+    "buyer": "買い手",
+    "orderTitle": "注文番号{{ref}}",
+    "override": "オーバーライドステータス",
+    "product": "製品",
+    "searchPh": "検索参照/購入者/販売者…",
+    "selectStatus": "ステータスを選択してください…",
+    "seller": "売り手",
+    "status": "状態",
+    "timeline": "タイムライン（{{count}}）"
+  },
+  "overview": {
+    "approvalQueue": "承認待ち行列",
+    "gmv": "総商品取引額",
+    "lastMonths": "過去 {{count}}ヶ月",
+    "noRecent": "最近活動はありません。",
+    "noSettledYet": "まだ確定した注文はありません。",
+    "nothingAwaiting": "レビュー待ちの案件はありません🎉",
+    "perMonthSettled": "月額$ · 決済済み注文",
+    "queue": {
+      "ads": "広告キャンペーン",
+      "kyc": "KYC件の投稿",
+      "markets": "市場提案",
+      "payouts": "支払い請求",
+      "products": "承認待ちの製品",
+      "roleRequests": "役割リクエスト"
+    },
+    "recentActivity": "最近の管理者アクティビティ",
+    "review": "レビュー",
+    "reviewQueue": "レビューキュー",
+    "stats": {
+      "disputes": "未解決の紛争",
+      "orders": "注文",
+      "products": "製品",
+      "users": "総ユーザー数"
+    },
+    "system": "システム",
+    "viewReports": "レポートを表示する"
+  },
+  "page": {
+    "audit": {
+      "subtitle": "管理者の操作の不変の記録",
+      "title": "監査ログ"
+    },
+    "branding": {
+      "subtitle": "ロゴ、アプリのアイコン、ファビコン。ロゴとファビコンの変更は即座に反映されます。",
+      "title": "ブランディング"
+    },
+    "categories": {
+      "subtitle": "{{categories}} カテゴリ · {{subcategories}} サブカテゴリ",
+      "title": "カテゴリー"
+    },
+    "community": {
+      "subtitle": "AgroTraders コミュニティ — レポート、グループ、アクティビティ",
+      "title": "コミュニティモデレーション"
+    },
+    "disputes": {
+      "subtitle": "{{count}}件 · エスクロー保護",
+      "title": "紛争"
+    },
+    "invoices": {
+      "title": "請求書"
+    },
+    "kyc": {
+      "subtitle": "{{count}} 保留中",
+      "title": "KYC レビュー"
+    },
+    "loaderWorkforce": {
+      "title": "ローダー作業員"
+    },
+    "markets": {
+      "subtitle": "{{count}} 取引市場 — 売り手は自身を登録し、買い手はこれらによって絞り込みます。",
+      "title": "市場"
+    },
+    "offices": {
+      "subtitle": "{{count}} オフィス",
+      "title": "グローバルオフィス"
+    },
+    "overview": {
+      "subtitle": "AgroTraders · ライブマーケットプレイスヘルス",
+      "title": "プラットフォーム概要"
+    },
+    "payments": {
+      "subtitle": "AgroTraders · ウォレット残高と取引履歴",
+      "title": "支払いと払い戻し"
+    },
+    "products": {
+      "subtitle": "{{count}}件の出品が審査待ちです",
+      "title": "製品承認"
+    },
+    "reports": {
+      "subtitle": "AgroTraders · ヘッドラインプラットフォーム指標",
+      "title": "レポートと分析"
+    },
+    "reviews": {
+      "subtitle": "注文、旅行、仕事に関する適度な双方向レビュー",
+      "title": "レビューと評価"
+    },
+    "transport": {
+      "title": "輸送業務"
+    }
+  },
+  "payments": {
+    "addMoney": "ウォレットにお金を追加する",
+    "adjust": "調整する",
+    "amountUsd": "金額（ドル）",
+    "apply": "適用する",
+    "applying": "適用中…",
+    "balance": "バランス {{amount}}",
+    "creditRefund": "クレジット（返金）",
+    "creditTopup": "クレジット（チャージ）",
+    "debitPayout": "デビット（支払い）",
+    "debitWithdraw": "デビット（引き出し）",
+    "exportCsv": "エクスポート CSV",
+    "exportPdf": "エクスポート PDF",
+    "exporting": "輸出中…",
+    "noMatches": "一致する項目はありません。",
+    "noPending": "保留中の支払い請求はありません。",
+    "noTxns": "この範囲での取引はありません。",
+    "payoutRequests": "支払い請求",
+    "pendingCount": "{{count}} 保留中",
+    "preset": {
+      "month": "月",
+      "today": "今日",
+      "week": "週"
+    },
+    "recentTxns": "最近の取引",
+    "requested": "リクエスト {{date}}",
+    "searchUser": "ユーザーを名前またはメールアドレスで検索する…",
+    "shownCount": "{{count}}が表示されました",
+    "stats": {
+      "escrowReleased": "エスクロー解除",
+      "payouts": "支払い",
+      "totalBalance": "ウォレットの合計残高",
+      "wallets": "財布"
+    }
+  },
+  "perm": {
+    "ads_moderate": "広告",
+    "auctions_manage": "オークション",
+    "audit_view": "監査ログ",
+    "bids_manage": "購入者の入札",
+    "branding_manage": "ブランディング",
+    "cms_manage": "CMSページ",
+    "community_moderate": "コミュニティ",
+    "disputes_manage": "紛争",
+    "finance_manage": "金融（ウォレット／決済）",
+    "kyc_review": "KYC レビュー",
+    "loaders_manage": "ローダー",
+    "markets_manage": "市場",
+    "offices_manage": "オフィス",
+    "orders_manage": "注文",
+    "products_moderate": "製品とカテゴリー",
+    "reports_view": "報告書",
+    "reviews_moderate": "レビューと評価",
+    "role_requests": "役割リクエスト",
+    "staff_manage": "スタッフと権限（スーパー管理者）",
+    "support_agent": "サポート",
+    "transport_manage": "輸送",
+    "users_manage": "ユーザー"
+  },
+  "placeholder": {
+    "body": "このモジュールは、レイアウト、テーブル、コンポーネントを共有しています。バックエンドの各フェーズが実装されるにつれて、ライブデータへの接続作業が継続されます。",
+    "docs": "ドキュメントを表示"
+  },
+  "prodMod": {
+    "allTypes": "全種類",
+    "approve": "承認する",
+    "colActions": "行動",
+    "colCategory": "カテゴリ",
+    "colPrice": "価格",
+    "colProduct": "製品",
+    "colSeller": "売り手",
+    "colStatus": "状態",
+    "confirm": "確認する",
+    "edit": "編集",
+    "fName": "名前",
+    "fPrice": "価格",
+    "fQty": "数量",
+    "none": "一致する商品はありません。",
+    "reasonPlaceholder": "理由（任意）",
+    "reject": "拒否する",
+    "save": "保存",
+    "searchPlaceholder": "商品を検索…",
+    "status": {
+      "all": "全て",
+      "hidden": "隠れた",
+      "live": "ライブ",
+      "pending": "保留中",
+      "rejected": "拒否されました"
+    },
+    "sub": "カタログを管理する ― 掲載情報の承認、却下、編集、または削除を行う。",
+    "tagAuction": "オークション",
+    "tagOffer": "オファー",
+    "takedown": "降ろす",
+    "type": {
+      "auction": "オークション",
+      "offer": "オファー",
+      "safedeal": "セーフディール"
+    }
+  },
+  "range": {
+    "allTime": "歴代",
+    "from": "から",
+    "to": "に"
+  },
+  "reports": {
+    "exportCsv": "エクスポート CSV",
+    "months12": "12ヶ月",
+    "noSettled": "確定した注文はありません。",
+    "noSignups": "該当エリア内に登録可能なアカウントはありません。",
+    "orderVolume": "注文量",
+    "ordersByStatus": "ステータスによる注文",
+    "perMonthSettled": "月額$ · 決済済み注文",
+    "preset": {
+      "month": "先月",
+      "quarter": "前四半期",
+      "year": "去年"
+    },
+    "signupsPerMonth": "月間新規登録者数",
+    "stats": {
+      "escrowReleased": "エスクロー解除",
+      "gmv": "GMV（範囲）",
+      "newUsers": "新規ユーザー（範囲）",
+      "orders": "注文数（範囲）"
+    },
+    "userGrowth": "ユーザー数の増加",
+    "usersByRole": "ユーザー（役割別）"
+  },
+  "reviewsMod": {
+    "adminNote": "管理者メモ：",
+    "adminNoteLabel": "管理者メモ（任意）",
+    "bodyPh": "審査機関…",
+    "confirmDelete": "このレビューを完全に削除しますか？この操作は元に戻せません。",
+    "delete": "消去",
+    "edit": "編集",
+    "editedBy": "{{name}} によって編集されました",
+    "empty": "これらのフィルターに一致するレビューはありません。",
+    "hide": "隠れる",
+    "kind": {
+      "all": "全て",
+      "assignment": "割り当て",
+      "hire": "雇う",
+      "loaderjob": "ローダージョブ",
+      "order": "注文",
+      "trip": "旅行"
+    },
+    "modalTitle": "レビューを編集する",
+    "noText": "レビューは書かれていません。",
+    "notePh": "このモデレーションに関する内部メモ…",
+    "rating": "評価",
+    "remove": "取り除く",
+    "reviewText": "レビューテキスト",
+    "save": "保存",
+    "saving": "保存中…",
+    "searchPh": "テキスト、評価者、またはレビュー対象者を検索…",
+    "starAria": "{{count}}星",
+    "status": {
+      "all": "全て",
+      "hidden": "隠れた",
+      "removed": "削除済み",
+      "visible": "見える"
+    },
+    "subjectLine": "主題 {{kind}} {{id}}",
+    "title": "レビュー",
+    "totalCount": "{{count}} 合計",
+    "unhide": "非表示を解除"
+  },
+  "roleReq": {
+    "approve": "承認する",
+    "colAction": "アクション",
+    "colNote": "注記",
+    "colRole": "希望する役割",
+    "colStatus": "状態",
+    "colUser": "ユーザー",
+    "confirmReject": "確認して拒否する",
+    "decided": "決めた",
+    "filter": {
+      "all": "全て",
+      "approved": "承認された",
+      "pending": "保留中",
+      "rejected": "拒否されました"
+    },
+    "liveApi": "ライブAPI",
+    "none": "役割リクエストは受け付けていません。",
+    "reasonPlaceholder": "理由（任意）",
+    "reject": "拒否する",
+    "sub": "追加のダッシュボードをリクエストしているユーザー。承認すると、そのロールが付与されます。"
+  },
+  "sd": {
+    "allRoles": "全て",
+    "colAccount": "アカウント",
+    "colBalance": "バランス",
+    "colLedger": "元帳",
+    "colRole": "役割",
+    "inEscrow": "エスクロー（支払い済み注文）",
+    "ledgerTitle": "ウォレット台帳",
+    "sellerBalances": "売主残高",
+    "sub": "会社全体の財務管理 ― エスクロー、ウォレット、残高。",
+    "totalOnPlatform": "プラットフォーム上の合計",
+    "txType": {
+      "escrow_hold": "エスクロー保留",
+      "escrow_release": "エスクロー解除",
+      "payout": "支払い",
+      "refund": "返金",
+      "topup": "チャージ"
+    },
+    "txnsCount": "取引 ({{count}})",
+    "wallets": "財布"
+  },
+  "support": {
+    "noTickets": "チケットなし",
+    "notePlaceholder": "メモを追加…",
+    "replyPlaceholder": "お客様への返信…",
+    "searchPlaceholder": "参照、注文、ユーザー…",
+    "subtitle": "{{count}} チケット",
+    "title": "サポート受信箱"
+  },
+  "supportInbox": {
+    "actions": "行動",
+    "add": "追加",
+    "agentPh": "エージェント…",
+    "assign": "割り当てる",
+    "assignMe": "私に割り当ててください",
+    "close": "近い",
+    "detailsHere": "チケットの詳細はここに表示されます。",
+    "escalate": "エスカレート",
+    "internalNote": "内部メモ",
+    "order": "注文",
+    "product": "製品",
+    "rating": "評価：{{score}}/5",
+    "requester": "依頼者",
+    "resolve": "解決する",
+    "safeDeal": "セーフディール",
+    "selectTicket": "チケットを選択してください",
+    "waitingUser": "待機中のユーザー"
+  },
+  "team": {
+    "accessGranted": "アクセス（{{count}} 許可）",
+    "active": "アクティブ",
+    "addStaff": "スタッフを追加する",
+    "addStaffBtn": "スタッフメンバーを追加する",
+    "adding": "追加…",
+    "clear": "クリア",
+    "close": "近い",
+    "createError": "スタッフメンバーを作成できませんでした。",
+    "deactivate": "無効化",
+    "email": "メール",
+    "inactive": "非アクティブ",
+    "name": "名前",
+    "needCapability": "チームメンバーを管理するには、スタッフと権限の管理機能が必要です。",
+    "noModules": "モジュールは付与されていません",
+    "permissions": "権限",
+    "reactivate": "再アクティブ化",
+    "remove": "取り除く",
+    "savePerms": "保存権限",
+    "saving": "保存中…",
+    "selectAll": "すべて選択",
+    "staffCount": "スタッフ（{{count}}）",
+    "sub": "社内スタッフのアカウントと、モジュールごとのアクセス権限を管理します。",
+    "superFull": "スーパー管理者 - フルアクセス",
+    "tempPassword": "一時パスワード（8文字以上）",
+    "you": "（あなた）"
+  },
+  "userDrawer": {
+    "accountActive": "アカウントが有効です",
+    "actBuyOrders": "注文（購入）",
+    "actHiresReceived": "採用された",
+    "actHiresSent": "採用担当者が送信されました",
+    "actProducts": "製品",
+    "actSellOrders": "注文（売り）",
+    "actTrips": "旅行",
+    "actVehicles": "車両",
+    "actWorkers": "労働者",
+    "active": "アクティブ",
+    "activity": "活動",
+    "addRole": "役割を追加する…",
+    "adminOnly": "管理者専用",
+    "contactEmail": "お問い合わせメール",
+    "country": "国",
+    "dangerBody": "アカウントを無効化します（ソフト削除）。ユーザーはログインできなくなります。",
+    "dangerZone": "危険区域",
+    "deactivate": "アカウントを無効にする",
+    "deleting": "削除中…",
+    "editDetails": "詳細を編集",
+    "email": "メール",
+    "grant": "付与",
+    "inactive": "非アクティブ",
+    "kycStatus": "KYC ステータス",
+    "location": "位置",
+    "market": "市場",
+    "name": "名前",
+    "phone": "電話",
+    "primary": "（主要な）",
+    "privateContact": "プライベートコンタクト",
+    "revokeRole": "役割を取り消す",
+    "roles": "役割",
+    "saveChanges": "変更を保存する",
+    "saving": "保存中…",
+    "title": "ユーザーを管理する",
+    "wallet": "財布",
+    "whatsapp": "WhatsApp"
+  },
+  "users": {
+    "filterAll": "全て",
+    "invite": "ユーザーを招待する",
+    "searchPlaceholder": "名前またはメールアドレスで検索…",
+    "subtitle": "{{shown}} / {{total}} アカウント",
+    "title": "ユーザー",
+    "view": "ビュー"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "auctions": {
+    "already_ended": "本次拍卖已结束。",
+    "bid_race": "另一个出价抢先了——请尝试提高出价。",
+    "bid_too_low": "您的出价低于当前最高出价——请尝试更高的金额。",
+    "ended": "本次拍卖已结束。",
+    "not_found": "未找到拍卖信息。",
+    "not_owner": "这不是你的拍卖。",
+    "own_auction": "你不能参与自己拍卖的商品竞拍。"
+  },
+  "auth": {
+    "account_missing": "此账户已不存在。",
+    "email_taken": "该邮箱地址已被注册。",
+    "invalid_credentials": "邮箱或密码无效。",
+    "not_a_refresh_token": "您的会话已过期，请重新登录。",
+    "refresh_invalid": "您的会话已过期，请重新登录。"
+  },
+  "net": {
+    "offline": "无法连接到服务器。API 是否正在运行？",
+    "rate_limited": "尝试次数过多——请稍等片刻再试。"
+  },
+  "unknown": "出错了，请重试。",
+  "validation": {
+    "failed": "请查看高亮显示的字段。"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@agrotraders/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared tooling config: Tailwind preset + tsconfig bases.",
+  "main": "tailwind-preset.cjs",
+  "files": ["tailwind-preset.cjs", "tsconfig.base.json", "tsconfig.react.json", "tsconfig.node.json"],
+  "dependencies": {
+    "@agrotraders/tokens": "workspace:*"
+  },
+  "scripts": {
+    "lint": "echo \"(config) no lint\"",
+    "typecheck": "echo \"(config) no typecheck\""
+  }
+}

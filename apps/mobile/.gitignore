@@ -1,0 +1,5 @@
+# Firebase native config — contains project API keys. Kept out of committed source.
+# For local builds these sit at the paths referenced by app.config.js; for EAS cloud
+# builds they are injected as file secrets (see app.config.js for the commands).
+google-services.json
+GoogleService-Info.plist

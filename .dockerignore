@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/build
+**/.turbo
+**/.vite
+**/.expo
+**/*.tsbuildinfo
+.git
+.github
+**/.env
+**/.env.*
+!**/.env.example
+apps/api/uploads
+apps/api/private-uploads
+infra/volumes
+design
+**/coverage

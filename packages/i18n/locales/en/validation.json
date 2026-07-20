@@ -1,0 +1,16 @@
+{
+  "unknown": "This value is not valid.",
+  "isNotEmpty": "This field is required.",
+  "isString": "This must be text.",
+  "isEmail": "Enter a valid email address.",
+  "isInt": "Enter a whole number.",
+  "isNumber": "Enter a number.",
+  "isBoolean": "This must be true or false.",
+  "isArray": "This must be a list.",
+  "isUrl": "Enter a valid URL.",
+  "isIn": "Choose one of the allowed values.",
+  "min": "Must be at least {{constraint}}.",
+  "max": "Must be at most {{constraint}}.",
+  "minLength": "Must be at least {{constraint}} characters.",
+  "maxLength": "Must be at most {{constraint}} characters."
+}

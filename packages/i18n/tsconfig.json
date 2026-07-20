@@ -1,0 +1,8 @@
+{
+  "extends": "@agrotraders/config/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "moduleResolution": "Bundler"
+  },
+  "include": ["src"]
+}

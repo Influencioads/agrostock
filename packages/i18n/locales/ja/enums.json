@@ -1,0 +1,68 @@
+{
+  "hire_status": {
+    "accepted": "承認済み",
+    "cancelled": "キャンセル",
+    "declined": "拒否しました",
+    "pending": "保留中"
+  },
+  "hire_target": {
+    "loaderco": "ローダー社",
+    "transporter": "輸送業者",
+    "worker": "ワーカー"
+  },
+  "kyc": {
+    "pending": "保留中",
+    "rejected": "拒否されました",
+    "verified": "検証済み"
+  },
+  "order_status": {
+    "cancelled": "キャンセル",
+    "delivered": "配達済み",
+    "dispute": "紛争",
+    "in_transit": "輸送中",
+    "paid": "エスクロー保管",
+    "processing": "処理",
+    "quote": "見積もりを送信しました",
+    "shipped": "発送済み"
+  },
+  "role": {
+    "admin": "管理者",
+    "buyer": "買い手",
+    "loaderco": "ローダー社",
+    "seller": "売り手",
+    "transporter": "輸送業者",
+    "worker": "ワーカー"
+  },
+  "support_category": {
+    "account_kyc": "アカウントとKYC",
+    "auction_bid": "オークション／入札",
+    "buyer_order": "購入者注文の問題",
+    "global_office": "グローバルオフィス",
+    "import_export": "輸入／輸出",
+    "loader": "ローダー／作業員",
+    "other": "他の",
+    "payment_safedeal": "支払い／安全な取引",
+    "product_listing": "商品一覧",
+    "seller_order": "販売者注文の問題",
+    "technical": "技術的な問題",
+    "transport": "輸送",
+    "wallet_payout": "ウォレット／支払い"
+  },
+  "support_priority": {
+    "high": "高い",
+    "low": "低い",
+    "medium": "中くらい",
+    "urgent": "緊急"
+  },
+  "support_status": {
+    "all": "全て",
+    "assigned": "割り当てられた",
+    "closed": "閉店",
+    "escalated": "エスカレーション",
+    "in_progress": "進行中",
+    "new": "新しい",
+    "resolved": "解決済み",
+    "waiting_support": "サポート待ち",
+    "waiting_user": "あなたを待っています"
+  }
+}
