@@ -1902,12 +1902,15 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Drop an uploaded asset so the app falls back to its built-in default. */
       clearBranding: (kind: BrandAssetKind) => patch<ApiBranding>('/admin/branding', { clear: kind }),
       users: (role?: string, search?: string) => get<ApiUser[]>('/admin/users', { role, search }),
+      createUser: (body: { name: string; email: string; password: string; role?: string; country?: string; active?: boolean }) =>
+        post<ApiUser>('/admin/users', body),
       user: (id: string) =>
         get<ApiUser & { profile: ApiPrivateProfile | null; wallet: { balanceCents: number } | null; _count: Record<string, number> }>(
           `/admin/users/${id}`,
         ),
       updateUser: (id: string, body: { name?: string; email?: string; country?: string; active?: boolean }) =>
         patch<ApiUser>(`/admin/users/${id}`, body),
+      resetUserPassword: (id: string, password: string) => patch<ApiUser>(`/admin/users/${id}/password`, { password }),
       grantUserRole: (id: string, role: string) => post<ApiUser>(`/admin/users/${id}/roles`, { role }),
       revokeUserRole: (id: string, role: string) => del<ApiUser>(`/admin/users/${id}/roles/${role}`),
       setUserKyc: (id: string, status: 'pending' | 'verified' | 'rejected') =>

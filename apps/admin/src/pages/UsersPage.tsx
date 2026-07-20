@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Avatar, Badge, Button, Card, Icon, type BadgeTone } from '@agrotraders/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Avatar, Badge, Button, Card, Icon, Input, type BadgeTone } from '@agrotraders/ui';
 import { PageHeader } from '../components/widgets';
 import { type UserRow } from '../mock/data';
 import { api } from '../lib/api';
@@ -9,15 +9,19 @@ import { useI18n } from '../i18n';
 import { useFormat } from '../lib/useFormat';
 
 /** Enum tokens, not labels — filtering compares tokens so it survives translation. */
-const ROLE_FILTERS = ['all', 'buyer', 'seller', 'transporter', 'loaderco'];
+const ROLE_FILTERS = ['all', 'buyer', 'seller', 'transporter', 'loaderco', 'worker', 'admin'];
+const CREATE_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'] as const;
 const kycTone: Record<string, BadgeTone> = { verified: 'green', pending: 'warn', rejected: 'error' };
 
 export function UsersPage() {
   const { t, lang } = useI18n();
   const fmt = useFormat();
+  const qc = useQueryClient();
   const [role, setRole] = useState('all');
   const [q, setQ] = useState('');
   const [viewing, setViewing] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'buyer', country: '', active: true });
+  const [createError, setCreateError] = useState('');
 
   const { data: users = [] } = useQuery<UserRow[]>({
     queryKey: ['admin-users', lang],
@@ -34,11 +38,33 @@ export function UsersPage() {
     retry: 1,
   });
 
+  const create = useMutation({
+    mutationFn: () =>
+      api.admin.createUser({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        country: form.country || undefined,
+        active: form.active,
+      }),
+    onSuccess: () => {
+      setForm({ name: '', email: '', password: '', role: 'buyer', country: '', active: true });
+      setCreateError('');
+      void qc.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      setCreateError(Array.isArray(msg) ? msg.join(', ') : msg || t('users.createError'));
+    },
+  });
+
   const filtered = users.filter(
     (u) =>
       (role === 'all' || u.role === role) &&
       (q === '' || u.name.toLowerCase().includes(q.toLowerCase()) || u.email.includes(q.toLowerCase())),
   );
+  const canCreate = Boolean(form.name.trim() && form.email.trim() && form.password.length >= 8);
 
   return (
     <div>
@@ -47,6 +73,55 @@ export function UsersPage() {
         subtitle={t('users.subtitle', { shown: filtered.length, total: users.length })}
         action={<Badge tone="green">{t('apiBadge.live')}</Badge>}
       />
+
+      <Card className="mb-5">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-48 flex-1">
+            <Input label={t('users.createName')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </div>
+          <div className="min-w-56 flex-1">
+            <Input label={t('users.createEmail')} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div className="min-w-44 flex-1">
+            <Input
+              label={t('users.createPassword')}
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+          </div>
+          <label className="min-w-36 text-sm font-semibold text-ink">
+            {t('users.createRole')}
+            <select
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              className="mt-1 h-10 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none"
+            >
+              {CREATE_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {t(`enums:role.${r}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="min-w-36 flex-1">
+            <Input label={t('users.createCountry')} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+          </div>
+          <label className="flex h-10 items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+              className="h-4 w-4 rounded border-surface-border text-brand-leaf"
+            />
+            {t('users.createActive')}
+          </label>
+          <Button disabled={!canCreate || create.isPending} onClick={() => create.mutate()}>
+            {create.isPending ? t('users.creating') : t('users.createUser')}
+          </Button>
+        </div>
+        {createError && <p className="mt-2 text-sm font-semibold text-status-error">{createError}</p>}
+      </Card>
 
       <Card padded={false}>
         <div className="flex flex-wrap items-center gap-3 border-b border-surface-border p-4">

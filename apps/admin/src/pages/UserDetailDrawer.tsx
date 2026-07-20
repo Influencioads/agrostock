@@ -22,6 +22,8 @@ export function UserDetailDrawer({ userId, onClose }: { userId: string; onClose:
 
   const [form, setForm] = useState({ name: '', email: '', country: '', active: true });
   const [addRole, setAddRole] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     if (u) setForm({ name: u.name, email: u.email, country: u.country ?? '', active: u.active !== false });
@@ -35,6 +37,18 @@ export function UserDetailDrawer({ userId, onClose }: { userId: string; onClose:
   const save = useMutation({
     mutationFn: () => api.admin.updateUser(userId, form),
     onSuccess: invalidate,
+  });
+  const resetPassword = useMutation({
+    mutationFn: () => api.admin.resetUserPassword(userId, password),
+    onSuccess: () => {
+      setPassword('');
+      setPasswordError('');
+      invalidate();
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      setPasswordError(Array.isArray(msg) ? msg.join(', ') : msg || t('userDrawer.passwordError'));
+    },
   });
   const grant = useMutation({
     mutationFn: (role: string) => api.admin.grantUserRole(userId, role),
@@ -109,6 +123,28 @@ export function UserDetailDrawer({ userId, onClose }: { userId: string; onClose:
               </div>
               <Button className="mt-3" disabled={save.isPending} onClick={() => save.mutate()}>
                 {save.isPending ? t('userDrawer.saving') : t('userDrawer.saveChanges')}
+              </Button>
+            </Card>
+
+            <Card>
+              <h3 className="mb-3 font-display font-bold text-ink">{t('userDrawer.passwordTitle')}</h3>
+              <Input
+                label={t('userDrawer.newPassword')}
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError('');
+                }}
+              />
+              {passwordError && <p className="mt-2 text-xs font-semibold text-status-error">{passwordError}</p>}
+              <Button
+                className="mt-3"
+                variant="outline"
+                disabled={password.length < 8 || resetPassword.isPending}
+                onClick={() => resetPassword.mutate()}
+              >
+                {resetPassword.isPending ? t('userDrawer.passwordSaving') : t('userDrawer.passwordSave')}
               </Button>
             </Card>
 

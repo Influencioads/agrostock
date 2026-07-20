@@ -174,6 +174,43 @@ export class UpdateUserDto {
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() active?: boolean;
 }
 
+export class CreateUserDto {
+  @ApiProperty({ example: 'buyer@agrotraders.org' })
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({ example: 'Buyer Account' })
+  @IsString()
+  name!: string;
+
+  @ApiProperty({ minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password!: string;
+
+  @ApiProperty({ enum: Role, required: false })
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  active?: boolean;
+}
+
+export class ResetUserPasswordDto {
+  @ApiProperty({ minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password!: string;
+}
+
 export class SetUserRoleDto {
   @ApiProperty({ enum: Role }) @IsEnum(Role) role!: Role;
 }
@@ -279,6 +316,45 @@ export class AdminService {
       select: { id: true, name: true, email: true, role: true, roles: true, active: true, country: true, kycStatus: true },
     });
     await this.audit.log({ actorId: adminId, action: 'user.update', entityType: 'User', entityId: id, meta: { ...dto } });
+    return updated;
+  }
+
+  async createUser(dto: CreateUserDto, adminId: string) {
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email }, select: { id: true } });
+    if (existing) throw new BadRequestException('Email already registered');
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        name: dto.name,
+        passwordHash,
+        role: dto.role ?? Role.buyer,
+        roles: { set: [] },
+        active: dto.active ?? true,
+        country: dto.country,
+        kycStatus: 'pending',
+      },
+      select: { id: true, name: true, email: true, role: true, roles: true, active: true, country: true, kycStatus: true, createdAt: true },
+    });
+    await this.audit.log({
+      actorId: adminId,
+      action: 'user.create',
+      entityType: 'User',
+      entityId: user.id,
+      meta: { email: dto.email, role: dto.role ?? Role.buyer },
+    });
+    return user;
+  }
+
+  async resetUserPassword(id: string, dto: ResetUserPasswordDto, adminId: string) {
+    await this.requireUser(id);
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { passwordHash },
+      select: { id: true, name: true, email: true, role: true, roles: true, active: true, country: true, kycStatus: true },
+    });
+    await this.audit.log({ actorId: adminId, action: 'user.password_reset', entityType: 'User', entityId: id });
     return updated;
   }
 
@@ -1036,6 +1112,12 @@ export class AdminController {
     return this.admin.users(role, search);
   }
 
+  @Post('users')
+  @RequirePermissions('users_manage')
+  createUser(@CurrentUser() admin: AuthUser, @Body() body: CreateUserDto) {
+    return this.admin.createUser(body, admin.id);
+  }
+
   @Get('users/:id')
   @RequirePermissions('users_manage')
   user(@Param('id') id: string) {
@@ -1046,6 +1128,12 @@ export class AdminController {
   @RequirePermissions('users_manage')
   updateUser(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.admin.updateUser(id, body, admin.id);
+  }
+
+  @Patch('users/:id/password')
+  @RequirePermissions('users_manage')
+  resetUserPassword(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: ResetUserPasswordDto) {
+    return this.admin.resetUserPassword(id, body, admin.id);
   }
 
   @Post('users/:id/roles')
