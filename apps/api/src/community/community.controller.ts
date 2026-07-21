@@ -42,14 +42,14 @@ export class CommunityController {
   }
 
   @Get('groups')
-  groups(@Query('kind') kind?: string, @Query('search') search?: string) {
-    return this.community.listGroups({ kind, search });
+  groups(@Locale() locale: Lang, @Query('kind') kind?: string, @Query('search') search?: string) {
+    return this.community.listGroups({ kind, search }, locale);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('groups/:id')
-  group(@CurrentUser() user: AuthUser | undefined, @Param('id') id: string) {
-    return this.community.getGroup(user, id);
+  group(@CurrentUser() user: AuthUser | undefined, @Param('id') id: string, @Locale() locale: Lang) {
+    return this.community.getGroup(user, id, locale);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
@@ -89,8 +89,8 @@ export class CommunityController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('my/groups')
-  myGroups(@CurrentUser() user: AuthUser) {
-    return this.community.myGroups(user.id);
+  myGroups(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
+    return this.community.myGroups(user.id, locale);
   }
 
   @ApiBearerAuth()

@@ -77,6 +77,7 @@ function BubbleBody({ m, mine }: { m: AnyRec; mine: boolean }) {
 function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | null; onBack: () => void; s: S }) {
   const { user } = useAuth();
   const { lang } = useI18n();
+  const [displayGroup, setDisplayGroup] = useState<AnyRec>(group);
   const [messages, setMessages] = useState<AnyRec[]>([]);
   const [text, setText] = useState('');
   const [typing, setTyping] = useState(false);
@@ -84,11 +85,13 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
 
   useEffect(() => {
     let alive = true;
+    setDisplayGroup(group);
+    api.community.group(group.id).then((g) => alive && setDisplayGroup(g as AnyRec)).catch(() => {});
     api.community.groupMessages(group.id).then((m) => alive && setMessages((m as AnyRec[]) ?? []));
     return () => {
       alive = false;
     };
-  }, [group.id]);
+  }, [group, group.id, lang]);
 
   useEffect(() => {
     if (!socket) return;
@@ -139,7 +142,7 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
         </Pressable>
         <Txt variant="title" style={{ marginEnd: 6 }}>{group.emoji ?? '💬'}</Txt>
         <View style={{ flex: 1 }}>
-          <Txt variant="title" numberOfLines={1}>{group.name}</Txt>
+          <Txt variant="title" numberOfLines={1}>{displayGroup.name}</Txt>
           {typing ? <Txt variant="muted">{s.typing}</Txt> : null}
         </View>
       </Row>
@@ -231,7 +234,7 @@ function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: str
     return () => {
       alive = false;
     };
-  }, [peer.userId]);
+  }, [peer.userId, lang]);
 
   useEffect(() => {
     if (!socket) return;
@@ -414,6 +417,7 @@ function FeedComposer({ onPosted, s }: { onPosted: () => void; s: S }) {
 /* ── Root screen ──────────────────────────────────────────────────── */
 export function Community() {
   const s = useChatStrings();
+  const { lang } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
   const route = useRoute<RouteProp<RootStackParamList, 'Community'>>();
@@ -433,10 +437,10 @@ export function Community() {
     }
   }, [route.params?.dmUserId, route.params?.dmName]);
 
-  const feed = useQuery({ queryKey: ['community-feed'], queryFn: () => api.community.feed(), enabled: tab === 'feed' });
-  const groups = useQuery({ queryKey: ['community-groups'], queryFn: () => api.community.groups(), enabled: tab === 'groups' });
-  const reqs = useQuery({ queryKey: ['community-requirements'], queryFn: () => api.community.requirements(), enabled: tab === 'requirements' });
-  const mine = useQuery({ queryKey: ['community-my'], queryFn: () => api.community.myGroups(), enabled: tab === 'mychats' && !!user });
+  const feed = useQuery({ queryKey: ['community-feed', lang], queryFn: () => api.community.feed(), enabled: tab === 'feed' });
+  const groups = useQuery({ queryKey: ['community-groups', lang], queryFn: () => api.community.groups(), enabled: tab === 'groups' });
+  const reqs = useQuery({ queryKey: ['community-requirements', lang], queryFn: () => api.community.requirements(), enabled: tab === 'requirements' });
+  const mine = useQuery({ queryKey: ['community-my', lang], queryFn: () => api.community.myGroups(), enabled: tab === 'mychats' && !!user });
 
   const join = async (id: string) => {
     await api.community.joinGroup(id);

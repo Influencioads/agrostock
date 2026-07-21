@@ -523,11 +523,15 @@ model Subcategory {
   emoji        String?
   sort         Int                      @default(0)
   categoryId   String
+  parentId     String?
   category     Category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  parent       Subcategory?             @relation("SubcategoryChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Subcategory[]            @relation("SubcategoryChildren")
   products     Product[]
   translations SubcategoryTranslation[]
 
-  @@unique([categoryId, name])
+  @@index([categoryId])
+  @@index([parentId])
 }
 
 model Product {

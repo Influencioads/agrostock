@@ -7,6 +7,7 @@ import { getFilterFields } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { ProductCard } from '../components/site/ProductCard';
 import { api, toCardProduct } from '../lib/api';
+import { buildSubcategoryTree, flattenSubcategoryTree, type SubcategoryNode } from '../lib/categoryTree';
 import { useI18n } from '../i18n';
 
 // The 5 grade chips map to the free-text `grade` values products actually carry.
@@ -33,7 +34,9 @@ export function MarketPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   // Every filter lives in the URL so views are deep-linkable and shareable.
+  const categoryId = params.get('categoryId') ?? '';
   const category = params.get('category') ?? '';
+  const subcategoryId = params.get('subcategoryId') ?? '';
   const subcategory = params.get('subcategory') ?? '';
   const market = params.get('market') ?? '';
   const city = params.get('city') ?? '';
@@ -73,19 +76,31 @@ export function MarketPage() {
   const clearAttrParams = (next: URLSearchParams) => {
     for (const k of Array.from(next.keys())) if (k.startsWith('attr_')) next.delete(k);
   };
-  const setCategory = (name: string | null) => {
+  const setCategory = (nextCategory: ApiCategory | null) => {
     const next = new URLSearchParams(params);
-    if (name) next.set('category', name);
-    else next.delete('category');
+    if (nextCategory) {
+      next.set('categoryId', nextCategory.id);
+      next.set('category', nextCategory.name);
+    } else {
+      next.delete('categoryId');
+      next.delete('category');
+    }
+    next.delete('subcategoryId');
     next.delete('subcategory');
     clearAttrParams(next);
     next.delete('page');
     setParams(next, { replace: true });
   };
-  const setSubcategory = (name: string | null) => {
+  const setSubcategory = (id: string | null) => {
     const next = new URLSearchParams(params);
-    if (name) next.set('subcategory', name);
-    else next.delete('subcategory');
+    const node = flatSubOptions.find((entry) => entry.node.id === id)?.node ?? null;
+    if (node) {
+      next.set('subcategoryId', node.id);
+      next.set('subcategory', node.name);
+    } else {
+      next.delete('subcategoryId');
+      next.delete('subcategory');
+    }
     clearAttrParams(next);
     next.delete('page');
     setParams(next, { replace: true });
@@ -116,7 +131,9 @@ export function MarketPage() {
   });
 
   const query: ProductQuery = {
+    categoryId: categoryId || undefined,
     category: category || undefined,
+    subcategoryId: subcategoryId || undefined,
     subcategory: subcategory || undefined,
     market: market || undefined,
     city: city || undefined,
@@ -153,10 +170,36 @@ export function MarketPage() {
     return [...items].sort((a, b) => Number(promotedSlugs.has(b.id)) - Number(promotedSlugs.has(a.id)));
   }, [items, promoted, sort]);
 
-  const subOptions = useMemo(
-    () => catData.find((c) => c.name === category)?.subcategories ?? [],
-    [catData, category],
+  const selectedCategory = useMemo(
+    () => catData.find((c) => (categoryId ? c.id === categoryId : c.name === category)) ?? null,
+    [catData, categoryId, category],
   );
+  const subOptions = useMemo(
+    () => buildSubcategoryTree(selectedCategory?.subcategories ?? []),
+    [selectedCategory?.subcategories],
+  );
+  const flatSubOptions = useMemo(() => flattenSubcategoryTree(subOptions), [subOptions]);
+  const selectedSubcategory = useMemo(
+    () => flatSubOptions.find(({ node }) => (subcategoryId ? node.id === subcategoryId : node.name === subcategory))?.node ?? null,
+    [flatSubOptions, subcategoryId, subcategory],
+  );
+  const selectedSubcategoryPath = useMemo(() => {
+    if (!selectedSubcategory) return [] as SubcategoryNode[];
+    const walk = (nodes: SubcategoryNode[], path: SubcategoryNode[] = []): SubcategoryNode[] | null => {
+      for (const node of nodes) {
+        const next = [...path, node];
+        if (node.id === selectedSubcategory.id) return next;
+        const found = walk(node.children, next);
+        if (found) return found;
+      }
+      return null;
+    };
+    return walk(subOptions) ?? [];
+  }, [subOptions, selectedSubcategory]);
+  const visibleSubOptions = selectedSubcategory ? selectedSubcategory.children : subOptions;
+  const currentSubParent = selectedSubcategory ?? null;
+  const parentSubcategory = selectedSubcategoryPath.length > 1 ? selectedSubcategoryPath[selectedSubcategoryPath.length - 2] : null;
+  const goUpSubcategory = () => setSubcategory(parentSubcategory?.id ?? null);
   const cities = useMemo(
     () => Array.from(new Set(markets.map((m) => m.city).filter(Boolean))) as string[],
     [markets],
@@ -205,8 +248,8 @@ export function MarketPage() {
                 <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm text-ink">
                   <input
                     type="checkbox"
-                    checked={category === c.name}
-                    onChange={() => setCategory(category === c.name ? null : c.name)}
+                    checked={selectedCategory?.id === c.id}
+                    onChange={() => setCategory(selectedCategory?.id === c.id ? null : c)}
                     className="accent-[#249653]"
                   />
                   {c.emoji} {c.name}
@@ -217,15 +260,59 @@ export function MarketPage() {
           </div>
 
           {/* subcategory — only once a category with children is chosen */}
-          {category && subOptions.length > 0 && (
+          {selectedCategory && flatSubOptions.length > 0 && (
             <div className="mt-5">
-              <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.subcategory')}</p>
-              <select value={subcategory} onChange={(e) => setSubcategory(e.target.value || null)} className={inputCls}>
-                <option value="">{t('page.market.allSubcategories')}</option>
-                {subOptions.map((s) => (
-                  <option key={s.id} value={s.name}>{s.emoji ? `${s.emoji} ` : ''}{s.name}</option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.subcategory')}</p>
+                {currentSubParent && (
+                  <button
+                    type="button"
+                    onClick={goUpSubcategory}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-brand-dark hover:text-brand"
+                  >
+                    <Icon name="chevronLeft" size={13} />
+                    Back
+                  </button>
+                )}
+              </div>
+              <div className="mt-2 overflow-hidden rounded-md border border-surface-border bg-white">
+                <button
+                  type="button"
+                  onClick={() => setSubcategory(currentSubParent?.id ?? null)}
+                  className="flex min-h-9 w-full items-center gap-2 border-b border-surface-border px-2.5 py-2 text-start text-sm font-bold text-brand-dark hover:bg-brand-surface/60"
+                >
+                  <Icon name="check" size={14} />
+                  <span className="min-w-0 flex-1 truncate">
+                    {currentSubParent
+                      ? `${t('hero.allOf', { defaultValue: 'All' })} ${currentSubParent.name}`
+                      : `${t('hero.allOf', { defaultValue: 'All' })} ${selectedCategory.name}`}
+                  </span>
+                </button>
+                {visibleSubOptions.length === 0 ? (
+                  <div className="px-2.5 py-3 text-xs text-ink-soft">No more child categories</div>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto p-1.5">
+                    {visibleSubOptions.map((node) => {
+                      const active = selectedSubcategory?.id === node.id;
+                      return (
+                        <button
+                          key={node.id}
+                          type="button"
+                          onClick={() => setSubcategory(node.id)}
+                          aria-current={active}
+                          className={
+                            'flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition ' +
+                            (active ? 'bg-brand-surface font-bold text-brand-dark' : 'text-ink hover:bg-brand-surface/60')
+                          }
+                        >
+                          <span className="min-w-0 flex-1 truncate">{node.emoji ? `${node.emoji} ` : ''}{node.name}</span>
+                          {node.children.length > 0 && <Icon name="chevronRight" size={14} className="text-ink-soft/60" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -365,8 +452,8 @@ export function MarketPage() {
         <div>
           <div className="mb-4 flex items-center justify-between gap-2">
             <div className="flex flex-wrap gap-1.5">
-              {category && <FilterChip label={category} tone="green" onRemove={() => setParam('category', null)} />}
-              {subcategory && <FilterChip label={subcategory} tone="green" onRemove={() => setParam('subcategory', null)} />}
+              {selectedCategory && <FilterChip label={selectedCategory.name} tone="green" onRemove={() => setCategory(null)} />}
+              {selectedSubcategory && <FilterChip label={selectedSubcategory.name} tone="green" onRemove={() => setSubcategory(null)} />}
               {market && <FilterChip label={marketName(market)} tone="mango" onRemove={() => setParam('market', null)} />}
               {city && <FilterChip label={city} tone="mango" onRemove={() => setParam('city', null)} />}
               {country && <FilterChip label={country} tone="mango" onRemove={() => setParam('country', null)} />}

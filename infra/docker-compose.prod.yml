@@ -1,6 +1,8 @@
 # AgroTraders — full production stack (backing services + all apps).
 # Build context is the repo root, so run from there:
-#   docker compose -f infra/docker-compose.prod.yml up -d --build
+#   docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
+# Run DB migrations explicitly during deploy:
+#   docker compose --env-file .env -f infra/docker-compose.prod.yml run --rm migrate
 #
 name: agrostock-prod
 
@@ -8,13 +10,15 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    cpus: '1.0'
+    mem_limit: 768m
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-agrostock}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrostock}
       POSTGRES_DB: ${POSTGRES_DB:-agrostock}
     ports:
-      # exposed on a non-default host port so you can seed/inspect the prod DB
-      - '5546:5432'
+      # local-only so bots cannot scan the database port from the internet
+      - '127.0.0.1:5546:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -26,12 +30,16 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    cpus: '0.25'
+    mem_limit: 128m
     volumes:
       - redis_data:/data
 
   minio:
     image: minio/minio:latest
     restart: unless-stopped
+    cpus: '0.50'
+    mem_limit: 512m
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-agrostock}
@@ -40,18 +48,26 @@ services:
       - minio_data:/data
 
   api:
+    image: agrostock-prod-api
     build:
       context: ..
       dockerfile: infra/Dockerfile.api
     restart: unless-stopped
+    cpus: '1.0'
+    mem_limit: 768m
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
     env_file:
       - ../.env
     environment:
       NODE_ENV: production
       API_PORT: 3000
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-0}
       DATABASE_URL: postgresql://${POSTGRES_USER:-agrostock}:${POSTGRES_PASSWORD:-agrostock}@postgres:5432/${POSTGRES_DB:-agrostock}?schema=public
       JWT_SECRET: ${JWT_SECRET:-change-me-access-secret}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
@@ -65,10 +81,27 @@ services:
       UPLOAD_DIR: /repo/apps/api/uploads
       PRIVATE_UPLOAD_DIR: /repo/apps/api/private-uploads
     ports:
-      - '3000:3000'
+      - '127.0.0.1:${HOST_API_PORT:-3100}:3000'
     volumes:
       - api_uploads:/repo/apps/api/uploads
       - api_private_uploads:/repo/apps/api/private-uploads
+
+  migrate:
+    image: agrostock-prod-api
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    profiles: ['tools']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agrostock}:${POSTGRES_PASSWORD:-agrostock}@postgres:5432/${POSTGRES_DB:-agrostock}?schema=public
+    entrypoint: ['npx', 'prisma', 'migrate', 'deploy']
+    restart: 'no'
 
   web:
     build:
@@ -77,10 +110,12 @@ services:
       args:
         VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
     restart: unless-stopped
+    cpus: '0.25'
+    mem_limit: 128m
     depends_on:
       - api
     ports:
-      - '8090:80'
+      - '127.0.0.1:${HOST_WEB_PORT:-8090}:80'
 
   admin:
     build:
@@ -89,10 +124,12 @@ services:
       args:
         VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
     restart: unless-stopped
+    cpus: '0.25'
+    mem_limit: 128m
     depends_on:
       - api
     ports:
-      - '8091:80'
+      - '127.0.0.1:${HOST_ADMIN_PORT:-8091}:80'
 
 volumes:
   postgres_data:

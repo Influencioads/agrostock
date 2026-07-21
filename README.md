@@ -81,12 +81,18 @@ Run individual apps with `pnpm dev:api` · `pnpm dev:web` · `pnpm dev:admin`.
 
 ## Production (Docker)
 
-Multi-stage images for `api` (NestJS, runs `prisma migrate deploy` on boot), `web` and `admin`
+Production migrations are now run explicitly during deploy, not on every API boot. Use
+the `migrate` compose service before restarting the API so a failed migration cannot
+create a restart loop.
+
+Multi-stage images for `api` (NestJS), `web` and `admin`
 (built static, served by nginx).
 
 ```bash
-docker compose -f infra/docker-compose.prod.yml up -d --build
-# api :3000 · web :8090 · admin :8091  (+ postgres, redis, minio)
+docker compose --env-file .env -f infra/docker-compose.prod.yml up -d postgres redis minio
+docker compose --env-file .env -f infra/docker-compose.prod.yml run --rm migrate
+docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build api web admin
+# api localhost:${HOST_API_PORT:-3100} · web localhost:${HOST_WEB_PORT:-8090} · admin localhost:${HOST_ADMIN_PORT:-8091}
 ```
 
 Hardening: `helmet` security headers, rate limiting (`@nestjs/throttler`, 120 req/min/IP),

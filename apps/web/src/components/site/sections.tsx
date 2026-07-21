@@ -1,7 +1,8 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import type { ApiCategory, ApiSubcategory } from '@agrotraders/api-client';
 import { Badge, Button, Card, Icon, Reveal, Stagger, StaggerItem } from '@agrotraders/ui';
 import { ATTRIBUTE_SCHEMA, getFilterFields } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
@@ -18,6 +19,7 @@ import {
 import { Sparkline } from './Sparkline';
 import { ProductCard } from './ProductCard';
 import { api, assetUrl, toCardProduct } from '../../lib/api';
+import { buildSubcategoryTree, flattenSubcategoryTree, type SubcategoryNode } from '../../lib/categoryTree';
 
 /* ── helpers ───────────────────────────────────────────────────── */
 
@@ -163,8 +165,8 @@ function CategoryMegaMenu() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [cat, setCat] = useState<string | null>(null);
-  const [sub, setSub] = useState<string | null>(null);
+  const [catId, setCatId] = useState<string | null>(null);
+  const [subId, setSubId] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -187,9 +189,11 @@ function CategoryMegaMenu() {
       const margin = 12;
       const maxH = 460;
       const mobile = window.innerWidth < 640;
+      const panelWidth = Math.min(660, window.innerWidth - margin * 2);
       const spaceBelow = vh - r.bottom - margin;
       const spaceAbove = r.top - margin;
-      const inline = mobile ? { left: 8, right: 8 } : { right: Math.max(8, window.innerWidth - r.right) };
+      const left = mobile ? margin : Math.min(Math.max(margin, r.left), window.innerWidth - panelWidth - margin);
+      const inline = { left, right: window.innerWidth - left - panelWidth };
       // Prefer opening downward; flip up only when it gives meaningfully more room.
       if (spaceBelow >= 320 || spaceBelow >= spaceAbove) {
         setPos({ ...inline, top: r.bottom + gap, height: Math.min(maxH, spaceBelow) });
@@ -225,46 +229,85 @@ function CategoryMegaMenu() {
     staleTime: 3600e3,
     retry: 1,
   });
-  const categories = liveCats.length
-    ? liveCats.map((c) => ({
-        name: c.name,
-        emoji: c.emoji ?? '📦',
-        subcategories: (c.subcategories ?? []).map((s) => ({ name: s.name })),
-      }))
-    : ATTRIBUTE_SCHEMA.map((c) => ({
-        name: c.name,
-        emoji: c.emoji,
-        subcategories: c.subcategories.map((s) => ({ name: s.name })),
-      }));
-
-  const activeCat = categories.find((c) => c.name === cat);
-  const subs = activeCat?.subcategories ?? [];
-  // The third level: options of the subcategory's first filterable attribute.
-  const leadField = cat && sub ? getFilterFields(cat, sub)[0] : undefined;
+  const fallbackCategories = useMemo<ApiCategory[]>(
+    () =>
+      ATTRIBUTE_SCHEMA.map((c, catIndex) => {
+        const categoryId = `fallback-cat-${catIndex}`;
+        return {
+          id: categoryId,
+          name: c.name,
+          slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          emoji: c.emoji,
+          tint: null,
+          subcategories: c.subcategories.map((s, subIndex): ApiSubcategory => ({
+            id: `fallback-sub-${catIndex}-${subIndex}`,
+            name: s.name,
+            slug: s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            emoji: null,
+            sort: subIndex,
+            categoryId,
+            parentId: null,
+          })),
+        };
+      }),
+    [],
+  );
+  const menuCategories = liveCats.length ? liveCats : fallbackCategories;
+  const activeCat = menuCategories.find((c) => c.id === catId) ?? null;
+  const subTree = useMemo(() => buildSubcategoryTree(activeCat?.subcategories ?? []), [activeCat?.subcategories]);
+  const flatSubs = useMemo(() => flattenSubcategoryTree(subTree), [subTree]);
+  const selectedSub = flatSubs.find(({ node }) => node.id === subId)?.node ?? null;
+  const selectedSubPath = useMemo(() => {
+    if (!selectedSub) return [] as SubcategoryNode[];
+    const walk = (nodes: SubcategoryNode[], path: SubcategoryNode[] = []): SubcategoryNode[] | null => {
+      for (const node of nodes) {
+        const next = [...path, node];
+        if (node.id === selectedSub.id) return next;
+        const found = walk(node.children, next);
+        if (found) return found;
+      }
+      return null;
+    };
+    return walk(subTree) ?? [];
+  }, [selectedSub, subTree]);
+  const visibleSubs = selectedSub ? selectedSub.children : subTree;
+  const parentSub = selectedSubPath.length > 1 ? selectedSubPath[selectedSubPath.length - 2] : null;
+  // The options column still shows attribute facets for the currently selected
+  // subcategory; child category navigation remains in the middle column.
+  const leadField = activeCat && selectedSub ? getFilterFields(activeCat.name, selectedSub.name)[0] : undefined;
   const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
   const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
+  const isFallbackId = (id?: string) => !id || id.startsWith('fallback-');
 
   const toggle = () => {
     // Reset the drill-down each time the panel is (re)opened.
     setOpen((o) => {
-      if (!o) { setCat(null); setSub(null); }
+      if (!o) { setCatId(null); setSubId(null); }
       return !o;
     });
   };
-  const go = (q: Record<string, string>) => {
+  const go = (category: ApiCategory, subcategory?: SubcategoryNode, extra: Record<string, string> = {}) => {
+    const q: Record<string, string> = {
+      category: category.name,
+      ...(!isFallbackId(category.id) ? { categoryId: category.id } : {}),
+      ...(subcategory ? { subcategory: subcategory.name } : {}),
+      ...(subcategory && !isFallbackId(subcategory.id) ? { subcategoryId: subcategory.id } : {}),
+      ...extra,
+    };
     setOpen(false);
     navigate(`/market?${new URLSearchParams(q).toString()}`);
   };
-  const pickCategory = (name: string) => {
-    setCat(name);
-    setSub(null);
+  const pickCategory = (id: string) => {
+    setCatId(id);
+    setSubId(null);
   };
-  const pickSub = (name: string) => {
+  const pickSub = (node: SubcategoryNode) => {
     // Drill into the third column when the subcategory has attribute options;
     // otherwise the subcategory itself is the leaf — jump straight to results.
-    if (cat && getFilterFields(cat, name).length > 0) setSub(name);
-    else if (cat) go({ category: cat, subcategory: name });
+    if (node.children.length > 0 || (activeCat && getFilterFields(activeCat.name, node.name).length > 0)) setSubId(node.id);
+    else if (activeCat) go(activeCat, node);
   };
+  const goBackSub = () => setSubId(parentSub?.id ?? null);
 
   const colBtn =
     'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition';
@@ -304,17 +347,17 @@ function CategoryMegaMenu() {
             <div className="flex min-h-0 flex-col border-b border-surface-border sm:border-b-0 sm:border-e">
               <div className={colHead}>{t('hero.colCategory', { defaultValue: 'Categories' })}</div>
               <div className="flex-1 overflow-y-auto p-1.5">
-                {categories.map((c) => {
-                  const active = c.name === cat;
+                {menuCategories.map((c) => {
+                  const active = c.id === catId;
                   return (
                     <button
-                      key={c.name}
+                      key={c.id}
                       type="button"
-                      onClick={() => pickCategory(c.name)}
+                      onClick={() => pickCategory(c.id)}
                       aria-current={active}
                       className={colBtn + (active ? ' bg-brand-surface font-bold text-brand-dark' : ' text-ink hover:bg-brand-surface/60')}
                     >
-                      <span className="text-base">{c.emoji}</span>
+                      <span className="text-base">{c.emoji ?? '📦'}</span>
                       <span className="flex-1 truncate">{c.name}</span>
                       <Icon name="chevronRight" size={14} className={active ? 'text-brand-dark' : 'text-ink-soft/50'} />
                     </button>
@@ -325,28 +368,43 @@ function CategoryMegaMenu() {
 
             {/* Column 2 — subcategories */}
             <div className="flex min-h-0 flex-col border-b border-surface-border sm:border-b-0 sm:border-e">
-              <div className={colHead}>
-                {cat ? cat : t('hero.colSubcategory', { defaultValue: 'Subcategory' })}
+              <div className={colHead + ' flex items-center justify-between gap-2'}>
+                <span className="min-w-0 truncate">{selectedSub ? selectedSub.name : activeCat ? activeCat.name : t('hero.colSubcategory', { defaultValue: 'Subcategory' })}</span>
+                {selectedSub && (
+                  <button type="button" onClick={goBackSub} className="shrink-0 text-[11px] font-bold text-brand-dark">
+                    Back
+                  </button>
+                )}
               </div>
-              {subs.length === 0 ? (
+              {!activeCat ? (
                 <p className={placeholder}>{t('hero.pickCategory', { defaultValue: 'Pick a category to see its subcategories' })}</p>
               ) : (
                 <div className="flex-1 overflow-y-auto p-1.5">
-                  {subs.map((s) => {
-                    const active = s.name === sub;
-                    const hasThird = cat ? getFilterFields(cat, s.name).length > 0 : false;
+                  <button
+                    type="button"
+                    onClick={() => selectedSub ? go(activeCat, selectedSub) : go(activeCat)}
+                    className={colBtn + ' mb-1 font-semibold text-brand-dark hover:bg-brand-surface/60'}
+                  >
+                    <Icon name="check" size={14} />
+                    <span className="flex-1 truncate">{t('hero.allOf', { defaultValue: 'All' })} {selectedSub ? selectedSub.name : activeCat.name}</span>
+                  </button>
+                  {visibleSubs.length === 0 ? (
+                    <p className={placeholder}>{t('hero.pickCategory', { defaultValue: 'Pick a category to see its subcategories' })}</p>
+                  ) : visibleSubs.map((node) => {
+                    const active = node.id === subId;
+                    const hasOptions = getFilterFields(activeCat.name, node.name).length > 0;
                     return (
                       <button
-                        key={s.name}
+                        key={node.id}
                         type="button"
-                        onClick={() => pickSub(s.name)}
+                        onClick={() => pickSub(node)}
                         aria-current={active}
                         className={colBtn + (active ? ' bg-brand-surface font-bold text-brand-dark' : ' text-ink hover:bg-brand-surface/60')}
                       >
-                        <span className="flex-1 truncate">{s.name}</span>
-                        {hasThird && (
+                        <span className="min-w-0 flex-1 truncate">{node.emoji ? `${node.emoji} ` : ''}{node.name}</span>
+                        {(node.children.length > 0 || hasOptions) ? (
                           <Icon name="chevronRight" size={14} className={active ? 'text-brand-dark' : 'text-ink-soft/50'} />
-                        )}
+                        ) : null}
                       </button>
                     );
                   })}
@@ -357,23 +415,23 @@ function CategoryMegaMenu() {
             {/* Column 3 — sub-subcategory (lead attribute options) */}
             <div className="flex min-h-0 flex-col">
               <div className={colHead}>
-                {sub && leadField ? aLabel(leadField.label) : t('hero.colOptions', { defaultValue: 'Options' })}
+                {selectedSub && leadField ? aLabel(leadField.label) : t('hero.colOptions', { defaultValue: 'Options' })}
               </div>
-              {sub && leadField ? (
+              {activeCat && selectedSub && leadField ? (
                 <div className="flex-1 overflow-y-auto p-1.5">
                   <button
                     type="button"
-                    onClick={() => go({ category: cat!, subcategory: sub })}
+                    onClick={() => go(activeCat, selectedSub)}
                     className={colBtn + ' font-semibold text-brand-dark hover:bg-brand-surface/60'}
                   >
                     <Icon name="check" size={14} />
-                    <span className="flex-1 truncate">{t('hero.allOf', { defaultValue: 'All' })} {sub}</span>
+                    <span className="flex-1 truncate">{t('hero.allOf', { defaultValue: 'All' })} {selectedSub.name}</span>
                   </button>
                   {(leadField.options ?? []).map((opt) => (
                     <button
                       key={opt}
                       type="button"
-                      onClick={() => go({ category: cat!, subcategory: sub, [`attr_${leadField.key}`]: opt })}
+                      onClick={() => go(activeCat, selectedSub, { [`attr_${leadField.key}`]: opt })}
                       className={colBtn + ' text-ink hover:bg-brand-surface/60'}
                     >
                       <span className="flex-1 truncate">{aOpt(opt)}</span>
@@ -448,7 +506,7 @@ export function Hero() {
               {(['buy', 'sell'] as const).map((m) => (
                 <button
                   key={m}
-                  onClick={() => setMode(m)}
+                  onClick={() => (m === 'sell' ? navigate('/register?role=seller') : setMode(m))}
                   className={
                     'rounded-md py-2 text-sm font-bold transition ' +
                     (mode === m ? 'bg-brand-gradient text-white shadow-cta' : 'text-ink-soft hover:text-ink')

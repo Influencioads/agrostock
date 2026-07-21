@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TranslationService, type AttributeValues } from './translation.service';
 import {
   BUYER_BID_UPSERTED,
+  COMMUNITY_GROUP_UPSERTED,
   COMMUNITY_POST_UPSERTED,
   COMMUNITY_REQUIREMENT_UPSERTED,
   PRODUCT_UPSERTED,
@@ -23,11 +24,18 @@ import {
 @Injectable()
 export class ContentTranslationWorker {
   private readonly logger = new Logger('ContentTranslation');
+  private queue: Promise<unknown> = Promise.resolve();
 
   constructor(
     private prisma: PrismaService,
     private translation: TranslationService,
   ) {}
+
+  private enqueue<T>(work: () => Promise<T>): Promise<T> {
+    const next = this.queue.then(work, work);
+    this.queue = next.catch(() => undefined);
+    return next;
+  }
 
   private hashesUnchanged(stored: Prisma.JsonValue | null | undefined, next: Record<string, string>): boolean {
     return this.translation.unchanged(stored as Record<string, string> | null, next);
@@ -40,6 +48,10 @@ export class ContentTranslationWorker {
   // ── Product (text fields + attribute values) ───────────────────────────
   @OnEvent(PRODUCT_UPSERTED)
   async onProduct({ id }: ContentUpsertedEvent) {
+    return this.enqueue(() => this.translateProduct(id));
+  }
+
+  private async translateProduct(id: string) {
     if (!this.translation.enabled) return;
     try {
       const p = await this.prisma.product.findUnique({
@@ -81,6 +93,10 @@ export class ContentTranslationWorker {
   // ── Review (single text field) ─────────────────────────────────────────
   @OnEvent(REVIEW_UPSERTED)
   async onReview({ id }: ContentUpsertedEvent) {
+    return this.enqueue(() => this.translateReview(id));
+  }
+
+  private async translateReview(id: string) {
     if (!this.translation.enabled) return;
     try {
       const r = await this.prisma.review.findUnique({ where: { id } });
@@ -104,8 +120,41 @@ export class ContentTranslationWorker {
   }
 
   // ── Community post (title + body) ──────────────────────────────────────
+  @OnEvent(COMMUNITY_GROUP_UPSERTED)
+  async onCommunityGroup({ id }: ContentUpsertedEvent) {
+    return this.enqueue(() => this.translateCommunityGroup(id));
+  }
+
+  private async translateCommunityGroup(id: string) {
+    if (!this.translation.enabled) return;
+    try {
+      const group = await this.prisma.communityGroup.findUnique({ where: { id } });
+      if (!group) return;
+
+      for (const locale of this.translation.targets) {
+        const tr = await this.translation.translateFields(group, ['name', 'description'], locale);
+        const data = {
+          name: tr.name ?? group.name,
+          description: tr.description ?? group.description,
+        };
+        await this.prisma.communityGroupTranslation.upsert({
+          where: { groupId_locale: { groupId: id, locale } },
+          create: { groupId: id, locale, ...data },
+          update: data,
+        });
+      }
+      this.logger.log(`translated community group ${id} into ${this.translation.targets.length} locales`);
+    } catch (err) {
+      this.logger.error(`community group ${id} translation failed: ${(err as Error).message}`);
+    }
+  }
+
   @OnEvent(COMMUNITY_POST_UPSERTED)
   async onCommunityPost({ id }: ContentUpsertedEvent) {
+    return this.enqueue(() => this.translateCommunityPost(id));
+  }
+
+  private async translateCommunityPost(id: string) {
     if (!this.translation.enabled) return;
     try {
       const post = await this.prisma.communityPost.findUnique({ where: { id } });
@@ -131,6 +180,10 @@ export class ContentTranslationWorker {
   // ── Community trade requirement (title / productName / grade / delivery) ─
   @OnEvent(COMMUNITY_REQUIREMENT_UPSERTED)
   async onRequirement({ id }: ContentUpsertedEvent) {
+    return this.enqueue(() => this.translateRequirement(id));
+  }
+
+  private async translateRequirement(id: string) {
     if (!this.translation.enabled) return;
     try {
       const req = await this.prisma.communityTradeRequirement.findUnique({ where: { id } });
@@ -162,6 +215,10 @@ export class ContentTranslationWorker {
   // ── Buyer bid (title / productName / notes) ────────────────────────────
   @OnEvent(BUYER_BID_UPSERTED)
   async onBuyerBid({ id }: ContentUpsertedEvent) {
+    return this.enqueue(() => this.translateBuyerBid(id));
+  }
+
+  private async translateBuyerBid(id: string) {
     if (!this.translation.enabled) return;
     try {
       const bid = await this.prisma.buyerBid.findUnique({ where: { id } });

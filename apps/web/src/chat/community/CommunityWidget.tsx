@@ -91,14 +91,21 @@ function TabBar({ tab, setTab, s }: { tab: string; setTab: (t: string) => void; 
 function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | null; onBack: () => void; s: AnyRec }) {
   const { user } = useAuth();
   const { lang } = useI18n();
+  const [displayGroup, setDisplayGroup] = useState<AnyRec>(group);
   const [messages, setMessages] = useState<AnyRec[]>([]);
   const [text, setText] = useState('');
   const [typing, setTyping] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api.community.groupMessages(group.id).then((m) => setMessages(m as AnyRec[]));
-  }, [group.id]);
+    let alive = true;
+    setDisplayGroup(group);
+    api.community.group(group.id).then((g) => alive && setDisplayGroup(g as AnyRec)).catch(() => {});
+    api.community.groupMessages(group.id).then((m) => alive && setMessages(m as AnyRec[]));
+    return () => {
+      alive = false;
+    };
+  }, [group, group.id, lang]);
 
   useEffect(() => {
     if (!socket) return;
@@ -150,7 +157,7 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
           <Icon name="chevronLeft" size={18} />
         </button>
         <span className="text-lg">{group.emoji ?? '💬'}</span>
-        <span className="font-display font-bold text-ink">{group.name}</span>
+        <span className="font-display font-bold text-ink">{displayGroup.name}</span>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
         {messages.length === 0 && <p className="mt-8 text-center text-sm text-ink-soft">{s.empty}</p>}
@@ -210,7 +217,7 @@ function DmRoom({ peer, socket, onBack, s }: { peer: OpenDmEvent; socket: Socket
       })
       .catch(() => {});
     api.community.dmRead(peer.userId).catch(() => {});
-  }, [peer.userId]);
+  }, [peer.userId, lang]);
 
   useEffect(() => {
     if (!socket) return;
@@ -358,6 +365,7 @@ function FeedComposer({ onPosted, s }: { onPosted: () => void; s: AnyRec }) {
 
 export function CommunityWidget() {
   const s = useChatStrings();
+  const { lang } = useI18n();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('feed');
@@ -382,10 +390,10 @@ export function CommunityWidget() {
     [],
   );
 
-  const feed = useQuery({ queryKey: ['community-feed'], queryFn: () => api.community.feed(), enabled: open && tab === 'feed' });
-  const groups = useQuery({ queryKey: ['community-groups'], queryFn: () => api.community.groups(), enabled: open && tab === 'groups' });
-  const reqs = useQuery({ queryKey: ['community-requirements'], queryFn: () => api.community.requirements(), enabled: open && tab === 'requirements' });
-  const mine = useQuery({ queryKey: ['community-my'], queryFn: () => api.community.myGroups(), enabled: open && tab === 'mychats' && !!user });
+  const feed = useQuery({ queryKey: ['community-feed', lang], queryFn: () => api.community.feed(), enabled: open && tab === 'feed' });
+  const groups = useQuery({ queryKey: ['community-groups', lang], queryFn: () => api.community.groups(), enabled: open && tab === 'groups' });
+  const reqs = useQuery({ queryKey: ['community-requirements', lang], queryFn: () => api.community.requirements(), enabled: open && tab === 'requirements' });
+  const mine = useQuery({ queryKey: ['community-my', lang], queryFn: () => api.community.myGroups(), enabled: open && tab === 'mychats' && !!user });
 
   const join = async (id: string) => {
     await api.community.joinGroup(id);
@@ -485,7 +493,7 @@ export function CommunityWidget() {
                       <span className="text-xl">{g.emoji ?? '💬'}</span>
                       <span>
                         <span className="block font-display font-bold text-ink">{g.name}</span>
-                        <span className="block text-[11px] text-ink-soft">{g._count?.members ?? 0} members</span>
+                        <span className="block text-[11px] text-ink-soft">{g._count?.members ?? 0} {s.members}</span>
                       </span>
                     </button>
                     {user && (

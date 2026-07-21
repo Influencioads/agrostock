@@ -44,6 +44,7 @@ export class SubcategoryDto {
   @IsString() @MinLength(2) name!: string;
   @IsOptional() @IsString() emoji?: string;
   @IsOptional() @IsInt() sort?: number;
+  @IsOptional() @IsString() parentId?: string;
 }
 
 export class UpdateSubcategoryDto {
@@ -67,7 +68,7 @@ export class CategoriesService {
         translations: { where: { locale } },
         subcategories: {
           orderBy: [{ sort: 'asc' }, { name: 'asc' }],
-          include: { translations: { where: { locale } }, _count: { select: { products: true } } },
+          include: { translations: { where: { locale } }, _count: { select: { products: true, children: true } } },
         },
         _count: { select: { products: true } },
       },
@@ -126,9 +127,23 @@ export class CategoriesService {
 
   async createSubcategory(categoryId: string, dto: SubcategoryDto) {
     const cat = await this.getCategory(categoryId);
-    const slug = await this.uniqueSlug(`${cat.slug}-${slugify(dto.name)}`);
+    const parent = dto.parentId
+      ? await this.prisma.subcategory.findUnique({ where: { id: dto.parentId }, select: { id: true, categoryId: true, slug: true } })
+      : null;
+    if (dto.parentId && !parent) throw new NotFoundException('Parent subcategory not found');
+    if (parent && parent.categoryId !== categoryId) {
+      throw new BadRequestException('Parent subcategory must belong to the same category.');
+    }
+    const duplicate = await this.prisma.subcategory.findFirst({
+      where: { categoryId, parentId: dto.parentId ?? null, name: dto.name },
+      select: { id: true },
+    });
+    if (duplicate) {
+      throw new BadRequestException('A subcategory with this name already exists at this level.');
+    }
+    const slug = await this.uniqueSlug(`${parent?.slug ?? cat.slug}-${slugify(dto.name)}`);
     return this.prisma.subcategory.create({
-      data: { name: dto.name, slug, emoji: dto.emoji, sort: dto.sort ?? 0, categoryId },
+      data: { name: dto.name, slug, emoji: dto.emoji, sort: dto.sort ?? 0, categoryId, parentId: dto.parentId },
     });
   }
 
@@ -148,11 +163,13 @@ export class CategoriesService {
   async removeSubcategory(id: string) {
     const sub = await this.prisma.subcategory.findUnique({
       where: { id },
-      include: { _count: { select: { products: true } } },
+      include: { _count: { select: { products: true, children: true } } },
     });
     if (!sub) throw new NotFoundException('Subcategory not found');
     if (sub._count.products > 0)
       throw new BadRequestException('Cannot delete a subcategory that still has products. Reassign them first.');
+    if (sub._count.children > 0)
+      throw new BadRequestException('Cannot delete a subcategory that still has child subcategories. Delete children first.');
     await this.prisma.subcategory.delete({ where: { id } });
     return { ok: true };
   }

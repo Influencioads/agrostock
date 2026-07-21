@@ -14,6 +14,7 @@ import { maskContacts, sanitizeMessage } from '../common/sanitize';
 import { localize } from '../common/locale';
 import { TranslationService } from '../translation/translation.service';
 import {
+  COMMUNITY_GROUP_UPSERTED,
   COMMUNITY_POST_UPSERTED,
   COMMUNITY_REQUIREMENT_UPSERTED,
   type ContentUpsertedEvent,
@@ -29,6 +30,12 @@ import type {
 
 /** Translatable columns on a trade requirement, folded from its translation row. */
 const REQUIREMENT_TR_FIELDS = ['title', 'productName', 'grade', 'delivery'] as const;
+const GROUP_TR_FIELDS = ['name', 'description'] as const;
+
+interface GroupTranslationRow {
+  name: string;
+  description: string | null;
+}
 
 interface RequirementTranslationRow {
   title: string;
@@ -49,6 +56,16 @@ function localizeRequirement<
   return localize(row, [...REQUIREMENT_TR_FIELDS]);
 }
 
+function localizeGroup<
+  T extends {
+    name: string;
+    description: string | null;
+    translations?: GroupTranslationRow[];
+  },
+>(row: T): T {
+  return localize(row, [...GROUP_TR_FIELDS]);
+}
+
 const slugify = (s: string) =>
   s
     .toLowerCase()
@@ -58,6 +75,9 @@ const slugify = (s: string) =>
   Math.random().toString(36).slice(2, 6);
 
 const DEFAULT_TAKE = 30;
+
+type GroupUnreadSource = { groupId: string; lastReadAt: Date | null };
+type ThreadUnreadSource = { id: string; aId: string; aLastReadAt: Date | null; bLastReadAt: Date | null };
 
 @Injectable()
 export class CommunityService {
@@ -148,53 +168,127 @@ export class CommunityService {
     return [...ids];
   }
 
+  private groupedCount(row: { _count?: { _all?: number } } | null | undefined): number {
+    return row?._count?._all ?? 0;
+  }
+
+  private async unreadByGroup(userId: string, memberships: GroupUnreadSource[]) {
+    if (!memberships.length) return new Map<string, number>();
+    const rows = await this.prisma.communityMessage.groupBy({
+      by: ['groupId'],
+      where: {
+        OR: memberships.map((m) => ({
+          groupId: m.groupId,
+          deletedAt: null,
+          senderId: { not: userId },
+          ...(m.lastReadAt ? { createdAt: { gt: m.lastReadAt } } : {}),
+        })),
+      },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((row) => [row.groupId!, this.groupedCount(row)]));
+  }
+
+  private async unreadByThread(userId: string, threads: ThreadUnreadSource[]) {
+    if (!threads.length) return new Map<string, number>();
+    const rows = await this.prisma.communityMessage.groupBy({
+      by: ['threadId'],
+      where: {
+        OR: threads.map((thread) => {
+          const lastReadAt = thread.aId === userId ? thread.aLastReadAt : thread.bLastReadAt;
+          return {
+            threadId: thread.id,
+            deletedAt: null,
+            senderId: { not: userId },
+            ...(lastReadAt ? { createdAt: { gt: lastReadAt } } : {}),
+          };
+        }),
+      },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((row) => [row.threadId!, this.groupedCount(row)]));
+  }
+
   // ── groups ────────────────────────────────────────────────────────
-  listGroups(params: { kind?: string; search?: string }) {
+  private async localizeGroups<
+    T extends { id: string; name: string; description: string | null; translations?: GroupTranslationRow[] },
+  >(rows: T[], locale: Lang) {
+    if (!this.translation.enabled || this.baseLang(locale) === 'en') return rows.map(localizeGroup);
+
+    const missing = rows.filter((row) => !row.translations?.length);
+    await Promise.all(
+      missing.map(async (group) => {
+        try {
+          const tr = await this.translation.translateFields(group, GROUP_TR_FIELDS, locale);
+          const data = {
+            name: tr.name ?? group.name,
+            description: tr.description ?? group.description,
+          };
+          await this.prisma.communityGroupTranslation.upsert({
+            where: { groupId_locale: { groupId: group.id, locale } },
+            create: { groupId: group.id, locale, ...data },
+            update: data,
+          });
+          group.translations = [data];
+        } catch (err) {
+          this.logger.error(`group ${group.id} translate failed: ${(err as Error).message}`);
+        }
+      }),
+    );
+
+    return rows.map(localizeGroup);
+  }
+
+  async listGroups(params: { kind?: string; search?: string }, locale: Lang = 'en') {
     const where: Prisma.CommunityGroupWhereInput = {
       deletedAt: null,
       visibility: 'public',
     };
     if (params.kind) where.kind = params.kind as Prisma.CommunityGroupWhereInput['kind'];
     if (params.search) where.name = { contains: params.search, mode: 'insensitive' };
-    return this.prisma.communityGroup.findMany({
+    const groups = await this.prisma.communityGroup.findMany({
       where,
       orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
-      include: { _count: { select: { members: true, messages: true } } },
+      include: {
+        _count: { select: { members: true, messages: true } },
+        translations: { where: { locale }, select: { name: true, description: true } },
+      },
     });
+    return this.localizeGroups(groups, locale);
   }
 
-  async myGroups(userId: string) {
+  async myGroups(userId: string, locale: Lang = 'en') {
     const memberships = await this.prisma.communityGroupMember.findMany({
       where: { user: { id: userId }, group: { deletedAt: null } },
-      include: { group: { include: { _count: { select: { members: true } } } } },
+      include: {
+        group: {
+          include: {
+            _count: { select: { members: true } },
+            translations: { where: { locale }, select: { name: true, description: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
-    // Attach unread counts per group (messages after lastReadAt, excluding own).
-    const result = [];
-    for (const m of memberships) {
-      const unread = await this.prisma.communityMessage.count({
-        where: {
-          groupId: m.groupId,
-          deletedAt: null,
-          senderId: { not: userId },
-          ...(m.lastReadAt ? { createdAt: { gt: m.lastReadAt } } : {}),
-        },
-      });
-      result.push({ ...m.group, membershipRole: m.role, unread });
-    }
-    return result;
+    const unread = await this.unreadByGroup(userId, memberships);
+    const result = memberships.map((m) => ({ ...m.group, membershipRole: m.role, unread: unread.get(m.groupId) ?? 0 }));
+    return this.localizeGroups(result, locale);
   }
 
-  async getGroup(user: AuthUser | undefined, id: string) {
+  async getGroup(user: AuthUser | undefined, id: string, locale: Lang = 'en') {
     const group = await this.prisma.communityGroup.findFirst({
       where: { id, deletedAt: null },
-      include: { _count: { select: { members: true, messages: true } } },
+      include: {
+        _count: { select: { members: true, messages: true } },
+        translations: { where: { locale }, select: { name: true, description: true } },
+      },
     });
     if (!group) throw new NotFoundException('Group not found');
     if (group.visibility !== 'public') {
       await this.assertMember(user, id);
     }
-    return group;
+    const [localized] = await this.localizeGroups([group], locale);
+    return localized;
   }
 
   async createGroup(user: AuthUser, dto: CreateGroupDto) {
@@ -214,6 +308,7 @@ export class CommunityService {
       include: { _count: { select: { members: true } } },
     });
     await this.audit.log({ actorId: user.id, action: 'community.group.create', entityType: 'CommunityGroup', entityId: group.id });
+    this.events.emit(COMMUNITY_GROUP_UPSERTED, { id: group.id } satisfies ContentUpsertedEvent);
     return group;
   }
 
@@ -569,33 +664,16 @@ export class CommunityService {
       where: { userId },
       select: { groupId: true, lastReadAt: true },
     });
-    let groups = 0;
-    for (const m of memberships) {
-      groups += await this.prisma.communityMessage.count({
-        where: {
-          groupId: m.groupId,
-          deletedAt: null,
-          senderId: { not: userId },
-          ...(m.lastReadAt ? { createdAt: { gt: m.lastReadAt } } : {}),
-        },
-      });
-    }
     const threads = await this.prisma.communityDirectThread.findMany({
       where: { OR: [{ aId: userId }, { bId: userId }] },
       select: { id: true, aId: true, aLastReadAt: true, bLastReadAt: true },
     });
-    let dms = 0;
-    for (const t of threads) {
-      const lastRead = t.aId === userId ? t.aLastReadAt : t.bLastReadAt;
-      dms += await this.prisma.communityMessage.count({
-        where: {
-          threadId: t.id,
-          deletedAt: null,
-          senderId: { not: userId },
-          ...(lastRead ? { createdAt: { gt: lastRead } } : {}),
-        },
-      });
-    }
+    const [groupUnread, dmUnread] = await Promise.all([
+      this.unreadByGroup(userId, memberships),
+      this.unreadByThread(userId, threads),
+    ]);
+    const groups = [...groupUnread.values()].reduce((sum, count) => sum + count, 0);
+    const dms = [...dmUnread.values()].reduce((sum, count) => sum + count, 0);
     return { groups, dms, total: groups + dms };
   }
 
@@ -816,6 +894,7 @@ export class CommunityService {
       data: { slug, name: dto.name, description: dto.description, emoji: dto.emoji, isDefault: !!dto.isDefault, kind: 'channel' },
     });
     await this.audit.log({ actorId: admin.id, action: 'community.group.admin_create', entityType: 'CommunityGroup', entityId: group.id });
+    this.events.emit(COMMUNITY_GROUP_UPSERTED, { id: group.id } satisfies ContentUpsertedEvent);
     return group;
   }
 
@@ -831,6 +910,7 @@ export class CommunityService {
       data: { name: dto.name, description: dto.description, emoji: dto.emoji, isDefault: dto.isDefault },
     });
     await this.audit.log({ actorId: admin.id, action: 'community.group.admin_update', entityType: 'CommunityGroup', entityId: id });
+    this.events.emit(COMMUNITY_GROUP_UPSERTED, { id } satisfies ContentUpsertedEvent);
     return group;
   }
 

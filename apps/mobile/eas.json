@@ -10,8 +10,11 @@
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "simulator": true
+      },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://187.127.131.162:3100"
+        "EXPO_PUBLIC_API_URL": "https://api.agrotraders.org"
       }
     },
     "production": {

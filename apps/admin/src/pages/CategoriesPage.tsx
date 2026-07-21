@@ -10,7 +10,7 @@ import { errMessage } from '../lib/errors';
 type CatModal =
   | { kind: 'category-new' }
   | { kind: 'category-edit'; cat: ApiCategory }
-  | { kind: 'sub-new'; cat: ApiCategory }
+  | { kind: 'sub-new'; cat: ApiCategory; parent?: ApiSubcategory }
   | { kind: 'sub-edit'; cat: ApiCategory; sub: ApiSubcategory }
   | null;
 
@@ -40,6 +40,47 @@ export function CategoriesPage() {
   });
 
   const totalSubs = categories.reduce((n, c) => n + (c.subcategories?.length ?? 0), 0);
+  const childSubs = (subs: ApiSubcategory[], parentId: string) => subs.filter((s) => s.parentId === parentId);
+  const rootSubs = (subs: ApiSubcategory[]) => subs.filter((s) => !s.parentId || !subs.some((p) => p.id === s.parentId));
+  const renderSubtree = (cat: ApiCategory, sub: ApiSubcategory, subs: ApiSubcategory[], depth = 0) => {
+    const children = childSubs(subs, sub.id);
+    return (
+      <div key={sub.id} className="space-y-2">
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"
+          style={{ marginInlineStart: depth ? Math.min(depth, 7) * 18 : undefined }}
+        >
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand-surface">
+            {sub.emoji || <Icon name="grid" size={14} />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="break-words font-semibold">{sub.name}</div>
+            <div className="text-[11px] text-ink-soft">
+              {t('catAdmin.nodeStats', { products: sub._count?.products ?? 0, children: children.length })}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            <Button variant="ghost" size="sm" onClick={() => setModal({ kind: 'sub-new', cat, parent: sub })} leftIcon={<Icon name="plus" size={13} />}>
+              {t('catAdmin.addChild')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setModal({ kind: 'sub-edit', cat, sub })}>
+              {t('catAdmin.edit')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (window.confirm(t('catAdmin.confirmDeleteSub', { name: sub.name }))) removeSub.mutate(sub);
+              }}
+            >
+              {t('catAdmin.delete')}
+            </Button>
+          </div>
+        </div>
+        {children.map((child) => renderSubtree(cat, child, subs, depth + 1))}
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -104,33 +145,8 @@ export function CategoriesPage() {
 
                 {isOpen && subs.length > 0 && (
                   <div className="border-t border-surface-border bg-brand-surface/30 px-5 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      {subs.map((sub) => (
-                        <span
-                          key={sub.id}
-                          className="group flex items-center gap-1.5 rounded-full border border-surface-border bg-white py-1 ps-3 pe-1.5 text-sm text-ink"
-                        >
-                          {sub.emoji && <span>{sub.emoji}</span>}
-                          {sub.name}
-                          <span className="text-[11px] text-ink-soft">({sub._count?.products ?? 0})</span>
-                          <button
-                            onClick={() => setModal({ kind: 'sub-edit', cat, sub })}
-                            className="ms-0.5 flex h-5 w-5 items-center justify-center rounded-full text-ink-soft hover:bg-brand-surface hover:text-ink"
-                            aria-label={t('catAdmin.editSub')}
-                          >
-                            <Icon name="palette" size={12} />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (window.confirm(t('catAdmin.confirmDeleteSub', { name: sub.name }))) removeSub.mutate(sub);
-                            }}
-                            className="flex h-5 w-5 items-center justify-center rounded-full text-ink-soft hover:bg-status-error/10 hover:text-status-error"
-                            aria-label={t('catAdmin.deleteSub')}
-                          >
-                            <Icon name="x" size={12} />
-                          </button>
-                        </span>
-                      ))}
+                    <div className="space-y-2">
+                      {rootSubs(subs).map((sub) => renderSubtree(cat, sub, subs))}
                     </div>
                   </div>
                 )}
@@ -167,7 +183,7 @@ function TaxonomyModal({ modal, onClose, onSaved }: { modal: NonNullable<CatModa
         case 'category-edit':
           return api.admin.updateCategory(modal.cat.id, { name: name.trim(), emoji: emoji.trim() });
         case 'sub-new':
-          return api.admin.createSubcategory(modal.cat.id, { name: name.trim(), emoji: trimmedEmoji });
+          return api.admin.createSubcategory(modal.cat.id, { name: name.trim(), emoji: trimmedEmoji, parentId: modal.parent?.id });
         case 'sub-edit':
           return api.admin.updateSubcategory(modal.sub.id, { name: name.trim(), emoji: emoji.trim() });
       }
@@ -185,7 +201,7 @@ function TaxonomyModal({ modal, onClose, onSaved }: { modal: NonNullable<CatModa
       : modal.kind === 'category-edit'
         ? t('catAdmin.modalEditCategory')
         : modal.kind === 'sub-new'
-          ? t('catAdmin.modalAddSub', { name: modal.cat.name })
+          ? t(modal.parent ? 'catAdmin.modalAddChild' : 'catAdmin.modalAddSub', { name: modal.parent?.name ?? modal.cat.name })
           : t('catAdmin.modalEditSub');
 
   return (

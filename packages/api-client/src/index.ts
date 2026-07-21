@@ -141,7 +141,8 @@ export interface ApiSubcategory {
   emoji: string | null;
   sort: number;
   categoryId: string;
-  _count?: { products: number };
+  parentId?: string | null;
+  _count?: { products: number; children?: number };
 }
 
 export interface ApiCategory {
@@ -1271,7 +1272,11 @@ export interface AuthResult {
 }
 
 export interface ProductQuery {
+  /** Stable category id filter. Preferred over `category` when available. */
+  categoryId?: string;
   category?: string;
+  /** Stable subcategory id filter. Includes that node's descendant branch on the API. */
+  subcategoryId?: string;
   subcategory?: string;
   /** Market slug filter. */
   market?: string;
@@ -1314,7 +1319,9 @@ export interface ProductListResult {
 /** Serialize a ProductQuery into the flat string query params `GET /products` expects. */
 function productQueryParams(q: ProductQuery): Record<string, string | undefined> {
   const params: Record<string, string | undefined> = {
+    categoryId: q.categoryId,
     category: q.category,
+    subcategoryId: q.subcategoryId,
     subcategory: q.subcategory,
     market: q.market || undefined,
     city: q.city || undefined,
@@ -1989,7 +1996,7 @@ export function createApiClient(opts: ApiClientOptions) {
       updateCategory: (id: string, body: { name?: string; emoji?: string; tint?: string; sort?: number }) =>
         patch<ApiCategory>(`/admin/categories/${id}`, body),
       removeCategory: (id: string) => del(`/admin/categories/${id}`),
-      createSubcategory: (categoryId: string, body: { name: string; emoji?: string; sort?: number }) =>
+      createSubcategory: (categoryId: string, body: { name: string; emoji?: string; sort?: number; parentId?: string }) =>
         post<ApiSubcategory>(`/admin/categories/${categoryId}/subcategories`, body),
       updateSubcategory: (id: string, body: { name?: string; emoji?: string; sort?: number }) =>
         patch<ApiSubcategory>(`/admin/subcategories/${id}`, body),

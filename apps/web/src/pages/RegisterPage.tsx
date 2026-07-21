@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BrandMark, Button, Card, Icon, Input, type IconName } from '@agrotraders/ui';
 import { useAuth } from '../auth/AuthContext';
@@ -26,8 +26,11 @@ export function RegisterPage() {
   const { register } = useAuth();
   const { logoSrc } = useBranding();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const roleFromUrl = searchParams.get('role');
+  const initialRole = roles.some((r) => r.id === roleFromUrl) ? roleFromUrl! : 'buyer';
 
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'buyer', country: '', phone: '', location: '', marketId: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: initialRole, country: '', phone: '', location: '', marketId: '' });
   const [ops, setOps] = useState({
     operatingCities: [] as string[],
     operatingCountries: [] as string[],

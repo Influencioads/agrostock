@@ -11,6 +11,7 @@ import type { AuthUser } from '../src/auth/current-user.decorator';
  */
 
 const audit = { log: vi.fn() };
+const translation = { enabled: false };
 const user = (id: string, roles: string[] = ['buyer']): AuthUser =>
   ({ id, email: `${id}@x.dev`, name: id, role: roles[0], roles } as unknown as AuthUser);
 
@@ -48,7 +49,7 @@ describe('Community — private group message access', () => {
       communityMessage: { findMany: vi.fn(async () => opts.messages ?? []) },
       communityUserBlock: { findMany: vi.fn(async () => []) },
     };
-    return new CommunityService(prisma as never, audit as never);
+    return new CommunityService(prisma as never, audit as never, {} as never, translation as never);
   }
 
   it('404s for an unknown group', async () => {

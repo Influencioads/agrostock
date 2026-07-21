@@ -127,14 +127,35 @@ export class ProductsService {
     private events: EventEmitter2,
   ) {}
 
+  private async subcategoryBranchIds(subcategoryId: string, categoryId?: string) {
+    const rows = await this.prisma.subcategory.findMany({
+      where: categoryId ? { categoryId } : undefined,
+      select: { id: true, parentId: true },
+    });
+    const picked = new Set([subcategoryId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const row of rows) {
+        if (row.parentId && picked.has(row.parentId) && !picked.has(row.id)) {
+          picked.add(row.id);
+          changed = true;
+        }
+      }
+    }
+    return [...picked];
+  }
+
   async findAll(q: Record<string, string | undefined>, locale: Lang = 'en') {
     const where: Prisma.ProductWhereInput = { approved: true };
-    if (q.category) where.category = { name: q.category };
+    if (q.categoryId) where.categoryId = q.categoryId;
+    else if (q.category) where.category = { name: q.category };
     if (q.verified === 'true') where.verified = true;
     if (q.safe === 'true') where.safeDeal = true;
     if (q.offer === 'true') where.isOffer = true;
     if (q.auction === 'true') where.isAuction = true;
-    if (q.subcategory) where.subcategory = { name: q.subcategory };
+    if (q.subcategoryId) where.subcategoryId = { in: await this.subcategoryBranchIds(q.subcategoryId, q.categoryId) };
+    else if (q.subcategory) where.subcategory = { name: q.subcategory };
     if (q.grade) where.grade = { equals: q.grade, mode: 'insensitive' };
     if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
     // Buyers can narrow to products a seller ships to their country.

@@ -32,35 +32,50 @@ export const api = createApiClient({
   },
 });
 
+function textValue(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value && typeof value === 'object' && 'name' in value) {
+    const name = (value as { name?: unknown }).name;
+    return typeof name === 'string' ? name : fallback;
+  }
+  return fallback;
+}
+
+function nullableText(value: unknown): string | null {
+  const text = textValue(value);
+  return text || null;
+}
+
 /** Normalize an API product into the card shape used across the site. */
 export function toCardProduct(p: ApiProduct): Product {
   return {
-    id: p.slug,
-    name: p.name,
+    id: textValue(p.slug, textValue(p.id)),
+    name: textValue(p.name, 'Product'),
     emoji: p.emoji ?? '🌾',
-    imageUrl: assetUrl(p.imageUrl),
-    images: (p.images ?? []).map((u) => assetUrl(u)).filter(Boolean) as string[],
-    grade: p.grade ?? '',
-    flag: p.flag ?? '',
-    seller: (p.seller && 'name' in p.seller ? p.seller.name : '') || '',
-    sellerId: p.seller?.id,
-    qty: p.qty ?? '',
-    moq: p.moq ?? '',
-    price: p.price,
+    imageUrl: assetUrl(textValue(p.imageUrl)),
+    images: (p.images ?? []).map((u) => assetUrl(textValue(u))).filter(Boolean) as string[],
+    grade: textValue(p.grade),
+    flag: textValue(p.flag),
+    seller: textValue(p.seller),
+    sellerId: textValue(p.seller?.id) || undefined,
+    qty: textValue(p.qty),
+    moq: textValue(p.moq),
+    price: textValue(p.price),
     priceCents: p.priceCents ?? null,
-    unit: p.unit,
-    rating: p.rating,
+    unit: textValue(p.unit),
+    rating: textValue(p.rating),
     verified: p.verified,
     safe: p.safeDeal,
     offer: p.isOffer,
     auction: p.isAuction,
-    delivery: p.delivery ?? '',
-    category: p.category && 'name' in p.category ? p.category.name : '',
-    marketName: p.market?.name,
-    marketSlug: p.market?.slug,
+    delivery: textValue(p.delivery),
+    category: textValue(p.category),
+    marketName: nullableText(p.market?.name) ?? undefined,
+    marketSlug: nullableText(p.market?.slug) ?? undefined,
     // Prefer the product's own structured location; fall back to its market.
-    city: p.city ?? p.market?.city ?? undefined,
-    country: p.country ?? p.market?.country ?? undefined,
-    supplyCountries: p.supplyCountries ?? [],
+    city: nullableText(p.city) ?? nullableText(p.market?.city) ?? undefined,
+    country: nullableText(p.country) ?? nullableText(p.market?.country) ?? undefined,
+    supplyCountries: (p.supplyCountries ?? []).map((country) => textValue(country)).filter(Boolean),
   };
 }

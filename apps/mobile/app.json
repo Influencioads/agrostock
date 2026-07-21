@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "AgroTraders",
-    "slug": "agrotraders",
+    "slug": "agrostock",
     "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
