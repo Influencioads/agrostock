@@ -10,10 +10,13 @@
   },
   "auth": {
     "account_missing": "Esta conta não existe mais.",
+    "email_not_verified": "Confirme seu endereço de e-mail antes de fazer login. Verifique sua caixa de entrada para encontrar o link.",
     "email_taken": "Esse endereço de e-mail já está cadastrado.",
     "invalid_credentials": "E-mail ou senha inválidos.",
     "not_a_refresh_token": "Sua sessão expirou — faça login novamente.",
-    "refresh_invalid": "Sua sessão expirou — faça login novamente."
+    "refresh_invalid": "Sua sessão expirou — faça login novamente.",
+    "verification_expired": "Esse link de confirmação expirou. Solicite um novo.",
+    "verification_invalid": "Esse link de confirmação não é válido. Solicite um novo."
   },
   "net": {
     "offline": "Não foi possível conectar ao servidor. A API está em execução?",

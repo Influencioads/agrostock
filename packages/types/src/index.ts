@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export { BRAND } from './brand';
 export * from './attributes';
+export * from './units';
 
 /** Platform roles (from the AgroTraders design). */
 export const Role = {
@@ -43,6 +44,7 @@ export const Lang = {
   Fr: 'fr',
   De: 'de',
   Ja: 'ja',
+  Fa: 'fa',
 } as const;
 export type Lang = (typeof Lang)[keyof typeof Lang];
 export const LANGS = Object.values(Lang) as Lang[];

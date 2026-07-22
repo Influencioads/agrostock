@@ -4,10 +4,12 @@
  * bids) into every non-English locale, filling the translation cache tables.
  *
  * Reuses the live translate-on-write workers, so behaviour matches new content
- * exactly. Each row is skipped when its source hash is unchanged, which makes
- * this safe to re-run and resumable after an interruption.
+ * exactly. A row is skipped only when its source hash is unchanged AND every
+ * target locale already has a row, which makes this safe to re-run, resumable
+ * after an interruption, and — importantly — the way a NEWLY ADDED locale gets
+ * filled in for the back-catalogue (it translates just the missing locales).
  *
- * ⚠️ Cost: translates each row × 9 locales via Google — run deliberately.
+ * ⚠️ Cost: translates each row × every missing locale via Google — run deliberately.
  *
  * Prereqs: DB up + schema pushed (`prisma db push`) + GOOGLE_TRANSLATE_API_KEY set.
  * Run:  pnpm --filter @agrotraders/api backfill:translations

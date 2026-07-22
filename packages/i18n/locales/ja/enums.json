@@ -64,5 +64,13 @@
     "resolved": "解決済み",
     "waiting_support": "サポート待ち",
     "waiting_user": "あなたを待っています"
+  },
+  "unit": {
+    "BAG": "バッグ",
+    "KG": "キログラム（KG）",
+    "MT": "メートルトン（MT）",
+    "PIECE": "ピース",
+    "QUINTAL": "キンタル",
+    "TON": "トン"
   }
 }

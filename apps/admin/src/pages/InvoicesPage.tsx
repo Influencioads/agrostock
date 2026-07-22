@@ -82,13 +82,13 @@ export function InvoicesPage() {
               </button>
             ))}
           </div>
-          <label className="ms-auto flex items-center gap-2 rounded-md border border-surface-border px-3">
+          <label className="flex w-full items-center gap-2 rounded-md border border-surface-border px-3 sm:ms-auto sm:w-auto">
             <Icon name="search" size={16} className="text-ink-soft" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={t('invoicesAdmin.searchPh')}
-              className="h-9 w-64 bg-transparent text-sm outline-none placeholder:text-ink-soft"
+              className="h-9 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-ink-soft sm:w-64"
             />
           </label>
         </div>

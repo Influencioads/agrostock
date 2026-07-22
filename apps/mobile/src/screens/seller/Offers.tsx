@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
+import { unitSuffix } from '@agrotraders/types';
 
 /** Offers — feature any listing as a promotional deal. */
 export function SellerOffers() {
@@ -43,7 +44,7 @@ export function SellerOffers() {
                 </View>
                 <View>
                   <Txt variant="title">{p.name}</Txt>
-                  <Txt variant="muted">{p.price}{p.unit}</Txt>
+                  <Txt variant="muted">{p.price}{unitSuffix(p.unit)}</Txt>
                 </View>
               </Row>
               <Row gap={8}>

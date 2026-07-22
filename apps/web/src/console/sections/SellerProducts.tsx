@@ -6,6 +6,7 @@ import { api, assetUrl } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { errMessage } from './order-parts';
 import { ProductForm, blankProduct, formToPayload, productToForm, productFormReady, type ProductFormValues } from './ProductForm';
+import { unitSuffix } from '@agrotraders/types';
 
 type SellerProduct = ApiProduct & { _count?: { orders: number; auctionBids: number } };
 
@@ -99,9 +100,9 @@ export function SellerProducts() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div>
-          <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.productForm.myProducts')}</h2>
+          <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.productForm.myProducts')}</h2>
           <p className="text-sm text-ink-soft">{t('console.productForm.listingsCount', { count: products.length })}</p>
         </div>
         <Button onClick={() => setAdding(true)} leftIcon={<Icon name="plus" size={16} />}>
@@ -139,7 +140,7 @@ export function SellerProducts() {
                 <div className="mt-2 flex items-end justify-between">
                   <span className="font-display text-lg font-extrabold text-ink">
                     {p.price}
-                    <span className="text-xs font-normal text-ink-soft">{p.unit}</span>
+                    <span className="text-xs font-normal text-ink-soft">{unitSuffix(p.unit)}</span>
                   </span>
                   <span className="text-xs text-ink-soft">{t('console.dash.ordersCount', { count: p._count?.orders ?? 0 })}</span>
                 </div>

@@ -114,24 +114,27 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
       <div className="mb-6 flex items-center gap-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-cta">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-cta">
           <Icon name={icon} size={24} />
         </span>
-        <div>
-          <h1 className="font-display text-3xl font-extrabold text-ink">{t(`page.directory.${type}.title`)}</h1>
+        <div className="min-w-0">
+          <h1 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t(`page.directory.${type}.title`)}</h1>
           <p className="text-ink-soft">{t(`page.directory.${type}.sub`)} · {t('page.directory.listed', { count: entries.length })}</p>
         </div>
       </div>
 
       {/* filter bar */}
       <div className="mb-6 flex flex-wrap items-center gap-2 rounded-lg border border-surface-border bg-white p-3 shadow-card">
-        <label className="flex items-center gap-2 rounded-md border border-surface-border px-2.5">
+        {/* The bar wraps, but this label was a rigid ~215px unit; full-width on
+            a phone so it shares the row with the selects instead of forcing
+            them onto their own lines mid-word. */}
+        <label className="flex w-full items-center gap-2 rounded-md border border-surface-border px-2.5 sm:w-auto">
           <Icon name="search" size={15} className="text-ink-soft" />
           <input
             value={search}
             onChange={(e) => setParam('search', e.target.value || null)}
             placeholder={t('page.directory.searchName')}
-            className="h-9 w-44 bg-transparent text-sm outline-none placeholder:text-ink-soft"
+            className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft sm:w-44"
           />
         </label>
         <select

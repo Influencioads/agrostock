@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { ApiUser } from '@agrotraders/api-client';
+import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrotraders/api-client';
 import { api, setApiActiveRole, setApiToken, setApiRefreshToken, TOKEN_KEY, REFRESH_KEY } from '../lib/api';
 import { storage } from '../lib/storage';
 
@@ -32,7 +32,7 @@ interface AuthValue {
     phone?: string;
     location?: string;
     marketId?: string;
-  }) => Promise<ApiUser>;
+  }) => Promise<RegisterResult>;
   loginDemo: (role: string) => Promise<ApiUser>;
   logout: () => Promise<void>;
 }
@@ -114,8 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback<AuthValue['register']>(
     async (body) => {
       const res = await api.auth.register(body);
-      await persist(res.user, res.accessToken, res.refreshToken);
-      return res.user;
+      // With email confirmation on there is no session yet — the signup screen
+      // shows a "check your inbox" panel and the link is opened on the web app.
+      if (!isPendingVerification(res)) await persist(res.user, res.accessToken, res.refreshToken);
+      return res;
     },
     [persist],
   );

@@ -10,10 +10,13 @@
   },
   "auth": {
     "account_missing": "Ce compte n'existe plus.",
+    "email_not_verified": "Veuillez confirmer votre adresse courriel avant de vous connecter. Consultez votre boîte de réception pour trouver le lien.",
     "email_taken": "Cette adresse e-mail est déjà enregistrée.",
     "invalid_credentials": "Adresse e-mail ou mot de passe invalide.",
     "not_a_refresh_token": "Votre session a expiré — veuillez vous reconnecter.",
-    "refresh_invalid": "Votre session a expiré — veuillez vous reconnecter."
+    "refresh_invalid": "Votre session a expiré — veuillez vous reconnecter.",
+    "verification_expired": "Ce lien de confirmation a expiré. Veuillez en demander un nouveau.",
+    "verification_invalid": "Ce lien de confirmation n'est pas valide. Veuillez en demander un nouveau."
   },
   "net": {
     "offline": "Impossible de contacter le serveur. L'API est-elle en cours d'exécution ?",

@@ -184,9 +184,11 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
       {back}
 
       {/* ===== TIMER HERO ===== */}
-      <section style={{ background: HERO }} className="rounded-2xl px-5 py-6 text-white">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <div className="min-w-[260px]">
+      <section style={{ background: HERO }} className="rounded-2xl px-4 py-5 text-white sm:px-5 sm:py-6">
+        <div className="flex flex-wrap items-center justify-between gap-5 sm:gap-6">
+          {/* `min-w-0` first: a 260px floor inside a ~300px console column left
+              nothing for the countdown and forced a horizontal scroll. */}
+          <div className="min-w-0 sm:min-w-[260px]">
             <div className="mb-3 flex flex-wrap items-center gap-2.5">
               <span className={'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold ' + (isAuction ? 'bg-status-error' : 'bg-white/15')}>
                 {isAuction && !timer.ended && <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-white" />}
@@ -194,7 +196,7 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
               </span>
               <span className="text-xs text-brand-leaf">#{buyerBid.reference}</span>
             </div>
-            <h1 className="max-w-[460px] font-display text-2xl font-extrabold leading-tight tracking-tight">{buyerBid.title}</h1>
+            <h1 className="max-w-full break-words font-display text-xl font-extrabold leading-tight tracking-tight sm:max-w-[460px] sm:text-2xl">{buyerBid.title}</h1>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-sm text-brand-mint/90">
               <span>{buyerBid.qtyValue} {buyerBid.qtyUnit}</span>
               {buyerBid.deliveryPlace && <><span className="opacity-40">·</span><span>📍 {buyerBid.deliveryPlace}</span></>}
@@ -216,15 +218,17 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
             <div className="mb-2.5 text-[11px] font-bold tracking-[0.16em] text-brand-leaf">
               {timer.ended ? t('console.buyerBidRoom.ended') : isAuction ? t('auction.closesIn') : t('console.buyerBidRoom.deadlineIn')}
             </div>
-            <div className="flex items-start gap-2.5">
+            {/* Three 76px boxes + gaps is 248px — wider than the console column
+                on a phone. Boxes shrink and the row wraps instead. */}
+            <div className="flex flex-wrap items-start justify-center gap-2 sm:gap-2.5">
               {[[timer.h, t('auction.hours')], [timer.m, t('auction.minutes')]].map(([v, l], i) => (
-                <div key={i} className="w-[76px] rounded-2xl border border-white/15 bg-white/[0.08] px-1.5 pb-2.5 pt-3">
-                  <div className="font-numeric text-[2.6rem] font-bold leading-none">{v}</div>
+                <div key={i} className="w-[64px] rounded-2xl border border-white/15 bg-white/[0.08] px-1.5 pb-2.5 pt-3 sm:w-[76px]">
+                  <div className="font-numeric text-3xl font-bold leading-none sm:text-[2.6rem]">{v}</div>
                   <div className="mt-1.5 text-[10px] tracking-wider text-brand-leaf">{l}</div>
                 </div>
               ))}
-              <div className="w-[76px] rounded-2xl border border-white/15 px-1.5 pb-2.5 pt-3 shadow-[0_10px_26px_rgba(201,67,67,0.4)]" style={{ background: 'linear-gradient(160deg,#C94343,#a83333)' }}>
-                <div className="font-numeric text-[2.6rem] font-bold leading-none">{timer.s}</div>
+              <div className="w-[64px] rounded-2xl border border-white/15 px-1.5 pb-2.5 pt-3 shadow-[0_10px_26px_rgba(201,67,67,0.4)] sm:w-[76px]" style={{ background: 'linear-gradient(160deg,#C94343,#a83333)' }}>
+                <div className="font-numeric text-3xl font-bold leading-none sm:text-[2.6rem]">{timer.s}</div>
                 <div className="mt-1.5 text-[10px] tracking-wider text-white/80">{t('auction.seconds')}</div>
               </div>
             </div>

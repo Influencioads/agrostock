@@ -20,9 +20,9 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags, PartialType } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
-import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsInt, IsObject, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Min, MinLength } from 'class-validator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { getAttributeField } from '@agrotraders/types';
+import { getAttributeField, getAttributeFields, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -89,7 +89,7 @@ export class CreateProductDto {
   @IsString() categoryId!: string;
   @IsOptional() @IsString() subcategoryId?: string;
   @IsString() price!: string;
-  @IsOptional() @IsString() unit?: string;
+  @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) unit?: string;
   @IsOptional() @IsString() grade?: string;
   @IsOptional() @IsString() qty?: string;
   @IsOptional() @IsString() moq?: string;
@@ -146,6 +146,61 @@ export class ProductsService {
     return [...picked];
   }
 
+  /** Resolve a subcategory from either an id or a name scoped to the chosen category. */
+  private async findSubcategory(q: Record<string, string | undefined>) {
+    if (q.subcategoryId) {
+      return this.prisma.subcategory.findUnique({
+        where: { id: q.subcategoryId },
+        select: { id: true, name: true, parentId: true, categoryId: true },
+      });
+    }
+    if (!q.subcategory) return null;
+    return this.prisma.subcategory.findFirst({
+      where: {
+        name: q.subcategory,
+        ...(q.categoryId ? { categoryId: q.categoryId } : {}),
+        ...(!q.categoryId && q.category ? { category: { name: q.category } } : {}),
+      },
+      select: { id: true, name: true, parentId: true, categoryId: true },
+    });
+  }
+
+  /**
+   * ATTRIBUTE_SCHEMA is keyed by (category name, LEVEL-2 subcategory name), but
+   * buyers can now select a node five levels down. Walk up the ancestor chain to
+   * the nearest name the schema actually knows, so a deep selection still gets
+   * its facets — without this, `getAttributeField` returns undefined and every
+   * `multiselect` filter silently degrades to a scalar `equals` that can never
+   * match a stored JSON array.
+   */
+  private async attributeSchemaNames(q: Record<string, string | undefined>) {
+    let categoryName = q.category;
+    if (!categoryName && q.categoryId) {
+      categoryName =
+        (await this.prisma.category.findUnique({ where: { id: q.categoryId }, select: { name: true } }))?.name ??
+        undefined;
+    }
+    if (!categoryName) return { category: undefined, subcategory: undefined };
+
+    let node = await this.findSubcategory(q);
+    if (!node && !q.subcategoryId && q.subcategory) {
+      // Name given but no matching row (stale link) — fall back to the raw name.
+      return { category: categoryName, subcategory: q.subcategory };
+    }
+    for (let hops = 0; node && hops <= 8; hops++) {
+      if (getAttributeFields(categoryName, node.name).length > 0) {
+        return { category: categoryName, subcategory: node.name };
+      }
+      node = node.parentId
+        ? await this.prisma.subcategory.findUnique({
+            where: { id: node.parentId },
+            select: { id: true, name: true, parentId: true, categoryId: true },
+          })
+        : null;
+    }
+    return { category: categoryName, subcategory: undefined };
+  }
+
   async findAll(q: Record<string, string | undefined>, locale: Lang = 'en') {
     const where: Prisma.ProductWhereInput = { approved: true };
     if (q.categoryId) where.categoryId = q.categoryId;
@@ -154,8 +209,21 @@ export class ProductsService {
     if (q.safe === 'true') where.safeDeal = true;
     if (q.offer === 'true') where.isOffer = true;
     if (q.auction === 'true') where.isAuction = true;
-    if (q.subcategoryId) where.subcategoryId = { in: await this.subcategoryBranchIds(q.subcategoryId, q.categoryId) };
-    else if (q.subcategory) where.subcategory = { name: q.subcategory };
+    // A lot whose countdown has run out is finished: it can't be bid on or
+    // bought, so it leaves the browse grid alongside the auction board (see
+    // `AuctionsService.list`). Plain products and open-ended lots are untouched;
+    // the seller still sees it under `/auctions/selling`.
+    where.NOT = { isAuction: true, auctionEndsAt: { lte: new Date() } };
+    // Both the id and the name form are branch-inclusive: selecting a parent has
+    // to return everything listed under its descendants, or picking anything but
+    // a leaf would look empty on a deep tree.
+    if (q.subcategoryId) {
+      where.subcategoryId = { in: await this.subcategoryBranchIds(q.subcategoryId, q.categoryId) };
+    } else if (q.subcategory) {
+      const match = await this.findSubcategory(q);
+      if (match) where.subcategoryId = { in: await this.subcategoryBranchIds(match.id, match.categoryId) };
+      else where.subcategory = { name: q.subcategory };
+    }
     if (q.grade) where.grade = { equals: q.grade, mode: 'insensitive' };
     if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
     // Buyers can narrow to products a seller ships to their country.
@@ -182,12 +250,17 @@ export class ProductsService {
     // stores a scalar (equals) or an array (array_contains); multiple selected
     // values within one field are OR-ed, and separate fields AND together.
     const attrConds: Prisma.ProductWhereInput[] = [];
+    const hasAttrFilters = Object.entries(q).some(([k, v]) => k.startsWith('attr_') && v);
+    // Resolved once: the walk costs a query per level, and every facet shares it.
+    const attrNames = hasAttrFilters
+      ? await this.attributeSchemaNames(q)
+      : { category: undefined, subcategory: undefined };
     for (const [rawKey, rawVal] of Object.entries(q)) {
       if (!rawKey.startsWith('attr_') || !rawVal) continue;
       const key = rawKey.slice(5);
       const values = rawVal.split(',').map((v) => v.trim()).filter(Boolean);
       if (!values.length) continue;
-      const field = getAttributeField(q.category, q.subcategory, key);
+      const field = getAttributeField(attrNames.category, attrNames.subcategory, key);
       const isArray = field?.type === 'multiselect';
       const isBool = field?.type === 'boolean';
       const ors = values.map((v): Prisma.ProductWhereInput => {
@@ -300,7 +373,8 @@ export class ProductsService {
         name: dto.name,
         price,
         priceCents: parsePriceCents(price),
-        unit: dto.unit ?? '/MT',
+        // Legacy rows hold the display form ('/MT'); new writes are canonical.
+        unit: toUnit(dto.unit),
         grade: dto.grade,
         qty: dto.qty,
         moq: dto.moq,

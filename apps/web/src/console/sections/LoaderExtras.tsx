@@ -14,7 +14,7 @@ type Worker = ApiLoaderWorker;
 function SectionHead({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-5">
-      <h2 className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+      <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>
       {sub && <p className="mt-1 text-sm text-ink-soft">{sub}</p>}
     </div>
   );
@@ -140,10 +140,13 @@ export function LoaderAvailability() {
   return (
     <div>
       <SectionHead title={t('console.nav.availability')} sub={t('console.loaderco.availabilitySub')} />
-      <Card className="overflow-x-auto">
+      {/* The scroller belongs INSIDE the Card, not on it: on the Card the p-5
+          padding scrolls away with the grid and the right edge collapses. */}
+      <Card>
         {isLoading ? (
           <p className="text-ink-soft">{t('common:loading')}</p>
         ) : (
+          <div className="overflow-x-auto">
           <div className="min-w-[520px]">
             <div className="mb-2 grid grid-cols-[110px_repeat(6,1fr)] items-center gap-2 text-center text-xs font-bold text-ink-soft">
               <span />
@@ -167,6 +170,7 @@ export function LoaderAvailability() {
                 })}
               </div>
             ))}
+          </div>
           </div>
         )}
       </Card>

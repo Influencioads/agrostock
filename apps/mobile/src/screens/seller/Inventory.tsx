@@ -9,6 +9,7 @@ import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
+import { unitSuffix } from '@agrotraders/types';
 
 type SellerProduct = ApiProduct & { _count?: { orders: number } };
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -44,7 +45,7 @@ export function SellerInventory() {
                   <Txt variant="muted">{p.flag} {p.qty} · {t('sellerX.inventory.orders', { count: p._count?.orders ?? 0 })}</Txt>
                 </View>
               </Row>
-              <Txt variant="title">{p.price}{p.unit}</Txt>
+              <Txt variant="title">{p.price}{unitSuffix(p.unit)}</Txt>
             </Row>
             <Row gap={6}>
               {p.isOffer ? <Badge label={t('sellerX.inventory.offer')} tone="mango" /> : null}

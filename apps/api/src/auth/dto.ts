@@ -119,3 +119,15 @@ export class RefreshDto {
   @IsString()
   refreshToken!: string;
 }
+
+export class VerifyEmailDto {
+  @ApiProperty({ description: 'The one-shot token from the confirmation link' })
+  @IsString()
+  token!: string;
+}
+
+export class ResendVerificationDto {
+  @ApiProperty({ example: 'buyer@agrotraders.org' })
+  @IsEmail()
+  email!: string;
+}

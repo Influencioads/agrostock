@@ -101,8 +101,13 @@ export function InvoiceBuilderModal({ subject, onClose }: { subject: BillableSub
           </div>
           <div className="space-y-2">
             {lines.map((l, i) => (
-              <div key={i} className="grid grid-cols-[1fr_4rem_6rem_auto] items-end gap-2">
-                <Input label={i === 0 ? t('console.invoice.description') : undefined} placeholder={t('console.invoice.linePlaceholder')} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
+              // Inside a modal at 360px the fixed 4rem+6rem+auto tracks left
+              // ~60px for the description. Description gets its own full-width
+              // row on a phone; qty / price / remove share the second.
+              <div key={i} className="grid grid-cols-[1fr_6rem_auto] items-end gap-2 sm:grid-cols-[1fr_4rem_6rem_auto]">
+                <div className="col-span-full sm:col-span-1">
+                  <Input label={i === 0 ? t('console.invoice.description') : undefined} placeholder={t('console.invoice.linePlaceholder')} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
+                </div>
                 <Input label={i === 0 ? t('console.invoice.qty') : undefined} type="number" value={String(l.qty)} onChange={(e) => setLine(i, { qty: Number(e.target.value) })} />
                 <Input label={i === 0 ? t('console.invoice.unitPrice') : undefined} type="number" value={String(l.unitPrice)} onChange={(e) => setLine(i, { unitPrice: Number(e.target.value) })} />
                 <button type="button" title={t('console.invoice.removeLine')} className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg text-ink-soft hover:bg-brand-surface hover:text-red-600 disabled:opacity-30" disabled={lines.length === 1} onClick={() => removeLine(i)}>
@@ -226,19 +231,19 @@ export function InvoiceCenter({ title, sub, billable }: { title?: string; sub?: 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-ink">{title ?? t('console.nav.invoices')}</h2>
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{title ?? t('console.nav.invoices')}</h2>
         {sub && <p className="mt-1 text-sm text-ink-soft">{sub}</p>}
       </div>
 
       {billable}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {(['issued', 'received'] as const).map((tb) => (
             <button key={tb} onClick={() => setTab(tb)} className={'rounded-full border px-4 py-1.5 text-sm font-semibold capitalize ' + (tab === tb ? 'border-brand bg-brand-surface text-brand-dark' : 'border-surface-border text-ink-soft')}>{tb === 'issued' ? t('console.invoice.tabIssued') : t('console.invoice.tabReceived')}</button>
           ))}
         </div>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {STATUS_FILTERS.map((s) => (
             <button key={s} onClick={() => setStatus(s)} className={'rounded-full border px-3 py-1 text-xs font-semibold capitalize ' + (status === s ? 'border-brand bg-brand-surface text-brand-dark' : 'border-surface-border text-ink-soft')}>{t(`console.invoice.filter.${s}`)}</button>
           ))}

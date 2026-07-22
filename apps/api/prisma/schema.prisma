@@ -274,6 +274,10 @@ model User {
   // Per-module admin capabilities (only meaningful for role=admin accounts).
   adminPermissions AdminPermission[] @default([])
   country      String?
+  /// When the account confirmed its email address. Null blocks login — except for
+  /// accounts that never self-registered (seeded, admin-created, loader-created
+  /// workers who sign in by phone), which are stamped verified at creation.
+  emailVerifiedAt DateTime?
   /// Preferred UI locale (BCP-47, e.g. "ru"). Null = detect from Accept-Language.
   locale       String?
   kycStatus    KycStatus @default(pending)
@@ -312,6 +316,7 @@ model User {
   roleDecisions     RoleRequest[]      @relation("RequestDecider")
   payoutRequests    PayoutRequest[]    @relation("PayoutUser")
   payoutDecisions   PayoutRequest[]    @relation("PayoutDecider")
+  emailTokens       EmailVerificationToken[]
 
   // ── Chat systems (Community + Live Support) back-relations ──
   ownedCommunityGroups     CommunityGroup[]               @relation("CommunityGroupOwner")
@@ -398,6 +403,21 @@ model Market {
   translations MarketTranslation[]
 
   @@index([status])
+}
+
+/// One-shot email confirmation link. Only the SHA-256 hash of the token is
+/// stored, so a database leak cannot be replayed into account takeovers; the raw
+/// token exists only in the email we send.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /// Extended per-user profile. `phone`, `whatsapp` and `contactEmail` are

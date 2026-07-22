@@ -64,5 +64,13 @@
     "resolved": "已解决",
     "waiting_support": "等待支持",
     "waiting_user": "等你"
+  },
+  "unit": {
+    "BAG": "包",
+    "KG": "千克（KG）",
+    "MT": "公吨 (MT)",
+    "PIECE": "片",
+    "QUINTAL": "昆塔尔",
+    "TON": "吨"
   }
 }

@@ -8,6 +8,7 @@ import { useI18n } from '../../i18n';
 import { Badge, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
+import { unitSuffix } from '@agrotraders/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -37,7 +38,7 @@ export function BuyerSaved() {
                 </View>
                 <View>
                   <Txt variant="title">{p.name}</Txt>
-                  <Txt variant="muted">{p.flag} {p.price}{p.unit}</Txt>
+                  <Txt variant="muted">{p.flag} {p.price}{unitSuffix(p.unit)}</Txt>
                 </View>
               </Row>
               {p.verified ? <Badge label={t('buyerX.saved.verified')} tone="green" /> : null}

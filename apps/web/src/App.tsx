@@ -21,6 +21,7 @@ import { PageView } from './pages/PageView';
 import { ConsolePage } from './console/ConsolePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { SystemPage } from './pages/SystemPage';
 import { ChatWidgets } from './chat/ChatWidgets';
 import { CurrencyProvider } from './currency/CurrencyContext';
@@ -66,6 +67,7 @@ export function App() {
           {/* auth */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* protected console */}
           <Route

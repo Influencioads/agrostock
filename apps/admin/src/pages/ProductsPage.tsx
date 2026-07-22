@@ -5,6 +5,7 @@ import type { AdminProduct } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
 import { api } from '../lib/api';
 import { useI18n } from '../i18n';
+import { unitSuffix } from '@agrotraders/types';
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   pending: 'warn',
@@ -74,7 +75,7 @@ export function ProductsPage() {
             </option>
           ))}
         </select>
-        <label className="ms-auto flex items-center gap-2 rounded-md border border-surface-border px-3">
+        <label className="flex w-full items-center gap-2 rounded-md border border-surface-border px-3 sm:ms-auto sm:w-auto">
           <Icon name="search" size={16} className="text-ink-soft" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('prodMod.searchPlaceholder')} className="h-8 w-56 bg-transparent text-sm outline-none placeholder:text-ink-soft" />
         </label>
@@ -137,7 +138,7 @@ export function ProductsPage() {
                     </td>
                     <td className="px-5 py-3 text-end font-numeric font-bold text-ink">
                       {p.price}
-                      {p.unit}
+                      {unitSuffix(p.unit)}
                     </td>
                     <td className="px-5 py-3">
                       {rejecting?.id === p.id ? (

@@ -2,9 +2,14 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import type { LoginDto, RegisterDto } from './dto';
 import { AppException } from '../common/app-exception';
+
+/** How long a confirmation link stays usable. */
+const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
@@ -12,6 +17,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private mail: MailService,
   ) {}
 
   private accessSecret() {
@@ -146,7 +152,88 @@ export class AuthService {
       }
       return created;
     });
+
+    // Without SMTP configured there is no way to deliver a link, so the account
+    // would be permanently unreachable — dev machines and CI fall through to the
+    // old behaviour of signing straight in.
+    if (!this.mail.enabled) {
+      const verified = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerifiedAt: new Date() },
+      });
+      return { user: this.safe(verified), ...(await this.tokens(verified)) };
+    }
+
+    await this.issueVerification(user);
+    return { pendingVerification: true as const, email: user.email };
+  }
+
+  /* ── email confirmation ───────────────────────────────────────── */
+
+  private hashToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  /**
+   * Mint a one-shot token, invalidate any earlier ones, and email the link.
+   *
+   * The token is committed before we return, but the SMTP round-trip is NOT
+   * awaited: a slow or unreachable mail host would otherwise hang signup for as
+   * long as the connection takes to time out. MailService.send already swallows
+   * and logs its own failures, and the user can always ask for a resend.
+   */
+  private async issueVerification(user: { id: string; email: string; name: string }) {
+    const token = randomBytes(32).toString('hex');
+    await this.prisma.$transaction([
+      // A fresh request supersedes older links so only the newest email works.
+      this.prisma.emailVerificationToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
+      this.prisma.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: this.hashToken(token),
+          expiresAt: new Date(Date.now() + VERIFICATION_TTL_MS),
+        },
+      }),
+    ]);
+    void this.mail.sendVerificationEmail(user, token);
+  }
+
+  /** Consume a confirmation token and sign the account in. */
+  async verifyEmail(rawToken: string) {
+    const token = (rawToken ?? '').trim();
+    if (!token) throw AppException.badRequest('auth.verification_invalid', 'Invalid confirmation link');
+    const record = await this.prisma.emailVerificationToken.findUnique({
+      where: { tokenHash: this.hashToken(token) },
+      include: { user: true },
+    });
+    if (!record || record.usedAt) {
+      throw AppException.badRequest('auth.verification_invalid', 'Invalid confirmation link');
+    }
+    if (record.expiresAt.getTime() < Date.now()) {
+      throw AppException.badRequest('auth.verification_expired', 'This confirmation link has expired');
+    }
+    const [, user] = await this.prisma.$transaction([
+      this.prisma.emailVerificationToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.user.update({
+        where: { id: record.userId },
+        // Keep the first confirmation time if the account is somehow already verified.
+        data: { emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
+      }),
+    ]);
     return { user: this.safe(user), ...(await this.tokens(user)) };
+  }
+
+  /**
+   * Re-send the confirmation link. Always resolves the same way whether or not
+   * the address exists, so this cannot be used to enumerate accounts.
+   */
+  async resendVerification(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email: (email ?? '').trim() } });
+    if (user && !user.emailVerifiedAt && this.mail.enabled) await this.issueVerification(user);
+    return { ok: true as const };
   }
 
   /**
@@ -176,6 +263,11 @@ export class AuthService {
     if (!user) throw AppException.unauthorized('auth.invalid_credentials', 'Invalid credentials');
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) throw AppException.unauthorized('auth.invalid_credentials', 'Invalid credentials');
+    // Self-registered accounts must confirm their address first. Seeded,
+    // admin-created and loader-created accounts are stamped verified on creation.
+    if (!user.emailVerifiedAt) {
+      throw AppException.forbidden('auth.email_not_verified', 'Confirm your email address to sign in');
+    }
     return { user: this.safe(user), ...(await this.tokens(user)) };
   }
 

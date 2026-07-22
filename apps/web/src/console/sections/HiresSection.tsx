@@ -126,7 +126,7 @@ export function HiresSection() {
 
   return (
     <div>
-      <h2 className="mb-5 font-display text-2xl font-extrabold text-ink">{t('console.nav.hires')}</h2>
+      <h2 className="mb-5 min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.hires')}</h2>
 
       {isProvider && (
         <>

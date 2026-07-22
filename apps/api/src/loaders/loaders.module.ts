@@ -238,7 +238,11 @@ export class LoadersService {
     const existing = await tx.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException('An account with this login already exists');
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await tx.user.create({ data: { email, passwordHash, name, role: 'worker' } });
+    // Created by their loader company (often against a synthetic email, since
+    // phone-only workers log in by number) — nobody could click a link here.
+    const user = await tx.user.create({
+      data: { email, passwordHash, name, role: 'worker', emailVerifiedAt: new Date() },
+    });
     if (!isEmail) await tx.profile.create({ data: { userId: user.id, phone: handle } });
     return user.id;
   }

@@ -5,11 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiBuyerBid, ApiBuyerBidMode } from '@agrotraders/api-client';
+import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { errMessage, usd } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, ChipSelect, EmptyState, Input, Loading, Row, Screen, Segmented, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import { GalleryEditor } from '../seller/AddProduct';
 import type { RootStackParamList } from '../../navigation/types';
@@ -82,7 +83,14 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
           <Input label={t('buyerX.bids.fieldProduct')} placeholder={t('pubX.ph.productBasmati1121')} value={f.productName} onChangeText={set('productName')} />
           <Row gap={10}>
             <View style={{ flex: 1 }}><Input label={t('buyerX.bids.fieldQuantity')} keyboardType="numeric" value={f.qtyValue} onChangeText={set('qtyValue')} /></View>
-            <View style={{ flex: 1 }}><Input label={t('buyerX.bids.fieldUnit')} value={f.qtyUnit} onChangeText={set('qtyUnit')} /></View>
+            <View style={{ flex: 1 }}>
+              <ChipSelect
+                label={t('buyerX.bids.fieldUnit')}
+                value={toUnit(f.qtyUnit)}
+                options={PRODUCT_UNITS.map((u) => ({ id: u, label: t(`enums:unit.${u}`) }))}
+                onChange={set('qtyUnit')}
+              />
+            </View>
           </Row>
           <Input label={t('buyerX.bids.fieldTargetPrice', { unit: f.qtyUnit })} keyboardType="numeric" value={f.targetPrice} onChangeText={set('targetPrice')} />
           <Input label={t('buyerX.bids.fieldDeliveryPlace')} placeholder={t('pubX.ph.deliveryJebelAli')} value={f.deliveryPlace} onChangeText={set('deliveryPlace')} />

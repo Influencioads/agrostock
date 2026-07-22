@@ -12,6 +12,33 @@ body {
   color: theme('colors.ink.DEFAULT');
 }
 
+/* Horizontal-overflow guard.
+   Without this a single too-wide child widens the whole document, and every
+   section below it loses its centring — the "nothing lines up on mobile" bug.
+   `clip` rather than `hidden` on purpose: `hidden` turns the element into a
+   scroll container, which would break the `sticky top-0` site header. */
+html,
+body {
+  overflow-x: clip;
+}
+@supports not (overflow: clip) {
+  html {
+    overflow-x: hidden;
+  }
+}
+
+#root {
+  max-width: 100%;
+}
+
+/* Media never dictates layout width on a phone. */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
 .font-display {
   font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
 }

@@ -131,6 +131,7 @@
   },
   "catAdmin": {
     "addCategory": "إضافة فئة",
+    "addChild": "إضافة طفل",
     "addSub": "فرعي",
     "catName": "اسم الفئة",
     "collapse": "ينهار",
@@ -145,9 +146,11 @@
     "empty": "لا توجد تصنيفات حتى الآن. أضف التصنيف الأول.",
     "expand": "يوسع",
     "modalAddCategory": "إضافة فئة",
+    "modalAddChild": "أضف طفلاً تحت {{name}}",
     "modalAddSub": "أضف فئة فرعية إلى {{name}}",
     "modalEditCategory": "تعديل الفئة",
     "modalEditSub": "تعديل الفئة الفرعية",
+    "nodeStats": "{{products}} منتجات · {{children}} مستويات الأطفال",
     "phCat": "مثال: الفواكه",
     "phSub": "مثال: أرز بسمتي",
     "productsCount": "{{count}} منتجات",
@@ -354,6 +357,7 @@
     "overview": "ملخص",
     "payments": "المدفوعات",
     "products": "منتجات",
+    "profile": "حساب تعريفي",
     "reports": "التقارير",
     "reviews": "التقييمات",
     "roleRequests": "طلبات الأدوار",
@@ -383,6 +387,7 @@
     "fStaff": "طاقم عمل",
     "fTimezone": "المنطقة الزمنية",
     "fType": "يكتب",
+    "pickTimezone": "— اختر المنطقة الزمنية —",
     "save": "حفظ المكتب",
     "saving": "توفير…"
   },
@@ -595,6 +600,22 @@
       "safedeal": "صفقة آمنة"
     }
   },
+  "profile": {
+    "active": "نشيط",
+    "inactive": "غير نشط",
+    "newPassword": "كلمة المرور الجديدة",
+    "noPermissions": "لم يتم تعيين أي أذونات للوحدة.",
+    "passwordError": "تعذر تغيير كلمة المرور.",
+    "passwordSave": "تغيير كلمة المرور",
+    "passwordSaving": "جارٍ التحديث...",
+    "passwordTitle": "كلمة المرور",
+    "passwordUpdated": "تم تغيير كلمة المرور.",
+    "permissions": "الأذونات",
+    "role": "دور",
+    "status": "حالة",
+    "subtitle": "يمكنك إدارة حسابك الإداري وكلمة مرورك من هنا. لا تظهر الحسابات الإدارية في قسم المستخدمين.",
+    "title": "ملف تعريف المشرف الرئيسي"
+  },
   "range": {
     "allTime": "على مر العصور",
     "from": "من",
@@ -798,6 +819,15 @@
     "whatsapp": "واتساب"
   },
   "users": {
+    "createActive": "نشيط",
+    "createCountry": "دولة",
+    "createEmail": "بريد إلكتروني",
+    "createError": "تعذر إنشاء المستخدم.",
+    "createName": "اسم",
+    "createPassword": "كلمة مرور مؤقتة",
+    "createRole": "دور",
+    "createUser": "إضافة مستخدم",
+    "creating": "إضافة...",
     "filterAll": "الجميع",
     "invite": "دعوة المستخدم",
     "searchPlaceholder": "ابحث عن الاسم أو البريد الإلكتروني…",

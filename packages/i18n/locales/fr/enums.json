@@ -64,5 +64,13 @@
     "resolved": "Résolu",
     "waiting_support": "En attente de soutien",
     "waiting_user": "Dans votre attente"
+  },
+  "unit": {
+    "BAG": "Sac",
+    "KG": "Kilogramme (KG)",
+    "MT": "Tonne métrique (MT)",
+    "PIECE": "Morceau",
+    "QUINTAL": "Quintal",
+    "TON": "Tonne"
   }
 }

@@ -36,6 +36,15 @@ export class AutoBidDto {
 
 const isAdmin = (u?: AuthUser) => !!u && (u.roles ?? [u.role]).includes('admin');
 
+/** A lot is complete once its countdown has run out. No clock = runs until closed. */
+const hasEnded = (p: Pick<Product, 'auctionEndsAt'>) =>
+  !!p.auctionEndsAt && p.auctionEndsAt.getTime() <= Date.now();
+
+/** Only live lots belong on a public board; the completed ones are owner-scoped. */
+const liveOnly = (): Prisma.ProductWhereInput => ({
+  OR: [{ auctionEndsAt: null }, { auctionEndsAt: { gt: new Date() } }],
+});
+
 /**
  * The minimum raise for a lot. Sellers may pin `bidIncrementCents`; otherwise it
  * scales to ~1% of the current price, clamped to $50–$1,000 and rounded to $50.
@@ -112,9 +121,33 @@ export class AuctionsService {
     };
   }
 
+  /**
+   * Completed lots leave every public surface but stay reachable for the people
+   * who were actually in them: the seller, an admin, and anyone who bid — by
+   * hand or by leaving a proxy ceiling. To everyone else the lot reads as though
+   * it never existed, so a stale link 404s instead of exposing a settled book.
+   */
+  private async isParticipant(product: Product, viewer?: AuthUser) {
+    if (!viewer) return false;
+    if (isAdmin(viewer) || product.sellerId === viewer.id) return true;
+    const [bid, auto] = await Promise.all([
+      this.prisma.auctionBid.findFirst({ where: { productId: product.id, bidderId: viewer.id }, select: { id: true } }),
+      this.prisma.auctionAutoBid.findFirst({ where: { productId: product.id, bidderId: viewer.id }, select: { maxCents: true } }),
+    ]);
+    return !!bid || !!auto;
+  }
+
+  /** Gate on a completed lot — same 404 as a slug that was never a lot at all. */
+  private async assertVisible(product: Product, viewer?: AuthUser) {
+    if (!hasEnded(product)) return;
+    if (!(await this.isParticipant(product, viewer))) {
+      throw AppException.notFound('auctions.not_found', 'Auction not found');
+    }
+  }
+
   async list(viewer?: AuthUser, locale: Lang = 'en') {
     const products = await this.prisma.product.findMany({
-      where: { isAuction: true, approved: true },
+      where: { isAuction: true, approved: true, ...liveOnly() },
       include: { seller: { select: { name: true } }, translations: { where: { locale } } },
       orderBy: { auctionEndsAt: 'asc' },
     });
@@ -133,6 +166,7 @@ export class AuctionsService {
       include: { seller: { select: { id: true, name: true, country: true } }, translations: { where: { locale } } },
     });
     if (!product || !product.isAuction) throw AppException.notFound('auctions.not_found', 'Auction not found');
+    await this.assertVisible(product, viewer);
     const ownerView = isAdmin(viewer) || (!!viewer && product.sellerId === viewer.id);
     const pub = await this.withPublic(product, ownerView);
     const standing = viewer && !ownerView ? await this.standing(product.id, viewer.id) : null;
@@ -147,6 +181,7 @@ export class AuctionsService {
   async bids(slug: string, viewer?: AuthUser) {
     const product = await this.prisma.product.findUnique({ where: { slug } });
     if (!product) throw AppException.notFound('auctions.not_found', 'Auction not found');
+    await this.assertVisible(product, viewer);
     const ownerView = isAdmin(viewer) || (!!viewer && product.sellerId === viewer.id);
     const rows = await this.prisma.auctionBid.findMany({
       where: { productId: product.id },

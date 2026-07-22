@@ -1,0 +1,7 @@
+{
+  "extends": "@agrotraders/config/tsconfig.react.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src"]
+}

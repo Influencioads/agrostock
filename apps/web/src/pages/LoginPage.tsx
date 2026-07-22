@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BrandMark, Button, Card, Icon, Input } from '@agrotraders/ui';
-import { resolveApiError } from '@agrotraders/api-client';
+import { apiErrorCode, resolveApiError } from '@agrotraders/api-client';
 import { useAuth } from '../auth/AuthContext';
+import { api } from '../lib/api';
 import { useBranding } from '../branding/BrandingProvider';
 import { useI18n } from '../i18n';
 
@@ -20,9 +21,14 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Set when the sign-in failed only because the address is not confirmed yet.
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resent, setResent] = useState(false);
 
   const submit = async (run: () => Promise<unknown>) => {
     setError('');
+    setNeedsVerification(false);
+    setResent(false);
     setBusy(true);
     try {
       await run();
@@ -41,6 +47,7 @@ export function LoginPage() {
       } else if (status === undefined) {
         setError(t('errors:net.offline'));
       } else {
+        setNeedsVerification(apiErrorCode(e) === 'auth.email_not_verified');
         setError(resolveApiError(e, (code) => t(`errors:${code}`, { defaultValue: '' }) || undefined, t('errors:unknown')));
       }
     } finally {
@@ -90,6 +97,20 @@ export function LoginPage() {
               error={error || undefined}
               required
             />
+            {needsVerification && (
+              <Button
+                type="button"
+                variant="outline"
+                fullWidth
+                disabled={resent}
+                onClick={async () => {
+                  await api.auth.resendVerification(email);
+                  setResent(true);
+                }}
+              >
+                {resent ? t('page.login.verificationSent') : t('page.login.resendVerification')}
+              </Button>
+            )}
             <Button type="submit" fullWidth disabled={busy}>
               {busy ? t('page.login.signingIn') : t('page.login.signIn')}
             </Button>

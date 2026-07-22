@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Icon, Input } from '@agrotraders/ui';
+import { Badge, Button, Combobox, Icon, Input } from '@agrotraders/ui';
 import type { ApiCategory, ApiMarket, ApiProduct } from '@agrotraders/api-client';
 import { COUNTRIES } from '@agrotraders/api-client';
-import { getAttributeFields, type AttrField } from '@agrotraders/types';
+import { getAttributeFields, PRODUCT_UNITS, toUnit, type AttrField } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
+import { useCityOptions } from '../../lib/geo';
 import { useI18n } from '../../i18n';
 import { errMessage } from './order-parts';
 
@@ -20,6 +21,8 @@ export interface ProductFormValues {
   subcategoryId: string;
   price: string;
   qty: string;
+  /** Quantity unit (`PRODUCT_UNITS`). Prices read as `$840/MT`. */
+  unit: string;
   moq: string;
   grade: string;
   flag: string;
@@ -41,7 +44,7 @@ export interface ProductFormValues {
 }
 
 export const blankProduct: ProductFormValues = {
-  name: '', categoryId: '', subcategoryId: '', price: '', qty: '', moq: '', grade: '', flag: '🌾',
+  name: '', categoryId: '', subcategoryId: '', price: '', qty: '', unit: 'MT', moq: '', grade: '', flag: '🌾',
   origin: '', city: '', country: '', supplyCountries: [], delivery: '', marketId: '',
   isOffer: false, isAuction: false, startBid: '', auctionEndsAt: '',
   attributes: {},
@@ -59,6 +62,8 @@ export function productToForm(p: ApiProduct): ProductFormValues {
     // The API stores the display string ("$840"); the form edits the bare number.
     price: (p.price ?? '').replace(/^\$/, ''),
     qty: p.qty ?? '',
+    // Listings created before units were a picker stored the display form ('/MT').
+    unit: toUnit(p.unit),
     moq: p.moq ?? '',
     grade: p.grade ?? '',
     flag: p.flag ?? '🌾',
@@ -85,6 +90,7 @@ export function formToPayload(f: ProductFormValues) {
     ...(f.subcategoryId ? { subcategoryId: f.subcategoryId } : {}),
     price: f.price,
     ...(f.qty ? { qty: f.qty } : {}),
+    unit: toUnit(f.unit),
     ...(f.moq ? { moq: f.moq } : {}),
     ...(f.grade ? { grade: f.grade } : {}),
     ...(f.flag ? { flag: f.flag } : {}),
@@ -491,6 +497,8 @@ export function ProductForm({
   const { t } = useI18n();
   const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const set = <K extends keyof ProductFormValues>(k: K) => (v: ProductFormValues[K]) => onChange({ ...value, [k]: v });
+  // City suggestions for wherever the goods sit, searched on the API per country.
+  const { cities, loading: citiesLoading } = useCityOptions(value.country, value.city);
   const selectedCategory = categories.find((c) => c.id === value.categoryId);
   const subcategories = selectedCategory?.subcategories ?? [];
   const categoryName = selectedCategory?.name ?? null;
@@ -559,6 +567,18 @@ export function ProductForm({
         <Input label={t('console.productForm.price')} placeholder="840" value={value.price} onChange={(e) => set('price')(e.target.value)} />
         <Input label={t('console.productForm.grade')} placeholder={t('console.productForm.phGrade')} value={value.grade} onChange={(e) => set('grade')(e.target.value)} />
         <Input label={t('console.productForm.quantity')} placeholder={t('console.productForm.phQty')} value={value.qty} onChange={(e) => set('qty')(e.target.value)} />
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.unit')}</span>
+          <select
+            value={toUnit(value.unit)}
+            onChange={(e) => set('unit')(e.target.value)}
+            className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
+          >
+            {PRODUCT_UNITS.map((u) => (
+              <option key={u} value={u}>{t(`enums:unit.${u}`)}</option>
+            ))}
+          </select>
+        </label>
         <Input label={t('console.productForm.moq')} placeholder={t('console.productForm.phMoq')} value={value.moq} onChange={(e) => set('moq')(e.target.value)} />
         <Input label={t('console.productForm.origin')} placeholder={t('console.productForm.phOrigin')} value={value.origin} onChange={(e) => set('origin')(e.target.value)} />
         <Input label={t('console.productForm.delivery')} placeholder={t('console.productForm.phDelivery')} value={value.delivery} onChange={(e) => set('delivery')(e.target.value)} />
@@ -566,18 +586,29 @@ export function ProductForm({
 
       {/* Location: where the goods physically sit */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input label={t('console.productForm.city')} placeholder={t('console.productForm.phCity')} value={value.city} onChange={(e) => set('city')(e.target.value)} />
+        {/* Country first — the city options are fetched per-country. */}
         <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.country')}</span>
           <select
             value={value.country}
-            onChange={(e) => set('country')(e.target.value)}
+            // A city only means something inside its country, so drop it when the country moves.
+            onChange={(e) => onChange({ ...value, country: e.target.value, city: '' })}
             className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
           >
             <option value="">{t('console.productForm.select')}</option>
             {COUNTRIES.map((c) => <option key={c.name} value={c.name}>{c.flag} {c.name}</option>)}
           </select>
         </label>
+        <Combobox
+          label={t('console.productForm.city')}
+          placeholder={t('console.productForm.phCity')}
+          value={value.city}
+          onChange={set('city')}
+          options={cities}
+          loading={citiesLoading}
+          // The API already filtered by the typed term.
+          filterLocally={false}
+        />
       </div>
 
       <SupplyCountriesSelect value={value.supplyCountries} onChange={set('supplyCountries')} />

@@ -9,6 +9,7 @@ import { useI18n } from '../i18n';
 import { chatBus } from '../chat/chatBus';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
 import { ReviewList } from '../console/components/ReviewList';
+import { unitSuffix } from '@agrotraders/types';
 
 /**
  * Public profile. Contact details are intentionally masked — the API never
@@ -146,7 +147,7 @@ export function PublicProfilePage() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-sm font-bold text-ink">{prod.name}</span>
-                  <span className="text-xs text-ink-soft">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{prod.unit}</span>
+                  <span className="text-xs text-ink-soft">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{unitSuffix(prod.unit)}</span>
                 </span>
                 <Icon name="chevronRight" size={16} className="text-ink-soft" />
               </Link>

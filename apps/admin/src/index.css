@@ -8,6 +8,29 @@
 body {
   margin: 0;
 }
+
+/* See apps/web/src/index.css — same horizontal-overflow guard. `clip` keeps
+   sticky positioning working; `hidden` would not. */
+html,
+body {
+  overflow-x: clip;
+}
+@supports not (overflow: clip) {
+  html {
+    overflow-x: hidden;
+  }
+}
+
+#root {
+  max-width: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
 .font-display {
   font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
 }

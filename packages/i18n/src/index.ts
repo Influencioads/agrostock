@@ -7,7 +7,7 @@
  */
 
 /** Supported locales. `en` is the source of truth; the rest are translated from it. */
-export const LOCALES = ['en', 'ru', 'zh-Hans', 'es', 'hi', 'ar', 'pt', 'fr', 'de', 'ja'] as const;
+export const LOCALES = ['en', 'ru', 'zh-Hans', 'es', 'hi', 'ar', 'pt', 'fr', 'de', 'ja', 'fa'] as const;
 export type Lang = (typeof LOCALES)[number];
 
 /** Locale names written in their own language, for the language picker. */
@@ -22,10 +22,11 @@ export const LOCALE_LABELS: Record<Lang, string> = {
   fr: 'Français',
   de: 'Deutsch',
   ja: '日本語',
+  fa: 'فارسی',
 };
 
 /** Right-to-left locales. Drives `dir="rtl"` on web and `I18nManager` on mobile. */
-export const RTL_LOCALES: readonly string[] = ['ar'];
+export const RTL_LOCALES: readonly string[] = ['ar', 'fa'];
 
 export function isRtl(locale: string): boolean {
   return RTL_LOCALES.includes(locale);

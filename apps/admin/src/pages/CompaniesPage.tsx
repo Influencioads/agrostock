@@ -192,7 +192,7 @@ export function CompaniesPage({ kind }: { kind: Kind }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t('companies.searchPlaceholder')}
-                className="h-9 w-56 bg-transparent text-sm outline-none placeholder:text-ink-soft"
+                className="h-9 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-ink-soft sm:w-56"
               />
             </label>
           </div>

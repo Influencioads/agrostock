@@ -130,6 +130,7 @@
   },
   "catAdmin": {
     "addCategory": "添加类别",
+    "addChild": "添加孩子",
     "addSub": "子",
     "catName": "类别名称",
     "collapse": "坍塌",
@@ -144,9 +145,11 @@
     "empty": "暂无分类。添加第一个分类。",
     "expand": "扩张",
     "modalAddCategory": "添加类别",
+    "modalAddChild": "在 {{name}} 下添加孩子",
     "modalAddSub": "向 {{name}} 添加子类别",
     "modalEditCategory": "编辑类别",
     "modalEditSub": "编辑子类别",
+    "nodeStats": "{{products}} 产品 · {{children}} 儿童级别",
     "phCat": "例如：水果",
     "phSub": "例如：巴斯马蒂大米",
     "productsCount": "{{count}} 产品",
@@ -348,6 +351,7 @@
     "overview": "概述",
     "payments": "付款",
     "products": "产品",
+    "profile": "轮廓",
     "reports": "报告",
     "reviews": "评论",
     "roleRequests": "角色请求",
@@ -377,6 +381,7 @@
     "fStaff": "职员",
     "fTimezone": "时区",
     "fType": "类型",
+    "pickTimezone": "— 选择时区 —",
     "save": "保存办公室",
     "saving": "保存…"
   },
@@ -589,6 +594,22 @@
       "safedeal": "安全交易"
     }
   },
+  "profile": {
+    "active": "积极的",
+    "inactive": "不活跃",
+    "newPassword": "新密码",
+    "noPermissions": "未分配任何模块权限。",
+    "passwordError": "无法更改密码。",
+    "passwordSave": "更改密码",
+    "passwordSaving": "正在更新……",
+    "passwordTitle": "密码",
+    "passwordUpdated": "密码已更改。",
+    "permissions": "权限",
+    "role": "角色",
+    "status": "地位",
+    "subtitle": "请在此处管理您的管理员帐户和密码。管理员帐户不会显示在“用户”列表中。",
+    "title": "超级管理员个人资料"
+  },
   "range": {
     "allTime": "所有时间",
     "from": "从",
@@ -792,6 +813,15 @@
     "whatsapp": "WhatsApp"
   },
   "users": {
+    "createActive": "积极的",
+    "createCountry": "国家",
+    "createEmail": "电子邮件",
+    "createError": "创建用户失败。",
+    "createName": "姓名",
+    "createPassword": "临时密码",
+    "createRole": "角色",
+    "createUser": "添加用户",
+    "creating": "添加……",
     "filterAll": "全部",
     "invite": "邀请用户",
     "searchPlaceholder": "搜索姓名或邮箱…",

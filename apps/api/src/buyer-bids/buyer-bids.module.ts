@@ -40,6 +40,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BUYER_BID_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
 import { Locale, localize } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
+import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 
 /** Gallery cap on a buyer's requirement photos (mirrors MAX_PRODUCT_IMAGES). */
 export const MAX_BUYER_BID_IMAGES = 6;
@@ -47,6 +48,16 @@ export const MAX_BUYER_BID_IMAGES = 6;
 const ref = () => 'BID-' + Math.floor(1000 + Math.random() * 9000);
 const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`;
 const isAdmin = (u: AuthUser) => (u.roles ?? [u.role]).includes('admin');
+
+/**
+ * A requirement is finished once it leaves `open` — awarded, closed or cancelled
+ * — or once whichever clock it runs on has expired. Mirrors the exclusions
+ * `open()` and `live()` already apply to the public boards.
+ */
+const isCompleted = (b: { status: string; deadline: Date | null; auctionEndsAt: Date | null }) =>
+  b.status !== 'open' ||
+  (!!b.deadline && b.deadline.getTime() <= Date.now()) ||
+  (!!b.auctionEndsAt && b.auctionEndsAt.getTime() <= Date.now());
 
 // ── DTOs ─────────────────────────────────────────────────────────
 
@@ -57,7 +68,7 @@ export class CreateBuyerBidDto {
   @ApiProperty() @IsString() @MaxLength(160) title!: string;
   @ApiProperty() @IsString() @MaxLength(160) productName!: string;
   @ApiProperty({ minimum: 0.01 }) @IsNumber() @Min(0.01) qtyValue!: number;
-  @ApiProperty({ required: false, default: 'MT' }) @IsOptional() @IsString() @MaxLength(16) qtyUnit?: string;
+  @ApiProperty({ required: false, enum: PRODUCT_UNITS, default: 'MT' }) @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) qtyUnit?: string;
 
   @ApiProperty({ required: false, description: 'Target / ceiling price per unit, USD cents' })
   @IsOptional() @IsInt() @Min(0) targetPriceCents?: number;
@@ -125,6 +136,27 @@ export class BuyerBidsService {
     await this.notifications.create({ userId, system: 'bids', type, params, data });
   }
 
+  /**
+   * A completed requirement is owner-scoped: the buyer who raised it, an admin,
+   * and any seller who actually bid on it keep their access (it stays in their
+   * dashboards and history). For everyone else a stale link 404s rather than
+   * exposing a settled book — the read mirror of the board exclusions.
+   */
+  private async assertVisible(
+    buyerBid: { id: string; buyerId: string; status: string; deadline: Date | null; auctionEndsAt: Date | null },
+    viewer: AuthUser | undefined,
+  ) {
+    if (!isCompleted(buyerBid)) return;
+    if (viewer && (buyerBid.buyerId === viewer.id || isAdmin(viewer))) return;
+    const own = viewer
+      ? await this.prisma.sellerBid.findFirst({
+          where: { buyerBidId: buyerBid.id, sellerId: viewer.id },
+          select: { id: true },
+        })
+      : null;
+    if (!own) throw new NotFoundException('Requirement not found');
+  }
+
   /** Lowest submitted price on a buyer bid, or null when nobody has bid. */
   private async bestPriceCents(buyerBidId: string, tx: Prisma.TransactionClient | PrismaService = this.prisma) {
     const best = await tx.sellerBid.findFirst({
@@ -152,7 +184,7 @@ export class BuyerBidsService {
         title: dto.title,
         productName: dto.productName,
         qtyValue: dto.qtyValue,
-        qtyUnit: dto.qtyUnit ?? 'MT',
+        qtyUnit: toUnit(dto.qtyUnit),
         targetPriceCents: dto.targetPriceCents,
         deliveryPlace: dto.deliveryPlace,
         destinationCountry: dto.destinationCountry,
@@ -386,6 +418,7 @@ export class BuyerBidsService {
       include: { ...BUYER_BID_INCLUDE, translations: { where: { locale } } },
     });
     if (!row) throw new NotFoundException('Requirement not found');
+    await this.assertVisible(row, user);
     const buyerBid = localizeBid(row);
 
     const ownerView = !!user && (buyerBid.buyerId === user.id || isAdmin(user));
@@ -437,6 +470,7 @@ export class BuyerBidsService {
   async bids(id: string, viewer: AuthUser | undefined) {
     const buyerBid = await this.prisma.buyerBid.findUnique({ where: { id } });
     if (!buyerBid) throw new NotFoundException('Requirement not found');
+    await this.assertVisible(buyerBid, viewer);
 
     const ownerView = !!viewer && (buyerBid.buyerId === viewer.id || isAdmin(viewer));
     const sealed = !ownerView && buyerBid.mode === 'quote';

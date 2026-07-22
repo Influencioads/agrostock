@@ -39,6 +39,8 @@
       "title": "Willkommen zurück"
     },
     "signUp": {
+      "checkInboxBody": "Wir haben einen Bestätigungslink an {{email}} gesendet. Öffnen Sie ihn, um Ihr Konto zu aktivieren, und melden Sie sich dann hier an.",
+      "checkInboxTitle": "Bestätigen Sie Ihre E-Mail-Adresse.",
       "cityRegion": "Stadt / Region",
       "cityRegionPh": "Dubai",
       "country": "Land",
@@ -50,8 +52,12 @@
       "fullName": "Vollständiger Name",
       "fullNamePh": "Karim Trading",
       "iAmA": "Ich bin ein/e…",
+      "noCities": "Keine passende Stadt gefunden",
       "phone": "Telefon (privat – nur für Administratoren)",
       "phonePh": "+971 50 123 4567",
+      "pickCountryFirst": "Wählen Sie zuerst ein Land aus.",
+      "resend": "Link erneut senden",
+      "resent": "Link gesendet – bitte überprüfen Sie Ihren Posteingang.",
       "title": "Erstellen Sie Ihr Konto"
     }
   },

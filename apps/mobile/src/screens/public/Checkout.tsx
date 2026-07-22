@@ -9,6 +9,7 @@ import { Button, Card, Loading, Row, Screen, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
+import { unitSuffix } from '@agrotraders/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, 'Checkout'>;
@@ -33,7 +34,7 @@ export function Checkout() {
     <Screen>
       <Txt variant="h2">{t('pubX.checkout.title')}</Txt>
       <Card style={{ gap: 12 }}>
-        <Row style={{ justifyContent: 'space-between' }}><Txt variant="title">{p.emoji} {p.name}</Txt><Txt variant="title">{p.price}{p.unit}</Txt></Row>
+        <Row style={{ justifyContent: 'space-between' }}><Txt variant="title">{p.emoji} {p.name}</Txt><Txt variant="title">{p.price}{unitSuffix(p.unit)}</Txt></Row>
         <Row style={{ justifyContent: 'space-between' }}>
           <Txt variant="muted">{t('pubX.checkout.quantity')}</Txt>
           <Row gap={8}>

@@ -82,7 +82,7 @@ export function KycSection() {
 
       <div>
         <div className="flex items-center gap-3">
-          <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.verify')}</h2>
+          <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.verify')}</h2>
           <Badge tone={statusTone[status] ?? 'slate'}>
             {t(`enums:kyc.${status}`, { defaultValue: status })}
           </Badge>

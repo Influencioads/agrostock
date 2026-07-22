@@ -130,6 +130,7 @@
   },
   "catAdmin": {
     "addCategory": "Добавить категорию",
+    "addChild": "Добавить ребенка",
     "addSub": "Под",
     "catName": "Название категории",
     "collapse": "Крах",
@@ -144,9 +145,11 @@
     "empty": "Категории пока отсутствуют. Добавьте первую.",
     "expand": "Расширять",
     "modalAddCategory": "Добавить категорию",
+    "modalAddChild": "Добавить ребенка младше {{name}}",
     "modalAddSub": "Добавить подкатегорию к {{name}}",
     "modalEditCategory": "Редактировать категорию",
     "modalEditSub": "Редактировать подкатегорию",
+    "nodeStats": "{{products}} товаров · {{children}} дочерних уровней",
     "phCat": "например, фрукты",
     "phSub": "например, рис басмати",
     "productsCount": "{{count}} товаров",
@@ -350,6 +353,7 @@
     "overview": "Обзор",
     "payments": "Платежи",
     "products": "Товары",
+    "profile": "Профиль",
     "reports": "Отчёты",
     "reviews": "Отзывы",
     "roleRequests": "Запросы ролей",
@@ -379,6 +383,7 @@
     "fStaff": "Персонал",
     "fTimezone": "Часовой пояс",
     "fType": "Тип",
+    "pickTimezone": "— выберите часовой пояс —",
     "save": "Сохранить офис",
     "saving": "Сохранение…"
   },
@@ -592,6 +597,22 @@
       "safedeal": "safedeal"
     }
   },
+  "profile": {
+    "active": "активный",
+    "inactive": "неактивный",
+    "newPassword": "Новый пароль",
+    "noPermissions": "Разрешения для модуля не назначены.",
+    "passwordError": "Не удалось изменить пароль.",
+    "passwordSave": "Изменить пароль",
+    "passwordSaving": "Обновление...",
+    "passwordTitle": "Пароль",
+    "passwordUpdated": "Пароль изменен.",
+    "permissions": "Разрешения",
+    "role": "Роль",
+    "status": "Статус",
+    "subtitle": "Здесь вы можете управлять своей учетной записью администратора и паролем. Учетные записи администраторов не отображаются в разделе «Пользователи».",
+    "title": "Профиль суперадминистратора"
+  },
   "range": {
     "allTime": "За все время",
     "from": "От",
@@ -795,6 +816,15 @@
     "whatsapp": "WhatsApp"
   },
   "users": {
+    "createActive": "Активный",
+    "createCountry": "Страна",
+    "createEmail": "Электронная почта",
+    "createError": "Не удалось создать пользователя.",
+    "createName": "Имя",
+    "createPassword": "Временный пароль",
+    "createRole": "Роль",
+    "createUser": "Добавить пользователя",
+    "creating": "Добавляем...",
     "filterAll": "Все",
     "invite": "Пригласить пользователя",
     "searchPlaceholder": "Поиск по имени или email…",

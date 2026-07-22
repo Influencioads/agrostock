@@ -51,6 +51,9 @@ importers:
       '@agrotraders/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@agrotraders/geo':
+        specifier: workspace:*
+        version: link:../../packages/geo
       '@agrotraders/i18n':
         specifier: workspace:^
         version: link:../../packages/i18n
@@ -287,6 +290,9 @@ importers:
       '@agrotraders/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@agrotraders/geo':
+        specifier: workspace:*
+        version: link:../../packages/geo
       '@agrotraders/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -423,6 +429,9 @@ importers:
       '@agrotraders/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@agrotraders/geo':
+        specifier: workspace:*
+        version: link:../../packages/geo
       '@agrotraders/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -508,6 +517,9 @@ importers:
 
   packages/api-client:
     dependencies:
+      '@agrotraders/geo':
+        specifier: workspace:*
+        version: link:../geo
       '@agrotraders/types':
         specifier: workspace:*
         version: link:../types
@@ -526,6 +538,18 @@ importers:
       '@agrotraders/tokens':
         specifier: workspace:*
         version: link:../tokens
+
+  packages/geo:
+    devDependencies:
+      '@agrotraders/config':
+        specifier: workspace:*
+        version: link:../config
+      country-state-city:
+        specifier: ^3.2.1
+        version: 3.2.1
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.3
 
   packages/i18n:
     dependencies:
@@ -3905,6 +3929,9 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  country-state-city@3.2.1:
+    resolution: {integrity: sha512-kxbanqMc6izjhc/EHkGPCTabSPZ2G6eG4/97akAYHJUN4stzzFEvQPZoF8oXDQ+10gM/O/yUmISCR1ZVxyb6EA==}
 
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
@@ -11843,6 +11870,8 @@ snapshots:
       path-type: 4.0.0
     optionalDependencies:
       typescript: 5.7.2
+
+  country-state-city@3.2.1: {}
 
   create-require@1.1.1: {}
 

@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 
 /** A resolved place: the query we looked up, its coordinates and a display label. */
@@ -109,6 +111,68 @@ export class GeoService {
   }
 }
 
+/**
+ * City reference lists, split one file per ISO country by
+ * `packages/geo/scripts/gen-geo.mjs`. The upstream dataset is a single 8 MB blob;
+ * serving it from here means the clients bundle nothing and we still ship no
+ * third-party geocoding call. Files are read lazily and kept in memory once
+ * touched (the largest, US, is ~190 KB).
+ */
+@Injectable()
+export class CityRefService {
+  private readonly dataDir = join(__dirname, 'data');
+  private codes: Record<string, string> | null = null;
+  private readonly cache = new Map<string, string[]>();
+
+  private async iso2(country: string): Promise<string | null> {
+    this.codes ??= JSON.parse(await readFile(join(this.dataDir, 'country-codes.json'), 'utf8'));
+    return this.codes![country.trim().toLowerCase()] ?? null;
+  }
+
+  /** City names for a country, optionally filtered by a prefix/substring query. */
+  async cities(country: string, q?: string, limit = 200): Promise<string[]> {
+    const iso = country ? await this.iso2(country) : null;
+    if (!iso) return [];
+    let all = this.cache.get(iso);
+    if (!all) {
+      try {
+        all = JSON.parse(await readFile(join(this.dataDir, 'cities', `${iso}.json`), 'utf8')) as string[];
+      } catch {
+        all = []; // Country with no cities in the dataset — the picker falls back to free text.
+      }
+      this.cache.set(iso, all);
+    }
+    const term = q?.trim().toLowerCase();
+    if (!term) return all.slice(0, limit);
+    // Prefix matches first — typing "mum" should surface Mumbai above Kadi-Mumbai.
+    const starts: string[] = [];
+    const contains: string[] = [];
+    for (const name of all) {
+      const lower = name.toLowerCase();
+      if (lower.startsWith(term)) starts.push(name);
+      else if (lower.includes(term)) contains.push(name);
+      if (starts.length >= limit) break;
+    }
+    return [...starts, ...contains].slice(0, limit);
+  }
+}
+
+/**
+ * Reference data — deliberately unauthenticated: the signup form needs the city
+ * list before an account exists.
+ */
+@ApiTags('geo')
+@Controller('geo')
+export class GeoRefController {
+  constructor(private readonly svc: CityRefService) {}
+
+  /** City names for a country name, e.g. `/geo/cities?country=India&q=mum`. */
+  @Get('cities')
+  cities(@Query('country') country: string, @Query('q') q?: string) {
+    return this.svc.cities(country ?? '', q);
+  }
+}
+
 @ApiTags('geo')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -130,5 +194,8 @@ export class GeoController {
   }
 }
 
-@Module({ controllers: [GeoController], providers: [GeoService] })
+@Module({
+  controllers: [GeoRefController, GeoController],
+  providers: [GeoService, CityRefService],
+})
 export class GeoModule {}

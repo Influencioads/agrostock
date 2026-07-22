@@ -36,7 +36,7 @@ export function SafeDealPage() {
             <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-3 py-1 text-xs font-semibold text-mint">
               <Icon name="shield" size={14} /> {t('page.safeDeal.badge')}
             </span>
-            <h1 className="mt-5 font-display text-4xl font-extrabold leading-tight lg:text-5xl">
+            <h1 className="mt-5 break-words font-display text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
               {t('page.safeDeal.heroTitle')}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-mint/80">
@@ -59,7 +59,7 @@ export function SafeDealPage() {
       {/* how it works */}
       <section className="mx-auto max-w-6xl px-4 py-14 lg:px-6">
         <Reveal as="div" className="mb-8 text-center">
-          <h2 className="font-display text-3xl font-extrabold text-ink">{t('page.safeDeal.howTitle')}</h2>
+          <h2 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.safeDeal.howTitle')}</h2>
           <p className="mt-2 text-ink-soft">{t('page.safeDeal.howSub')}</p>
         </Reveal>
         <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -94,7 +94,7 @@ export function SafeDealPage() {
       <section className="bg-white">
         <div className="mx-auto max-w-6xl px-4 py-14 lg:px-6">
           <Reveal as="div" className="mb-8 text-center">
-            <h2 className="font-display text-3xl font-extrabold text-ink">{t('page.safeDeal.coverTitle')}</h2>
+            <h2 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.safeDeal.coverTitle')}</h2>
             <p className="mt-2 text-ink-soft">{t('page.safeDeal.coverSub')}</p>
           </Reveal>
           <Stagger className="grid gap-4 sm:grid-cols-2">
@@ -119,7 +119,7 @@ export function SafeDealPage() {
       {/* guarantees */}
       <section className="mx-auto max-w-6xl px-4 py-14 lg:px-6">
         <Reveal as="div" className="mb-8 text-center">
-          <h2 className="font-display text-3xl font-extrabold text-ink">{t('page.safeDeal.guaranteesTitle')}</h2>
+          <h2 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.safeDeal.guaranteesTitle')}</h2>
         </Reveal>
         <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {GUARANTEES.map((g) => (

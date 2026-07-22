@@ -5,8 +5,8 @@ import { useI18n } from '../i18n';
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h2 className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+      <div className="min-w-0">
+        <h2 className="break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>
         {subtitle && <p className="mt-1 text-sm text-ink-soft">{subtitle}</p>}
       </div>
       {action}

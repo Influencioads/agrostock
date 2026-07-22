@@ -76,7 +76,14 @@ import jaMobile from '../locales/ja/mobile.json';
 import jaNav from '../locales/ja/nav.json';
 import jaAttrs from '../locales/ja/attrs.json';
 
-/** All 10 supported locales ship their mobile catalog. Keys missing in a locale fall back to `en`. */
+import faCommon from '../locales/fa/common.json';
+import faEnums from '../locales/fa/enums.json';
+import faErrors from '../locales/fa/errors.json';
+import faMobile from '../locales/fa/mobile.json';
+import faNav from '../locales/fa/nav.json';
+import faAttrs from '../locales/fa/attrs.json';
+
+/** Every supported locale ships its mobile catalog. Keys missing in a locale fall back to `en`. */
 export const resources: Resource = {
   en: { mobile: enMobile, common: enCommon, nav: enNav, enums: enEnums, errors: enErrors, attrs: enAttrs },
   ru: { mobile: ruMobile, common: ruCommon, nav: ruNav, enums: ruEnums, errors: ruErrors, attrs: ruAttrs },
@@ -88,4 +95,5 @@ export const resources: Resource = {
   fr: { mobile: frMobile, common: frCommon, nav: frNav, enums: frEnums, errors: frErrors, attrs: frAttrs },
   de: { mobile: deMobile, common: deCommon, nav: deNav, enums: deEnums, errors: deErrors, attrs: deAttrs },
   ja: { mobile: jaMobile, common: jaCommon, nav: jaNav, enums: jaEnums, errors: jaErrors, attrs: jaAttrs },
+  fa: { mobile: faMobile, common: faCommon, nav: faNav, enums: faEnums, errors: faErrors, attrs: faAttrs },
 };

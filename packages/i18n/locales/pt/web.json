@@ -60,6 +60,19 @@
     "yourOffer": "Sua última oferta · {{amount}}",
     "yourOfferLabel": "Sua oferta"
   },
+  "categoryName": {
+    "animalFeed": "Ração animal",
+    "fertilizers": "Fertilizantes",
+    "fruits": "Frutas",
+    "grains": "Cereais",
+    "machinery": "Maquinaria",
+    "oils": "Óleos",
+    "packaging": "Embalagem",
+    "pulses": "Leguminosas",
+    "seeds": "Sementes",
+    "spices": "Especiarias",
+    "vegetables": "Legumes"
+  },
   "chat": {
     "agent": "Agente",
     "back": "Voltar",
@@ -905,6 +918,7 @@
       "subcategory": "Subcategoria",
       "supplyCountries": "Suprimentos para",
       "supplyCountriesHint": "— selecione todos os países para os quais você pode enviar.",
+      "unit": "Unidade",
       "uploadFailed": "O envio da imagem falhou. Tente usar arquivos JPG ou PNG menores.",
       "uploading": "Carregando…"
     },
@@ -1333,10 +1347,12 @@
       "emailPlaceholder": "you@company.com ou telefone",
       "noAccount": "Não tem conta?",
       "password": "Senha",
+      "resendVerification": "Reenviar link de confirmação",
       "signIn": "Entrar",
       "signingIn": "Entrando…",
       "subtitle": "Faça login no seu console.",
-      "title": "bem vindo de volta"
+      "title": "bem vindo de volta",
+      "verificationSent": "Link enviado — verifique sua caixa de entrada."
     },
     "market": {
       "allCities": "Todas as cidades",
@@ -1512,6 +1528,7 @@
       "phLocation": "Amritsar, Índia",
       "phone": "Telefone",
       "photoHint": "JPG, PNG ou WebP · até 10 MB",
+      "pickTimezone": "— Selecione seu fuso horário —",
       "privateContact": "Dados de contato privados",
       "privateSub": "Nunca é exibido publicamente — outros usuários veem uma dica oculta e entram em contato com você via chat.",
       "profilePhoto": "Foto de perfil",
@@ -1531,6 +1548,9 @@
       "yourMarket": "Seu mercado"
     },
     "register": {
+      "checkInboxBody": "Enviamos um link de confirmação para {{email}}. Clique nele para ativar sua conta — você poderá fazer login assim que a confirmação for concluída.",
+      "checkInboxTitle": "Confirme seu e-mail",
+      "cityHint": "Escolha na lista ou digite se a sua não estiver disponível.",
       "cityRegion": "Cidade/região",
       "country": "País",
       "createAccount": "Criar {{role}} conta",
@@ -1543,6 +1563,7 @@
       "minDistanceKm": "Distância mínima da viagem (km)",
       "minLoaders": "Tripulação mínima",
       "minWorkHours": "Duração mínima do trabalho (horas)",
+      "noCities": "Nenhuma cidade encontrada — digite a sua própria",
       "operatingCities": "Cidades em que você opera",
       "operatingCountries": "Países em que você opera",
       "opsHint": "Ajuda os compradores a encontrarem você com base em onde você trabalha e nos trabalhos que você aceita.",
@@ -1555,9 +1576,13 @@
       "phCountry": "🇮🇳 Índia",
       "phPorts": "Mumbai, Dubai",
       "phone": "Telefone (privado — somente administradores, outros usuários podem conversar com você)",
+      "pickCountry": "— Selecione seu país —",
+      "pickCountryFirst": "Selecione primeiro um país",
       "pickMarket": "— escolha seu mercado de negociação —",
       "pwTooShort": "A senha deve ter no mínimo 8 caracteres.",
       "registerAs": "Quero me cadastrar como…",
+      "resend": "Reenviar o link",
+      "resent": "Link enviado — verifique sua caixa de entrada.",
       "roleDesc": {
         "buyer": "Importar e comprar produtos",
         "loaderco": "Gerenciar equipes de carregamento",
@@ -1569,6 +1594,7 @@
       "supplyingCities": "Cidades para as quais você fornece",
       "supplyingCountries": "Países para os quais você fornece",
       "tagHint": "Digite e pressione Enter para adicionar",
+      "tagHintPick": "Selecione na lista ou digite e pressione Enter.",
       "title": "Crie sua conta",
       "yourMarket": "Seu mercado"
     },
@@ -1701,6 +1727,11 @@
       "sub": "Tokens com predominância de verde e detalhes em laranja/manga, escala tipográfica e a biblioteca de componentes que alimenta todas as superfícies AgroTraders — web, painéis e o aplicativo móvel unificado.",
       "title": "Sistema de projeto",
       "typography": "Tipografia"
+    },
+    "verifyEmail": {
+      "backToSignIn": "Voltar para a página de login",
+      "checking": "Confirmando seu e-mail…",
+      "failedTitle": "Não foi possível confirmar este link."
     }
   },
   "product": {

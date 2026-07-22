@@ -13,7 +13,7 @@ import { InvoiceCenter, InvoiceBuilderModal, type BillableSubject } from './Invo
 function SectionHead({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-5">
-      <h2 className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+      <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>
       {sub && <p className="mt-1 text-sm text-ink-soft">{sub}</p>}
     </div>
   );
@@ -128,9 +128,9 @@ export function TransporterMyRequests() {
           <Input label={t('console.transporter.from')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={(e) => setForm((f) => ({ ...f, fromCity: e.target.value }))} />
           <Input label={t('console.transporter.to')} placeholder={t('console.ph.toCity')} value={form.toCity} onChange={(e) => setForm((f) => ({ ...f, toCity: e.target.value }))} />
           <Input label={t('console.transporter.cargo')} placeholder={t('console.ph.cargo')} value={form.cargo} onChange={(e) => setForm((f) => ({ ...f, cargo: e.target.value }))} />
-          <div className="flex items-end gap-2">
+          <div className="flex flex-wrap items-end gap-2 [&>label]:min-w-[6rem] [&>label]:flex-1">
             <Input label={t('console.transporter.weight')} placeholder="24" value={form.weightMt} onChange={(e) => setForm((f) => ({ ...f, weightMt: e.target.value }))} />
-            <Button className="mb-0.5" disabled={!ready || create.isPending} onClick={() => create.mutate()}>{t('console.transporter.post')}</Button>
+            <Button className="mb-0.5 shrink-0" disabled={!ready || create.isPending} onClick={() => create.mutate()}>{t('console.transporter.post')}</Button>
           </div>
         </div>
         {error && <p className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
@@ -169,9 +169,9 @@ export function TransporterDrivers() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div>
-          <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.drivers')}</h2>
+          <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.drivers')}</h2>
           <p className="mt-1 text-sm text-ink-soft">{t('console.transporter.driversSub')}</p>
         </div>
         <Button onClick={() => { setEditing(null); setOpen(true); }} leftIcon={<Icon name="plus" size={16} />}>{t('console.transporter.addDriver')}</Button>

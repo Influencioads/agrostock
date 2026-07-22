@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import { socialProof, countryFlag } from '@agrotraders/api-client';
-import { getAttributeFields } from '@agrotraders/types';
+import { getAttributeFields, unitSuffix } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { products as mockProducts } from '../mock/data';
 import { api, toCardProduct } from '../lib/api';
@@ -113,7 +113,7 @@ export function ProductPage() {
   if (notFound) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-24 text-center lg:px-6">
-        <h1 className="font-display text-3xl font-extrabold text-ink">{t('page.product.notFound')}</h1>
+        <h1 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.product.notFound')}</h1>
         <p className="mt-2 text-ink-soft">{t('page.product.notFoundBody')}</p>
         <Link to="/market" className="mt-4 inline-block font-bold text-brand hover:underline">{t('page.product.browseMarket')}</Link>
       </div>
@@ -181,7 +181,7 @@ export function ProductPage() {
               </Badge>
               {product.offer && <Badge tone="mango">{t('site.offer')}</Badge>}
             </div>
-            <h1 className="mt-3 font-display text-3xl font-extrabold text-ink">{product.name}</h1>
+            <h1 className="mt-3 min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{product.name}</h1>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 text-ink-soft">
               {product.flag} {product.seller} · {t('page.product.availLine', { qty: product.qty, moq: product.moq })}
               {product.sellerId && (
@@ -290,8 +290,8 @@ export function ProductPage() {
         <aside className="space-y-4 lg:sticky lg:top-28 lg:h-fit">
           <Card>
             <div className="flex items-end gap-2">
-              <span className="font-display text-3xl font-extrabold text-ink">{fmtPrice(product)}</span>
-              <span className="text-ink-soft">{product.unit}</span>
+              <span className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{fmtPrice(product)}</span>
+              <span className="text-ink-soft">{unitSuffix(product.unit)}</span>
             </div>
             <p className="mt-1 text-sm text-ink-soft">{t('page.product.deliveryLine', { delivery: product.delivery })}</p>
 

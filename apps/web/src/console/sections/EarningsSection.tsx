@@ -38,7 +38,7 @@ export function EarningsSection({ title, sub }: { title?: string; sub?: string }
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-ink">{title ?? t('console.money.earningsTitle')}</h2>
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{title ?? t('console.money.earningsTitle')}</h2>
         <p className="mt-1 text-sm text-ink-soft">{sub ?? t('console.money.earningsSub')}</p>
       </div>
 

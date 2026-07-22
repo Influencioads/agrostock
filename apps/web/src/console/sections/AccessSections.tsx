@@ -47,7 +47,7 @@ export function RolesAccessSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.access')}</h2>
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.access')}</h2>
         <p className="text-sm text-ink-soft">{t('console.access.sub')}</p>
       </div>
 

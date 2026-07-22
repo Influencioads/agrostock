@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto, RegisterDto } from './dto';
+import { LoginDto, RefreshDto, RegisterDto, ResendVerificationDto, VerifyEmailDto } from './dto';
 import { JwtAuthGuard } from './guards';
 
 @ApiTags('auth')
@@ -23,6 +23,21 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  /** Consume a confirmation link and sign the account in. */
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Post('verify-email')
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.auth.verifyEmail(dto.token);
+  }
+
+  // Deliberately tight: this endpoint sends mail, so it is the obvious lever for
+  // using us as a spam relay against a third party's inbox.
+  @Throttle({ default: { ttl: 60_000, limit: 3 } })
+  @Post('resend-verification')
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.auth.resendVerification(dto.email);
   }
 
   @Throttle({ default: { ttl: 60_000, limit: 30 } })

@@ -1105,6 +1105,7 @@
       "quantity": "Quantity",
       "moq": "MOQ",
       "origin": "Origin",
+      "unit": "Unit",
       "city": "City",
       "supplyCountries": "Supplies to",
       "supplyCountriesHint": "— select every country you can ship to",
@@ -1339,7 +1340,9 @@
       "noAccount": "No account?",
       "createOne": "Create one",
       "demoAccounts": "Demo accounts · one click",
-      "demoHint": "password: password123"
+      "demoHint": "password: password123",
+      "resendVerification": "Resend confirmation link",
+      "verificationSent": "Link sent \u2014 check your inbox"
     },
     "register": {
       "title": "Create your account",
@@ -1381,7 +1384,21 @@
       "phCities": "Amritsar, Ludhiana",
       "phPorts": "Mumbai, Dubai",
       "phCountry": "🇮🇳 India",
-      "phCity": "Amritsar"
+      "phCity": "Amritsar",
+      "pickCountry": "\u2014 select your country \u2014",
+      "pickCountryFirst": "Select a country first",
+      "noCities": "No matching city \u2014 type your own",
+      "cityHint": "Pick from the list, or type it if yours is missing",
+      "tagHintPick": "Pick from the list, or type and press Enter",
+      "checkInboxTitle": "Confirm your email",
+      "checkInboxBody": "We sent a confirmation link to {{email}}. Click it to activate your account \u2014 you can sign in once it is confirmed.",
+      "resend": "Resend the link",
+      "resent": "Link sent \u2014 check your inbox"
+    },
+    "verifyEmail": {
+      "checking": "Confirming your email\u2026",
+      "failedTitle": "We could not confirm this link",
+      "backToSignIn": "Back to sign in"
     },
     "auctions": {
       "sub": "Sellers auction their lots · buyers bid privately — only the auction owner sees the bids.",
@@ -1629,6 +1646,7 @@
       "availableFrom": "Available from",
       "until": "Until",
       "timezone": "Timezone",
+      "pickTimezone": "\u2014 select your timezone \u2014",
       "languages": "Languages",
       "yourMarket": "Your market",
       "privateContact": "Private contact details",

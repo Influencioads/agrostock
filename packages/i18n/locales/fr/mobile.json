@@ -41,6 +41,8 @@
       "title": "Content de te revoir"
     },
     "signUp": {
+      "checkInboxBody": "Nous avons envoyé un lien de confirmation à {{email}}. Ouvrez-le pour activer votre compte, puis connectez-vous ici.",
+      "checkInboxTitle": "Confirmez votre courriel",
       "cityRegion": "Ville / région",
       "cityRegionPh": "Dubaï",
       "country": "Pays",
@@ -52,8 +54,12 @@
       "fullName": "Nom et prénom",
       "fullNamePh": "Karim Trading",
       "iAmA": "Je suis un…",
+      "noCities": "Aucune ville correspondante",
       "phone": "Téléphone (privé — administrateurs uniquement)",
       "phonePh": "+971 50 123 4567",
+      "pickCountryFirst": "Sélectionnez d'abord un pays",
+      "resend": "Renvoyer le lien",
+      "resent": "Lien envoyé — vérifiez votre boîte de réception",
       "title": "Créez votre compte"
     }
   },

@@ -38,7 +38,7 @@ export function LoaderDashboard({ name, onNavigate }: { name: string; onNavigate
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.dash.welcome', { name: name.split(' ')[0] })}</h2>
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.dash.welcome', { name: name.split(' ')[0] })}</h2>
         <p className="mt-1 text-sm text-ink-soft">{t('console.dash.loaderSub')}</p>
       </div>
 

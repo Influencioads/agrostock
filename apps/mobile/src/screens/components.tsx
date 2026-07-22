@@ -7,6 +7,7 @@ import { assetUrl } from '../lib/api';
 import { useCurrency } from '../currency/CurrencyContext';
 import { Badge } from '../ui';
 import { useI18n } from '../i18n';
+import { unitSuffix } from '@agrotraders/types';
 
 function discountFor(name: string) {
   return 10 + (name.length % 6);
@@ -42,7 +43,7 @@ export function ProductCard({ product, onPress, width }: { product: ApiProduct; 
       </Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
         <Text style={{ fontWeight: '800', color: C.ink }}>
-          {fmtPrice(product)}<Text style={{ fontSize: 11, fontWeight: '400', color: C.inkSoft }}>{product.unit}</Text>
+          {fmtPrice(product)}<Text style={{ fontSize: 11, fontWeight: '400', color: C.inkSoft }}>{unitSuffix(product.unit)}</Text>
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
           <Ionicons name="star" size={12} color={C.mangoDeep} />

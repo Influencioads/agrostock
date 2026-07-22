@@ -87,10 +87,12 @@ export function OtpCard({ label, code, hint }: { label: string; code: string; hi
   const [copied, setCopied] = useState(false);
   return (
     <Card className="bg-brand-dock text-white">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <div className="text-xs uppercase tracking-wide text-mint/80">{label}</div>
-          <div className="font-numeric text-3xl font-extrabold tracking-[0.3em]">{code}</div>
+          {/* `break-all`: the wide letter-spacing makes an 8-digit code ~220px,
+              which has nowhere to go on a phone unless it may break. */}
+          <div className="font-numeric text-2xl font-extrabold tracking-[0.2em] break-all sm:text-3xl sm:tracking-[0.3em]">{code}</div>
           <p className="mt-1 max-w-md text-xs text-mint/70">{hint}</p>
         </div>
         <Button
@@ -129,7 +131,7 @@ export function OtpEntry({ orderId, kind, onDone }: { orderId: string; kind: 'pi
 
   return (
     <div>
-      <div className="flex items-end gap-2">
+      <div className="flex flex-wrap items-end gap-2 [&>*:first-child]:min-w-[9rem] [&>*:first-child]:flex-1">
         <Input
           label={kind === 'pickup' ? t('console.order.pickupOtpLabel') : t('console.order.deliveryOtpLabel')}
           value={code}

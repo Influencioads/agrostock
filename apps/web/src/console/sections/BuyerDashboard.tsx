@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { usd, parseAmount, orderLabel, orderTone } from '../lib';
 import { BarChart } from './BarChart';
+import { unitSuffix } from '@agrotraders/types';
 
 /** Progress = how far along the real lifecycle the order actually is. */
 const progressOf = (status: ApiOrder['status']) => {
@@ -52,7 +53,7 @@ export function BuyerDashboard({ name, onNavigate }: { name: string; onNavigate:
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.dash.welcome', { name: name.split(' ')[0] })}</h2>
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.dash.welcome', { name: name.split(' ')[0] })}</h2>
         <p className="mt-1 text-sm text-ink-soft">{t('console.dash.buyerSub')}</p>
       </div>
 
@@ -139,7 +140,7 @@ export function BuyerDashboard({ name, onNavigate }: { name: string; onNavigate:
                   <div className="truncate text-sm font-semibold text-ink">{p.name}</div>
                   {/* `price` already carries the "$" and `unit` the leading "/". */}
                   <div className="truncate text-xs text-ink-soft">
-                    {p.flag} {p.price}{p.unit}
+                    {p.flag} {p.price}{unitSuffix(p.unit)}
                   </div>
                 </div>
                 <Badge tone="mango">{t('console.dash.offer')}</Badge>

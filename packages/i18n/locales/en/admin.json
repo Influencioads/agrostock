@@ -621,6 +621,7 @@
     "fCity": "City",
     "fManager": "Manager",
     "fTimezone": "Timezone",
+    "pickTimezone": "\u2014 select a timezone \u2014",
     "fLanguages": "Languages",
     "fStaff": "Staff",
     "saving": "Saving…",

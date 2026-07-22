@@ -7,14 +7,15 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiCategory, ApiMarket, ApiProduct } from '@agrotraders/api-client';
 import { COUNTRIES } from '@agrotraders/api-client';
-import { getAttributeFields, type AttrField } from '@agrotraders/types';
+import { getAttributeFields, PRODUCT_UNITS, toUnit, type AttrField } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, Chip, ChipSelect, Input, Row, Screen, Txt } from '../../ui';
-import { C } from '../../theme/tokens';
+import { C, radius } from '../../theme/tokens';
+import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -23,7 +24,7 @@ type R = RouteProp<RootStackParamList, 'Section'>;
 export const MAX_IMAGES = 6;
 
 const blank = {
-  name: '', categoryId: '', subcategoryId: '', price: '', unit: '/MT', qty: '', moq: '',
+  name: '', categoryId: '', subcategoryId: '', price: '', unit: 'MT', qty: '', moq: '',
   grade: '', emoji: '🌾', origin: '', city: '', country: '', delivery: '', isOffer: false, isAuction: false,
   marketId: '', startBid: '', auctionDays: '7',
   images: [] as string[],
@@ -364,9 +365,12 @@ export function SellerAddProduct() {
 
   const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
-  const subcategories = selectedCategory?.subcategories ?? [];
   const categoryName = selectedCategory?.name ?? null;
-  const subcategoryName = subcategories.find((s) => s.id === form.subcategoryId)?.name ?? null;
+  // The picker hands back the resolved names, so the form never has to walk the
+  // tree itself. `attrSource` is the level-2 ancestor whose schema applies.
+  const [taxonomy, setTaxonomy] = useState<CategorySelection>(EMPTY_SELECTION);
+  const [catSheet, setCatSheet] = useState(false);
+  const subcategoryName = taxonomy.attrSource;
 
   // Edit mode: prefill from the seller's own listings.
   const { data: mine = [] } = useQuery<ApiProduct[]>({
@@ -380,7 +384,7 @@ export function SellerAddProduct() {
     if (p) {
       setForm((f) => ({
         ...f,
-        name: p.name ?? '', price: String(p.price ?? '').replace(/[^0-9.]/g, ''), unit: p.unit ?? '/MT',
+        name: p.name ?? '', price: String(p.price ?? '').replace(/[^0-9.]/g, ''), unit: toUnit(p.unit),
         qty: p.qty ?? '', moq: p.moq ?? '', grade: p.grade ?? '', emoji: p.emoji ?? '🌾',
         origin: p.origin ?? '', city: p.city ?? '', country: p.country ?? '',
         subcategoryId: (p.subcategory && typeof p.subcategory === 'object' ? (p.subcategory as { id?: string }).id : '') ?? '',
@@ -443,24 +447,32 @@ export function SellerAddProduct() {
         <GalleryEditor images={form.images} onChange={(images) => setForm((f) => ({ ...f, images }))} onError={setErr} />
 
         <Input label={t('sellerX.add.name')} placeholder={t('sellerX.add.phName')} value={form.name} onChangeText={set('name')} />
-        <ChipSelect
-          label={t('sellerX.add.category')}
-          options={categories.map((c) => ({ id: c.id, label: `${c.emoji ?? ''} ${c.name}`.trim() }))}
-          value={form.categoryId}
-          onChange={(id) => setForm((f) => ({ ...f, categoryId: id, subcategoryId: '' }))}
-        />
+        {/* One cascading picker instead of two chip strips — the taxonomy is five
+            levels deep, which no chip strip can represent. */}
+        <View style={{ gap: 6 }}>
+          <Txt variant="label">{t('sellerX.add.category')}</Txt>
+          <Pressable
+            onPress={() => setCatSheet(true)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.white, borderWidth: 1, borderColor: form.categoryId ? C.green : C.border, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, paddingVertical: 8 }}
+          >
+            <Ionicons name="grid-outline" size={18} color={form.categoryId ? C.green : C.inkSoft} />
+            <Txt style={{ flex: 1, fontWeight: '700', color: form.categoryId ? C.ink : C.inkSoft }} numberOfLines={2}>
+              {taxonomy.trail.length ? taxonomy.trail.join('  ›  ') : t('sellerX.add.category')}
+            </Txt>
+            <Ionicons name="chevron-down" size={18} color={C.inkSoft} />
+          </Pressable>
+        </View>
 
-        {subcategories.length > 0 && (
-          <ChipSelect
-            label={t('sellerX.add.subcategory')}
-            options={[
-              { id: '', label: '—' },
-              ...subcategories.map((s) => ({ id: s.id, label: `${s.emoji ? `${s.emoji} ` : ''}${s.name}` })),
-            ]}
-            value={form.subcategoryId}
-            onChange={(id) => setForm((f) => ({ ...f, subcategoryId: id }))}
-          />
-        )}
+        <CategorySheet
+          visible={catSheet}
+          onClose={() => setCatSheet(false)}
+          categories={categories}
+          selection={taxonomy}
+          onSelect={(next) => {
+            setTaxonomy(next);
+            setForm((f) => ({ ...f, categoryId: next.categoryId, subcategoryId: next.subcategoryId }));
+          }}
+        />
 
         <AttributeFields
           category={categoryName}
@@ -473,7 +485,14 @@ export function SellerAddProduct() {
 
         <Row gap={10}>
           <View style={{ flex: 1 }}><Input label={t('sellerX.add.price')} keyboardType="numeric" placeholder="840" value={form.price} onChangeText={set('price')} /></View>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.unit')} placeholder={t('sellerX.add.phUnit')} value={form.unit} onChangeText={set('unit')} /></View>
+          <View style={{ flex: 1 }}>
+            <ChipSelect
+              label={t('sellerX.add.unit')}
+              value={toUnit(form.unit)}
+              options={PRODUCT_UNITS.map((u) => ({ id: u, label: t(`enums:unit.${u}`) }))}
+              onChange={set('unit')}
+            />
+          </View>
         </Row>
         <Row gap={10}>
           <View style={{ flex: 1 }}><Input label={t('sellerX.add.quantity')} placeholder={t('sellerX.add.phQty')} value={form.qty} onChangeText={set('qty')} /></View>
@@ -488,8 +507,9 @@ export function SellerAddProduct() {
           <View style={{ flex: 1 }}><Input label={t('sellerX.add.delivery')} placeholder={t('sellerX.add.phDelivery')} value={form.delivery} onChangeText={set('delivery')} /></View>
         </Row>
 
-        <Input label={t('sellerX.add.city')} placeholder={t('sellerX.add.phCity')} value={form.city} onChangeText={set('city')} />
+        {/* Country first — the city belongs to it. */}
         <CountryPicker value={form.country} onChange={(country) => setForm((f) => ({ ...f, country }))} />
+        <Input label={t('sellerX.add.city')} placeholder={t('sellerX.add.phCity')} value={form.city} onChangeText={set('city')} />
         <SupplyCountriesPicker value={form.supplyCountries} onChange={(supplyCountries) => setForm((f) => ({ ...f, supplyCountries }))} />
 
         <View style={{ gap: 8 }}>

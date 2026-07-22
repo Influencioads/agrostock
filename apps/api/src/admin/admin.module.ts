@@ -363,6 +363,9 @@ export class AdminService {
         active: dto.active ?? true,
         country: dto.country,
         kycStatus: 'pending',
+        // Admin-provisioned: there is no confirmation email to click, so the
+        // account is trusted from the start and can sign in immediately.
+        emailVerifiedAt: new Date(),
       },
       select: { id: true, name: true, email: true, role: true, roles: true, active: true, country: true, kycStatus: true, createdAt: true },
     });
@@ -1036,6 +1039,8 @@ export class AdminService {
         passwordHash,
         role: Role.admin,
         kycStatus: 'verified',
+        // Staff are provisioned by an admin, not self-registered — no link to click.
+        emailVerifiedAt: new Date(),
         // Default a new staff account to no permissions unless granted explicitly.
         adminPermissions: dto.permissions ?? [],
       },

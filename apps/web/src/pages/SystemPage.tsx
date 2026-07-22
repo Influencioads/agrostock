@@ -101,15 +101,15 @@ export function SystemPage() {
   return (
     <div>
       {/* header */}
-      <div className="bg-brand-dock px-8 py-10 text-white">
+      <div className="bg-brand-dock px-4 py-8 text-white sm:px-6 sm:py-10 lg:px-8">
         <p className="font-numeric text-sm font-semibold tracking-wide text-mango">
           AGROTRADERS UI KIT · V1.0
         </p>
-        <h1 className="mt-2 font-display text-4xl font-extrabold">{t('page.system.title')}</h1>
+        <h1 className="mt-2 font-display text-3xl font-extrabold sm:text-4xl">{t('page.system.title')}</h1>
         <p className="mt-3 max-w-2xl text-mint/80">{t('page.system.sub')}</p>
       </div>
 
-      <div className="px-8 pb-16">
+      <div className="px-4 pb-16 sm:px-6 lg:px-8">
         {/* color tokens */}
         <Section title={t('page.system.colorTokens')}>
           <div className="space-y-6">
@@ -251,11 +251,11 @@ export function SystemPage() {
         {/* icons */}
         <Section title={t('page.system.iconSet')}>
           <Card>
-            <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-8">
               {(Object.keys(ICON_PATHS) as IconName[]).map((name) => (
                 <div key={name} className="flex flex-col items-center gap-1.5 rounded-md border border-surface-border p-3 text-ink">
                   <Icon name={name} size={22} />
-                  <span className="text-[10px] text-ink-soft">{name}</span>
+                  <span className="max-w-full break-all text-center text-[10px] text-ink-soft">{name}</span>
                 </div>
               ))}
             </div>

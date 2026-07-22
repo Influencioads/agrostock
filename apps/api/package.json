@@ -18,8 +18,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "seed": "ts-node prisma/seed.ts",
+    "taxonomy:sync": "ts-node prisma/taxonomy-sync.ts",
     "backfill:attrs": "ts-node prisma/backfill-attributes.ts",
     "backfill:translations": "ts-node prisma/backfill-translations.ts",
+    "backfill:email-verified": "ts-node prisma/backfill-email-verified.ts",
     "prewarm:text": "ts-node prisma/prewarm-text.ts",
     "backfill:taxonomy": "ts-node prisma/backfill-taxonomy.ts"
   },

@@ -46,6 +46,8 @@ export const ICON_PATHS = {
   message: 'M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-4-1L3 20l1.1-4A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z',
   file: 'M6 2h7l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1ZM13 2v5h5M9 13h6M9 17h6',
   refresh: 'M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5',
+  // Door + out-arrow. Used where a "Log out" label doesn't fit (mobile headers).
+  logout: 'M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4M16 17l5-5-5-5M21 12H9',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
@@ -61,7 +63,7 @@ export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
  * never rotate an arrow, so these are flipped explicitly under `dir="rtl"`.
  * Non-directional glyphs (search, star, truck…) must NOT be flipped.
  */
-const DIRECTIONAL: ReadonlySet<string> = new Set(['chevronLeft', 'chevronRight', 'arrowLeft', 'arrowRight']);
+const DIRECTIONAL: ReadonlySet<string> = new Set(['chevronLeft', 'chevronRight', 'arrowLeft', 'arrowRight', 'logout']);
 
 export function Icon({ name, size = 20, strokeWidth = 2, className, ...rest }: IconProps) {
   const rtlAware = DIRECTIONAL.has(name) ? 'rtl:-scale-x-100' : undefined;

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import type { ApiBuyerBid, ApiBuyerBidMode, ApiCategory } from '@agrotraders/api-client';
+import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
@@ -106,7 +107,18 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
             </select>
           </label>
           <Input label={t('console.buyer.quantity')} type="number" value={f.qtyValue} onChange={(e) => setF({ ...f, qtyValue: e.target.value })} />
-          <Input label={t('console.buyer.unit')} value={f.qtyUnit} onChange={(e) => setF({ ...f, qtyUnit: e.target.value })} />
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.unit')}</span>
+            <select
+              value={toUnit(f.qtyUnit)}
+              onChange={(e) => setF({ ...f, qtyUnit: e.target.value })}
+              className="h-11 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
+            >
+              {PRODUCT_UNITS.map((u) => (
+                <option key={u} value={u}>{t(`enums:unit.${u}`)}</option>
+              ))}
+            </select>
+          </label>
           <Input label={t('console.buyer.targetPrice', { unit: f.qtyUnit })} type="number" value={f.targetPrice} onChange={(e) => setF({ ...f, targetPrice: e.target.value })} />
           <Input label={t('console.buyer.deliveryPlace')} placeholder={t('console.buyer.phDeliveryPlace')} value={f.deliveryPlace} onChange={(e) => setF({ ...f, deliveryPlace: e.target.value })} />
           <Input label={t('console.buyer.destinationCountry')} placeholder={t('console.buyer.phDestCountry')} value={f.destinationCountry} onChange={(e) => setF({ ...f, destinationCountry: e.target.value })} />
@@ -227,7 +239,7 @@ export function BuyerBids() {
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.bids')}</h2>
+          <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.bids')}</h2>
           <p className="mt-1 text-sm text-ink-soft">{t('console.buyer.bidsSub')}</p>
         </div>
         <Button leftIcon={<Icon name="plus" size={16} />} onClick={() => setCreating(true)}>{t('console.buyer.postRequirement')}</Button>

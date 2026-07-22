@@ -106,6 +106,12 @@
       "countryPh": "UAE",
       "cityRegion": "City / region",
       "cityRegionPh": "Dubai",
+      "pickCountryFirst": "Select a country first",
+      "noCities": "No matching city",
+      "checkInboxTitle": "Confirm your email",
+      "checkInboxBody": "We sent a confirmation link to {{email}}. Open it to activate your account, then sign in here.",
+      "resend": "Resend the link",
+      "resent": "Link sent \u2014 check your inbox",
       "iAmA": "I am a…",
       "cta": "Create account",
       "error": "Could not create the account. Try a different email."

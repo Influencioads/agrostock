@@ -89,7 +89,7 @@ export function BuyerAuctions() {
   return (
     <div>
       <div className="mb-5">
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.auctions')}</h2>
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.auctions')}</h2>
         <p className="mt-1 text-sm text-ink-soft">{t('console.buyer.auctionsHubSub')}</p>
       </div>
 
@@ -151,7 +151,7 @@ export function BuyerAuctions() {
       </section>
 
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <h3 className="font-display font-bold text-ink">{t('console.buyer.myReverseAuctions')}</h3>
           <span className="text-xs text-ink-soft">{t('console.buyer.sellersBidDown')}</span>
         </div>

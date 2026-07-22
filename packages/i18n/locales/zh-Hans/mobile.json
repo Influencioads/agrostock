@@ -37,6 +37,8 @@
       "title": "欢迎回来"
     },
     "signUp": {
+      "checkInboxBody": "我们已向{{email}}发送了确认链接。请打开链接激活您的账户，然后在此登录。",
+      "checkInboxTitle": "请确认您的电子邮件",
       "cityRegion": "城市/地区",
       "cityRegionPh": "迪拜",
       "country": "国家",
@@ -48,8 +50,12 @@
       "fullName": "姓名",
       "fullNamePh": "卡里姆贸易",
       "iAmA": "我是……",
+      "noCities": "没有匹配的城市",
       "phone": "电话（私人号码——仅限管理员）",
       "phonePh": "+971 50 123 4567",
+      "pickCountryFirst": "请先选择一个国家/地区",
+      "resend": "重新发送链接",
+      "resent": "链接已发送——请查看您的收件箱",
       "title": "创建您的帐户"
     }
   },

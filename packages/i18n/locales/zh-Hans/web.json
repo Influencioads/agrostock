@@ -54,6 +54,19 @@
     "yourOffer": "您的最后报价 · {{amount}}",
     "yourOfferLabel": "您的报价"
   },
+  "categoryName": {
+    "animalFeed": "饲料",
+    "fertilizers": "化肥",
+    "fruits": "水果",
+    "grains": "谷物",
+    "machinery": "机械",
+    "oils": "食用油",
+    "packaging": "包装",
+    "pulses": "豆类",
+    "seeds": "种子",
+    "spices": "香料",
+    "vegetables": "蔬菜"
+  },
   "chat": {
     "agent": "代理人",
     "back": "后退",
@@ -863,6 +876,7 @@
       "subcategory": "子类别",
       "supplyCountries": "供应",
       "supplyCountriesHint": "— 选择所有您可以发货的国家/地区",
+      "unit": "单元",
       "uploadFailed": "图片上传失败。请尝试上传较小的 JPG 或 PNG 文件。",
       "uploading": "正在上传…"
     },
@@ -1283,10 +1297,12 @@
       "emailPlaceholder": "you@company.com 或电话",
       "noAccount": "没有账号？",
       "password": "密码",
+      "resendVerification": "重新发送确认链接",
       "signIn": "登入",
       "signingIn": "正在登录……",
       "subtitle": "登录您的游戏主机。",
-      "title": "欢迎回来"
+      "title": "欢迎回来",
+      "verificationSent": "链接已发送——请查看您的收件箱"
     },
     "market": {
       "allCities": "所有城市",
@@ -1461,6 +1477,7 @@
       "phLocation": "印度阿姆利则",
       "phone": "电话",
       "photoHint": "JPG、PNG 或 WebP 格式，最大 10 MB",
+      "pickTimezone": "— 选择您的时区 —",
       "privateContact": "私人联系方式",
       "privateSub": "不会公开显示——其他用户会看到隐藏的提示，并通过聊天联系你。",
       "profilePhoto": "个人资料照片",
@@ -1480,6 +1497,9 @@
       "yourMarket": "您的市场"
     },
     "register": {
+      "checkInboxBody": "我们已向{{email}}发送了确认链接。点击链接激活您的账户——确认后即可登录。",
+      "checkInboxTitle": "请确认您的电子邮件",
+      "cityHint": "请从列表中选择，如果列表中没有您需要的选项，请手动输入。",
       "cityRegion": "城市/地区",
       "country": "国家",
       "createAccount": "创建 {{role}} 帐户",
@@ -1492,6 +1512,7 @@
       "minDistanceKm": "最短行程距离（公里）",
       "minLoaders": "最低船员人数",
       "minWorkHours": "最短工作时长（小时）",
+      "noCities": "没有匹配的城市——请自行输入。",
       "operatingCities": "您运营所在的城市",
       "operatingCountries": "您开展业务的国家/地区",
       "opsHint": "通过你的工作地点和你从事的工作，帮助买家找到你。",
@@ -1504,9 +1525,13 @@
       "phCountry": "🇮🇳 印度",
       "phPorts": "孟买，迪拜",
       "phone": "电话（私密——仅限管理员，其他人可以与您聊天）",
+      "pickCountry": "— 选择您的国家/地区 —",
+      "pickCountryFirst": "请先选择一个国家/地区",
       "pickMarket": "— 选择你的交易市场 —",
       "pwTooShort": "密码长度必须至少为 8 个字符。",
       "registerAs": "我想注册成为……",
+      "resend": "重新发送链接",
+      "resent": "链接已发送——请查看您的收件箱",
       "roleDesc": {
         "buyer": "进口和采购农产品",
         "loaderco": "管理装卸人员",
@@ -1518,6 +1543,7 @@
       "supplyingCities": "您提供的城市",
       "supplyingCountries": "您向哪些国家/地区供货",
       "tagHint": "输入并按回车键添加",
+      "tagHintPick": "从列表中选择，或键入并按 Enter 键。",
       "title": "创建您的帐户",
       "yourMarket": "您的市场"
     },
@@ -1647,6 +1673,11 @@
       "sub": "以绿色为主色调，芒果/橙色点缀的代币，字体缩放，以及为所有 AgroTraders 表面（网页、仪表板和统一的移动应用程序）提供支持的组件库。",
       "title": "设计系统",
       "typography": "排版"
+    },
+    "verifyEmail": {
+      "backToSignIn": "返回登录页面",
+      "checking": "正在确认您的电子邮件……",
+      "failedTitle": "我们无法确认此链接"
     }
   },
   "product": {

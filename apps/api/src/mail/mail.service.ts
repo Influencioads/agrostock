@@ -45,6 +45,11 @@ export class MailService implements OnModuleInit {
       port,
       secure: String(this.config.get('SMTP_SECURE') ?? (port === 465)).toLowerCase() === 'true' || port === 465,
       auth: user && pass ? { user, pass } : undefined,
+      // Fail fast on a misconfigured or unreachable host instead of holding the
+      // socket open for the OS default (~2 minutes).
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     });
     this.logger.log(`Email enabled via ${host}:${port}.`);
   }
@@ -55,6 +60,44 @@ export class MailService implements OnModuleInit {
 
   private webUrl() {
     return (this.config.get<string>('APP_WEB_URL') ?? '').replace(/\/$/, '');
+  }
+
+  /**
+   * Send one arbitrary transactional email. Returns false (never throws) when
+   * mail is disabled or the send fails — callers decide whether that is fatal.
+   */
+  async send(opts: { to: string; subject: string; html: string; text: string }): Promise<boolean> {
+    if (!this.transporter) return false;
+    try {
+      await this.transporter.sendMail({ from: this.from, ...opts });
+      return true;
+    } catch (err) {
+      this.logger.error(`email send failed: ${(err as Error).message}`);
+      return false;
+    }
+  }
+
+  /** Where the confirmation link points. Relative when APP_WEB_URL is unset. */
+  verificationUrl(token: string): string {
+    return `${this.webUrl()}/verify-email?token=${encodeURIComponent(token)}`;
+  }
+
+  /** Confirm-your-address email carrying a one-shot token. */
+  async sendVerificationEmail(user: { email: string; name: string }, token: string): Promise<boolean> {
+    const url = this.verificationUrl(token);
+    const { html, text } = renderNotificationEmail({
+      title: 'Confirm your email address',
+      body: 'Tap the button below to activate your AgroTraders account. The link is valid for 24 hours — if it expires, request a new one from the sign-in page.',
+      ctaUrl: url,
+      ctaLabel: 'Confirm my email',
+      name: user.name,
+    });
+    return this.send({
+      to: user.email,
+      subject: '[AgroTraders] Confirm your email address',
+      html,
+      text,
+    });
   }
 
   /** Absolute URL from a notification's relative linkUrl (best-effort). */

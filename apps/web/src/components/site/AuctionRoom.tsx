@@ -8,6 +8,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { chatBus } from '../../chat/chatBus';
 import { BidPanel } from './BidPanel';
+import { unitSuffix } from '@agrotraders/types';
 
 interface CardProduct {
   id: string; name: string; emoji?: string | null; flag?: string | null;
@@ -69,7 +70,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
     [t('auction.spec.available'), product.qty || '—'],
     [t('auction.spec.moqLot'), product.moq || '—'],
     [t('auction.spec.delivery'), product.delivery || '—'],
-    [t('auction.spec.unit'), product.unit || '/MT'],
+    [t('auction.spec.unit'), unitSuffix(product.unit)],
   ];
   const sellerInitials = (product.seller ?? 'AG').split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
@@ -87,14 +88,14 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
       {/* ===== BIG TIMER HERO ===== */}
       <section style={{ background: HERO }} className="text-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8 px-4 py-7 lg:px-8">
-          <div className="min-w-[280px]">
+          <div className="min-w-0 sm:min-w-[280px]">
             <div className="mb-3 flex items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-status-error px-2.5 py-1.5 text-xs font-bold">
                 <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-white" />{t('auction.liveAuction')}
               </span>
               <span className="text-xs text-brand-leaf">#{slug.slice(0, 8).toUpperCase()}</span>
             </div>
-            <h1 className="max-w-[460px] font-display text-3xl font-extrabold leading-tight tracking-tight">{product.name}</h1>
+            <h1 className="max-w-full break-words font-display text-2xl font-extrabold leading-tight tracking-tight sm:max-w-[460px] sm:text-3xl">{product.name}</h1>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-sm text-brand-mint/90">
               <span>{product.flag} {product.seller}</span>
               {product.marketName && <><span className="opacity-40">·</span><span>📍 {product.marketName}</span></>}
@@ -115,15 +116,16 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
           {/* countdown */}
           <div className="text-center">
             <div className="mb-2.5 text-[11px] font-bold tracking-[0.16em] text-brand-leaf">{t('auction.closesIn')}</div>
-            <div className="flex items-start gap-2.5">
+            {/* 3 × 88px + gaps is 285px — it fits 390px but not a 320px phone. */}
+            <div className="flex flex-wrap items-start justify-center gap-2 sm:gap-2.5">
               {[[timer.h, t('auction.hours')], [timer.m, t('auction.minutes')]].map(([v, l], i) => (
-                <div key={i} className="w-[88px] rounded-2xl border border-white/15 bg-white/[0.08] px-1.5 pb-2.5 pt-3.5">
-                  <div className="font-numeric text-[3.1rem] font-bold leading-none">{v}</div>
+                <div key={i} className="w-[68px] rounded-2xl border border-white/15 bg-white/[0.08] px-1.5 pb-2.5 pt-3.5 sm:w-[88px]">
+                  <div className="font-numeric text-[2.2rem] font-bold leading-none sm:text-[3.1rem]">{v}</div>
                   <div className="mt-1.5 text-[10px] tracking-wider text-brand-leaf">{l}</div>
                 </div>
               ))}
-              <div className="w-[88px] rounded-2xl border border-white/15 px-1.5 pb-2.5 pt-3.5 shadow-[0_10px_26px_rgba(201,67,67,0.4)]" style={{ background: 'linear-gradient(160deg,#C94343,#a83333)' }}>
-                <div className="font-numeric text-[3.1rem] font-bold leading-none">{timer.s}</div>
+              <div className="w-[68px] rounded-2xl border border-white/15 px-1.5 pb-2.5 pt-3.5 shadow-[0_10px_26px_rgba(201,67,67,0.4)] sm:w-[88px]" style={{ background: 'linear-gradient(160deg,#C94343,#a83333)' }}>
+                <div className="font-numeric text-[2.2rem] font-bold leading-none sm:text-[3.1rem]">{timer.s}</div>
                 <div className="mt-1.5 text-[10px] tracking-wider text-white/80">{t('auction.seconds')}</div>
               </div>
             </div>

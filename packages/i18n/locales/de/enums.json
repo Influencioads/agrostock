@@ -64,5 +64,13 @@
     "resolved": "Gelöst",
     "waiting_support": "Wir warten auf Unterstützung",
     "waiting_user": "Warten auf Sie"
+  },
+  "unit": {
+    "BAG": "Tasche",
+    "KG": "Kilogramm (kg)",
+    "MT": "Metrische Tonne (MT)",
+    "PIECE": "Stück",
+    "QUINTAL": "Zentner",
+    "TON": "Tonne"
   }
 }

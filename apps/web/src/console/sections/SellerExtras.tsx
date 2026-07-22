@@ -10,13 +10,14 @@ import { errMessage } from './order-parts';
 import { ProductForm, blankProduct, formToPayload, productFormReady, type ProductFormValues } from './ProductForm';
 import { BuyerBidRoom } from './BuyerBidRoom';
 import { BarChart } from './BarChart';
+import { unitSuffix } from '@agrotraders/types';
 
 type SellerProduct = ApiProduct & { _count?: { orders: number; auctionBids: number } };
 
 function SectionHead({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-5">
-      <h2 className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+      <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>
       {sub && <p className="mt-1 text-sm text-ink-soft">{sub}</p>}
     </div>
   );
@@ -231,7 +232,7 @@ function StartAuctionModal({ onClose }: { onClose: () => void }) {
                 className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
               >
                 <option value="">{t('console.seller.selectListing')}</option>
-                {eligible.map((p) => <option key={p.id} value={p.id}>{p.emoji} {p.name} — {p.price}{p.unit}</option>)}
+                {eligible.map((p) => <option key={p.id} value={p.id}>{p.emoji} {p.name} — {p.price}{unitSuffix(p.unit)}</option>)}
               </select>
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -311,7 +312,7 @@ export function SellerAuctions() {
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.auctions')}</h2>
+          <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.auctions')}</h2>
           <p className="mt-1 text-sm text-ink-soft">{t('console.seller.auctionsSub')}</p>
         </div>
         <Button leftIcon={<Icon name="plus" size={16} />} onClick={() => setStarting(true)}>{t('console.seller.startAuction')}</Button>
@@ -398,7 +399,7 @@ export function SellerOffers() {
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-surface text-xl">{p.emoji ?? '🌾'}</span>
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-ink">{p.name}</div>
-                  <div className="text-xs text-ink-soft">{p.price}{p.unit}</div>
+                  <div className="text-xs text-ink-soft">{p.price}{unitSuffix(p.unit)}</div>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
 import type { ApiOffice } from '@agrotraders/api-client';
+import { GMT_OFFSETS, normalizeGmt } from '@agrotraders/geo';
 import { PageHeader } from '../components/widgets';
 import { api } from '../lib/api';
 import { useI18n } from '../i18n';
@@ -21,7 +22,19 @@ function OfficeEditor({ initial, onCancel, onSave, saving }: { initial: OfficeFo
         <Input label={t('officesAdmin.fType')} value={form.type} onChange={(e) => set('type', e.target.value)} />
         <Input label={t('officesAdmin.fCity')} value={form.city} onChange={(e) => set('city', e.target.value)} />
         <Input label={t('officesAdmin.fManager')} value={form.mgr} onChange={(e) => set('mgr', e.target.value)} />
-        <Input label={t('officesAdmin.fTimezone')} value={form.tz ?? ''} onChange={(e) => set('tz', e.target.value)} />
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-ink">{t('officesAdmin.fTimezone')}</span>
+          <select
+            value={normalizeGmt(form.tz)}
+            onChange={(e) => set('tz', e.target.value)}
+            className="h-11 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
+          >
+            <option value="">{t('officesAdmin.pickTimezone')}</option>
+            {GMT_OFFSETS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
         <Input label={t('officesAdmin.fLanguages')} value={form.langs ?? ''} onChange={(e) => set('langs', e.target.value)} />
         <Input label={t('officesAdmin.fStaff')} value={String(form.staff)} onChange={(e) => set('staff', Number(e.target.value) || 0)} />
       </div>

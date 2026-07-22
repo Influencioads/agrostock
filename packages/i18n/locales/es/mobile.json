@@ -41,6 +41,8 @@
       "title": "Bienvenido de nuevo"
     },
     "signUp": {
+      "checkInboxBody": "Te enviamos un enlace de confirmación a {{email}}. Ábrelo para activar tu cuenta y luego inicia sesión aquí.",
+      "checkInboxTitle": "Confirma tu correo electrónico",
       "cityRegion": "Ciudad/región",
       "cityRegionPh": "Dubái",
       "country": "País",
@@ -52,8 +54,12 @@
       "fullName": "Nombre completo",
       "fullNamePh": "Comercio de Karim",
       "iAmA": "Soy un…",
+      "noCities": "No hay ciudad que coincida",
       "phone": "Teléfono (privado — solo para administradores)",
       "phonePh": "+971 50 123 4567",
+      "pickCountryFirst": "Primero, seleccione un país.",
+      "resend": "Reenviar el enlace",
+      "resent": "Enlace enviado; revisa tu bandeja de entrada.",
       "title": "Crea tu cuenta"
     }
   },

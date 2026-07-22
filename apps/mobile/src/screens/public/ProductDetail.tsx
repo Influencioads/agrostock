@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { socialProof, countryFlag, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
-import { getAttributeFields } from '@agrotraders/types';
+import { getAttributeFields, unitSuffix } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
@@ -252,7 +252,7 @@ export function ProductDetail() {
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.white, borderTopWidth: 1, borderTopColor: C.border, padding: space.lg, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flexShrink: 1 }}>
           <Txt variant="muted">{t('pubX.pd.price')}</Txt>
-          <Txt variant="h3" numberOfLines={1}>{fmtPrice(p)}<Txt variant="muted">{p.unit}</Txt></Txt>
+          <Txt variant="h3" numberOfLines={1}>{fmtPrice(p)}<Txt variant="muted">{unitSuffix(p.unit)}</Txt></Txt>
         </View>
         <Row gap={8} style={{ marginStart: 'auto' }}>
           <Button title="−" variant="outline" size="sm" onPress={() => setQty((q) => Math.max(1, q - 1))} />

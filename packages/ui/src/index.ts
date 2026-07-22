@@ -6,6 +6,7 @@ export { Badge, type BadgeProps, type BadgeTone } from './Badge';
 export { Card, type CardProps } from './Card';
 export { Stat, type StatProps } from './Stat';
 export { Input, type InputProps } from './Input';
+export { Combobox, type ComboboxProps } from './Combobox';
 export { Avatar, type AvatarProps } from './Avatar';
 export { Tabs, type TabsProps, type TabItem } from './Tabs';
 export { Table, type TableProps, type TableColumn } from './Table';

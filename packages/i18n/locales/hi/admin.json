@@ -131,6 +131,7 @@
   },
   "catAdmin": {
     "addCategory": "श्रेणी जोड़ना",
+    "addChild": "बच्चे को जोड़ें",
     "addSub": "उप",
     "catName": "श्रेणी नाम",
     "collapse": "गिर जाना",
@@ -145,9 +146,11 @@
     "empty": "अभी तक कोई श्रेणियां नहीं हैं। पहली श्रेणी जोड़ें।",
     "expand": "बढ़ाना",
     "modalAddCategory": "श्रेणी जोड़ना",
+    "modalAddChild": "{{name}} वर्ष से कम आयु के बच्चे को जोड़ें",
     "modalAddSub": "{{name}} में उपश्रेणी जोड़ें",
     "modalEditCategory": "श्रेणी संपादित करें",
     "modalEditSub": "उपश्रेणी संपादित करें",
+    "nodeStats": "{{products}} उत्पाद · {{children}} बच्चों के स्तर",
     "phCat": "उदाहरण के लिए फल",
     "phSub": "उदाहरण के लिए बासमती चावल",
     "productsCount": "{{count}} उत्पाद",
@@ -350,6 +353,7 @@
     "overview": "अवलोकन",
     "payments": "भुगतान",
     "products": "उत्पादों",
+    "profile": "प्रोफ़ाइल",
     "reports": "रिपोर्टों",
     "reviews": "समीक्षा",
     "roleRequests": "भूमिका अनुरोध",
@@ -379,6 +383,7 @@
     "fStaff": "कर्मचारी",
     "fTimezone": "समय क्षेत्र",
     "fType": "प्रकार",
+    "pickTimezone": "— समय क्षेत्र चुनें —",
     "save": "कार्यालय बचाओ",
     "saving": "बचत हो रही है…"
   },
@@ -592,6 +597,22 @@
       "safedeal": "सुरक्षित सौदा"
     }
   },
+  "profile": {
+    "active": "सक्रिय",
+    "inactive": "निष्क्रिय",
+    "newPassword": "नया पासवर्ड",
+    "noPermissions": "किसी मॉड्यूल को अनुमति नहीं दी गई है।",
+    "passwordError": "पासवर्ड नहीं बदला जा सका।",
+    "passwordSave": "पासवर्ड बदलें",
+    "passwordSaving": "अपडेट हो रहा है...",
+    "passwordTitle": "पासवर्ड",
+    "passwordUpdated": "पासवर्ड बदला गया।",
+    "permissions": "अनुमतियां",
+    "role": "भूमिका",
+    "status": "स्थिति",
+    "subtitle": "यहां आप अपना एडमिन अकाउंट और पासवर्ड मैनेज कर सकते हैं। एडमिन अकाउंट यूजर्स में नहीं दिखाए जाते हैं।",
+    "title": "सुपर एडमिन प्रोफ़ाइल"
+  },
   "range": {
     "allTime": "पूरे समय",
     "from": "से",
@@ -795,6 +816,15 @@
     "whatsapp": "WhatsApp"
   },
   "users": {
+    "createActive": "सक्रिय",
+    "createCountry": "देश",
+    "createEmail": "ईमेल",
+    "createError": "उपयोगकर्ता नहीं बनाया जा सका।",
+    "createName": "नाम",
+    "createPassword": "अस्थायी पासवर्ड",
+    "createRole": "भूमिका",
+    "createUser": "उपयोगकर्ता जोड़ें",
+    "creating": "जोड़ रहा हूँ...",
     "filterAll": "सभी",
     "invite": "उपयोगकर्ता को आमंत्रित करें",
     "searchPlaceholder": "नाम या ईमेल से खोजें…",

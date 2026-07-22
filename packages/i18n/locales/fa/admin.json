@@ -1,0 +1,816 @@
+{
+  "account": {
+    "fallbackName": "مدیر پلتفرم",
+    "logOut": "خروج از سیستم",
+    "staff": "کارکنان",
+    "superAdmin": "مدیر ارشد"
+  },
+  "adsAdmin": {
+    "awaiting": "در انتظار تأیید",
+    "clicks": "{{count}} کلیک",
+    "confirmReject": "تایید، رد",
+    "filter": {
+      "all": "همه",
+      "approved": "تایید شده",
+      "pending": "در حال بررسی",
+      "rejected": "رد شد"
+    },
+    "impressions": "برداشت‌ها (مجموعه نشان داده شده)",
+    "listingFallback": "فهرست",
+    "live": "زنده",
+    "liveNow": "همین حالا زندگی کن",
+    "noneAwaiting": "هیچ کمپینی در انتظار بررسی نیست.",
+    "nothingHere": "اینجا هیچی نیست",
+    "paused": "مکث کرد",
+    "pending": "در حال بررسی",
+    "perDaySubmitted": "{{amount}}/روز · ارسال شده",
+    "queueCleared": "صف پاک شد",
+    "reasonExample": "بودجه برای این دسته خیلی بالاست",
+    "reasonLabel": "دلیل: {{reason}}",
+    "reasonPlaceholder": "دلیل (به فروشنده نشان داده شود)",
+    "rejected": "رد شد",
+    "rejecting": "رد کردن…",
+    "sellerFallback": "فروشنده",
+    "sub": "فهرست‌های حمایت‌شده. یک کمپین تأییدشده و بدون توقف در بازار اجرا می‌شود.",
+    "views": "{{count}} بازدید"
+  },
+  "apiBadge": {
+    "connecting": "در حال اتصال…",
+    "live": "API زنده",
+    "offline": "آفلاین",
+    "offlineMock": "آفلاین (شبیه‌سازی)"
+  },
+  "auctionsAdmin": {
+    "bidBook": "دفترچه پیشنهادات ({{count}})",
+    "bidderFallback": "پیشنهاد دهنده",
+    "bidsCount": "{{count}} پیشنهاد قیمت",
+    "closeNow": "همین حالا ببند",
+    "drawerTitle": "حراج",
+    "ends": "پایان {{date}}",
+    "high": "بالا {{amount}}",
+    "noBids": "هنوز هیچ پیشنهادی ارائه نشده است.",
+    "none": "فعلا حراجی نداره",
+    "sub": "هر حراجی روی پلتفرم - برای بررسی دفترچه پیشنهادات کلیک کنید.",
+    "void": "حراج باطل"
+  },
+  "audit": {
+    "actionPh": "عملکرد فیلتر (مثلاً کیف پول، احراز هویت، سفارش)…",
+    "detail": "جزئیات",
+    "empty": "هیچ ورودی حسابرسی مطابقت ندارد.",
+    "entityPh": "نوع موجودیت (کاربر، سفارش…)",
+    "entriesCount": "{{count}} ورودی‌ها",
+    "system": "سیستم"
+  },
+  "bell": {
+    "app": "برنامه",
+    "aria": "اعلان‌ها",
+    "ariaSettings": "تنظیمات",
+    "caughtUp": "همه‌تون گرفتارین.",
+    "mail": "ایمیل",
+    "markAllRead": "علامت گذاری همه به عنوان خوانده شده",
+    "notifications": "اعلان‌ها",
+    "push": "فشار دهید",
+    "settings": "تنظیمات اعلان"
+  },
+  "bidsAdmin": {
+    "award": "جایزه",
+    "buyerLine": "خریدار: {{name}}",
+    "cancelReq": "لغو الزام",
+    "colActions": "اقدامات",
+    "colBest": "بهترین",
+    "colBuyer": "خریدار",
+    "colQty": "تعداد",
+    "colReq": "مورد نیاز",
+    "colSellerBids": "پیشنهادهای فروشنده",
+    "colStatus": "وضعیت",
+    "drawerTitle": "پیشنهاد قیمت خریدار",
+    "noSellerBids": "هنوز هیچ فروشنده‌ای پیشنهادی ارائه نکرده است.",
+    "none": "هیچ پیشنهاد خریدی مطابقت ندارد.",
+    "reqFallback": "مورد نیاز",
+    "sellerBidsCount": "پیشنهادات فروشنده ({{count}})",
+    "sellerFallback": "فروشنده",
+    "status": {
+      "all": "همه",
+      "awarded": "اعطا شده",
+      "cancelled": "لغو شد",
+      "closed": "بسته",
+      "open": "باز",
+      "submitted": "ارسال شده"
+    },
+    "sub": "مزایده‌های معکوس - خریداران یک نیاز را اعلام می‌کنند، فروشندگان برای برنده شدن در آن پیشنهاد قیمت می‌دهند.",
+    "view": "مشاهده"
+  },
+  "brand": {
+    "tagline": "مرکز فرماندهی"
+  },
+  "brandingAdmin": {
+    "assets": {
+      "appIcon": {
+        "hint": "به عنوان یک PNG با ابعاد ۵۱۲ پیکسل برای آیکون لانچر موبایل ذخیره شده است.",
+        "title": "آیکون برنامه"
+      },
+      "favicon": {
+        "hint": "آیکون تب مرورگر برای ویترین فروشگاه و این پنل. به صورت PNG با ابعاد ۱۸۰ پیکسل ذخیره شده است.",
+        "title": "فاویکون"
+      },
+      "logo": {
+        "hint": "در هدر، فوتر و این سایدبار سایت نمایش داده می‌شود. حالت مربعی بهترین عملکرد را دارد؛ به صورت WebP با حداکثر اندازه ۵۱۲ پیکسل ذخیره می‌شود.",
+        "title": "لوگو"
+      }
+    },
+    "custom": "سفارشی",
+    "default": "پیش‌فرض",
+    "noteBody": "آیکون‌های لانچر و صفحه شروع در نسخه اصلی گنجانده شده‌اند. آپلود در اینجا، طرح هنری را ذخیره و سطوح وب را به‌روزرسانی می‌کند، اما برنامه تلفن همراه فقط پس از حذف نسخه بعدی فروشگاه، آن را دریافت می‌کند.",
+    "noteTitle": "آیکون برنامه به گوشی‌های نصب‌شده نمی‌رسد.",
+    "replace": "جایگزین کردن",
+    "reset": "تنظیم مجدد به حالت پیش‌فرض",
+    "resetFailed": "ریست نشد.",
+    "upload": "آپلود",
+    "uploadFailed": "آپلود ناموفق بود"
+  },
+  "catAdmin": {
+    "addCategory": "افزودن دسته",
+    "addChild": "اضافه کردن فرزند",
+    "addSub": "زیر",
+    "catName": "نام دسته بندی",
+    "collapse": "جمع کردن",
+    "confirmDeleteCat": "حذف دسته «{{name}}»؟ زیردسته‌های آن نیز حذف خواهند شد.",
+    "confirmDeleteSub": "زیرشاخه «{{name}}» حذف شود؟",
+    "delete": "حذف",
+    "deleteSub": "حذف زیرشاخه",
+    "edit": "ویرایش",
+    "editSub": "ویرایش زیررده",
+    "emojiHint": "یک ایموجی واحد در کنار نام نشان داده شده است.",
+    "emojiLabel": "ایموجی (اختیاری)",
+    "empty": "هنوز دسته‌بندی‌ای وجود ندارد. اولین دسته‌بندی را اضافه کنید.",
+    "expand": "گسترش",
+    "modalAddCategory": "افزودن دسته",
+    "modalAddSub": "زیرشاخه را به {{name}} اضافه کنید",
+    "modalEditCategory": "ویرایش رده",
+    "modalEditSub": "ویرایش زیررده",
+    "phCat": "مثلاً میوه‌ها",
+    "phSub": "مثلاً برنج باسماتی",
+    "productsCount": "{{count}} محصول",
+    "save": "ذخیره",
+    "saving": "در حال ذخیره…",
+    "subName": "نام زیرگروه"
+  },
+  "cmsAdmin": {
+    "draft": "پیش نویس",
+    "publish": "منتشر کردن",
+    "published": "منتشر شده",
+    "sub": "مدیریت محتوای عمومی سایت و صفحات فرود.",
+    "unpublish": "عدم انتشار"
+  },
+  "communityMod": {
+    "action": "اکشن",
+    "banAuthor": "نویسنده را ممنوع کنید",
+    "createBtn": "ایجاد کانال",
+    "createChannel": "ایجاد کانال رسمی",
+    "creating": "ایجاد…",
+    "default": "پیش‌فرض",
+    "delete": "حذف",
+    "dismiss": "رد کردن",
+    "fDescription": "توضیحات",
+    "fEmoji": "ایموجی",
+    "fName": "نام",
+    "glance": "انجمن در یک نگاه",
+    "groupsCount": "گروه‌ها ({{count}})",
+    "metric": {
+      "groups": "گروه‌ها",
+      "messages": "پیام‌ها",
+      "openReports": "گزارش‌های باز",
+      "posts": "پست‌ها",
+      "requirements": "الزامات"
+    },
+    "noPosts": "هیچ پستی وجود ندارد.",
+    "noReports": "گزارش‌های باز ممنوع 🎉",
+    "pin": "پین",
+    "pinned": "سنجاق شده",
+    "recentPosts": "پست‌های اخیر",
+    "reported": "محتوای گزارش‌شده",
+    "reportedBy": "گزارش شده توسط {{name}} · هدف {{id}}",
+    "tab": {
+      "analytics": "تحلیل‌ها",
+      "feed": "خوراک",
+      "groups": "گروه‌ها",
+      "reports": "گزارش‌ها"
+    },
+    "unpin": "پین را بردارید"
+  },
+  "companies": {
+    "approveListing": "تایید آگهی",
+    "colActions": "اقدامات",
+    "colCompany": "شرکت",
+    "colListing": "فهرست",
+    "detail": "جزئیات شرکت",
+    "drivers": "رانندگان",
+    "fleet": "ناوگان ({{count}})",
+    "jobs": "مشاغل",
+    "lanes": "خطوط",
+    "lanesN": "خطوط ({{count}})",
+    "listed": "فهرست شده",
+    "loadersSub": "هر شرکت لودر - خدمه، تیم‌ها، مشاغل، کارت‌های امتیاز و تأیید فهرست عمومی.",
+    "none": "هیچ شرکتی یافت نشد.",
+    "rateCard": "کارت امتیاز ({{count}})",
+    "recentTrips": "سفرهای اخیر ({{count}})",
+    "searchPlaceholder": "جستجوی شرکت‌ها…",
+    "tabCompanies": "شرکت‌ها",
+    "tabHires": "درخواست‌های استخدام",
+    "teams": "تیم‌ها",
+    "teamsN": "تیم‌ها ({{count}})",
+    "transportSub": "هر شرکت حمل و نقل - ناوگان، خطوط، سفرها و تأیید فهرست عمومی.",
+    "trips": "سفرها",
+    "unlist": "از فهرست خارج کردن",
+    "unlisted": "ثبت نشده",
+    "vehicles": "وسایل نقلیه",
+    "workers": "کارگران"
+  },
+  "disputes": {
+    "allSmooth": "هر سفارش به طور روان در حال انجام است.",
+    "amount": "مبلغ {{amount}}",
+    "badge": "اختلاف نظر",
+    "none": "بدون اختلافات آشکار",
+    "orderRef": "سفارش شماره{{ref}}",
+    "refund": "خریدار بازپرداخت",
+    "release": "انتشار به فروشنده",
+    "sub_one": "{{count}} اختلافات آشکار",
+    "sub_other": "{{count}} اختلافات آشکار"
+  },
+  "genericError": "مشکلی پیش آمده است. لطفا دوباره امتحان کنید.",
+  "header": {
+    "fallbackTitle": "مدیر",
+    "searchPlaceholder": "جستجوی کاربران، سفارشات، محصولات…"
+  },
+  "hires": {
+    "empty": "هنوز درخواست استخدامی ثبت نشده است.",
+    "title": "عملیات استخدامی"
+  },
+  "invoicesAdmin": {
+    "colActions": "اقدامات",
+    "colFromTo": "از → تا",
+    "colIssued": "صادر شده",
+    "colKind": "مهربان",
+    "colNumber": "شماره",
+    "colStatus": "وضعیت",
+    "colTotal": "مجموع",
+    "empty": "هیچ فاکتوری مطابقت ندارد.",
+    "markPaid": "مارک پرداخت کرد",
+    "pdf": "PDF",
+    "searchPh": "شماره، صادرکننده یا گیرنده…",
+    "status": {
+      "all": "همه",
+      "draft": "پیش نویس",
+      "issued": "صادر شده",
+      "paid": "پرداخت شده",
+      "void": "باطل"
+    },
+    "void": "باطل"
+  },
+  "kycAdmin": {
+    "all": "همه",
+    "allReviewed": "همه مطالب ارسالی بررسی شد. کار عالی بود.",
+    "approve": "تأیید",
+    "confirmReject": "تایید، رد",
+    "docs": "اسناد",
+    "docsCount": "{{count}} اسناد",
+    "justNow": "همین الان",
+    "noDocs": "هنوز هیچ مدرکی آپلود نشده است.",
+    "nothingHere": "اینجا هیچی نیست",
+    "queueCleared": "صف پاک شد",
+    "reject": "رد کردن",
+    "rejectPh": "دلیل رد درخواست (اختیاری)",
+    "view": "مشاهده"
+  },
+  "kycDocs": {
+    "title": "KYC اسناد"
+  },
+  "login": {
+    "adminOnly": "این کنسول فقط برای مدیران است.",
+    "commandCentre": "مرکز فرماندهی",
+    "demo": "نسخه آزمایشی: admin@agrotraders.org · password123",
+    "email": "ایمیل",
+    "invalid": "مدارک شناسایی نامعتبر.",
+    "password": "رمز عبور",
+    "signingIn": "در حال ورود به سیستم…",
+    "title": "ورود مدیر"
+  },
+  "marketsAdmin": {
+    "active": "فعال",
+    "addMarket": "اضافه کردن بازار",
+    "approve": "تأیید",
+    "awaiting": "{{count}} در انتظار بررسی",
+    "edit": "ویرایش",
+    "editMarket": "ویرایش بازار",
+    "fCity": "شهر",
+    "fCountry": "کشور",
+    "fFlag": "ایموجی پرچم",
+    "fName": "نام",
+    "fRegion": "منطقه",
+    "hidden": "پنهان",
+    "hide": "پنهان کردن",
+    "pending": "در حال بررسی",
+    "phCity": "دهلی",
+    "phCountry": "🇮🇳 هند",
+    "phFlag": "🇮🇳",
+    "phName": "آزادپور مندی",
+    "phRegion": "جنوب آسیا",
+    "proposals": "پیشنهادات فروشنده",
+    "proposedBy": "پیشنهاد شده توسط {{name}}",
+    "reject": "رد کردن",
+    "rejected": "رد شد",
+    "save": "ذخیره",
+    "saveError": "نتوانست بازار را نجات دهد - مزارع را بررسی کنید.",
+    "show": "نمایش"
+  },
+  "nav": {
+    "ads": "تبلیغات",
+    "auctions": "مزایده‌ها",
+    "audit": "گزارش حسابرسی",
+    "bids": "پیشنهادهای خریدار",
+    "branding": "برندسازی",
+    "categories": "دسته‌ها",
+    "cms": "CMS",
+    "community": "جامعه",
+    "disputes": "اختلافات",
+    "invoices": "فاکتورها",
+    "kyc": "KYC نقد و بررسی",
+    "loaders": "لودرها",
+    "markets": "بازارها",
+    "offices": "دفاتر",
+    "orders": "سفارشات",
+    "overview": "نمای کلی",
+    "payments": "پرداخت‌ها",
+    "products": "محصولات",
+    "profile": "پروفایل",
+    "reports": "گزارش‌ها",
+    "reviews": "نقد و بررسی‌ها",
+    "roleRequests": "درخواست‌های نقش",
+    "safedeal": "معامله امن",
+    "support": "صندوق ورودی پشتیبانی",
+    "team": "تیم",
+    "transport": "حمل و نقل",
+    "users": "کاربران"
+  },
+  "navGroup": {
+    "Company": "شرکت",
+    "Finance": "امور مالی",
+    "Logistics": "لجستیک",
+    "Marketplace": "بازار",
+    "Messaging": "پیام‌رسانی",
+    "Platform": "پلتفرم"
+  },
+  "officesAdmin": {
+    "addOffice": "دفتر اضافه کنید",
+    "delete": "حذف",
+    "edit": "ویرایش",
+    "fCity": "شهر",
+    "fFlag": "پرچم (ایموجی)",
+    "fLanguages": "زبان‌ها",
+    "fManager": "مدیر",
+    "fName": "نام",
+    "fStaff": "کارکنان",
+    "fTimezone": "منطقه زمانی",
+    "fType": "نوع",
+    "pickTimezone": "— یک منطقه زمانی انتخاب کنید —",
+    "save": "ذخیره دفتر",
+    "saving": "در حال ذخیره…"
+  },
+  "orders": {
+    "details": "جزئیات",
+    "subtitle": "{{count}} سفارشات اخیر · معاملات ایمن تحت نظارت",
+    "title": "سفارشات"
+  },
+  "ordersAdmin": {
+    "all": "همه",
+    "amount": "مبلغ",
+    "apply": "اعمال کردن",
+    "buyer": "خریدار",
+    "orderTitle": "سفارش شماره{{ref}}",
+    "override": "وضعیت را نادیده بگیرید",
+    "product": "محصول",
+    "searchPh": "جستجوی مرجع/خریدار/فروشنده…",
+    "selectStatus": "انتخاب وضعیت…",
+    "seller": "فروشنده",
+    "status": "وضعیت",
+    "timeline": "جدول زمانی ({{count}})"
+  },
+  "overview": {
+    "approvalQueue": "صف تأیید",
+    "gmv": "ارزش ناخالص کالا",
+    "noRecent": "فعالیت اخیری وجود ندارد.",
+    "noSettledYet": "هنوز هیچ سفارشی تسویه نشده است.",
+    "nothingAwaiting": "چیزی در انتظار بررسی نیست 🎉",
+    "perMonthSettled": "دلار در ماه · سفارشات تسویه شده",
+    "queue": {
+      "ads": "کمپین‌های تبلیغاتی",
+      "kyc": "KYC ارسال‌ها",
+      "markets": "پیشنهادهای بازار",
+      "payouts": "درخواست‌های پرداخت",
+      "products": "محصولات در انتظار تایید",
+      "roleRequests": "درخواست‌های نقش"
+    },
+    "recentActivity": "فعالیت اخیر مدیر",
+    "review": "نقد و بررسی",
+    "reviewQueue": "صف بررسی",
+    "stats": {
+      "disputes": "اختلافات علنی",
+      "orders": "سفارشات",
+      "products": "محصولات",
+      "users": "کل کاربران"
+    },
+    "system": "سیستم",
+    "viewReports": "مشاهده گزارش‌ها"
+  },
+  "page": {
+    "audit": {
+      "subtitle": "سابقه تغییرناپذیر اقدامات مدیر",
+      "title": "گزارش حسابرسی"
+    },
+    "branding": {
+      "subtitle": "لوگو، آیکون برنامه و فاویکون. تغییرات لوگو و فاویکون بلافاصله اعمال می‌شوند.",
+      "title": "برندسازی"
+    },
+    "categories": {
+      "title": "دسته‌ها"
+    },
+    "community": {
+      "subtitle": "AgroTraders انجمن — گزارش‌ها، گروه‌ها و فعالیت‌ها",
+      "title": "اعتدال جامعه"
+    },
+    "disputes": {
+      "title": "اختلافات"
+    },
+    "invoices": {
+      "subtitle": "{{count}} فاکتور در سراسر پلتفرم",
+      "title": "فاکتورها"
+    },
+    "kyc": {
+      "subtitle": "{{count}} در حال بررسی",
+      "title": "KYC نقد و بررسی"
+    },
+    "loaderWorkforce": {
+      "title": "نیروی کار لودر"
+    },
+    "markets": {
+      "title": "بازارها"
+    },
+    "offices": {
+      "title": "دفاتر جهانی"
+    },
+    "overview": {
+      "subtitle": "AgroTraders · سلامت بازار زنده",
+      "title": "بررسی اجمالی پلتفرم"
+    },
+    "payments": {
+      "subtitle": "AgroTraders · موجودی کیف پول و دفتر کل تراکنش‌ها",
+      "title": "پرداخت‌ها و تسویه حساب‌ها"
+    },
+    "products": {
+      "subtitle": "{{count}} آگهی در انتظار بررسی",
+      "title": "تاییدیه‌های محصول"
+    },
+    "reports": {
+      "subtitle": "AgroTraders · معیارهای اصلی پلتفرم",
+      "title": "گزارش‌ها و تحلیل‌ها"
+    },
+    "reviews": {
+      "subtitle": "بررسی‌های دوطرفه را در مورد سفارشات، سفرها و کارها مدیریت کنید",
+      "title": "نقدها و رتبه‌بندی‌ها"
+    },
+    "transport": {
+      "title": "عملیات حمل و نقل"
+    }
+  },
+  "payments": {
+    "addMoney": "اضافه کردن پول به کیف پول",
+    "adjust": "تنظیم",
+    "amountUsd": "مبلغ (دلار)",
+    "apply": "اعمال کردن",
+    "applying": "اعمال…",
+    "balance": "موجودی {{amount}}",
+    "creditRefund": "اعتبار (بازپرداخت)",
+    "creditTopup": "اعتبار (شارژ)",
+    "debitPayout": "بدهی (پرداخت)",
+    "debitWithdraw": "بدهکار کردن (برداشت کردن)",
+    "exportCsv": "صادرات CSV",
+    "exportPdf": "صادرات PDF",
+    "exporting": "صادرات…",
+    "noMatches": "بدون کبریت.",
+    "noPending": "هیچ درخواست پرداختی در انتظار نیست.",
+    "noTxns": "هیچ معامله‌ای در این محدوده انجام نشده است.",
+    "payoutRequests": "درخواست‌های پرداخت",
+    "pendingCount": "{{count}} در حال بررسی",
+    "preset": {
+      "month": "ماه",
+      "today": "امروز",
+      "week": "هفته"
+    },
+    "recentTxns": "تراکنش‌های اخیر",
+    "requested": "درخواست شده {{date}}",
+    "searchUser": "جستجوی کاربر بر اساس نام یا ایمیل…",
+    "shownCount": "{{count}} نشان داده شده است",
+    "stats": {
+      "escrowReleased": "سپرده آزاد شد",
+      "payouts": "پرداخت‌ها",
+      "totalBalance": "کل موجودی کیف پول",
+      "wallets": "کیف پول‌ها"
+    }
+  },
+  "perm": {
+    "ads_moderate": "تبلیغات",
+    "auctions_manage": "مزایده‌ها",
+    "audit_view": "گزارش حسابرسی",
+    "bids_manage": "پیشنهادهای خریدار",
+    "branding_manage": "برندسازی",
+    "community_moderate": "جامعه",
+    "disputes_manage": "اختلافات",
+    "finance_manage": "امور مالی (کیف پول/پرداخت)",
+    "kyc_review": "KYC نقد و بررسی",
+    "loaders_manage": "لودرها",
+    "markets_manage": "بازارها",
+    "offices_manage": "دفاتر",
+    "orders_manage": "سفارشات",
+    "products_moderate": "محصولات و دسته بندی ها",
+    "reports_view": "گزارش‌ها",
+    "reviews_moderate": "نقدها و رتبه‌بندی‌ها",
+    "role_requests": "درخواست‌های نقش",
+    "staff_manage": "کارکنان و مجوزها (مدیر ارشد)",
+    "support_agent": "پشتیبانی",
+    "transport_manage": "حمل و نقل",
+    "users_manage": "کاربران"
+  },
+  "placeholder": {
+    "body": "این ماژول از همان طرح‌بندی، جداول و کامپوننت‌ها استفاده می‌کند. اتصال به داده‌های زنده با اجرای فازهای backend ادامه می‌یابد.",
+    "docs": "مشاهده مستندات"
+  },
+  "prodMod": {
+    "allTypes": "همه انواع",
+    "approve": "تأیید",
+    "colActions": "اقدامات",
+    "colCategory": "دسته بندی",
+    "colPrice": "قیمت",
+    "colProduct": "محصول",
+    "colSeller": "فروشنده",
+    "colStatus": "وضعیت",
+    "confirm": "تأیید",
+    "edit": "ویرایش",
+    "fName": "نام",
+    "fPrice": "قیمت",
+    "fQty": "تعداد",
+    "none": "هیچ محصولی مطابقت ندارد.",
+    "reasonPlaceholder": "دلیل (اختیاری)",
+    "reject": "رد کردن",
+    "save": "ذخیره",
+    "searchPlaceholder": "جستجوی محصولات …",
+    "status": {
+      "all": "همه",
+      "hidden": "پنهان",
+      "live": "زنده",
+      "pending": "در حال بررسی",
+      "rejected": "رد شده"
+    },
+    "sub": "مدیریت کاتالوگ - تأیید، رد، ویرایش یا حذف آگهی‌ها.",
+    "tagAuction": "حراج",
+    "tagOffer": "پیشنهاد",
+    "takedown": "حذف",
+    "type": {
+      "auction": "حراج",
+      "offer": "پیشنهاد",
+      "safedeal": "سیف دیل"
+    }
+  },
+  "profile": {
+    "active": "فعال",
+    "inactive": "غیرفعال",
+    "newPassword": "رمز عبور جدید",
+    "noPermissions": "هیچ مجوز ماژولی اختصاص داده نشده است.",
+    "passwordError": "رمز عبور را نتوانستم تغییر دهم.",
+    "passwordSave": "تغییر رمز عبور",
+    "passwordSaving": "در حال به‌روزرسانی...",
+    "passwordTitle": "رمز عبور",
+    "passwordUpdated": "رمز عبور تغییر کرد.",
+    "permissions": "مجوزها",
+    "role": "نقش",
+    "status": "وضعیت",
+    "subtitle": "حساب کاربری ادمین و رمز عبور خود را اینجا مدیریت کنید. حساب‌های کاربری ادمین در بخش کاربران نمایش داده نمی‌شوند.",
+    "title": "پروفایل سوپر ادمین"
+  },
+  "range": {
+    "allTime": "تمام وقت",
+    "from": "از",
+    "to": "به"
+  },
+  "reports": {
+    "exportCsv": "صادرات CSV",
+    "months12": "۱۲ ماه",
+    "noSettled": "هیچ سفارش تسویه‌شده‌ای ثبت نشده است.",
+    "noSignups": "هیچ ثبت نامی در محدوده وجود ندارد.",
+    "orderVolume": "حجم سفارش",
+    "ordersByStatus": "سفارشات بر اساس وضعیت",
+    "perMonthSettled": "دلار در ماه · سفارشات تسویه شده",
+    "preset": {
+      "month": "ماه گذشته",
+      "quarter": "سه ماهه آخر",
+      "year": "سال گذشته"
+    },
+    "signupsPerMonth": "ثبت نام های جدید در هر ماه",
+    "stats": {
+      "escrowReleased": "اسکرو منتشر شد",
+      "gmv": "GMV (محدوده)",
+      "newUsers": "کاربران جدید (محدوده)",
+      "orders": "سفارشات (محدوده)"
+    },
+    "userGrowth": "رشد کاربر",
+    "usersByRole": "کاربران بر اساس نقش"
+  },
+  "reviewsMod": {
+    "adminNote": "یادداشت مدیر:",
+    "adminNoteLabel": "یادداشت مدیر (اختیاری)",
+    "bodyPh": "متن بررسی…",
+    "confirmDelete": "آیا می‌خواهید این نظر را برای همیشه حذف کنید؟ این کار قابل بازگشت نیست.",
+    "delete": "حذف",
+    "edit": "ویرایش",
+    "editedBy": "ویرایش شده توسط {{name}}",
+    "empty": "هیچ نظری با این فیلترها مطابقت ندارد.",
+    "hide": "پنهان کردن",
+    "kind": {
+      "all": "همه",
+      "assignment": "تکلیف",
+      "hire": "استخدام",
+      "loaderjob": "شغل لودر",
+      "order": "سفارش",
+      "trip": "سفر"
+    },
+    "modalTitle": "ویرایش نقد",
+    "noText": "بدون نقد کتبی.",
+    "notePh": "یادداشت داخلی درباره این تعدیل…",
+    "rating": "رتبه‌بندی",
+    "remove": "حذف",
+    "reviewText": "متن نقد و بررسی",
+    "save": "ذخیره",
+    "saving": "در حال ذخیره…",
+    "searchPh": "جستجوی متن، ارزیاب یا بررسی شونده…",
+    "status": {
+      "all": "همه",
+      "hidden": "پنهان",
+      "removed": "حذف شده",
+      "visible": "قابل مشاهده"
+    },
+    "subjectLine": "موضوع {{kind}} {{id}}",
+    "title": "نقد و بررسی‌ها",
+    "totalCount": "{{count}} مجموع",
+    "unhide": "آشکار کردن"
+  },
+  "roleReq": {
+    "approve": "تأیید",
+    "colAction": "اکشن",
+    "colNote": "توجه داشته باشید",
+    "colRole": "نقش درخواستی",
+    "colStatus": "وضعیت",
+    "colUser": "کاربر",
+    "confirmReject": "تایید، رد",
+    "decided": "تصمیم گرفت",
+    "filter": {
+      "all": "همه",
+      "approved": "تایید شده",
+      "pending": "در حال بررسی",
+      "rejected": "رد شده"
+    },
+    "liveApi": "API زنده",
+    "none": "هیچ درخواست نقشی وجود ندارد.",
+    "reasonPlaceholder": "دلیل (اختیاری)",
+    "reject": "رد کردن",
+    "sub": "کاربرانی که درخواست داشبورد اضافی دارند. تأیید، نقش را اعطا می‌کند."
+  },
+  "sd": {
+    "allRoles": "همه",
+    "colAccount": "حساب کاربری",
+    "colBalance": "تعادل",
+    "colLedger": "لجر",
+    "colRole": "نقش",
+    "inEscrow": "در حساب امانی (سفارش‌های پرداخت‌شده)",
+    "ledgerTitle": "دفتر کل کیف پول",
+    "sellerBalances": "مانده حساب فروشنده",
+    "sub": "نظارت مالی در سطح شرکت - سپرده، کیف پول و موجودی.",
+    "totalOnPlatform": "مجموع روی سکو",
+    "txType": {
+      "escrow_hold": "نگه داشتن سپرده",
+      "escrow_release": "آزادسازی سپرده",
+      "payout": "پرداخت",
+      "refund": "بازپرداخت",
+      "topup": "شارژ مجدد"
+    },
+    "txnsCount": "تراکنش‌ها ({{count}})",
+    "wallets": "کیف پول‌ها"
+  },
+  "support": {
+    "noTickets": "بلیطی وجود ندارد",
+    "notePlaceholder": "افزودن یادداشت…",
+    "replyPlaceholder": "پاسخ به مشتری…",
+    "searchPlaceholder": "مرجع، سفارش، کاربر…",
+    "subtitle": "{{count}} بلیط",
+    "title": "صندوق ورودی پشتیبانی"
+  },
+  "supportInbox": {
+    "actions": "اقدامات",
+    "add": "اضافه کردن",
+    "agentPh": "عامل…",
+    "assign": "اختصاص دادن",
+    "assignMe": "به من اختصاص دهید",
+    "close": "بستن",
+    "detailsHere": "جزئیات بلیط اینجا نمایش داده می‌شود.",
+    "escalate": "تشدید",
+    "internalNote": "یادداشت داخلی",
+    "order": "سفارش دهید",
+    "product": "محصول",
+    "rating": "امتیاز: {{score}}/5",
+    "requester": "درخواست کننده",
+    "resolve": "حل و فصل",
+    "safeDeal": "معامله امن",
+    "selectTicket": "بلیط را انتخاب کنید",
+    "waitingUser": "کاربر منتظر"
+  },
+  "team": {
+    "accessGranted": "دسترسی ({{count}} اعطا شده)",
+    "active": "فعال",
+    "addStaff": "اضافه کردن یک کارمند",
+    "addStaffBtn": "اضافه کردن عضو پرسنل",
+    "adding": "اضافه شدن…",
+    "clear": "پاک کردن",
+    "close": "بستن",
+    "createError": "نتوانستم عضو کارمند ایجاد کنم.",
+    "deactivate": "غیرفعال کردن",
+    "email": "ایمیل",
+    "inactive": "غیرفعال",
+    "name": "نام",
+    "needCapability": "برای مدیریت اعضای تیم به قابلیت Staff & permissions نیاز دارید.",
+    "noModules": "هیچ ماژولی اعطا نشده است",
+    "permissions": "مجوزها",
+    "reactivate": "دوباره فعال کنید",
+    "remove": "حذف",
+    "savePerms": "ذخیره مجوزها",
+    "saving": "در حال ذخیره…",
+    "selectAll": "همه را انتخاب کنید",
+    "staffCount": "کارکنان ({{count}})",
+    "sub": "مدیریت حساب‌های کارکنان داخلی و دسترسی‌های هر ماژول به آنها.",
+    "superFull": "مدیر ارشد - دسترسی کامل",
+    "tempPassword": "رمز عبور موقت (حداقل ۸)",
+    "you": "(شما)"
+  },
+  "userDrawer": {
+    "accountActive": "حساب فعال است",
+    "actBuyOrders": "سفارش‌ها (خرید)",
+    "actHiresReceived": "اجاره‌های دریافتی",
+    "actHiresSent": "استخدام‌ها ارسال شدند",
+    "actProducts": "محصولات",
+    "actSellOrders": "سفارش‌ها (فروش)",
+    "actTrips": "سفرها",
+    "actVehicles": "وسایل نقلیه",
+    "actWorkers": "کارگران",
+    "active": "فعال",
+    "activity": "فعالیت",
+    "addRole": "اضافه کردن نقش…",
+    "adminOnly": "فقط مدیر",
+    "contactEmail": "ایمیل تماس",
+    "country": "کشور",
+    "dangerBody": "حساب کاربری را غیرفعال می‌کند (حذف موقت). کاربر دیگر نمی‌تواند وارد سیستم شود.",
+    "dangerZone": "منطقه خطر",
+    "deactivate": "غیرفعال کردن حساب کاربری",
+    "deleting": "در حال حذف…",
+    "editDetails": "جزئیات را ویرایش کنید",
+    "email": "ایمیل",
+    "grant": "گرانت",
+    "inactive": "غیرفعال",
+    "kycStatus": "وضعیت KYC",
+    "location": "مکان",
+    "market": "بازار",
+    "name": "نام",
+    "phone": "تلفن",
+    "primary": "(اولیه)",
+    "privateContact": "تماس خصوصی",
+    "revokeRole": "لغو نقش",
+    "roles": "نقش‌ها",
+    "saveChanges": "ذخیره تغییرات",
+    "saving": "در حال ذخیره…",
+    "title": "مدیریت کاربر",
+    "wallet": "کیف پول",
+    "whatsapp": "واتساپ"
+  },
+  "users": {
+    "createActive": "فعال",
+    "createCountry": "کشور",
+    "createEmail": "ایمیل",
+    "createError": "نتوانستم کاربر ایجاد کنم.",
+    "createName": "نام",
+    "createPassword": "رمز عبور موقت",
+    "createRole": "نقش",
+    "createUser": "اضافه کردن کاربر",
+    "creating": "در حال اضافه کردن...",
+    "filterAll": "همه",
+    "invite": "دعوت از کاربر",
+    "searchPlaceholder": "جستجوی نام یا ایمیل…",
+    "title": "کاربران",
+    "view": "مشاهده"
+  }
+}

@@ -4,6 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { seedAllLabelTranslations } from './seed-translations';
+import { buildTaxonomyPlan, subKey } from './taxonomy/plan';
 
 /** A tiny but valid PDF used as a placeholder KYC document in demo data. */
 const SAMPLE_PDF = Buffer.from(
@@ -69,43 +70,15 @@ const slug = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 /**
- * Full product taxonomy mirrored from agrobazar.ru — 24 top-level categories,
- * each with its complete subcategory set (~420 total). English is the canonical
- * `name` on the base row; the Russian label rides alongside as `[en, ru]` sub
- * tuples (seeded into SubcategoryTranslation inline below). Category-level Russian
- * names live in `packages/i18n/locales/ru/db-labels.json`, applied by
- * `seedAllLabelTranslations` after this seed. Admins can edit more from the panel.
+ * The product taxonomy now lives in `prisma/taxonomy/` — one module per
+ * top-level category, assembled into `TAXONOMY`. It is shared with
+ * `taxonomy-sync.ts` so a dev reseed and a production sync can never diverge.
+ * Slugs and ordering come from `buildTaxonomyPlan`, which is deterministic.
+ *
+ * Category-level Russian names live in `packages/i18n/locales/ru/db-labels.json`,
+ * applied by `seedAllLabelTranslations` after this seed; level-2 Russian labels
+ * ride along on the tree itself and are seeded into SubcategoryTranslation below.
  */
-
-
-const A = '#DFF3E4', B = '#EDF7EF', C = '#FBF4E4', D = '#FBE9E6', E = '#E6F0F4', F = '#F0EFEA';
-// subs are [english, russian] — english is the base-row name, russian a translation.
-const categories: { name: string; emoji: string; tint: string; subs: [string, string][] }[] = [
-  { name: 'Vegetables', emoji: '🥦', tint: A, subs: [['Bur gherkin', 'Ангурия'], ['Artichoke', 'Артишок'], ['Eggplant', 'Баклажаны'], ['Sweet potato', 'Батат'], ['Broccoli', 'Брокколи'], ['Ginger', 'Имбирь'], ['Zucchini', 'Кабачки'], ['Cabbage', 'Капуста'], ['Brussels sprouts', 'Капуста брюссельская'], ['Napa cabbage', 'Капуста пекинская'], ['Savoy cabbage', 'Капуста савойская'], ['Cauliflower', 'Капуста цветная'], ['Potato', 'Картофель'], ['Kohlrabi', 'Кольраби'], ['Bottle gourd', 'Лагенария'], ['Carrot', 'Морковь'], ['Cucumber', 'Огурцы'], ['Olives', 'Оливы'], ['Pattypan squash', 'Патиссоны'], ['Bell pepper', 'Перец болгарский'], ['Chili pepper', 'Перец горький'], ['Tsitsak pepper', 'Перец цицак'], ['Tomato', 'Помидоры'], ['Radish', 'Редис'], ['Black radish', 'Редька'], ['Turnip', 'Репа'], ['Beetroot', 'Свекла'], ['Fodder beet', 'Свекла кормовая'], ['Sugar beet', 'Свекла сахарная'], ['Asparagus', 'Спаржа'], ['Jerusalem artichoke', 'Топинамбур'], ['Pumpkin', 'Тыква'], ['Horseradish', 'Хрен'], ['Chayote', 'Чайот'], ['Garlic', 'Чеснок'], ['Tiger nut', 'Чуфа'], ['Yacon', 'Якон'], ['Yam', 'Ямс']] },
-  { name: 'Fruits', emoji: '🍎', tint: C, subs: [['Apricot', 'Абрикосы'], ['Avocado', 'Авокадо'], ['Pawpaw', 'Азимина'], ['Quince', 'Айва'], ['Ackee', 'Аки'], ['Cherry plum', 'Алыча'], ['Pineapple', 'Ананасы'], ['Orange', 'Апельсины'], ['Blood orange', 'Апельсины красные'], ['Watermelon', 'Арбузы'], ['Banana', 'Бананы'], ['Grapes', 'Виноград'], ['Sour cherry', 'Вишня'], ['Pomegranate', 'Гранат'], ['Grapefruit', 'Грейпфрут'], ['Pear', 'Груши'], ['Guava', 'Гуава'], ['Jackfruit', 'Джекфрут'], ['Durian', 'Дуриан'], ['Melon', 'Дыни'], ['Fig', 'Инжир'], ['Horned melon', 'Кивано'], ['Kiwi', 'Киви'], ['Clementine', 'Клементин'], ['Coconut', 'Кокосы'], ['Kumquat', 'Кумкват'], ['Lime', 'Лайм'], ['Lemon', 'Лимоны'], ['Lychee', 'Личи'], ['Longan', 'Лонган'], ['Mango', 'Манго'], ['Mangosteen', 'Мангостин'], ['Mandarin', 'Мандарины'], ['Passion fruit', 'Маракуйя'], ['Nectarine', 'Нектарин'], ['Papaya', 'Папайя'], ['Peach', 'Персики'], ['Dragon fruit', 'Питайя'], ['Pomelo', 'Помело'], ['Sweetie', 'Свити'], ['Feijoa', 'Фейхоа'], ['Persimmon', 'Хурма'], ['Sweet cherry', 'Черешня'], ['Cherimoya', 'Черимойя'], ['Rose apple', 'Чомпу'], ['Apple', 'Яблоки']] },
-  { name: 'Berries', emoji: '🫐', tint: E, subs: [['Barberry', 'Барбарис'], ['Hawthorn', 'Боярышник'], ['Lingonberry', 'Брусника'], ['Elderberry', 'Бузина'], ['Blueberry', 'Голубика'], ['Blackberry', 'Ежевика'], ['Honeysuckle berry', 'Жимолость'], ['Wild strawberry', 'Земляника'], ['Serviceberry', 'Ирга'], ['Viburnum', 'Калина'], ['Cornelian cherry', 'Кизил'], ['Strawberry', 'Клубника'], ['Cranberry', 'Клюква'], ['Arctic raspberry', 'Княженика'], ['Schisandra', 'Лимонник'], ['Raspberry', 'Малина'], ['Juniper berry', 'Можжевеловая ягода'], ['Cloudberry', 'Морошка'], ['Sea buckthorn', 'Облепиха'], ['Rowan berry', 'Рябина'], ['Currant', 'Смородина'], ['Blackthorn', 'Терновник'], ['Bilberry', 'Черника'], ['Bird cherry', 'Черёмуха'], ['Mulberry', 'Шелковица'], ['Rosehip', 'Шиповник']] },
-  { name: 'Herbs & greens', emoji: '🥬', tint: A, subs: [['Basil', 'Базилик'], ['Oregano', 'Душица'], ['Fireweed tea', 'Иван-чай'], ['Cilantro', 'Кинза'], ['Coriander', 'Кориандр'], ['Garden cress', 'Кресс-салат'], ['Butterhead lettuce', 'Латук'], ['Beet greens', 'Лист свёклы'], ['Green onion', 'Лук зелёный'], ['Leek', 'Лук-порей'], ['Lovage', 'Любисток'], ['Marjoram', 'Майоран'], ['Chard', 'Мангольд'], ['Lemon balm', 'Мелисса'], ['Mint', 'Мята'], ['Fern', 'Папоротник'], ['Parsley', 'Петрушка'], ['Rhubarb', 'Ревень'], ['Rosemary', 'Розмарин'], ['Arugula', 'Руккола'], ['Iceberg lettuce', 'Салат Айсберг'], ['Baby-mix salad', 'Салат Бэби-микс'], ['Oakleaf lettuce', 'Салат Дуболистный'], ['Lollo Rosso lettuce', 'Салат Лолло Россо'], ['Radicchio', 'Салат Радиччио'], ['Romaine lettuce', 'Салат Романо'], ['Tatsoi', 'Салат Тат-сой'], ['Frisée lettuce', 'Салат Фриссе'], ['Celery', 'Сельдерей'], ['Thyme', 'Тимьян'], ['Dill', 'Укроп'], ['Salad chicory', 'Цикорий салатный'], ['Ramson', 'Черемша'], ['Sage', 'Шалфей'], ['Chives', 'Шнитт-лук'], ['Spinach', 'Шпинат'], ['Sorrel', 'Щавель'], ['Tarragon', 'Эстрагон']] },
-  { name: 'Mushrooms', emoji: '🍄', tint: F, subs: [['Porcini', 'Белые грибы'], ['Stinkhorn', 'Весёлка'], ['Oyster mushroom', 'Вешенка'], ['Woolly milkcap', 'Волнушка'], ['Parasol mushroom', 'Гриб зонтик'], ['Milk mushroom', 'Груздь'], ['Lurid bolete', 'Дубовик'], ['Hedgehog mushroom', 'Ежовик'], ['Chanterelle', 'Лисичка'], ['Slippery jack', 'Маслёнок'], ['Bay bolete', 'Моховик'], ['Honey fungus', 'Опёнок'], ['Birch bolete', 'Подберёзовик'], ['Aspen bolete', 'Подосиновик'], ['Half-cep bolete', 'Полубелый гриб'], ['Reishi', 'Рейши'], ['Saffron milk cap', 'Рыжик'], ['Morel', 'Сморчок'], ['Russula', 'Сыроежка'], ['Bracket fungus', 'Трутовик'], ['Truffle', 'Трюфель'], ["Caesar's mushroom", 'Цезарский гриб'], ['Chaga', 'Чага'], ['Champignon', 'Шампиньоны'], ['Verpa', 'Шапочка'], ['Shiitake', 'Шиитаке']] },
-  { name: 'Grain', emoji: '🌾', tint: C, subs: [['Broad beans', 'Бобы'], ['Peas', 'Горох'], ['Buckwheat', 'Гречиха'], ['Oilcake', 'Жмых'], ['Castor bean', 'Клещевина'], ['Corn', 'Кукуруза'], ['Sesame', 'Кунжут'], ['Lupine', 'Люпин'], ['Flax', 'Лён'], ['Flour', 'Мука'], ['Chickpea', 'Нут'], ['Oats', 'Овёс'], ['Sunflower', 'Подсолнечник'], ['Millet', 'Просо'], ['Wheat', 'Пшеница'], ['Rapeseed', 'Рапс'], ['Rice', 'Рис'], ['Rye', 'Рожь'], ['Sorghum', 'Сорго'], ['Soybean', 'Соя'], ['Triticale', 'Тритикале'], ['Beans', 'Фасоль'], ['Fodder', 'Фураж'], ['Lentil', 'Чечевица'], ['Meal', 'Шрот'], ['Barley', 'Ячмень']] },
-  { name: 'Nuts', emoji: '🥜', tint: F, subs: [['Peanut', 'Арахис'], ['Brazil nut', 'Бразильский орех'], ['Water caltrop', 'Водяной орех'], ['Walnut', 'Грецкий орех'], ['Acorn', 'Жёлудь'], ['Chestnut', 'Каштан'], ['Pine nut', 'Кедровый орех'], ['Cashew', 'Кешью'], ['Macadamia', 'Макадамия'], ['Manchurian walnut', 'Маньчжурский орех'], ['Almond', 'Миндаль'], ['Nutmeg', 'Мускатный орех'], ['Paradise nut', 'Райский орех'], ['Coco de mer', 'Сейшельский орех'], ['Turkish hazelnut', 'Турецкий орех'], ['Pistachio', 'Фисташки'], ['Hazelnut', 'Фундук']] },
-  { name: 'Packaging', emoji: '📦', tint: F, subs: [['Banana boxes', 'Банановые коробки'], ['Barrels', 'Бочки'], ['Paper', 'Бумага'], ['Cardboard', 'Картон'], ['Containers', 'Контейнеры'], ['Boxes', 'Коробки'], ['Trays', 'Лотки'], ['Bag-closing thread', 'Нитки мешкозашивочные'], ['Bags', 'Пакеты'], ['Film', 'Плёнка'], ['Pallets', 'Поддоны'], ['Net bags', 'Сетка'], ['Adhesive tape', 'Скотч'], ['Glass containers', 'Стеклотара'], ['Textile packaging', 'Текстильная тара'], ['Crates', 'Ящики']] },
-  { name: 'Animal feed', emoji: '🧺', tint: A, subs: [['Amino acids', 'Аминокислоты'], ['Distillers grains', 'Барда'], ['Vitamins', 'Витамины'], ['Liquid feed', 'Жидкие корма'], ['Oilcake', 'Жмых'], ['Beet pulp', 'Жом'], ['Milk replacers', 'Заменители молока'], ['Fodder grain', 'Зерно фуражное'], ['Compound feed', 'Комбикорма'], ['Feed meal', 'Мука кормовая'], ['Substandard products', 'Некондиционные продукты'], ['Bran', 'Отруби'], ['Premixes', 'Премиксы'], ['Probiotics', 'Пробиотики'], ['Haylage', 'Сенаж'], ['Hay', 'Сено'], ['Silage', 'Силос'], ['Feed salt', 'Соль кормовая'], ['Meal', 'Шрот'], ['Extruded feed', 'Экструдированные корма']] },
-  { name: 'Meat', emoji: '🥩', tint: D, subs: [['Lamb & mutton', 'Баранина'], ['Beef', 'Говядина'], ['Sausages', 'Колбасные изделия'], ['Horse meat', 'Конина'], ['Poultry meat', 'Мясо птицы'], ['Venison', 'Оленина'], ['Semi-finished meat', 'Полуфабрикаты'], ['Lard', 'Сало'], ['Pork', 'Свинина']] },
-  { name: 'Fish', emoji: '🐟', tint: E, subs: [['Red mullet', 'Барабулька'], ['Beluga', 'Белуга'], ['Pink salmon', 'Горбуша'], ['Fish roe', 'Икра рыбы'], ['Carp', 'Карп'], ['Chum salmon', 'Кета'], ['Mullet', 'Кефаль'], ['Coho salmon', 'Кижуч'], ['Molluscs & crustaceans', 'Моллюски и ракообразные'], ['Seafood', 'Морепродукты'], ['Sturgeon', 'Осётр'], ['Peled', 'Пелядь'], ['Fish by-products', 'Рыбные субпродукты'], ['Mackerel', 'Скумбрия'], ['Fish mince', 'Фарш рыбный'], ['Trout', 'Форель']] },
-  { name: 'Dairy products', emoji: '🥛', tint: B, subs: [['Yogurt', 'Йогурт'], ['Milk', 'Молоко'], ['Powdered milk', 'Молоко сухое'], ['Milk fat', 'Молочный жир'], ['Ice cream', 'Мороженое'], ['Condensed milk', 'Сгущённое молоко'], ['Cream', 'Сливки'], ['Sour cream', 'Сметана'], ['Dry whey', 'Сыворотка сухая'], ['Cheese', 'Сыры']] },
-  { name: 'Live animals & poultry', emoji: '🐄', tint: A, subs: [['Goats', 'Козы'], ['Cattle', 'Крупный рогатый скот'], ['Rabbits', 'Кролики'], ['Horses', 'Лошади'], ['Fish fry', 'Мальки'], ['Sheep', 'Овцы'], ['Poultry (live)', 'Птицы'], ['Pigs', 'Свиньи']] },
-  { name: 'Eggs', emoji: '🥚', tint: C, subs: [['Goose eggs', 'Гусиное яйцо'], ['Hatching eggs', 'Инкубационное яйцо'], ['Turkey eggs', 'Индюшиное яйцо'], ['Chicken eggs', 'Куриное яйцо'], ['Quail eggs', 'Перепелиное яйцо'], ['Ostrich eggs', 'Страусиное яйцо'], ['Duck eggs', 'Утиное яйцо'], ['Guinea fowl eggs', 'Цесарское яйцо']] },
-  { name: 'Seeds & planting material', emoji: '🌱', tint: B, subs: [['Seed potato', 'Картофель семенной'], ['Onion picks', 'Лук-выборок'], ['Onion sets', 'Лук-севок'], ['Jerusalem artichoke tubers', 'Посадочный материал топинамбура'], ['Perennial planting stock', 'Посадочный материал травянистых многолетников'], ['Wild strawberry seedlings', 'Рассада земляники'], ['Strawberry seedlings', 'Рассада клубники'], ['Flower seedlings', 'Рассада цветочных культур'], ['Apricot saplings', 'Саженцы абрикоса'], ['Blueberry saplings', 'Саженцы голубики'], ['Ornamental saplings', 'Саженцы декоративных культур'], ['Raspberry saplings', 'Саженцы малины'], ['Sea buckthorn saplings', 'Саженцы облепихи'], ['Peach saplings', 'Саженцы персика'], ['Plum saplings', 'Саженцы сливы'], ['Apple saplings', 'Саженцы яблони'], ['Vetch seeds', 'Семена вики'], ['Pea seeds', 'Семена гороха'], ['Mustard seeds', 'Семена горчицы'], ['Coriander seeds', 'Семена кориандра'], ['Corn seeds', 'Семена кукурузы'], ['Onion seeds', 'Семена лука'], ['Flax seeds', 'Семена льна'], ['Mung bean seeds', 'Семена маша'], ['Oat seeds', 'Семена овса'], ['Parsley seeds', 'Семена петрушки'], ['Sunflower seeds', 'Семена подсолнечника'], ['Wheat seeds', 'Семена пшеницы'], ['Rapeseed seeds', 'Семена рапса'], ['Milk thistle seeds', 'Семена расторопши'], ['Radish seeds', 'Семена редиса'], ['Rye seeds', 'Семена ржи'], ['Camelina seeds', 'Семена рыжика посевного'], ['Fodder beet seeds', 'Семена свеклы кормовой'], ['Soybean seeds', 'Семена сои'], ['Lawn grass seeds', 'Семена травосмеси газонной'], ['Triticale seeds', 'Семена тритикале'], ['Dill seeds', 'Семена укропа'], ['Bean seeds', 'Семена фасоли'], ['Lentil seeds', 'Семена чечевицы'], ['Sorrel seeds', 'Семена щавеля'], ['Barley seeds', 'Семена ячменя'], ['Seed garlic', 'Чеснок семенной']] },
-  { name: 'Agrochemicals', emoji: '🧪', tint: E, subs: [['Biological agents', 'Биопрепараты'], ['Mineral fertilizers', 'Минеральные удобрения'], ['Cleaning & disinfectants', 'Моющие и дезинфицирующие средства'], ['Organic fertilizers', 'Органические удобрения'], ['Growth regulators', 'Регуляторы роста'], ['Plant protection products', 'Средства защиты растений']] },
-  { name: 'Processed products', emoji: '🏭', tint: F, subs: [['Frozen mushrooms', 'Замороженные грибы'], ['Frozen fruits & vegetables', 'Замороженные фрукты и овощи'], ['Protein isolates', 'Изоляты'], ['Ketchup', 'Кетчуп'], ['Confectionery', 'Кондитерские изделия'], ['Canned goods', 'Консервированные продукты'], ['Concentrates', 'Концентраты'], ['Starch & syrup products', 'Крахмало-паточная продукция'], ['Groats', 'Крупа'], ['Mayonnaise', 'Майонез'], ['Pasta', 'Макаронные изделия'], ['Oils & fats', 'Масложировая продукция'], ['Flour', 'Мука'], ['Beverages', 'Напитки'], ['Pastes & purées', 'Пасты, пюре'], ['Instant foods', 'Продукты быстрого приготовления'], ['Sugar', 'Сахар'], ['Dried fruits & berries', 'Сушёные фрукты и ягоды'], ['Texturates', 'Текстураты'], ['Tea, coffee & cocoa', 'Чай, кофе, какао-порошок и др.'], ['Egg products', 'Яичные продукты']] },
-  { name: 'Technical raw materials', emoji: '🧵', tint: E, subs: [['Fur', 'Мех'], ['Natural casings', 'Натуральные оболочки'], ['Feathers & down', 'Перо, пух'], ['Horns', 'Рога'], ['Wool', 'Шерсть'], ['Hides', 'Шкуры']] },
-  { name: 'Beekeeping products', emoji: '🍯', tint: C, subs: [['Honey', 'Мёд'], ['Beeswax', 'Воск'], ['Bee bread', 'Перга'], ['Propolis', 'Прополис'], ['Pollen', 'Пыльца'], ['Foundation', 'Вощина'], ['Dead bees', 'Пчелиный подмор']] },
-  { name: 'Ornamental plants', emoji: '🌸', tint: D, subs: [['Succulents', 'Суккуленты'], ['Conifers', 'Хвойные деревья'], ['Fresh-cut flowers', 'Цветы свежесрезанные']] },
-  { name: 'Spare parts for machinery', emoji: '🔧', tint: F, subs: [['Loader & excavator parts', 'Запчасти для погрузчиков и экскаваторов'], ['Other machinery parts', 'Запчасти для прочих с/х машин'], ['Forage machinery parts', 'Запчасти для кормозаготовительной техники'], ['Combine parts', 'Запчасти для комбайнов'], ['Harvester parts', 'Запчасти для уборочной техники'], ['Tractor parts', 'Запчасти для тракторов'], ['Seeder parts', 'Запчасти для посевной техники']] },
-  { name: 'Agricultural machinery', emoji: '🚜', tint: B, subs: [['Agricultural trucks', 'Грузовой с/х транспорт'], ['Forage machinery', 'Кормозаготовительная техника'], ['Mini machinery', 'Мини-техника'], ['Seeding machinery', 'Посевная техника'], ['Trailers & semi-trailers', 'Прицепы и полуприцепы'], ['Other agricultural machinery', 'Прочая сельскохозяйственная техника'], ['Fertilizer spreaders', 'Техника для внесения удобрения'], ['Livestock machinery', 'Техника для животноводства'], ['Irrigation machinery', 'Техника для полива и орошения'], ['Harvesting machinery', 'Уборочная техника']] },
-  { name: 'Equipment', emoji: '⚙️', tint: E, subs: [['Tank equipment', 'Ёмкостное оборудование'], ['Grain-processing equipment', 'Зерноперерабатывающее оборудование'], ['Meat-processing equipment', 'Мясоперерабатывающее оборудование'], ['Dairy equipment', 'Оборудование для молочной промышленности'], ['Agri-waste processing equipment', 'Оборудование для переработки с/х отходов'], ['Feed production equipment', 'Оборудование для производства кормов'], ['Food production equipment', 'Оборудование для производства продуктов питания'], ['Poultry equipment', 'Оборудование для птицеводства'], ['Warehouse equipment', 'Оборудование для складов и хранилищ']] },
-  { name: 'Agricultural land & facilities', emoji: '🏞️', tint: A, subs: [['Agricultural land plots', 'Земельные участки с/х назначения'], ['Processing facilities', 'Перерабатывающие предприятия'], ['Greenhouses', 'Теплицы'], ['Farmsteads', 'Хозяйства'], ['Production facilities', 'Производственные предприятия'], ['Warehouses & elevators', 'Склады, хранилища, элеваторы'], ['Farms', 'Фермы'], ['Fish farms & ponds', 'Рыбоводческие хозяйства, водоемы']] },
-];
 
 // Physical trade markets / mandis sellers attach to (buyers filter by these).
 const markets: { name: string; city: string; country: string; flag: string; region?: string }[] = [
@@ -329,28 +302,46 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  // categories + subcategories
+  // categories + subcategories, straight from the shared taxonomy tree
+  const taxonomy = buildTaxonomyPlan();
   const catMap = new Map<string, string>();
-  const subMap = new Map<string, string>(); // key: `${category}|${sub}`
-  let ci = 0;
-  for (const c of categories) {
+  const subMap = new Map<string, string>(); // key: `${category}|${sub}` — level-2 only, for the demo products below
+  for (const c of taxonomy.categories) {
     const cat = await prisma.category.create({
-      data: { name: c.name, slug: slug(c.name), emoji: c.emoji, tint: c.tint, sort: ci++ },
+      data: { name: c.name, slug: c.slug, emoji: c.emoji, tint: c.tint, sort: c.sort },
     });
     catMap.set(c.name, cat.id);
-    let si = 0;
-    for (const [subName, subRu] of c.subs) {
-      const sub = await prisma.subcategory.create({
-        data: {
-          name: subName,
-          slug: `${slug(c.name)}-${slug(subName)}`,
-          categoryId: cat.id,
-          sort: si++,
-          translations: { create: [{ locale: 'ru', name: subRu }] },
-        },
-      });
-      subMap.set(`${c.name}|${subName}`, sub.id);
+  }
+  // ~14k rows, so ids are minted here and written with `createMany` one level at
+  // a time — `plan.subcategories` is ordered parents-before-children, so a
+  // child's parent id is always already known.
+  const subIdByKey = new Map<string, string>();
+  const byLevel: { id: string; name: string; slug: string; emoji: string | null; categoryId: string; parentId: string | null; sort: number }[][] = [];
+  const ruLabels: { subcategoryId: string; locale: string; name: string }[] = [];
+  for (const node of taxonomy.subcategories) {
+    const id = `tx${randomUUID().replace(/-/g, '')}`;
+    subIdByKey.set(subKey(node.categoryName, node.path), id);
+    (byLevel[node.level - 2] ??= []).push({
+      id,
+      name: node.name,
+      slug: node.slug,
+      emoji: node.emoji ?? null,
+      categoryId: catMap.get(node.categoryName)!,
+      parentId: node.parentPath ? subIdByKey.get(subKey(node.categoryName, node.parentPath))! : null,
+      sort: node.sort,
+    });
+    if (node.level === 2) {
+      subMap.set(`${node.categoryName}|${node.name}`, id);
+      if (node.ru) ruLabels.push({ subcategoryId: id, locale: 'ru', name: node.ru });
     }
+  }
+  for (const level of byLevel) {
+    for (let i = 0; i < (level?.length ?? 0); i += 2000) {
+      await prisma.subcategory.createMany({ data: level.slice(i, i + 2000) });
+    }
+  }
+  for (let i = 0; i < ruLabels.length; i += 2000) {
+    await prisma.subcategoryTranslation.createMany({ data: ruLabels.slice(i, i + 2000) });
   }
 
   // offices
@@ -378,6 +369,8 @@ async function main() {
         role,
         country,
         kycStatus: kyc,
+        // Demo accounts must be able to sign in without an inbox.
+        emailVerifiedAt: new Date(),
         // A seeded admin is a full super-admin (holds every permission); without
         // this the PermissionsGuard would 403 them on every gated route.
         adminPermissions: role === 'admin' ? Object.values(AdminPermission) : [],
@@ -420,7 +413,7 @@ async function main() {
   for (const sa of scopedAdmins) {
     if (userMap.has(sa.name)) continue;
     const u = await prisma.user.create({
-      data: { email: sa.email, passwordHash, name: sa.name, role: 'admin', country: '🌍', kycStatus: 'verified', adminPermissions: sa.perms },
+      data: { email: sa.email, passwordHash, name: sa.name, role: 'admin', country: '🌍', kycStatus: 'verified', adminPermissions: sa.perms, emailVerifiedAt: new Date() },
     });
     userMap.set(sa.name, u.id);
   }

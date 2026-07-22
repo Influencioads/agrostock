@@ -28,7 +28,7 @@ export function SiteFooter() {
   const { logoSrc } = useBranding();
   return (
     <footer className="bg-brand-evergreen text-mint/90">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:gap-10 sm:px-6 sm:py-14 lg:grid-cols-5">
         <div className="lg:col-span-1">
           <BrandMark
             logoSrc={logoSrc}
@@ -54,9 +54,9 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-5 text-xs text-mint/60 sm:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 text-center text-xs text-mint/60 sm:flex-row sm:px-6 sm:text-start">
           <span>{t('site.copyright', { year: new Date().getFullYear() })}</span>
-          <span className="flex gap-4">
+          <span className="flex flex-wrap justify-center gap-x-4 gap-y-1">
             <Link to="/p/terms" className="hover:text-mango">{t('site.terms')}</Link>
             <Link to="/p/privacy" className="hover:text-mango">{t('site.privacy')}</Link>
             <Link to="/p/cookies" className="hover:text-mango">{t('site.cookies')}</Link>

@@ -48,7 +48,7 @@ export function TransporterRequests() {
 
   return (
     <div>
-      <h2 className="mb-5 font-display text-2xl font-extrabold text-ink">{t('console.nav.requests')}</h2>
+      <h2 className="mb-5 min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.requests')}</h2>
       {isLoading ? <p className="text-ink-soft">{t('common:loading')}</p> : requests.length === 0 ? (
         <Card className="py-12 text-center text-ink-soft">{t('console.transporter.noRequests')}</Card>
       ) : (
@@ -61,10 +61,12 @@ export function TransporterRequests() {
                   <div className="font-display font-bold text-ink">{r.fromCity} → {r.toCity}</div>
                   <div className="text-xs text-ink-soft">#{r.reference} · {r.cargo} · {r.createdBy?.name} · {t('console.transporter.quotesCount', { count: r._count?.quotes ?? 0 })}</div>
                 </div>
-                <div className="flex items-end gap-2">
-                  <div className="w-28"><Input label={t('console.transporter.quotePrice')} type="number" value={d.price} onChange={(e) => set(r.id, 'price', e.target.value)} /></div>
-                  <div className="w-24"><Input label={t('console.transporter.etaDays')} type="number" value={d.eta} onChange={(e) => set(r.id, 'eta', e.target.value)} /></div>
-                  <Button className="mb-0.5" size="sm" disabled={quote.isPending || !Number(d.price)} onClick={() => quote.mutate({ id: r.id, priceCents: Math.round(Number(d.price) * 100), etaDays: Number(d.eta) || undefined })}>
+                {/* 112 + 96 + ~80px of button overflowed the ~280px a Card gives
+                    it on a phone; the fields now share the row and shrink. */}
+                <div className="flex w-full flex-wrap items-end gap-2 sm:w-auto">
+                  <div className="min-w-[6rem] flex-1 sm:w-28 sm:flex-none"><Input label={t('console.transporter.quotePrice')} type="number" value={d.price} onChange={(e) => set(r.id, 'price', e.target.value)} /></div>
+                  <div className="min-w-[5rem] flex-1 sm:w-24 sm:flex-none"><Input label={t('console.transporter.etaDays')} type="number" value={d.eta} onChange={(e) => set(r.id, 'eta', e.target.value)} /></div>
+                  <Button className="mb-0.5 shrink-0" size="sm" disabled={quote.isPending || !Number(d.price)} onClick={() => quote.mutate({ id: r.id, priceCents: Math.round(Number(d.price) * 100), etaDays: Number(d.eta) || undefined })}>
                     {t('console.transporter.quote')}
                   </Button>
                 </div>
@@ -91,7 +93,7 @@ export function TransporterTrips() {
   });
   return (
     <div>
-      <h2 className="mb-5 font-display text-2xl font-extrabold text-ink">{t('console.dash.activeTrips')}</h2>
+      <h2 className="mb-5 min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.dash.activeTrips')}</h2>
       {isLoading ? <p className="text-ink-soft">{t('common:loading')}</p> : trips.length === 0 ? (
         <Card className="py-12 text-center text-ink-soft">{t('console.transporter.noTrips')}</Card>
       ) : (
@@ -132,8 +134,8 @@ export function TransporterVehicles() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.vehicles')}</h2>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.vehicles')}</h2>
         <Button onClick={() => { setEditing(null); setOpen(true); }} leftIcon={<Icon name="plus" size={16} />}>{t('console.transporter.addVehicle')}</Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -220,8 +222,8 @@ export function TransporterRoutes() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.routes')}</h2>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.routes')}</h2>
         <Button onClick={() => { setEditing(null); setOpen(true); }} leftIcon={<Icon name="plus" size={16} />}>{t('console.transporter.addRoute')}</Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -275,10 +277,10 @@ function RouteModal({ route, onClose, onSaved }: { route: ApiRoute | null; onClo
       <div className="space-y-3">
         <Input label={t('console.transporter.routeName')} placeholder={t('console.ph.routeName')} value={form.name} onChange={s('name')} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input label={t('console.transporter.fromCity')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={s('fromCity')} />
           <Input label={t('console.transporter.fromCountry')} placeholder={t('console.ph.country')} value={form.fromCountry} onChange={s('fromCountry')} />
-          <Input label={t('console.transporter.toCity')} placeholder={t('console.ph.toCity')} value={form.toCity} onChange={s('toCity')} />
+          <Input label={t('console.transporter.fromCity')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={s('fromCity')} />
           <Input label={t('console.transporter.toCountry')} placeholder={t('console.ph.countryUae')} value={form.toCountry} onChange={s('toCountry')} />
+          <Input label={t('console.transporter.toCity')} placeholder={t('console.ph.toCity')} value={form.toCity} onChange={s('toCity')} />
           <Input label={t('console.transporter.distanceKmLabel')} type="number" placeholder="1900" value={form.distanceKm} onChange={s('distanceKm')} />
           <Input label={t('console.transporter.baseRateLabel')} type="number" placeholder="1200" value={form.baseRate} onChange={s('baseRate')} />
         </div>

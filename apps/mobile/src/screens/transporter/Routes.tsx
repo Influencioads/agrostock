@@ -86,12 +86,12 @@ function RouteForm({ route, onClose, onSaved }: { route: ApiRoute | null; onClos
     <FormModal visible title={route ? t('transX.routes.editTitle') : t('transX.routes.addTitle')} onClose={onClose} onSubmit={() => save.mutate()} submitting={save.isPending} canSubmit={!!form.name.trim() && !!form.fromCity.trim() && !!form.toCity.trim()}>
       <Input label={t('transX.routes.name')} placeholder={t('pubX.ph.routeName')} value={form.name} onChangeText={set('name')} />
       <Row gap={10}>
-        <View style={{ flex: 1 }}><Input label={t('transX.routes.fromCity')} placeholder={t('pubX.ph.cityMundra')} value={form.fromCity} onChangeText={set('fromCity')} /></View>
         <View style={{ flex: 1 }}><Input label={t('transX.routes.fromCountry')} placeholder={t('pubX.ph.countryIndia')} value={form.fromCountry} onChangeText={set('fromCountry')} /></View>
+        <View style={{ flex: 1 }}><Input label={t('transX.routes.fromCity')} placeholder={t('pubX.ph.cityMundra')} value={form.fromCity} onChangeText={set('fromCity')} /></View>
       </Row>
       <Row gap={10}>
-        <View style={{ flex: 1 }}><Input label={t('transX.routes.toCity')} placeholder={t('pubX.ph.cityDubai')} value={form.toCity} onChangeText={set('toCity')} /></View>
         <View style={{ flex: 1 }}><Input label={t('transX.routes.toCountry')} placeholder={t('pubX.ph.countryUae')} value={form.toCountry} onChangeText={set('toCountry')} /></View>
+        <View style={{ flex: 1 }}><Input label={t('transX.routes.toCity')} placeholder={t('pubX.ph.cityDubai')} value={form.toCity} onChangeText={set('toCity')} /></View>
       </Row>
       <Row gap={10}>
         <View style={{ flex: 1 }}><Input label={t('transX.routes.distance')} placeholder="1900" keyboardType="numeric" value={form.distanceKm} onChangeText={set('distanceKm')} /></View>

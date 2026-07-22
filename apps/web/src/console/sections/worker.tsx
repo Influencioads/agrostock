@@ -35,7 +35,7 @@ export function WorkerJobs() {
 
   return (
     <div>
-      <h2 className="mb-5 font-display text-2xl font-extrabold text-ink">{t('console.worker.myJobs')}</h2>
+      <h2 className="mb-5 min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.worker.myJobs')}</h2>
       {isLoading ? <p className="text-ink-soft">{t('common:loading')}</p> : jobs.length === 0 ? (
         <Card className="py-12 text-center text-ink-soft">{t('console.worker.noJobs')}</Card>
       ) : (
@@ -91,7 +91,7 @@ export function WorkerDashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.worker.dashboardTitle')}</h2>
+      <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.worker.dashboardTitle')}</h2>
 
       <Card className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -130,7 +130,7 @@ export function WorkerAttendance() {
     r.checkInAt && r.checkOutAt ? ((new Date(r.checkOutAt).getTime() - new Date(r.checkInAt).getTime()) / 3.6e6).toFixed(1) + 'h' : '—';
   return (
     <div>
-      <h2 className="mb-5 font-display text-2xl font-extrabold text-ink">{t('console.worker.shiftHistory')}</h2>
+      <h2 className="mb-5 min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.worker.shiftHistory')}</h2>
       {isLoading ? <p className="text-ink-soft">{t('common:loading')}</p> : rows.length === 0 ? (
         <Card className="py-12 text-center text-ink-soft">{t('console.worker.noShifts')}</Card>
       ) : (
@@ -166,7 +166,7 @@ export function WorkerReviews() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.worker.ratingsReviews')}</h2>
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.worker.ratingsReviews')}</h2>
         {data && data.count > 0 && (
           <p className="mt-1 text-sm text-ink-soft">
             <span className="font-numeric font-bold text-ink">{data.avg.toFixed(1)}</span> {t('console.worker.average', { avg: '' }).trim()} · {t('console.worker.reviewsCount', { count: data.count })}

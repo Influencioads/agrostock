@@ -64,5 +64,13 @@
     "resolved": "Resolvido",
     "waiting_support": "Aguardando suporte",
     "waiting_user": "Estou te esperando."
+  },
+  "unit": {
+    "BAG": "Bolsa",
+    "KG": "Quilograma (KG)",
+    "MT": "Tonelada métrica (MT)",
+    "PIECE": "Pedaço",
+    "QUINTAL": "Quintal",
+    "TON": "Tonelada"
   }
 }

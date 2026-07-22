@@ -13,6 +13,7 @@ import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from '../components/HireModal';
 import type { RootStackParamList } from '../../navigation/types';
 import { forwardChevron } from '../../lib/rtl';
+import { unitSuffix } from '@agrotraders/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, 'PublicProfile'>;
@@ -110,7 +111,7 @@ export function PublicProfile() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Txt variant="title" numberOfLines={1}>{prod.name}</Txt>
-                    <Txt variant="muted">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{prod.unit}</Txt>
+                    <Txt variant="muted">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{unitSuffix(prod.unit)}</Txt>
                   </View>
                   <Ionicons name={forwardChevron()} size={16} color={C.inkSoft} />
                 </Row>

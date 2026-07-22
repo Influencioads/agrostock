@@ -31,7 +31,7 @@ const SOURCE = 'en';
 /** Locales and the provider that actually supports them. DeepL has no Hindi. */
 const PROVIDERS = {
   ru: 'deepl', 'zh-Hans': 'deepl', es: 'deepl', pt: 'deepl', fr: 'deepl', de: 'deepl', ja: 'deepl',
-  ar: 'google', hi: 'google',
+  ar: 'google', hi: 'google', fa: 'google',
 };
 
 /** CLDR plural categories per locale — i18next appends these as `key_one`, `key_few`, … */
@@ -42,6 +42,7 @@ const PLURAL_CATEGORIES = {
   hi: ['one', 'other'], es: ['one', 'many', 'other'], pt: ['one', 'many', 'other'],
   fr: ['one', 'many', 'other'], de: ['one', 'other'],
   'zh-Hans': ['other'], ja: ['other'],
+  fa: ['one', 'other'],
 };
 
 /* ── placeholder protection ─────────────────────────────────────── */

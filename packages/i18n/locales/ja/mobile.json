@@ -37,6 +37,8 @@
       "title": "おかえり"
     },
     "signUp": {
+      "checkInboxBody": "{{email}}宛に確認リンクを送信しました。リンクを開いてアカウントを有効化し、その後こちらからログインしてください。",
+      "checkInboxTitle": "メールアドレスを確認してください",
       "cityRegion": "都市／地域",
       "cityRegionPh": "ドバイ",
       "country": "国",
@@ -48,8 +50,12 @@
       "fullName": "フルネーム",
       "fullNamePh": "カリムトレーディング",
       "iAmA": "私は…",
+      "noCities": "該当する都市はありません",
       "phone": "電話（非公開 - 管理者のみ）",
       "phonePh": "+971 50 123 4567",
+      "pickCountryFirst": "まず国を選択してください",
+      "resend": "リンクを再送してください",
+      "resent": "リンクが送信されました — 受信トレイをご確認ください",
       "title": "アカウントを作成する"
     }
   },

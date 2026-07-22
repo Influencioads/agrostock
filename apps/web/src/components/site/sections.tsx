@@ -19,16 +19,16 @@ import {
 import { Sparkline } from './Sparkline';
 import { ProductCard } from './ProductCard';
 import { api, assetUrl, toCardProduct } from '../../lib/api';
-import { buildSubcategoryTree, flattenSubcategoryTree, type SubcategoryNode } from '../../lib/categoryTree';
+import { buildSubcategoryTree, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
 
 /* ── helpers ───────────────────────────────────────────────────── */
 
 function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
-    <Reveal as="div" className="mb-5 flex items-end justify-between">
-      <h2 className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+    <Reveal as="div" className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+      <h2 className="min-w-0 font-display text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>
       {action && (
-        <button onClick={onAction} className="group flex items-center gap-1 text-sm font-bold text-brand hover:text-brand-dark">
+        <button onClick={onAction} className="group flex shrink-0 items-center gap-1 text-sm font-bold text-brand hover:text-brand-dark">
           {action}{' '}
           <Icon name="chevronRight" size={15} className="transition-transform duration-200 group-hover:translate-x-0.5" />
         </button>
@@ -189,16 +189,31 @@ function CategoryMegaMenu() {
       const margin = 12;
       const maxH = 460;
       const mobile = window.innerWidth < 640;
+
+      // On a phone there is never enough room beside or below the trigger for a
+      // three-column picker, and the flip-up/flip-down maths just produced a
+      // ~200px-tall sliver. Pin it to the bottom edge as a sheet instead, so it
+      // always gets 72vh regardless of where the trigger sits on the page.
+      if (mobile) {
+        setPos({ left: 0, right: 0, bottom: 0, height: Math.min(maxH, Math.round(vh * 0.72)) });
+        return;
+      }
+
       const panelWidth = Math.min(660, window.innerWidth - margin * 2);
-      const spaceBelow = vh - r.bottom - margin;
-      const spaceAbove = r.top - margin;
-      const left = mobile ? margin : Math.min(Math.max(margin, r.left), window.innerWidth - panelWidth - margin);
+      // Clamp the anchor into the viewport first. On a short viewport (landscape
+      // phone) an off-screen trigger yielded a negative offset and pushed the
+      // panel below the fold, where `position: fixed` makes it unreachable.
+      const anchorTop = Math.min(Math.max(r.top, margin), vh - margin);
+      const anchorBottom = Math.min(Math.max(r.bottom, margin), vh - margin);
+      const spaceBelow = vh - anchorBottom - margin;
+      const spaceAbove = anchorTop - margin;
+      const left = Math.min(Math.max(margin, r.left), window.innerWidth - panelWidth - margin);
       const inline = { left, right: window.innerWidth - left - panelWidth };
       // Prefer opening downward; flip up only when it gives meaningfully more room.
       if (spaceBelow >= 320 || spaceBelow >= spaceAbove) {
-        setPos({ ...inline, top: r.bottom + gap, height: Math.min(maxH, spaceBelow) });
+        setPos({ ...inline, top: anchorBottom + gap, height: Math.max(160, Math.min(maxH, spaceBelow)) });
       } else {
-        setPos({ ...inline, bottom: vh - r.top + gap, height: Math.min(maxH, spaceAbove) });
+        setPos({ ...inline, bottom: vh - anchorTop + gap, height: Math.max(160, Math.min(maxH, spaceAbove)) });
       }
     };
     place();
@@ -324,22 +339,27 @@ function CategoryMegaMenu() {
         aria-haspopup="true"
         aria-expanded={open}
         className={
-          'flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition ' +
+          // Full-width, labelled field on phones. It used to hide its label
+          // below `sm`, leaving a bare grid icon that nobody read as
+          // "Categories" — the single most-reported homepage complaint.
+          'flex h-10 w-full items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition sm:w-auto ' +
           (open
             ? 'border-brand-leaf bg-brand-surface text-brand-dark'
             : 'border-surface-border text-ink-soft hover:border-brand-leaf hover:text-brand-dark')
         }
       >
-        <Icon name="grid" size={16} />
-        <span className="hidden sm:inline">{t('hero.categories', { defaultValue: 'Categories' })}</span>
-        <Icon name="chevronDown" size={14} className={open ? 'rotate-180 transition' : 'transition'} />
+        <Icon name="grid" size={16} className="shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-start sm:flex-none">
+          {t('hero.categories', { defaultValue: 'Categories' })}
+        </span>
+        <Icon name="chevronDown" size={14} className={'shrink-0 ' + (open ? 'rotate-180 transition' : 'transition')} />
       </button>
 
       {open && pos && createPortal(
         <div
           ref={panelRef}
           style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, right: pos.right, zIndex: 60 }}
-          className="overflow-hidden rounded-xl border border-surface-border bg-white text-ink shadow-[0_24px_60px_rgba(11,61,46,0.22)] sm:w-[min(92vw,660px)]"
+          className="overflow-hidden rounded-t-2xl border border-surface-border bg-white text-ink shadow-[0_-12px_60px_rgba(11,61,46,0.28)] sm:rounded-xl sm:shadow-[0_24px_60px_rgba(11,61,46,0.22)] sm:w-[min(92vw,660px)]"
         >
           {/* Fixed 3-column grid, height-capped so the last rows stay reachable. */}
           <div className="grid grid-cols-1 overflow-y-auto sm:grid-cols-3 sm:overflow-hidden" style={{ height: pos.height }}>
@@ -366,8 +386,15 @@ function CategoryMegaMenu() {
               </div>
             </div>
 
-            {/* Column 2 — subcategories */}
-            <div className="flex min-h-0 flex-col border-b border-surface-border sm:border-b-0 sm:border-e">
+            {/* Column 2 — subcategories.
+                Stacked (not side-by-side) below `sm`, so an empty placeholder
+                column would just be dead scroll: hide it until it has content. */}
+            <div
+              className={
+                'min-h-0 flex-col border-b border-surface-border sm:flex sm:border-b-0 sm:border-e ' +
+                (activeCat ? 'flex' : 'hidden')
+              }
+            >
               <div className={colHead + ' flex items-center justify-between gap-2'}>
                 <span className="min-w-0 truncate">{selectedSub ? selectedSub.name : activeCat ? activeCat.name : t('hero.colSubcategory', { defaultValue: 'Subcategory' })}</span>
                 {selectedSub && (
@@ -413,7 +440,11 @@ function CategoryMegaMenu() {
             </div>
 
             {/* Column 3 — sub-subcategory (lead attribute options) */}
-            <div className="flex min-h-0 flex-col">
+            <div
+              className={
+                'min-h-0 flex-col sm:flex ' + (activeCat && selectedSub && leadField ? 'flex' : 'hidden')
+              }
+            >
               <div className={colHead}>
                 {selectedSub && leadField ? aLabel(leadField.label) : t('hero.colOptions', { defaultValue: 'Options' })}
               </div>
@@ -527,9 +558,12 @@ export function Hero() {
                   className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft"
                 />
               </label>
-              <div className="flex min-w-0 gap-2 sm:contents">
+              {/* Stacked full-width on phones (side-by-side leaves each ~150px,
+                  too narrow for a translated label); `sm:contents` hands both
+                  children back to the parent grid on wider screens. */}
+              <div className="grid min-w-0 grid-cols-1 gap-2 sm:contents">
                 <CategoryMegaMenu />
-                <Button className="flex-1 sm:flex-none" onClick={() => navigate('/market')}>{t('common:search')}</Button>
+                <Button className="w-full sm:w-auto" onClick={() => navigate('/market')}>{t('common:search')}</Button>
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -664,6 +698,14 @@ export function Highlighted() {
 
 /* ── Categories ────────────────────────────────────────────────── */
 
+/** 'Animal Feed' → 'animalFeed' — the key shape used by the `categoryName` catalog. */
+function categoryKey(name: string) {
+  return name
+    .split(/\s+/)
+    .map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+    .join('');
+}
+
 export function Categories() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -680,7 +722,12 @@ export function Categories() {
               <span className="flex h-12 w-12 items-center justify-center rounded-lg text-2xl" style={{ background: c.tint }}>
                 {c.emoji}
               </span>
-              <span className="max-w-full break-words text-center text-sm font-bold text-ink">{c.name}</span>
+              <span className="max-w-full break-words text-center text-sm font-bold text-ink">
+                {/* Category names live in the mock list in English — look each one up in
+                    the `categoryName` catalog (key = camelCased name) and fall back to
+                    the English label if a locale is missing the key. */}
+                {t(`categoryName.${categoryKey(c.name)}`, { defaultValue: c.name })}
+              </span>
               <span className="text-xs text-ink-soft">{c.count}</span>
             </button>
           </StaggerItem>
@@ -812,8 +859,12 @@ export function International() {
   return (
     <Section className="bg-white">
       <SectionHeader title={t('section.international')} action={t('common:viewAll')} />
+      {/* The outer `overflow-hidden` (for the rounded corners) was silently
+          CLIPPING this 5-column table at ~360px — the last two columns were
+          simply unreachable. The inner scroller gives them back. */}
       <div className="overflow-hidden rounded-lg border border-surface-border">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] text-sm">
           <thead className="bg-brand-surface text-start text-xs font-bold uppercase text-ink-soft">
             <tr>
               <th className="px-4 py-3">{t('site.intl.product')}</th>
@@ -839,6 +890,7 @@ export function International() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </Section>
   );

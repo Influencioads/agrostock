@@ -54,6 +54,19 @@
     "yourOffer": "最終オファー · {{amount}}",
     "yourOfferLabel": "あなたのオファー"
   },
+  "categoryName": {
+    "animalFeed": "飼料",
+    "fertilizers": "肥料",
+    "fruits": "果物",
+    "grains": "穀物",
+    "machinery": "農業機械",
+    "oils": "油脂",
+    "packaging": "包装",
+    "pulses": "豆類",
+    "seeds": "種子",
+    "spices": "香辛料",
+    "vegetables": "野菜"
+  },
   "chat": {
     "agent": "エージェント",
     "back": "戻る",
@@ -865,6 +878,7 @@
       "subcategory": "サブカテゴリ",
       "supplyCountries": "供給",
       "supplyCountriesHint": "— 発送可能な国をすべて選択してください",
+      "unit": "ユニット",
       "uploadFailed": "画像のアップロードに失敗しました。より小さいサイズのJPGまたはPNGファイルをお試しください。",
       "uploading": "アップロード中…"
     },
@@ -1284,10 +1298,12 @@
       "emailPlaceholder": "you@company.com または電話で",
       "noAccount": "アカウントをお持ちでないですか？",
       "password": "パスワード",
+      "resendVerification": "確認リンクを再送信",
       "signIn": "サインイン",
       "signingIn": "ログイン中…",
       "subtitle": "コンソールにサインインしてください。",
-      "title": "おかえり"
+      "title": "おかえり",
+      "verificationSent": "リンクが送信されました — 受信トレイをご確認ください"
     },
     "market": {
       "allCities": "すべての都市",
@@ -1462,6 +1478,7 @@
       "phLocation": "インド、アムリトサル",
       "phone": "電話",
       "photoHint": "JPG、PNG、またはWebP形式（最大10MB）",
+      "pickTimezone": "— タイムゾーンを選択してください —",
       "privateContact": "個人連絡先情報",
       "privateSub": "一般には公開されません。他のユーザーには隠されたヒントが表示され、チャットを通じて連絡を取ることができます。",
       "profilePhoto": "プロフィール写真",
@@ -1481,6 +1498,9 @@
       "yourMarket": "あなたの市場"
     },
     "register": {
+      "checkInboxBody": "{{email}}宛に確認リンクを送信しました。リンクをクリックしてアカウントを有効化してください。確認が完了次第、ログインできるようになります。",
+      "checkInboxTitle": "メールアドレスを確認してください",
+      "cityHint": "リストから選択するか、リストにない場合は入力してください。",
       "cityRegion": "都市／地域",
       "country": "国",
       "createAccount": "{{role}}アカウントを作成する",
@@ -1493,6 +1513,7 @@
       "minDistanceKm": "最短移動距離（km）",
       "minLoaders": "最小乗務員数",
       "minWorkHours": "最低勤務時間（時間）",
+      "noCities": "該当する都市が見つかりません。ご自身で入力してください。",
       "operatingCities": "事業を展開している都市",
       "operatingCountries": "事業を展開している国々",
       "opsHint": "あなたの勤務先や仕事内容に基づいて、購入者があなたを見つけやすくなります。",
@@ -1505,9 +1526,13 @@
       "phCountry": "🇮🇳 インド",
       "phPorts": "ムンバイ、ドバイ",
       "phone": "電話（非公開 - 管理者のみ利用可能、他のユーザーはチャットであなたと連絡を取ることができます）",
+      "pickCountry": "— 国を選択してください —",
+      "pickCountryFirst": "まず国を選択してください",
       "pickMarket": "— 取引市場を選択する —",
       "pwTooShort": "パスワードは8文字以上である必要があります。",
       "registerAs": "私は…として登録したいです。",
+      "resend": "リンクを再送してください",
+      "resent": "リンクが送信されました — 受信トレイをご確認ください",
       "roleDesc": {
         "buyer": "農産物の輸入と購入",
         "loaderco": "荷積み作業員を管理する",
@@ -1519,6 +1544,7 @@
       "supplyingCities": "供給先の都市",
       "supplyingCountries": "供給先の国々",
       "tagHint": "入力してEnterキーを押すと追加できます",
+      "tagHintPick": "リストから選択するか、入力してEnterキーを押してください。",
       "title": "アカウントを作成する",
       "yourMarket": "あなたの市場"
     },
@@ -1648,6 +1674,11 @@
       "sub": "マンゴー/オレンジのアクセント、タイプスケール、そしてWeb、ダッシュボード、統合モバイルアプリなど、あらゆるAgroTradersサーフェスを支えるコンポーネントライブラリを備えた、グリーンファーストのトークン。",
       "title": "デザインシステム",
       "typography": "タイポグラフィ"
+    },
+    "verifyEmail": {
+      "backToSignIn": "サインインに戻る",
+      "checking": "メールアドレスを確認しています…",
+      "failedTitle": "このリンクを確認できませんでした"
     }
   },
   "product": {

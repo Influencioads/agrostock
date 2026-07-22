@@ -29,7 +29,7 @@ export function PageView() {
         </Card>
       ) : (
         <article>
-          <h1 className="font-display text-3xl font-extrabold text-ink">{page.title}</h1>
+          <h1 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{page.title}</h1>
           <div className="mt-6 whitespace-pre-wrap text-ink-soft">{page.body}</div>
         </article>
       )}

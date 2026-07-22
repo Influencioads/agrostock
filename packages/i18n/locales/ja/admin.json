@@ -130,6 +130,7 @@
   },
   "catAdmin": {
     "addCategory": "カテゴリを追加",
+    "addChild": "子を追加する",
     "addSub": "サブ",
     "catName": "カテゴリ名",
     "collapse": "崩壊",
@@ -144,9 +145,11 @@
     "empty": "まだカテゴリがありません。最初のカテゴリを追加してください。",
     "expand": "拡大する",
     "modalAddCategory": "カテゴリを追加",
+    "modalAddChild": "{{name}}の下に子供を追加する",
     "modalAddSub": "{{name}}にサブカテゴリを追加する",
     "modalEditCategory": "カテゴリを編集",
     "modalEditSub": "サブカテゴリを編集する",
+    "nodeStats": "{{products}} 製品 · {{children}} 子レベル",
     "phCat": "例：果物",
     "phSub": "例：バスマティライス",
     "productsCount": "{{count}}製品",
@@ -347,6 +350,7 @@
     "overview": "概要",
     "payments": "支払い",
     "products": "製品",
+    "profile": "プロフィール",
     "reports": "報告書",
     "reviews": "レビュー",
     "roleRequests": "役割リクエスト",
@@ -376,6 +380,7 @@
     "fStaff": "スタッフ",
     "fTimezone": "タイムゾーン",
     "fType": "タイプ",
+    "pickTimezone": "— タイムゾーンを選択してください —",
     "save": "オフィスを保存",
     "saving": "保存中…"
   },
@@ -588,6 +593,22 @@
       "safedeal": "セーフディール"
     }
   },
+  "profile": {
+    "active": "アクティブ",
+    "inactive": "非アクティブ",
+    "newPassword": "新しいパスワード",
+    "noPermissions": "モジュール権限は割り当てられていません。",
+    "passwordError": "パスワードを変更できませんでした。",
+    "passwordSave": "パスワードを変更する",
+    "passwordSaving": "更新中...",
+    "passwordTitle": "パスワード",
+    "passwordUpdated": "パスワードが変更されました。",
+    "permissions": "権限",
+    "role": "役割",
+    "status": "状態",
+    "subtitle": "管理者アカウントとパスワードの管理はここで行えます。管理者アカウントは「ユーザー」一覧には表示されません。",
+    "title": "スーパー管理者プロフィール"
+  },
   "range": {
     "allTime": "歴代",
     "from": "から",
@@ -791,6 +812,15 @@
     "whatsapp": "WhatsApp"
   },
   "users": {
+    "createActive": "アクティブ",
+    "createCountry": "国",
+    "createEmail": "メール",
+    "createError": "ユーザーを作成できませんでした。",
+    "createName": "名前",
+    "createPassword": "一時パスワード",
+    "createRole": "役割",
+    "createUser": "ユーザーを追加",
+    "creating": "追加中...",
     "filterAll": "全て",
     "invite": "ユーザーを招待する",
     "searchPlaceholder": "名前またはメールアドレスで検索…",

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@agrotraders/api-client": "workspace:*",
+    "@agrotraders/geo": "workspace:*",
     "@agrotraders/i18n": "workspace:^",
     "@agrotraders/tokens": "workspace:*",
     "@agrotraders/types": "workspace:*",

@@ -18,6 +18,14 @@ export interface BrandMarkProps {
   glyphClassName?: string;
   /** Draw only the glyph, no wordmark. */
   glyphOnly?: boolean;
+  /**
+   * Replaces the size preset's type scale on the wordmark — e.g.
+   * `text-[15px] sm:text-xl` to keep the full name readable on a narrow phone.
+   * It REPLACES rather than adds because `cn` is plain `clsx`: two font-size
+   * utilities would both land in the class list and Tailwind's stylesheet order
+   * (not the class order) would silently decide the winner.
+   */
+  wordmarkClassName?: string;
   className?: string;
 }
 
@@ -32,6 +40,7 @@ export function BrandMark({
   suffixClassName = 'text-brand',
   glyphClassName,
   glyphOnly = false,
+  wordmarkClassName,
   className,
 }: BrandMarkProps) {
   const s = SIZES[size];
@@ -55,7 +64,7 @@ export function BrandMark({
         </span>
       )}
       {!glyphOnly && (
-        <span className={cn('font-display font-extrabold', s.text)}>
+        <span className={cn('font-display font-extrabold whitespace-nowrap', wordmarkClassName ?? s.text)}>
           {BRAND.prefix}
           <span className={suffixClassName}>{BRAND.suffix}</span>
         </span>

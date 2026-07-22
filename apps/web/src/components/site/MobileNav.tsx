@@ -61,7 +61,7 @@ export function MobileNav() {
           aria-modal="true"
           aria-label={t('common:menu')}
           style={{ transform: open ? 'translateX(0)' : hidden }}
-          className="pointer-events-auto absolute inset-y-0 start-0 flex w-[86%] max-w-[340px] flex-col bg-white shadow-2xl transition-transform duration-300"
+          className="pointer-events-auto absolute inset-y-0 start-0 flex w-[88%] max-w-[min(340px,88vw)] flex-col bg-white shadow-2xl transition-transform duration-300"
         >
           <div className="flex h-full flex-col">
             <header className="flex items-center justify-between border-b border-surface-border px-4 py-3">

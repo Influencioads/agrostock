@@ -130,6 +130,7 @@
   },
   "catAdmin": {
     "addCategory": "Agregar categoría",
+    "addChild": "Agregar niño",
     "addSub": "Sub",
     "catName": "Nombre de la categoría",
     "collapse": "Colapsar",
@@ -144,9 +145,11 @@
     "empty": "Aún no hay categorías. Añade la primera.",
     "expand": "Expandir",
     "modalAddCategory": "Agregar categoría",
+    "modalAddChild": "Agregar niño menor de {{name}}",
     "modalAddSub": "Agregar subcategoría a {{name}}",
     "modalEditCategory": "Editar categoría",
     "modalEditSub": "Editar subcategoría",
+    "nodeStats": "{{products}} productos · {{children}} niveles de niños",
     "phCat": "p. ej. Frutas",
     "phSub": "Por ejemplo, arroz basmati",
     "productsCount": "{{count}} productos",
@@ -348,6 +351,7 @@
     "overview": "Descripción general",
     "payments": "Pagos",
     "products": "Productos",
+    "profile": "Perfil",
     "reports": "Informes",
     "reviews": "Reseñas",
     "roleRequests": "Solicitudes de roles",
@@ -377,6 +381,7 @@
     "fStaff": "Personal",
     "fTimezone": "Zona horaria",
     "fType": "Tipo",
+    "pickTimezone": "— seleccione una zona horaria —",
     "save": "Guardar oficina",
     "saving": "Ahorro…"
   },
@@ -590,6 +595,22 @@
       "safedeal": "trato seguro"
     }
   },
+  "profile": {
+    "active": "activo",
+    "inactive": "inactivo",
+    "newPassword": "Nueva contraseña",
+    "noPermissions": "No se han asignado permisos de módulo.",
+    "passwordError": "No se pudo cambiar la contraseña.",
+    "passwordSave": "Cambiar la contraseña",
+    "passwordSaving": "Actualizando...",
+    "passwordTitle": "Contraseña",
+    "passwordUpdated": "Contraseña cambiada.",
+    "permissions": "Permisos",
+    "role": "Role",
+    "status": "Estado",
+    "subtitle": "Gestiona aquí tu cuenta de administrador y tu contraseña. Las cuentas de administrador no aparecen en la sección de Usuarios.",
+    "title": "Perfil de superadministrador"
+  },
   "range": {
     "allTime": "Todos los tiempos",
     "from": "De",
@@ -793,6 +814,15 @@
     "whatsapp": "WhatsApp"
   },
   "users": {
+    "createActive": "Activo",
+    "createCountry": "País",
+    "createEmail": "Correo electrónico",
+    "createError": "No se pudo crear el usuario.",
+    "createName": "Nombre",
+    "createPassword": "Contraseña temporal",
+    "createRole": "Role",
+    "createUser": "Agregar usuario",
+    "creating": "Añadiendo...",
     "filterAll": "Todo",
     "invite": "Invitar usuario",
     "searchPlaceholder": "Buscar por nombre o correo electrónico…",

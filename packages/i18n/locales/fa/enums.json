@@ -1,0 +1,76 @@
+{
+  "hire_status": {
+    "accepted": "پذیرفته شده",
+    "cancelled": "لغو شد",
+    "declined": "رد شد",
+    "pending": "در حال بررسی"
+  },
+  "hire_target": {
+    "loaderco": "شرکت لودر",
+    "transporter": "حمل کننده",
+    "worker": "کارگر"
+  },
+  "kyc": {
+    "pending": "در حال بررسی",
+    "rejected": "رد شد",
+    "verified": "تأیید شده"
+  },
+  "order_status": {
+    "cancelled": "لغو شد",
+    "delivered": "تحویل داده شد",
+    "dispute": "اختلاف",
+    "in_transit": "در حال ترانزیت",
+    "paid": "سپرده گذاری انجام شد",
+    "processing": "پردازش",
+    "quote": "نقل قول ارسال شد",
+    "shipped": "ارسال شد"
+  },
+  "role": {
+    "admin": "مدیر",
+    "buyer": "خریدار",
+    "loaderco": "شرکت لودر",
+    "seller": "فروشنده",
+    "transporter": "حمل کننده",
+    "worker": "کارگر"
+  },
+  "support_category": {
+    "account_kyc": "حساب کاربری و KYC",
+    "auction_bid": "مزایده/پیشنهاد",
+    "buyer_order": "مشکل سفارش خریدار",
+    "global_office": "دفتر جهانی",
+    "import_export": "واردات / صادرات",
+    "loader": "لودر / کارگر",
+    "other": "دیگر",
+    "payment_safedeal": "پرداخت / معامله امن",
+    "product_listing": "فهرست محصولات",
+    "seller_order": "مشکل سفارش فروشنده",
+    "technical": "مشکل فنی",
+    "transport": "حمل و نقل",
+    "wallet_payout": "کیف پول / پرداخت"
+  },
+  "support_priority": {
+    "high": "بالا",
+    "low": "کم",
+    "medium": "متوسط",
+    "urgent": "فوری"
+  },
+  "support_status": {
+    "all": "همه",
+    "assigned": "اختصاص داده شده",
+    "closed": "بسته",
+    "escalated": "تشدید شده",
+    "in_progress": "در حال انجام",
+    "new": "جدید",
+    "resolved": "حل شد",
+    "waiting_support": "منتظر حمایت هستیم",
+    "waiting_user": "منتظر شما هستم"
+  },
+  "unit": {
+    "BAG": "کیف",
+    "KG": "کیلوگرم (KG)",
+    "MT": "تن متریک (MT)",
+    "PIECE": "قطعه",
+    "QUINTAL": "کوینتال",
+    "TON": "تن"
+  }
+}

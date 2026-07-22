@@ -28,7 +28,7 @@ export function Overview({ name }: { name: string }) {
 
   return (
     <div>
-      <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.dash.welcome', { name: name.split(' ')[0] })}</h2>
+      <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.dash.welcome', { name: name.split(' ')[0] })}</h2>
       <p className="mt-1 text-sm text-ink-soft">{t('console.dash.overviewSub')}</p>
 
       <Stagger className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">

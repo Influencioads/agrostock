@@ -128,7 +128,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute end-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-surface-border bg-white shadow-xl">
+        <div className="absolute end-0 z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-surface-border bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-surface-border px-4 py-3">
             <span className="font-display text-sm font-bold text-ink">
               {showPrefs ? t('bell.settings') : t('bell.notifications')}

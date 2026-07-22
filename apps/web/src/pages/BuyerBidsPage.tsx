@@ -40,7 +40,7 @@ export function BuyerBidsPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-extrabold text-ink">{t('page.bids.title')}</h1>
+          <h1 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.bids.title')}</h1>
           <p className="mt-1 text-ink-soft">{t('page.bids.sub')}</p>
         </div>
         <Button

@@ -128,6 +128,7 @@
   },
   "catAdmin": {
     "addCategory": "Kategorie hinzufügen",
+    "addChild": "Kind hinzufügen",
     "addSub": "Sub",
     "catName": "Kategoriename",
     "collapse": "Zusammenbruch",
@@ -142,9 +143,11 @@
     "empty": "Noch keine Kategorien. Füge die erste hinzu.",
     "expand": "Expandieren",
     "modalAddCategory": "Kategorie hinzufügen",
+    "modalAddChild": "Füge ein Kind unter {{name}} hinzu",
     "modalAddSub": "Füge Unterkategorie zu {{name}} hinzu",
     "modalEditCategory": "Kategorie bearbeiten",
     "modalEditSub": "Unterkategorie bearbeiten",
+    "nodeStats": "{{products}} Produkte · {{children}} Kinderstufen",
     "phCat": "z.B. Früchte",
     "phSub": "z. B. Basmatireis",
     "productsCount": "{{count}} Produkte",
@@ -345,6 +348,7 @@
     "overview": "Überblick",
     "payments": "Zahlungen",
     "products": "Produkte",
+    "profile": "Profil",
     "reports": "Berichte",
     "reviews": "Rezensionen",
     "roleRequests": "Rollenanfragen",
@@ -374,6 +378,7 @@
     "fStaff": "Personal",
     "fTimezone": "Zeitzone",
     "fType": "Typ",
+    "pickTimezone": "— Wählen Sie eine Zeitzone aus —",
     "save": "Büro retten",
     "saving": "Speichern…"
   },
@@ -586,6 +591,22 @@
       "safedeal": "Safedeal"
     }
   },
+  "profile": {
+    "active": "aktiv",
+    "inactive": "inaktiv",
+    "newPassword": "Neues Passwort",
+    "noPermissions": "Es wurden keine Modulberechtigungen zugewiesen.",
+    "passwordError": "Passwort konnte nicht geändert werden.",
+    "passwordSave": "Kennwort ändern",
+    "passwordSaving": "Aktualisierung...",
+    "passwordTitle": "Passwort",
+    "passwordUpdated": "Passwort geändert.",
+    "permissions": "Berechtigungen",
+    "role": "Rolle",
+    "status": "Status",
+    "subtitle": "Verwalten Sie hier Ihr Administratorkonto und Ihr Passwort. Administratorkonten werden nicht unter „Benutzer“ angezeigt.",
+    "title": "Super-Admin-Profil"
+  },
   "range": {
     "allTime": "Alle Zeiten",
     "from": "Aus",
@@ -789,6 +810,15 @@
     "whatsapp": "WhatsApp"
   },
   "users": {
+    "createActive": "Aktiv",
+    "createCountry": "Land",
+    "createEmail": "E-Mail",
+    "createError": "Benutzer konnte nicht erstellt werden.",
+    "createName": "Name",
+    "createPassword": "Temporäres Passwort",
+    "createRole": "Rolle",
+    "createUser": "Benutzer hinzufügen",
+    "creating": "Hinzufügen...",
     "filterAll": "Alle",
     "invite": "Benutzer einladen",
     "searchPlaceholder": "Name oder E-Mail suchen…",

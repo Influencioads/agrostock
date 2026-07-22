@@ -2,13 +2,20 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQuery } from '@tanstack/react-query';
+import { isPendingVerification } from '@agrotraders/api-client';
+import { ALL_COUNTRIES } from '@agrotraders/geo';
 import { useAuth } from '../../auth/AuthProvider';
+import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { Button, Card, Chip, Input, Screen, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { SIGNUP_ROLES } from './signupRoles';
 import { TagInput } from '../components/TagInput';
+import { PickerField } from '../components/PickerSheet';
+
+const COUNTRY_OPTIONS = ALL_COUNTRIES.map((c) => ({ value: c.name, label: `${c.flag} ${c.name}` }));
 
 const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker']);
 
@@ -29,8 +36,23 @@ export function SignUp() {
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  // Set once the API says the account exists but still has to confirm its email.
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [resent, setResent] = useState(false);
+  // Drives the remote city search shared by the city field and the tag pickers.
+  const [citySearch, setCitySearch] = useState('');
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
   const setOp = (k: keyof typeof ops) => (v: string | string[]) => setOps((o) => ({ ...o, [k]: v }));
+
+  // ~134k cities live on the API, not in the bundle - searched per country.
+  const { data: cities = [], isFetching: citiesLoading } = useQuery({
+    queryKey: ['geo-cities', form.country, citySearch],
+    queryFn: () => api.geo.cities(form.country, citySearch || undefined),
+    enabled: Boolean(form.country),
+    staleTime: 3600e3,
+    retry: 1,
+  });
+  const cityOptions = cities.map((c) => ({ value: c }));
 
   const isTransporter = form.role === 'transporter';
   const isLoaderco = form.role === 'loaderco';
@@ -45,7 +67,7 @@ export function SignUp() {
       return v.trim() && Number.isFinite(n) ? n : undefined;
     };
     try {
-      await register({
+      const result = await register({
         ...form,
         phone: form.phone || undefined,
         location: form.location || undefined,
@@ -64,6 +86,12 @@ export function SignUp() {
         ...(isTransporter && { minDistanceKm: numOrUndef(ops.minDistanceKm) }),
         ...(isLoaderco && { minLoaders: numOrUndef(ops.minLoaders) }),
       });
+      // With SMTP configured the account cannot sign in until it confirms its
+      // address - the link opens the web app, then they sign in here.
+      if (isPendingVerification(result)) {
+        setPendingEmail(result.email);
+        return;
+      }
       if (nav.canGoBack()) nav.goBack();
       else nav.navigate('App');
     } catch {
@@ -73,6 +101,29 @@ export function SignUp() {
     }
   }
 
+  if (pendingEmail) {
+    return (
+      <Screen>
+        <Txt variant="h2">{t('auth.signUp.checkInboxTitle')}</Txt>
+        <Card style={{ gap: 14 }}>
+          <Txt color={C.inkSoft}>{t('auth.signUp.checkInboxBody', { email: pendingEmail })}</Txt>
+          <Button
+            title={resent ? t('auth.signUp.resent') : t('auth.signUp.resend')}
+            variant="outline"
+            full
+            disabled={resent}
+            onPress={async () => {
+              // Always resolves - the endpoint never reveals whether the address exists.
+              await api.auth.resendVerification(pendingEmail);
+              setResent(true);
+            }}
+          />
+          <Button title={t('auth.signIn.cta')} full onPress={() => (nav.canGoBack() ? nav.goBack() : nav.navigate('App'))} />
+        </Card>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <Txt variant="h2">{t('auth.signUp.title')}</Txt>
@@ -80,8 +131,26 @@ export function SignUp() {
         <Input label={t('auth.signUp.fullName')} placeholder={t('auth.signUp.fullNamePh')} value={form.name} onChangeText={set('name')} />
         <Input label={t('auth.signUp.email')} autoCapitalize="none" keyboardType="email-address" placeholder={t('auth.signUp.emailPh')} value={form.email} onChangeText={set('email')} />
         <Input label={t('auth.password')} secureTextEntry placeholder={t('auth.passwordPh')} value={form.password} onChangeText={set('password')} />
-        <Input label={t('auth.signUp.country')} placeholder={t('auth.signUp.countryPh')} value={form.country} onChangeText={set('country')} />
-        <Input label={t('auth.signUp.cityRegion')} placeholder={t('auth.signUp.cityRegionPh')} value={form.location} onChangeText={set('location')} />
+        <PickerField
+          label={t('auth.signUp.country')}
+          placeholder={t('auth.signUp.countryPh')}
+          value={form.country}
+          displayValue={COUNTRY_OPTIONS.find((c) => c.value === form.country)?.label}
+          options={COUNTRY_OPTIONS}
+          // Cities belong to a country, so changing it invalidates the city pick.
+          onChange={(v) => setForm((f) => ({ ...f, country: v, location: '' }))}
+        />
+        <PickerField
+          label={t('auth.signUp.cityRegion')}
+          placeholder={form.country ? t('auth.signUp.cityRegionPh') : t('auth.signUp.pickCountryFirst')}
+          value={form.location}
+          options={cityOptions}
+          onChange={set('location')}
+          onSearch={setCitySearch}
+          loading={citiesLoading}
+          disabled={!form.country}
+          emptyLabel={t('auth.signUp.noCities')}
+        />
         <Input label={t('auth.signUp.phone')} keyboardType="phone-pad" placeholder={t('auth.signUp.phonePh')} value={form.phone} onChangeText={set('phone')} />
         <View style={{ gap: 8 }}>
           <Txt variant="label">{t('auth.signUp.iAmA')}</Txt>
@@ -115,12 +184,12 @@ export function SignUp() {
               <Txt variant="label">{t('pubX.dir.opsTitle')}</Txt>
               <Txt variant="small" color={C.inkSoft}>{t('pubX.dir.opsHint')}</Txt>
             </View>
-            <TagInput label={t('pubX.dir.operatingCountries')} value={ops.operatingCountries} onChange={setOp('operatingCountries')} placeholder={t('pubX.ph.opCountries')} />
-            <TagInput label={t('pubX.dir.operatingCities')} value={ops.operatingCities} onChange={setOp('operatingCities')} placeholder={t('pubX.ph.opCities')} />
+            <TagInput label={t('pubX.dir.operatingCountries')} value={ops.operatingCountries} onChange={setOp('operatingCountries')} placeholder={t('pubX.ph.opCountries')} options={COUNTRY_OPTIONS} />
+            <TagInput label={t('pubX.dir.operatingCities')} value={ops.operatingCities} onChange={setOp('operatingCities')} placeholder={t('pubX.ph.opCities')} options={form.country ? cityOptions : undefined} onSearch={setCitySearch} loading={citiesLoading} />
             {isTransporter || isLoaderco ? (
               <>
-                <TagInput label={t('pubX.dir.supplyingCountries')} value={ops.supplyingCountries} onChange={setOp('supplyingCountries')} placeholder={t('pubX.ph.opCountries')} />
-                <TagInput label={t('pubX.dir.supplyingCities')} value={ops.supplyingCities} onChange={setOp('supplyingCities')} placeholder={t('pubX.ph.supCities')} />
+                <TagInput label={t('pubX.dir.supplyingCountries')} value={ops.supplyingCountries} onChange={setOp('supplyingCountries')} placeholder={t('pubX.ph.opCountries')} options={COUNTRY_OPTIONS} />
+                <TagInput label={t('pubX.dir.supplyingCities')} value={ops.supplyingCities} onChange={setOp('supplyingCities')} placeholder={t('pubX.ph.supCities')} options={form.country ? cityOptions : undefined} onSearch={setCitySearch} loading={citiesLoading} />
               </>
             ) : null}
             {isTransporter ? (

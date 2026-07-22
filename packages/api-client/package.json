@@ -10,6 +10,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@agrotraders/geo": "workspace:*",
     "@agrotraders/types": "workspace:*",
     "axios": "^1.7.7",
     "socket.io-client": "^4.8.1"

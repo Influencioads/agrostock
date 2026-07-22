@@ -8,13 +8,14 @@ import { useI18n } from '../../i18n';
 import { chatBus } from '../../chat/chatBus';
 import { usd, orderLabel, orderTone } from '../lib';
 import { DownloadInvoiceButton, OrderDrawer, OrderStepper, OtpCard, ShipmentFacts } from './order-parts';
+import { unitSuffix } from '@agrotraders/types';
 
 const orderTextKey = (s: string) => `enums:order_status.${s}`;
 
 function SectionHead({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-5">
-      <h2 className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+      <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{title}</h2>
       {sub && <p className="mt-1 text-sm text-ink-soft">{sub}</p>}
     </div>
   );
@@ -41,7 +42,7 @@ export function BrowseSection() {
   });
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <SectionHead title={t('console.browseProducts')} sub={t('console.buyer.browseSub')} />
         <Link to="/market">
           <Button leftIcon={<Icon name="bag" size={16} />}>{t('console.buyer.openMarketplace')}</Button>
@@ -53,7 +54,7 @@ export function BrowseSection() {
             <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-surface text-2xl">{p.emoji ?? '🌾'}</span>
             <div className="min-w-0 flex-1">
               <div className="truncate font-display font-bold text-ink">{p.name}</div>
-              <div className="truncate text-xs text-ink-soft">{p.flag} {p.origin} · ${p.price}/{p.unit}</div>
+              <div className="truncate text-xs text-ink-soft">{p.flag} {p.origin} · ${p.price}{unitSuffix(p.unit)}</div>
             </div>
             {p.verified && <Badge tone="green">{t('console.buyer.verified')}</Badge>}
           </Card>
@@ -82,7 +83,7 @@ export function SavedSection() {
               <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-mango-soft text-2xl">{p.emoji ?? '🌾'}</span>
               <div className="min-w-0 flex-1">
                 <div className="truncate font-display font-bold text-ink">{p.name}</div>
-                <div className="truncate text-xs text-ink-soft">{p.flag} ${p.price}/{p.unit}</div>
+                <div className="truncate text-xs text-ink-soft">{p.flag} ${p.price}{unitSuffix(p.unit)}</div>
               </div>
               <Icon name="heart" size={18} className="text-orange" />
             </Card>

@@ -124,7 +124,7 @@ export function OrdersPage() {
             </button>
           ))}
         </div>
-        <label className="ms-auto flex items-center gap-2 rounded-md border border-surface-border px-3">
+        <label className="flex w-full items-center gap-2 rounded-md border border-surface-border px-3 sm:ms-auto sm:w-auto">
           <Icon name="search" size={16} className="text-ink-soft" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('ordersAdmin.searchPh')} className="h-8 w-56 bg-transparent text-sm outline-none placeholder:text-ink-soft" />
         </label>

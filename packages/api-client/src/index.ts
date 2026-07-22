@@ -38,99 +38,10 @@ export interface NotificationPrefsPatch {
 
 /* ── country reference ──────────────────────────────────────────── */
 
-/** A country a seller can trade from or supply to. `name` is the stored value. */
-export interface Country {
-  name: string;
-  flag: string;
-}
-
-/**
- * Shared country list for location + supply-country pickers across web and
- * mobile. Ordered roughly by agri-trade relevance, then alphabetical. `name`
- * is what gets persisted, so keep these stable.
- */
-export const COUNTRIES: Country[] = [
-  { name: 'India', flag: '🇮🇳' },
-  { name: 'China', flag: '🇨🇳' },
-  { name: 'United States', flag: '🇺🇸' },
-  { name: 'Brazil', flag: '🇧🇷' },
-  { name: 'Russia', flag: '🇷🇺' },
-  { name: 'Ukraine', flag: '🇺🇦' },
-  { name: 'Argentina', flag: '🇦🇷' },
-  { name: 'Canada', flag: '🇨🇦' },
-  { name: 'Australia', flag: '🇦🇺' },
-  { name: 'France', flag: '🇫🇷' },
-  { name: 'Germany', flag: '🇩🇪' },
-  { name: 'Turkey', flag: '🇹🇷' },
-  { name: 'Vietnam', flag: '🇻🇳' },
-  { name: 'Thailand', flag: '🇹🇭' },
-  { name: 'Indonesia', flag: '🇮🇩' },
-  { name: 'Pakistan', flag: '🇵🇰' },
-  { name: 'Bangladesh', flag: '🇧🇩' },
-  { name: 'Egypt', flag: '🇪🇬' },
-  { name: 'Nigeria', flag: '🇳🇬' },
-  { name: 'South Africa', flag: '🇿🇦' },
-  { name: 'Kenya', flag: '🇰🇪' },
-  { name: 'Ethiopia', flag: '🇪🇹' },
-  { name: 'Saudi Arabia', flag: '🇸🇦' },
-  { name: 'United Arab Emirates', flag: '🇦🇪' },
-  { name: 'Qatar', flag: '🇶🇦' },
-  { name: 'Kuwait', flag: '🇰🇼' },
-  { name: 'Iran', flag: '🇮🇷' },
-  { name: 'Iraq', flag: '🇮🇶' },
-  { name: 'Kazakhstan', flag: '🇰🇿' },
-  { name: 'Uzbekistan', flag: '🇺🇿' },
-  { name: 'United Kingdom', flag: '🇬🇧' },
-  { name: 'Netherlands', flag: '🇳🇱' },
-  { name: 'Italy', flag: '🇮🇹' },
-  { name: 'Spain', flag: '🇪🇸' },
-  { name: 'Poland', flag: '🇵🇱' },
-  { name: 'Romania', flag: '🇷🇴' },
-  { name: 'Belgium', flag: '🇧🇪' },
-  { name: 'Mexico', flag: '🇲🇽' },
-  { name: 'Colombia', flag: '🇨🇴' },
-  { name: 'Peru', flag: '🇵🇪' },
-  { name: 'Chile', flag: '🇨🇱' },
-  { name: 'Japan', flag: '🇯🇵' },
-  { name: 'South Korea', flag: '🇰🇷' },
-  { name: 'Malaysia', flag: '🇲🇾' },
-  { name: 'Philippines', flag: '🇵🇭' },
-  { name: 'Singapore', flag: '🇸🇬' },
-  { name: 'Sri Lanka', flag: '🇱🇰' },
-  { name: 'Nepal', flag: '🇳🇵' },
-  { name: 'Myanmar', flag: '🇲🇲' },
-  { name: 'Morocco', flag: '🇲🇦' },
-  { name: 'Algeria', flag: '🇩🇿' },
-  { name: 'Tunisia', flag: '🇹🇳' },
-  { name: 'Ghana', flag: '🇬🇭' },
-  { name: 'Tanzania', flag: '🇹🇿' },
-  { name: 'Uganda', flag: '🇺🇬' },
-  { name: 'Ivory Coast', flag: '🇨🇮' },
-  { name: 'Sudan', flag: '🇸🇩' },
-  { name: 'Azerbaijan', flag: '🇦🇿' },
-  { name: 'Georgia', flag: '🇬🇪' },
-  { name: 'Afghanistan', flag: '🇦🇫' },
-  { name: 'Jordan', flag: '🇯🇴' },
-  { name: 'Lebanon', flag: '🇱🇧' },
-  { name: 'Oman', flag: '🇴🇲' },
-  { name: 'Bahrain', flag: '🇧🇭' },
-  { name: 'Yemen', flag: '🇾🇪' },
-  { name: 'Portugal', flag: '🇵🇹' },
-  { name: 'Greece', flag: '🇬🇷' },
-  { name: 'Hungary', flag: '🇭🇺' },
-  { name: 'Bulgaria', flag: '🇧🇬' },
-  { name: 'Serbia', flag: '🇷🇸' },
-  { name: 'Sweden', flag: '🇸🇪' },
-  { name: 'Denmark', flag: '🇩🇰' },
-  { name: 'Ireland', flag: '🇮🇪' },
-  { name: 'Switzerland', flag: '🇨🇭' },
-  { name: 'Austria', flag: '🇦🇹' },
-  { name: 'New Zealand', flag: '🇳🇿' },
-];
-
-/** Look up a country's flag by its stored name (empty string when unknown). */
-export const countryFlag = (name?: string | null): string =>
-  (name && COUNTRIES.find((c) => c.name.toLowerCase() === name.toLowerCase())?.flag) || '';
+// Lives in @agrotraders/geo now (it needs the ISO codes that back the city
+// lists); re-exported here so the existing `from '@agrotraders/api-client'`
+// imports across web and mobile keep working.
+export { COUNTRIES, countryFlag, countryIso2, findCountry, type Country } from '@agrotraders/geo';
 
 /* ── response types (mirror the NestJS API) ─────────────────────── */
 
@@ -1271,6 +1182,19 @@ export interface AuthResult {
   refreshToken: string;
 }
 
+/** Registration when SMTP is configured: no session until the email is confirmed. */
+export interface PendingVerification {
+  pendingVerification: true;
+  email: string;
+}
+
+export type RegisterResult = AuthResult | PendingVerification;
+
+/** Narrow a register() result to the "check your inbox" branch. */
+export function isPendingVerification(r: RegisterResult): r is PendingVerification {
+  return (r as PendingVerification).pendingVerification === true;
+}
+
 export interface ProductQuery {
   /** Stable category id filter. Preferred over `category` when available. */
   categoryId?: string;
@@ -1468,12 +1392,31 @@ export function createApiClient(opts: ApiClientOptions) {
         minWorkHours?: number;
         minDistanceKm?: number;
         minLoaders?: number;
-      }) => (await http.post<AuthResult>('/auth/register', body)).data,
+      }) => (await http.post<RegisterResult>('/auth/register', body)).data,
       refresh: async (refreshToken: string) =>
         (await http.post<AuthResult>('/auth/refresh', { refreshToken })).data,
+      /** Consume a confirmation link — returns a full session on success. */
+      verifyEmail: async (token: string) =>
+        (await http.post<AuthResult>('/auth/verify-email', { token })).data,
+      /** Re-send the confirmation link. Always resolves, even for unknown addresses. */
+      resendVerification: async (email: string) =>
+        (await http.post<{ ok: true }>('/auth/resend-verification', { email })).data,
       me: () => get<ApiUser>('/auth/me'),
     },
-    categories: { list: () => get<ApiCategory[]>('/categories') },
+    categories: {
+      /**
+       * `depth` bounds how many subcategory levels come back (default 1 —
+       * categories plus their direct children). Pass `'all'` only where the whole
+       * tree is genuinely needed; on a five-level taxonomy it is a large payload.
+       */
+      list: (depth?: number | 'all') => get<ApiCategory[]>('/categories', depth ? { depth } : undefined),
+      /** Subcategories of one category, optionally rooted at `parentId`. */
+      subtree: (categoryId: string, opts?: { depth?: number | 'all'; parentId?: string }) =>
+        get<ApiSubcategory[]>(`/categories/${categoryId}/subtree`, {
+          ...(opts?.depth ? { depth: opts.depth } : {}),
+          ...(opts?.parentId ? { parentId: opts.parentId } : {}),
+        }),
+    },
     offices: { list: () => get<ApiOffice[]>('/offices') },
     markets: {
       /** Public: approved markets only. */
@@ -1699,6 +1642,12 @@ export function createApiClient(opts: ApiClientOptions) {
       geocode: (q: string) => get<ApiGeoPoint>('/geo/geocode', { q }),
       /** Resolve two places and get both endpoints plus straight-line distance. */
       route: (from: string, to: string) => get<ApiGeoRoute>('/geo/route', { from, to }),
+      /**
+       * City names for a country, filtered server-side. Public (the signup form
+       * needs it before an account exists) and capped at 200 results.
+       */
+      cities: (country: string, q?: string) =>
+        get<string[]>('/geo/cities', q ? { country, q } : { country }),
     },
     loaders: {
       // teams
@@ -1998,8 +1947,11 @@ export function createApiClient(opts: ApiClientOptions) {
       removeCategory: (id: string) => del(`/admin/categories/${id}`),
       createSubcategory: (categoryId: string, body: { name: string; emoji?: string; sort?: number; parentId?: string }) =>
         post<ApiSubcategory>(`/admin/categories/${categoryId}/subcategories`, body),
-      updateSubcategory: (id: string, body: { name?: string; emoji?: string; sort?: number }) =>
-        patch<ApiSubcategory>(`/admin/subcategories/${id}`, body),
+      /** `parentId: null` promotes the node (with its subtree) back to level 2. */
+      updateSubcategory: (
+        id: string,
+        body: { name?: string; emoji?: string; sort?: number; parentId?: string | null },
+      ) => patch<ApiSubcategory>(`/admin/subcategories/${id}`, body),
       removeSubcategory: (id: string) => del(`/admin/subcategories/${id}`),
     },
 
@@ -2131,3 +2083,4 @@ export type { Socket };
 export * from './helpers';
 export * from './errors';
 export * from './format';
+export * from './categoryTree';

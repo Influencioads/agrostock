@@ -8,6 +8,7 @@ import { useBranding } from '../branding/BrandingProvider';
 import { useI18n, LanguageSelect } from '../i18n';
 import { api } from '../lib/api';
 import { NotificationBell } from './NotificationBell';
+import { AdminMobileNav } from './AdminMobileNav';
 
 interface Mod {
   to: string;
@@ -91,11 +92,16 @@ export function AdminLayout() {
     return n && n > 0 ? n : undefined;
   };
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-surface-bg font-body text-ink">
-      {/* sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col bg-brand-dock text-mint">
-        <div className="flex items-center gap-2.5 px-5 py-5">
+  /**
+   * Sidebar contents, rendered twice: in the desktop `aside` and in the mobile
+   * drawer. A function (not a component) so the two can't drift apart.
+   *
+   * `layoutKey` must differ per copy — a shared Framer `layoutId` would animate
+   * the active-item highlight between the offscreen drawer and the real sidebar.
+   */
+  const sidebarBody = (layoutKey: string) => (
+    <>
+      <div className="flex items-center gap-2.5 px-5 py-5">
           <BrandMark logoSrc={logoSrc} size="sm" glyphOnly />
           <div>
             <div className="font-display text-base font-extrabold leading-none text-white">
@@ -124,7 +130,7 @@ export function AdminLayout() {
                     <>
                       {isActive && (
                         <motion.span
-                          layoutId={reduce ? undefined : 'admin-nav-active'}
+                          layoutId={reduce ? undefined : layoutKey}
                           className="absolute inset-0 rounded-lg bg-white/10"
                           transition={{ type: 'spring', stiffness: 500, damping: 40 }}
                         />
@@ -154,31 +160,44 @@ export function AdminLayout() {
               </div>
             </div>
             <button onClick={logout} title={t('account.logOut')} className="text-mint/60 hover:text-white">
-              <Icon name="x" size={18} />
+              <Icon name="logout" size={18} />
             </button>
           </div>
         </div>
+    </>
+  );
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-surface-bg font-body text-ink">
+      {/* sidebar — desktop only; below `lg` the same content lives in the drawer */}
+      <aside className="hidden w-64 shrink-0 flex-col bg-brand-dock text-mint lg:flex">
+        {sidebarBody('admin-nav-active')}
       </aside>
 
       {/* main */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-surface-border bg-white px-6">
-          <h1 className="font-display text-lg font-extrabold text-ink">
+      {/* `min-w-0`: without it this flex child refuses to shrink and every
+          `overflow-x-auto` table below is inert. */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-surface-border bg-white px-3 py-2 sm:px-6 sm:py-0">
+          <AdminMobileNav>{sidebarBody('admin-nav-active-mobile')}</AdminMobileNav>
+          <h1 className="min-w-0 flex-1 truncate font-display text-base font-extrabold text-ink sm:text-lg">
             {current ? t(`nav.${current.key}`) : t('header.fallbackTitle')}
           </h1>
           <label className="ms-auto hidden items-center gap-2 rounded-md border border-surface-border px-3 md:flex">
             <Icon name="search" size={16} className="text-ink-soft" />
             <input
               placeholder={t('header.searchPlaceholder')}
-              className="h-9 w-64 bg-transparent text-sm outline-none placeholder:text-ink-soft"
+              className="h-9 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-ink-soft md:w-48 lg:w-64"
             />
           </label>
-          <LanguageSelect />
-          <NotificationBell />
-          <Avatar name={t('account.fallbackName')} size={34} />
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <LanguageSelect />
+            <NotificationBell />
+            <Avatar name={t('account.fallbackName')} size={34} />
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="min-w-0 flex-1 overflow-y-auto p-3 sm:p-6">
           <AnimatedOutlet />
         </main>
       </div>

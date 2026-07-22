@@ -3,31 +3,48 @@ import { Pressable, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
+import { PickerSheet, type PickerOption } from './PickerSheet';
 
 /**
- * Free-text tag entry: type a value and submit (or comma) to add a chip; tap a
- * chip to remove it. Used for the free-text city/country lists (operating /
- * supplying areas) collected at sign-up and in the loader crew form.
+ * Tag entry: type a value and submit (or comma) to add a chip; tap a chip to
+ * remove it. Used for the city/country lists (operating / supplying areas)
+ * collected at sign-up and in the loader crew form.
+ *
+ * Pass `options` to add a "choose from list" sheet — entries then snap to the
+ * canonical spelling, which is what makes the directory filters match. Free text
+ * still works on purpose: a missing place must never block a signup.
  */
 export function TagInput({
   label,
   value,
   onChange,
   placeholder,
+  options,
+  onSearch,
+  loading,
+  pickLabel,
 }: {
   label: string;
   value: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
+  /** Suggestions. Already filtered when they come from a server-side search. */
+  options?: PickerOption[];
+  onSearch?: (q: string) => void;
+  loading?: boolean;
+  pickLabel?: string;
 }) {
   const [draft, setDraft] = useState('');
+  const [picking, setPicking] = useState(false);
 
   const add = (raw: string) => {
     const v = raw.trim().replace(/,$/, '').trim();
     setDraft('');
     if (!v) return;
-    if (value.some((tag) => tag.toLowerCase() === v.toLowerCase())) return;
-    onChange([...value, v]);
+    // Snap to the canonical option when one matches, so casing/spelling is stable.
+    const canonical = options?.find((o) => o.value.toLowerCase() === v.toLowerCase())?.value ?? v;
+    if (value.some((tag) => tag.toLowerCase() === canonical.toLowerCase())) return;
+    onChange([...value, canonical]);
   };
 
   return (
@@ -74,6 +91,25 @@ export function TagInput({
           backgroundColor: C.white,
         }}
       />
+      {options && (
+        <>
+          <Pressable onPress={() => setPicking(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="add-circle-outline" size={15} color={C.green} />
+            <Txt variant="small" style={{ color: C.green, fontWeight: '700' }}>
+              {pickLabel ?? label}
+            </Txt>
+          </Pressable>
+          <PickerSheet
+            visible={picking}
+            title={label}
+            options={options.filter((o) => !value.some((v) => v.toLowerCase() === o.value.toLowerCase()))}
+            onSelect={add}
+            onClose={() => setPicking(false)}
+            onSearch={onSearch}
+            loading={loading}
+          />
+        </>
+      )}
     </View>
   );
 }

@@ -10,10 +10,13 @@
   },
   "auth": {
     "account_missing": "Dieses Konto existiert nicht mehr.",
+    "email_not_verified": "Bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden. Den Link finden Sie in Ihrem Posteingang.",
     "email_taken": "Diese E-Mail-Adresse ist bereits registriert.",
     "invalid_credentials": "Ungültige E-Mail-Adresse oder ungültiges Passwort.",
     "not_a_refresh_token": "Ihre Sitzung ist abgelaufen – bitte melden Sie sich erneut an.",
-    "refresh_invalid": "Ihre Sitzung ist abgelaufen – bitte melden Sie sich erneut an."
+    "refresh_invalid": "Ihre Sitzung ist abgelaufen – bitte melden Sie sich erneut an.",
+    "verification_expired": "Dieser Bestätigungslink ist abgelaufen. Fordern Sie einen neuen an.",
+    "verification_invalid": "Dieser Bestätigungslink ist ungültig. Bitte fordern Sie einen neuen an."
   },
   "net": {
     "offline": "Der Server ist nicht erreichbar. Läuft die API?",

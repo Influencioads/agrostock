@@ -10,10 +10,13 @@
   },
   "auth": {
     "account_missing": "此账户已不存在。",
+    "email_not_verified": "请先确认您的邮箱地址再登录。请查看您的邮箱以获取链接。",
     "email_taken": "该邮箱地址已被注册。",
     "invalid_credentials": "邮箱或密码无效。",
     "not_a_refresh_token": "您的会话已过期，请重新登录。",
-    "refresh_invalid": "您的会话已过期，请重新登录。"
+    "refresh_invalid": "您的会话已过期，请重新登录。",
+    "verification_expired": "该确认链接已过期，请申请新的链接。",
+    "verification_invalid": "该确认链接无效，请申请新的确认链接。"
   },
   "net": {
     "offline": "无法连接到服务器。API 是否正在运行？",

@@ -11,7 +11,7 @@ import { api } from '../../lib/api';
 import { Chip, ChipSelect, EmptyState, Input, Loading, SearchBar, Screen, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
 import { ProductCard } from '../components';
-import { CategorySheet } from '../components/CategorySheet';
+import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -42,8 +42,10 @@ export function Browse() {
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [market, setMarket] = useState('');
   const [sort, setSort] = useState('relevance');
-  const [category, setCategory] = useState('');
-  const [subcategory, setSubcategory] = useState('');
+  // One object rather than loose strings: a deep pick needs the id (for branch-
+  // inclusive filtering), the trail (for the trigger label) and the attribute
+  // source name (level-2 ancestor) all at once.
+  const [selection, setSelection] = useState<CategorySelection>(EMPTY_SELECTION);
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
   const [grade, setGrade] = useState('');
@@ -57,8 +59,8 @@ export function Browse() {
     search: search || undefined,
     sort,
     market: market || undefined,
-    category: category || undefined,
-    subcategory: subcategory || undefined,
+    categoryId: selection.categoryId || undefined,
+    subcategoryId: selection.subcategoryId || undefined,
     city: city || undefined,
     country: country || undefined,
     grade: grade || undefined,
@@ -85,7 +87,7 @@ export function Browse() {
 
   const all = { id: '', label: t('pubX.browse.all') };
   // Label + emoji for the current category, shown on the picker trigger.
-  const activeCat = useMemo(() => cats.find((c) => c.name === category), [cats, category]);
+  const activeCat = useMemo(() => cats.find((c) => c.id === selection.categoryId), [cats, selection.categoryId]);
   const cityOptions = useMemo(() => {
     const list = Array.from(new Set(markets.map((m) => m.city).filter(Boolean))) as string[];
     return list.length ? [all, ...list.map((c) => ({ id: c, label: c }))] : [];
@@ -100,14 +102,18 @@ export function Browse() {
   );
 
   // Attribute facets for the chosen subcategory. Picks reset when the (sub)category changes.
-  const attrFields = useMemo(() => getFilterFields(category, subcategory), [category, subcategory]);
+  // A deep pick resolves to its nearest schema-bearing ancestor, so facets keep
+  // showing past level 2 instead of vanishing.
+  const attrFields = useMemo(
+    () => getFilterFields(selection.categoryName, selection.attrSource),
+    [selection.categoryName, selection.attrSource],
+  );
   // Filter facets come from the English schema; only the display is localized —
   // the value sent to the API stays canonical English.
   const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
   const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
-  const applyCategory = (next: { category: string; subcategory: string }) => {
-    setCategory(next.category);
-    setSubcategory(next.subcategory);
+  const applyCategory = (next: CategorySelection) => {
+    setSelection(next);
     setAttrs({});
   };
   const toggleAttr = (key: string, val: string) => {
@@ -137,16 +143,16 @@ export function Browse() {
         <Txt variant="label">{t('pubX.browse.category')}</Txt>
         <Pressable
           onPress={() => setCatSheet(true)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.white, borderWidth: 1, borderColor: category ? C.green : C.border, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, paddingVertical: 8 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.white, borderWidth: 1, borderColor: selection.categoryId ? C.green : C.border, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, paddingVertical: 8 }}
         >
-          <Ionicons name="grid-outline" size={18} color={category ? C.green : C.inkSoft} />
-          <Txt style={{ flex: 1, fontWeight: '700', color: category ? C.ink : C.inkSoft }} numberOfLines={1}>
-            {category
-              ? `${activeCat?.emoji ?? ''} ${category}${subcategory ? `  ›  ${subcategory}` : ''}`.trim()
+          <Ionicons name="grid-outline" size={18} color={selection.categoryId ? C.green : C.inkSoft} />
+          <Txt style={{ flex: 1, fontWeight: '700', color: selection.categoryId ? C.ink : C.inkSoft }} numberOfLines={1}>
+            {selection.categoryId
+              ? `${activeCat?.emoji ?? ''} ${selection.trail.join('  ›  ')}`.trim()
               : t('pubX.browse.allCategories')}
           </Txt>
-          {category ? (
-            <Pressable onPress={() => applyCategory({ category: '', subcategory: '' })} hitSlop={10}>
+          {selection.categoryId ? (
+            <Pressable onPress={() => applyCategory(EMPTY_SELECTION)} hitSlop={10}>
               <Ionicons name="close-circle" size={18} color={C.inkSoft} />
             </Pressable>
           ) : (
@@ -159,8 +165,7 @@ export function Browse() {
         visible={catSheet}
         onClose={() => setCatSheet(false)}
         categories={cats}
-        category={category}
-        subcategory={subcategory}
+        selection={selection}
         onSelect={applyCategory}
       />
 
@@ -185,11 +190,11 @@ export function Browse() {
           </View>
         );
       })}
-      {cityOptions.length > 0 && (
-        <ChipSelect label={t('pubX.browse.city')} options={cityOptions} value={city} onChange={setCity} />
-      )}
       {countryOptions.length > 0 && (
         <ChipSelect label={t('pubX.browse.country')} options={countryOptions} value={country} onChange={setCountry} />
+      )}
+      {cityOptions.length > 0 && (
+        <ChipSelect label={t('pubX.browse.city')} options={cityOptions} value={city} onChange={setCity} />
       )}
       <ChipSelect label={t('pubX.browse.grade')} options={gradeOptions} value={grade} onChange={setGrade} />
 

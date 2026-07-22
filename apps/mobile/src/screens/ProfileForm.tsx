@@ -3,10 +3,12 @@ import { Image, ScrollView, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiMarket } from '@agrotraders/api-client';
+import { GMT_OFFSETS, normalizeGmt } from '@agrotraders/geo';
 import { api, assetUrl } from '../lib/api';
 import { errMessage } from '../lib/format';
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar, Badge, Button, Card, Chip, Input, Loading, Row, Txt } from '../ui';
+import { PickerField } from './components/PickerSheet';
 import { C, space } from '../theme/tokens';
 import { useI18n } from '../i18n';
 
@@ -133,7 +135,17 @@ export function ProfileForm() {
           <View style={{ flex: 1 }}><Input label={t('compX.profile.until')} placeholder="20:00" value={f.availableTo} onChangeText={set('availableTo')} /></View>
         </Row>
         <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={t('compX.profile.timezone')} placeholder="GMT+5:30" value={f.timezone} onChangeText={set('timezone')} /></View>
+          <View style={{ flex: 1 }}>
+            <PickerField
+              label={t('compX.profile.timezone')}
+              placeholder="GMT+5:30"
+              // Legacy free-text values are snapped onto a list entry so the
+              // field shows the saved zone instead of appearing empty.
+              value={normalizeGmt(f.timezone)}
+              options={GMT_OFFSETS.map((o) => ({ value: o.value, label: o.label }))}
+              onChange={set('timezone')}
+            />
+          </View>
           <View style={{ flex: 1 }}><Input label={t('compX.profile.languages')} placeholder="EN · HI" value={f.languages} onChangeText={set('languages')} /></View>
         </Row>
         {roles.includes('seller') && (

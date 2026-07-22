@@ -60,6 +60,19 @@
     "yourOffer": "Tu última oferta · {{amount}}",
     "yourOfferLabel": "Tu oferta"
   },
+  "categoryName": {
+    "animalFeed": "Alimento para animales",
+    "fertilizers": "Fertilizantes",
+    "fruits": "Frutas",
+    "grains": "Cereales",
+    "machinery": "Maquinaria",
+    "oils": "Aceites",
+    "packaging": "Embalaje",
+    "pulses": "Legumbres",
+    "seeds": "Semillas",
+    "spices": "Especias",
+    "vegetables": "Verduras"
+  },
   "chat": {
     "agent": "Agente",
     "back": "Atrás",
@@ -905,6 +918,7 @@
       "subcategory": "Subcategoría",
       "supplyCountries": "Suministros para",
       "supplyCountriesHint": "— selecciona todos los países a los que puedes realizar envíos.",
+      "unit": "Unidad",
       "uploadFailed": "Error al subir la imagen. Prueba con archivos JPG o PNG más pequeños.",
       "uploading": "Subiendo…"
     },
@@ -1333,10 +1347,12 @@
       "emailPlaceholder": "usted@company.com o por teléfono",
       "noAccount": "¿No tienes cuenta?",
       "password": "Contraseña",
+      "resendVerification": "Reenviar enlace de confirmación",
       "signIn": "Iniciar sesión",
       "signingIn": "Iniciando sesión…",
       "subtitle": "Inicia sesión en tu consola.",
-      "title": "Bienvenido de nuevo"
+      "title": "Bienvenido de nuevo",
+      "verificationSent": "Enlace enviado; revisa tu bandeja de entrada."
     },
     "market": {
       "allCities": "Todas las ciudades",
@@ -1512,6 +1528,7 @@
       "phLocation": "Amritsar, India",
       "phone": "Teléfono",
       "photoHint": "JPG, PNG o WebP · hasta 10 MB",
+      "pickTimezone": "— selecciona tu zona horaria —",
       "privateContact": "Datos de contacto privados",
       "privateSub": "Nunca se muestra públicamente; otros usuarios ven una pista oculta y se comunican contigo a través del chat.",
       "profilePhoto": "Foto de perfil",
@@ -1531,6 +1548,9 @@
       "yourMarket": "Tu mercado"
     },
     "register": {
+      "checkInboxBody": "Te enviamos un enlace de confirmación a {{email}}. Haz clic en él para activar tu cuenta; podrás iniciar sesión una vez confirmada.",
+      "checkInboxTitle": "Confirma tu correo electrónico",
+      "cityHint": "Seleccione de la lista o escríbalo si falta el suyo.",
       "cityRegion": "Ciudad/región",
       "country": "País",
       "createAccount": "Crear cuenta {{role}}",
@@ -1543,6 +1563,7 @@
       "minDistanceKm": "Distancia mínima del viaje (km)",
       "minLoaders": "Tamaño mínimo de la tripulación",
       "minWorkHours": "Duración mínima del trabajo (horas)",
+      "noCities": "No se encontró ninguna ciudad coincidente; escriba la suya propia.",
       "operatingCities": "Ciudades en las que operas",
       "operatingCountries": "Países en los que opera",
       "opsHint": "Ayuda a los compradores a encontrarte según el lugar donde trabajas y los trabajos que realizas.",
@@ -1555,9 +1576,13 @@
       "phCountry": "🇮🇳 India",
       "phPorts": "Bombay, Dubái",
       "phone": "Teléfono (privado: solo administradores, los demás chatean contigo)",
+      "pickCountry": "— selecciona tu país —",
+      "pickCountryFirst": "Primero, seleccione un país.",
       "pickMarket": "— elige tu mercado de negociación —",
       "pwTooShort": "La contraseña debe tener al menos 8 caracteres.",
       "registerAs": "Quiero registrarme como…",
+      "resend": "Reenviar el enlace",
+      "resent": "Enlace enviado; revisa tu bandeja de entrada.",
       "roleDesc": {
         "buyer": "Importar y comprar productos",
         "loaderco": "Gestionar los equipos de carga",
@@ -1569,6 +1594,7 @@
       "supplyingCities": "Ciudades a las que usted suministra",
       "supplyingCountries": "Países a los que usted suministra",
       "tagHint": "Escribe y pulsa Enter para añadir",
+      "tagHintPick": "Seleccione de la lista o escriba y pulse Intro.",
       "title": "Crea tu cuenta",
       "yourMarket": "Tu mercado"
     },
@@ -1700,6 +1726,11 @@
       "sub": "Tokens con prioridad al verde con acento mango/naranja, escala de tipografía y la biblioteca de componentes que impulsa cada superficie AgroTraders: web, paneles y la aplicación móvil unificada.",
       "title": "Sistema de diseño",
       "typography": "Tipografía"
+    },
+    "verifyEmail": {
+      "backToSignIn": "Volver a iniciar sesión",
+      "checking": "Confirmando tu correo electrónico…",
+      "failedTitle": "No pudimos confirmar este enlace."
     }
   },
   "product": {

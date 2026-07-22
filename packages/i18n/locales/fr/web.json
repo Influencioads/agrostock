@@ -60,6 +60,19 @@
     "yourOffer": "Votre dernière offre · {{amount}}",
     "yourOfferLabel": "Votre offre"
   },
+  "categoryName": {
+    "animalFeed": "Aliments pour animaux",
+    "fertilizers": "Engrais",
+    "fruits": "Fruits",
+    "grains": "Céréales",
+    "machinery": "Machines",
+    "oils": "Huiles",
+    "packaging": "Emballage",
+    "pulses": "Légumineuses",
+    "seeds": "Semences",
+    "spices": "Épices",
+    "vegetables": "Légumes"
+  },
   "chat": {
     "agent": "Agent",
     "back": "Dos",
@@ -903,6 +916,7 @@
       "subcategory": "Sous-catégorie",
       "supplyCountries": "Fournitures à",
       "supplyCountriesHint": "— Sélectionnez tous les pays vers lesquels vous pouvez expédier des commandes.",
+      "unit": "Unité",
       "uploadFailed": "Le chargement de l'image a échoué. Veuillez essayer des fichiers JPG ou PNG plus petits.",
       "uploading": "Chargement en cours…"
     },
@@ -1328,10 +1342,12 @@
       "emailPlaceholder": "vous@entreprise.com ou téléphone",
       "noAccount": "Pas de compte ?",
       "password": "Mot de passe",
+      "resendVerification": "Renvoyer le lien de confirmation",
       "signIn": "Se connecter",
       "signingIn": "Connexion…",
       "subtitle": "Connectez-vous à votre console.",
-      "title": "Content de te revoir"
+      "title": "Content de te revoir",
+      "verificationSent": "Lien envoyé — vérifiez votre boîte de réception"
     },
     "market": {
       "allCities": "Toutes les villes",
@@ -1506,6 +1522,7 @@
       "phLocation": "Amritsar, Inde",
       "phone": "Téléphone",
       "photoHint": "JPG, PNG ou WebP · jusqu'à 10 Mo",
+      "pickTimezone": "— Sélectionnez votre fuseau horaire —",
       "privateContact": "coordonnées privées",
       "privateSub": "Jamais affiché publiquement — les autres utilisateurs aperçoivent un indice masqué et vous contactent par chat.",
       "profilePhoto": "Photo de profil",
@@ -1525,6 +1542,9 @@
       "yourMarket": "Votre marché"
     },
     "register": {
+      "checkInboxBody": "Nous avons envoyé un lien de confirmation à {{email}}. Cliquez dessus pour activer votre compte ; vous pourrez vous connecter une fois la confirmation effectuée.",
+      "checkInboxTitle": "Confirmez votre courriel",
+      "cityHint": "Choisissez-le dans la liste, ou saisissez-le si le vôtre est absent.",
       "cityRegion": "Ville / région",
       "country": "Pays",
       "createAccount": "Créer un compte {{role}}",
@@ -1537,6 +1557,7 @@
       "minDistanceKm": "Distance minimale du trajet (km)",
       "minLoaders": "Taille minimale de l'équipage",
       "minWorkHours": "Durée minimale du travail (heures)",
+      "noCities": "Aucune ville trouvée — saisissez la vôtre",
       "operatingCities": "Villes dans lesquelles vous exercez vos activités",
       "operatingCountries": "Pays dans lesquels vous opérez",
       "opsHint": "Permet aux acheteurs de vous trouver en fonction de votre lieu de travail et des emplois que vous occupez.",
@@ -1549,9 +1570,13 @@
       "phCountry": "🇮🇳 Inde",
       "phPorts": "Mumbai, Dubaï",
       "phone": "Téléphone (privé — administrateurs uniquement, les autres peuvent discuter avec vous)",
+      "pickCountry": "— sélectionnez votre pays —",
+      "pickCountryFirst": "Sélectionnez d'abord un pays",
       "pickMarket": "— Choisissez votre marché commercial —",
       "pwTooShort": "Le mot de passe doit comporter au moins 8 caractères.",
       "registerAs": "Je souhaite m'inscrire en tant que…",
+      "resend": "Renvoyer le lien",
+      "resent": "Lien envoyé — vérifiez votre boîte de réception",
       "roleDesc": {
         "buyer": "Importer et acheter des produits",
         "loaderco": "Gérer les équipes de chargement",
@@ -1563,6 +1588,7 @@
       "supplyingCities": "Villes que vous fournissez à",
       "supplyingCountries": "Pays auxquels vous approvisionnez",
       "tagHint": "Saisissez votre code et appuyez sur Entrée pour ajouter.",
+      "tagHintPick": "Choisissez un élément dans la liste ou saisissez-le et appuyez sur Entrée.",
       "title": "Créez votre compte",
       "yourMarket": "Votre marché"
     },
@@ -1695,6 +1721,11 @@
       "sub": "Des jetons verts en premier avec une touche mangue/orange, une échelle de caractères et la bibliothèque de composants qui alimente chaque surface AgroTraders — le Web, les tableaux de bord et l'application mobile unifiée.",
       "title": "Système de conception",
       "typography": "Typographie"
+    },
+    "verifyEmail": {
+      "backToSignIn": "Retour à la page de connexion",
+      "checking": "Confirmation de votre courriel…",
+      "failedTitle": "Nous n'avons pas pu confirmer ce lien."
     }
   },
   "product": {

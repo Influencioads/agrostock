@@ -30,7 +30,7 @@ export function BuyerOrders() {
 
   return (
     <div>
-      <h2 className="mb-5 font-display text-2xl font-extrabold text-ink">{t('console.order.myOrders')}</h2>
+      <h2 className="mb-5 min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.order.myOrders')}</h2>
       {error && <p className="mb-3 text-sm font-semibold text-red-600">{error}</p>}
       {isLoading ? (
         <p className="text-ink-soft">{t('common:loading')}</p>

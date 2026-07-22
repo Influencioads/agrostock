@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
+import { GMT_OFFSETS, normalizeGmt } from '@agrotraders/geo';
 import type { ApiMarket } from '@agrotraders/api-client';
 import { api, assetUrl } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
@@ -198,7 +199,21 @@ export function ProfileForm() {
             <Input label={t('page.profileForm.availableFrom')} type="time" value={f.availableFrom} onChange={set('availableFrom')} />
             <Input label={t('page.profileForm.until')} type="time" value={f.availableTo} onChange={set('availableTo')} />
           </div>
-          <Input label={t('page.profileForm.timezone')} placeholder="GMT+5:30" value={f.timezone} onChange={set('timezone')} />
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('page.profileForm.timezone')}</span>
+            <select
+              // normalizeGmt snaps legacy free-text ("GMT+05:30", "UTC+5:30") onto
+              // a list value, so an existing profile shows its zone instead of blank.
+              value={normalizeGmt(f.timezone)}
+              onChange={set('timezone')}
+              className="h-11 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
+            >
+              <option value="">{t('page.profileForm.pickTimezone')}</option>
+              {GMT_OFFSETS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </label>
           <Input label={t('page.profileForm.languages')} placeholder="EN · HI · PA" value={f.languages} onChange={set('languages')} />
           {roles.includes('seller') && (
             <label>
@@ -312,7 +327,7 @@ export function ProfileFormPage() {
   const { t } = useI18n();
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6">
-      <h1 className="mb-1 font-display text-3xl font-extrabold text-ink">{t('page.profileForm.completeTitle')}</h1>
+      <h1 className="mb-1 min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.profileForm.completeTitle')}</h1>
       <p className="mb-6 text-ink-soft">{t('page.profileForm.completeSub')}</p>
       <ProfileForm />
     </div>

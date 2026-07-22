@@ -141,7 +141,6 @@
     "web.console.productForm.addMore_many",
     "web.console.productForm.addMore_one",
     "web.console.productForm.addMore_other",
-    "web.console.productForm.hasOrders_many",
     "web.console.productForm.hasOrders_one",
     "web.console.productForm.hasOrders_other",
     "web.console.productForm.listingsCount_many",
@@ -169,6 +168,6 @@
     "web.site.sealedBids_one",
     "web.site.sealedBids_other"
   ],
-  "updatedAt": "2026-07-18T09:43:09.762Z",
+  "updatedAt": "2026-07-21T17:52:00.994Z",
   "provider": "google"
 }

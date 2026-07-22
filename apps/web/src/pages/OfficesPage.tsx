@@ -18,7 +18,7 @@ export function OfficesPage() {
   const { t } = useI18n();
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
-      <h1 className="font-display text-3xl font-extrabold text-ink">{t('section.offices')}</h1>
+      <h1 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('section.offices')}</h1>
       <p className="mt-1 text-ink-soft">{t('page.offices.sub')}</p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

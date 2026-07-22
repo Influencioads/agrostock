@@ -22,7 +22,7 @@ export function StatementButtons() {
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => download('pdf')} leftIcon={<Icon name="file" size={14} />}>
         {busy === 'pdf' ? '…' : 'PDF'}
       </Button>

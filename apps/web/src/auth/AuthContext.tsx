@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import type { ApiUser } from '@agrotraders/api-client';
+import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrotraders/api-client';
 import { api } from '../lib/api';
 
 interface AuthContextValue {
@@ -21,7 +21,9 @@ interface AuthContextValue {
     phone?: string;
     location?: string;
     marketId?: string;
-  }) => Promise<ApiUser>;
+  }) => Promise<RegisterResult>;
+  /** Consume a confirmation link and start the session it returns. */
+  verifyEmail: (token: string) => Promise<ApiUser>;
   loginDemo: (role: string) => Promise<ApiUser>;
   logout: () => void;
 }
@@ -89,6 +91,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback<AuthContextValue['register']>(
     async (body) => {
       const res = await api.auth.register(body);
+      // When email confirmation is on there is no session yet — the caller shows
+      // a "check your inbox" panel and the session starts at /verify-email.
+      if (!isPendingVerification(res)) persist(res.user, res.accessToken, res.refreshToken);
+      return res;
+    },
+    [persist],
+  );
+
+  const verifyEmail = useCallback(
+    async (token: string) => {
+      const res = await api.auth.verifyEmail(token);
       persist(res.user, res.accessToken, res.refreshToken);
       return res.user;
     },
@@ -109,8 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, roles, activeRole, setActiveRole, login, register, loginDemo, logout }),
-    [user, token, roles, activeRole, setActiveRole, login, register, loginDemo, logout],
+    () => ({ user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, loginDemo, logout }),
+    [user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, loginDemo, logout],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -41,6 +41,23 @@ export class ContentTranslationWorker {
     return this.translation.unchanged(stored as Record<string, string> | null, next);
   }
 
+  /**
+   * Which locales this record still needs.
+   *
+   * The source hash only answers "did the text change", so on its own it would
+   * skip every existing row forever the moment a NEW locale is added to
+   * `LOCALES` — the back-catalogue could never pick the language up (this is
+   * exactly what happened when Persian was added). So when the text is
+   * unchanged we fill only the gaps, which makes adding a locale self-healing:
+   * the backfill script, or any later edit, completes it with no special
+   * handling. When the text did change, everything is re-translated.
+   */
+  private pendingTargets(sourceChanged: boolean, existing: { locale: string }[]) {
+    if (sourceChanged) return this.translation.targets;
+    const have = new Set(existing.map((t) => t.locale));
+    return this.translation.targets.filter((locale) => !have.has(locale));
+  }
+
   private jsonAttrs(attrs: AttributeValues | null): Prisma.InputJsonValue | typeof Prisma.JsonNull {
     return attrs ? (attrs as Prisma.InputJsonValue) : Prisma.JsonNull;
   }
@@ -56,16 +73,22 @@ export class ContentTranslationWorker {
     try {
       const p = await this.prisma.product.findUnique({
         where: { id },
-        include: { category: { select: { name: true } }, subcategory: { select: { name: true } } },
+        include: {
+          category: { select: { name: true } },
+          subcategory: { select: { name: true } },
+          translations: { select: { locale: true } },
+        },
       });
       if (!p) return;
 
       const fields = ['name', 'grade', 'origin', 'qty', 'moq', 'delivery'] as const;
       const hashes = this.translation.fieldHashes(p, [...fields, 'attributes']);
-      if (this.hashesUnchanged(p.sourceHashes, hashes)) return;
+      const changed = !this.hashesUnchanged(p.sourceHashes, hashes);
+      const targets = this.pendingTargets(changed, p.translations);
+      if (!targets.length) return;
 
       const schema = getAttributeFields(p.category?.name, p.subcategory?.name);
-      for (const locale of this.translation.targets) {
+      for (const locale of targets) {
         const tr = await this.translation.translateFields(p, fields, locale);
         const attrs = await this.translation.translateAttributes(p.attributes as AttributeValues, schema, locale);
         const data = {
@@ -83,8 +106,8 @@ export class ContentTranslationWorker {
           update: data,
         });
       }
-      await this.prisma.product.update({ where: { id }, data: { sourceHashes: hashes } });
-      this.logger.log(`translated product ${id} into ${this.translation.targets.length} locales`);
+      if (changed) await this.prisma.product.update({ where: { id }, data: { sourceHashes: hashes } });
+      this.logger.log(`translated product ${id} into ${targets.length} locale(s)`);
     } catch (err) {
       this.logger.error(`product ${id} translation failed: ${(err as Error).message}`);
     }
@@ -99,12 +122,17 @@ export class ContentTranslationWorker {
   private async translateReview(id: string) {
     if (!this.translation.enabled) return;
     try {
-      const r = await this.prisma.review.findUnique({ where: { id } });
+      const r = await this.prisma.review.findUnique({
+        where: { id },
+        include: { translations: { select: { locale: true } } },
+      });
       if (!r || !r.text) return;
       const hashes = this.translation.fieldHashes(r, ['text']);
-      if (this.hashesUnchanged(r.sourceHashes, hashes)) return;
+      const changed = !this.hashesUnchanged(r.sourceHashes, hashes);
+      const targets = this.pendingTargets(changed, r.translations);
+      if (!targets.length) return;
 
-      for (const locale of this.translation.targets) {
+      for (const locale of targets) {
         const [text] = await this.translation.translateFields(r, ['text'], locale).then((m) => [m.text]);
         const body = text ?? r.text;
         await this.prisma.reviewTranslation.upsert({
@@ -113,7 +141,7 @@ export class ContentTranslationWorker {
           update: { text: body },
         });
       }
-      await this.prisma.review.update({ where: { id }, data: { sourceHashes: hashes } });
+      if (changed) await this.prisma.review.update({ where: { id }, data: { sourceHashes: hashes } });
     } catch (err) {
       this.logger.error(`review ${id} translation failed: ${(err as Error).message}`);
     }
@@ -128,10 +156,17 @@ export class ContentTranslationWorker {
   private async translateCommunityGroup(id: string) {
     if (!this.translation.enabled) return;
     try {
-      const group = await this.prisma.communityGroup.findUnique({ where: { id } });
+      const group = await this.prisma.communityGroup.findUnique({
+        where: { id },
+        include: { translations: { select: { locale: true } } },
+      });
       if (!group) return;
+      // No source hashes on this model, so it re-translates on every event; only
+      // the locales that are actually missing need work.
+      const targets = this.pendingTargets(false, group.translations);
+      if (!targets.length) return;
 
-      for (const locale of this.translation.targets) {
+      for (const locale of targets) {
         const tr = await this.translation.translateFields(group, ['name', 'description'], locale);
         const data = {
           name: tr.name ?? group.name,
@@ -143,7 +178,7 @@ export class ContentTranslationWorker {
           update: data,
         });
       }
-      this.logger.log(`translated community group ${id} into ${this.translation.targets.length} locales`);
+      this.logger.log(`translated community group ${id} into ${targets.length} locale(s)`);
     } catch (err) {
       this.logger.error(`community group ${id} translation failed: ${(err as Error).message}`);
     }
@@ -157,12 +192,17 @@ export class ContentTranslationWorker {
   private async translateCommunityPost(id: string) {
     if (!this.translation.enabled) return;
     try {
-      const post = await this.prisma.communityPost.findUnique({ where: { id } });
+      const post = await this.prisma.communityPost.findUnique({
+        where: { id },
+        include: { translations: { select: { locale: true } } },
+      });
       if (!post) return;
       const hashes = this.translation.fieldHashes(post, ['title', 'body']);
-      if (this.hashesUnchanged(post.sourceHashes, hashes)) return;
+      const changed = !this.hashesUnchanged(post.sourceHashes, hashes);
+      const targets = this.pendingTargets(changed, post.translations);
+      if (!targets.length) return;
 
-      for (const locale of this.translation.targets) {
+      for (const locale of targets) {
         const tr = await this.translation.translateFields(post, ['title', 'body'], locale);
         const data = { title: tr.title ?? post.title, body: tr.body ?? post.body };
         await this.prisma.communityPostTranslation.upsert({
@@ -171,7 +211,7 @@ export class ContentTranslationWorker {
           update: data,
         });
       }
-      await this.prisma.communityPost.update({ where: { id }, data: { sourceHashes: hashes } });
+      if (changed) await this.prisma.communityPost.update({ where: { id }, data: { sourceHashes: hashes } });
     } catch (err) {
       this.logger.error(`community post ${id} translation failed: ${(err as Error).message}`);
     }
@@ -186,13 +226,18 @@ export class ContentTranslationWorker {
   private async translateRequirement(id: string) {
     if (!this.translation.enabled) return;
     try {
-      const req = await this.prisma.communityTradeRequirement.findUnique({ where: { id } });
+      const req = await this.prisma.communityTradeRequirement.findUnique({
+        where: { id },
+        include: { translations: { select: { locale: true } } },
+      });
       if (!req) return;
       const fields = ['title', 'productName', 'grade', 'delivery'] as const;
       const hashes = this.translation.fieldHashes(req, [...fields]);
-      if (this.hashesUnchanged(req.sourceHashes, hashes)) return;
+      const changed = !this.hashesUnchanged(req.sourceHashes, hashes);
+      const targets = this.pendingTargets(changed, req.translations);
+      if (!targets.length) return;
 
-      for (const locale of this.translation.targets) {
+      for (const locale of targets) {
         const tr = await this.translation.translateFields(req, fields, locale);
         const data = {
           title: tr.title ?? req.title,
@@ -206,7 +251,9 @@ export class ContentTranslationWorker {
           update: data,
         });
       }
-      await this.prisma.communityTradeRequirement.update({ where: { id }, data: { sourceHashes: hashes } });
+      if (changed) {
+        await this.prisma.communityTradeRequirement.update({ where: { id }, data: { sourceHashes: hashes } });
+      }
     } catch (err) {
       this.logger.error(`requirement ${id} translation failed: ${(err as Error).message}`);
     }
@@ -221,13 +268,18 @@ export class ContentTranslationWorker {
   private async translateBuyerBid(id: string) {
     if (!this.translation.enabled) return;
     try {
-      const bid = await this.prisma.buyerBid.findUnique({ where: { id } });
+      const bid = await this.prisma.buyerBid.findUnique({
+        where: { id },
+        include: { translations: { select: { locale: true } } },
+      });
       if (!bid) return;
       const fields = ['title', 'productName', 'notes'] as const;
       const hashes = this.translation.fieldHashes(bid, [...fields]);
-      if (this.hashesUnchanged(bid.sourceHashes, hashes)) return;
+      const changed = !this.hashesUnchanged(bid.sourceHashes, hashes);
+      const targets = this.pendingTargets(changed, bid.translations);
+      if (!targets.length) return;
 
-      for (const locale of this.translation.targets) {
+      for (const locale of targets) {
         const tr = await this.translation.translateFields(bid, fields, locale);
         const data = {
           title: tr.title ?? bid.title,
@@ -240,7 +292,7 @@ export class ContentTranslationWorker {
           update: data,
         });
       }
-      await this.prisma.buyerBid.update({ where: { id }, data: { sourceHashes: hashes } });
+      if (changed) await this.prisma.buyerBid.update({ where: { id }, data: { sourceHashes: hashes } });
     } catch (err) {
       this.logger.error(`buyer bid ${id} translation failed: ${(err as Error).message}`);
     }

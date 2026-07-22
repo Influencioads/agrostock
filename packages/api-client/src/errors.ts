@@ -31,6 +31,11 @@ export function apiErrorBody(e: unknown): ApiErrorBody {
   return (e as AxiosLike)?.response?.data ?? {};
 }
 
+/** The stable `code` on a rejection, when it carries one. */
+export function apiErrorCode(e: unknown): string | undefined {
+  return apiErrorBody(e).code;
+}
+
 /** The API's English text, joined when the ValidationPipe returns an array. */
 export function apiErrorMessage(e: unknown): string | undefined {
   const msg = apiErrorBody(e).message;

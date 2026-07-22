@@ -4,6 +4,7 @@ import { socialProof } from '@agrotraders/api-client';
 import type { Product } from '../../mock/data';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
+import { unitSuffix } from '@agrotraders/types';
 
 const cardText = (value: unknown, fallback = ''): string => {
   if (typeof value === 'string') return value;
@@ -25,7 +26,7 @@ export function ProductCard({ p }: { p: Product }) {
   const emoji = cardText(p.emoji, '🌾');
   const grade = cardText(p.grade);
   const rating = cardText(p.rating);
-  const unit = cardText(p.unit);
+  const unit = unitSuffix(cardText(p.unit));
   const qty = cardText(p.qty);
   const moq = cardText(p.moq);
   const delivery = cardText(p.delivery);
@@ -89,12 +90,14 @@ export function ProductCard({ p }: { p: Product }) {
           {t('site.proofLine', { watching: proof.watching, ordered: proof.orderedLastMonth })}
         </div>
 
-        <div className="mt-auto flex items-end justify-between pt-3">
-          <div>
+        {/* Wraps: in the homepage's 2-up mobile grid the card is ~171px wide,
+            where price + Buy on one line overflows. */}
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-2 pt-3">
+          <div className="min-w-0">
             <span className="font-display text-lg font-extrabold text-ink">{fmtPrice(priceProduct)}</span>
             <span className="text-xs text-ink-soft">{unit}</span>
           </div>
-          <Button size="sm" leftIcon={<Icon name="bag" size={15} />}>
+          <Button size="sm" className="shrink-0" leftIcon={<Icon name="bag" size={15} />}>
             {t('site.buy')}
           </Button>
         </div>

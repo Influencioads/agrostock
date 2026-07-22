@@ -49,14 +49,14 @@ export function BarChart({
 
   return (
     <Card className={className}>
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <div className="min-w-0">
           <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
           <p className="text-xs text-ink-soft">
             {caption} · {t('console.chart.lastMonths', { count: series.length })}
           </p>
         </div>
-        <div className="flex rounded-lg bg-surface-bg p-0.5">
+        <div className="flex shrink-0 rounded-lg bg-surface-bg p-0.5">
           {(['8M', '1Y'] as const).map((r) => (
             <button
               key={r}
@@ -71,8 +71,10 @@ export function BarChart({
           ))}
         </div>
       </div>
+      {/* Tighter gaps on a phone: with 12 bars the old `gap-2` spent 88px of a
+          ~240px card on whitespace, leaving ~13px columns. */}
       {hasData ? (
-        <div className="mt-6 flex h-44 items-end gap-2">
+        <div className="mt-6 flex h-44 items-end gap-1 sm:gap-2">
           {series.map((v, i) => {
             const last = i === series.length - 1;
             // Normalize to a 0–100 bar height so any absolute values fit.
@@ -98,9 +100,9 @@ export function BarChart({
           {t('console.chart.noData')}
         </div>
       )}
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex gap-1 sm:gap-2">
         {labels.map((m, i) => (
-          <span key={i} className="flex-1 text-center text-[11px] text-ink-soft">
+          <span key={i} className="min-w-0 flex-1 truncate text-center text-[10px] text-ink-soft sm:text-[11px]">
             {m}
           </span>
         ))}

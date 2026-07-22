@@ -64,5 +64,13 @@
     "transporter": "Transporter",
     "loaderco": "Loader Co",
     "worker": "Worker"
+  },
+  "unit": {
+    "KG": "Kilogram (KG)",
+    "MT": "Metric ton (MT)",
+    "QUINTAL": "Quintal",
+    "TON": "Ton",
+    "BAG": "Bag",
+    "PIECE": "Piece"
   }
 }

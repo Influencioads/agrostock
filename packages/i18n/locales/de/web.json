@@ -57,6 +57,19 @@
     "yourOffer": "Ihr letztes Angebot · {{amount}}",
     "yourOfferLabel": "Ihr Angebot"
   },
+  "categoryName": {
+    "animalFeed": "Futtermittel",
+    "fertilizers": "Düngemittel",
+    "fruits": "Obst",
+    "grains": "Getreide",
+    "machinery": "Maschinen",
+    "oils": "Öle",
+    "packaging": "Verpackung",
+    "pulses": "Hülsenfrüchte",
+    "seeds": "Saatgut",
+    "spices": "Gewürze",
+    "vegetables": "Gemüse"
+  },
   "chat": {
     "agent": "Agent",
     "back": "Zurück",
@@ -885,6 +898,7 @@
       "subcategory": "Unterkategorie",
       "supplyCountries": "Lieferungen an",
       "supplyCountriesHint": "— Wählen Sie alle Länder aus, in die Sie versenden können.",
+      "unit": "Einheit",
       "uploadFailed": "Der Bild-Upload ist fehlgeschlagen. Bitte versuchen Sie es mit kleineren JPG- oder PNG-Dateien.",
       "uploading": "Wird hochgeladen…"
     },
@@ -1302,10 +1316,12 @@
       "emailPlaceholder": "Sie können uns unter you@company.com kontaktieren oder uns anrufen.",
       "noAccount": "Noch kein Konto?",
       "password": "Passwort",
+      "resendVerification": "Bestätigungslink erneut senden",
       "signIn": "anmelden",
       "signingIn": "Anmelden…",
       "subtitle": "Melde dich in deiner Konsole an.",
-      "title": "Willkommen zurück"
+      "title": "Willkommen zurück",
+      "verificationSent": "Link gesendet – bitte überprüfen Sie Ihren Posteingang."
     },
     "market": {
       "allCities": "Alle Städte",
@@ -1481,6 +1497,7 @@
       "phLocation": "Amritsar, Indien",
       "phone": "Telefon",
       "photoHint": "JPG, PNG oder WebP · bis zu 10 MB",
+      "pickTimezone": "— Wählen Sie Ihre Zeitzone aus —",
       "privateContact": "Private Kontaktdaten",
       "privateSub": "Wird niemals öffentlich angezeigt – andere Nutzer sehen einen versteckten Hinweis und können Sie über den Chat kontaktieren.",
       "profilePhoto": "Profilfoto",
@@ -1500,6 +1517,9 @@
       "yourMarket": "Ihr Markt"
     },
     "register": {
+      "checkInboxBody": "Wir haben einen Bestätigungslink an {{email}} gesendet. Klicken Sie darauf, um Ihr Konto zu aktivieren – Sie können sich anmelden, sobald es bestätigt ist.",
+      "checkInboxTitle": "Bestätigen Sie Ihre E-Mail-Adresse.",
+      "cityHint": "Wählen Sie aus der Liste oder geben Sie Ihren Namen ein, falls er fehlt.",
       "cityRegion": "Stadt / Region",
       "country": "Land",
       "createAccount": "{{role}}-Konto erstellen",
@@ -1512,6 +1532,7 @@
       "minDistanceKm": "Mindeststrecke (km)",
       "minLoaders": "Mindestbesatzungsgröße",
       "minWorkHours": "Mindestdauer des Auftrags (Stunden)",
+      "noCities": "Keine passende Stadt gefunden – geben Sie Ihre eigene ein",
       "operatingCities": "Städte, in denen Sie tätig sind",
       "operatingCountries": "Länder, in denen Sie tätig sind",
       "opsHint": "Hilft Käufern, Sie anhand Ihres Arbeitsplatzes und Ihrer Tätigkeiten zu finden.",
@@ -1524,9 +1545,13 @@
       "phCountry": "🇮🇳 Indien",
       "phPorts": "Mumbai, Dubai",
       "phone": "Telefon (privat – nur für Administratoren, andere chatten mit Ihnen)",
+      "pickCountry": "— Wählen Sie Ihr Land aus —",
+      "pickCountryFirst": "Wählen Sie zuerst ein Land aus.",
       "pickMarket": "— Wähle deinen Handelsmarkt —",
       "pwTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein.",
       "registerAs": "Ich möchte mich registrieren als…",
+      "resend": "Link erneut senden",
+      "resent": "Link gesendet – bitte überprüfen Sie Ihren Posteingang.",
       "roleDesc": {
         "buyer": "Import und Kauf von Produkten",
         "loaderco": "Ladeteams verwalten",
@@ -1538,6 +1563,7 @@
       "supplyingCities": "Städte, die Sie beliefern",
       "supplyingCountries": "Länder, an die Sie liefern",
       "tagHint": "Geben Sie den Text ein und drücken Sie die Eingabetaste, um ihn hinzuzufügen.",
+      "tagHintPick": "Wählen Sie aus der Liste aus oder geben Sie etwas ein und drücken Sie die Eingabetaste.",
       "title": "Erstellen Sie Ihr Konto",
       "yourMarket": "Ihr Markt"
     },
@@ -1669,6 +1695,11 @@
       "sub": "Grüne Token mit einem mango-/orangefarbenen Akzent, Typografie-Skalierung und die Komponentenbibliothek, die jede AgroTraders Oberfläche antreibt – Web, Dashboards und die einheitliche mobile App.",
       "title": "Designsystem",
       "typography": "Typografie"
+    },
+    "verifyEmail": {
+      "backToSignIn": "Zurück zur Anmeldeseite",
+      "checking": "E-Mail-Adresse wird bestätigt…",
+      "failedTitle": "Wir konnten diesen Link nicht bestätigen."
     }
   },
   "product": {

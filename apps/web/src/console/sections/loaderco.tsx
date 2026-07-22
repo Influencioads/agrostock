@@ -70,8 +70,8 @@ export function LoaderWorkers() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.workers')}</h2>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.workers')}</h2>
         <Button onClick={() => { setForm(emptyForm); setAddOpen(true); }} leftIcon={<Icon name="plus" size={16} />}>{t('console.loaderco.addWorker')}</Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -223,8 +223,8 @@ export function LoaderTeams() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-extrabold text-ink">{t('console.nav.teams')}</h2>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.teams')}</h2>
         <Button onClick={() => setAddOpen(true)} leftIcon={<Icon name="plus" size={16} />}>{t('console.loaderco.addTeam')}</Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -271,9 +271,9 @@ function TeamDetailModal({ team, onClose, onChanged }: { team: ApiLoaderTeam; on
       footer={<><Button variant="ghost" onClick={() => remove.mutate()} disabled={remove.isPending}>{t('console.loaderco.deleteTeam')}</Button>
         <Button onClick={onClose}>{t('console.order.done')}</Button></>}>
       <div className="space-y-4">
-        <div className="flex items-end gap-2">
-          <div className="flex-1"><Input label={t('console.loaderco.teamName')} value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <Button variant="secondary" onClick={() => rename.mutate()} disabled={rename.isPending || name.trim() === team.name}>{t('console.loaderco.rename')}</Button>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[8rem] flex-1"><Input label={t('console.loaderco.teamName')} value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <Button className="shrink-0" variant="secondary" onClick={() => rename.mutate()} disabled={rename.isPending || name.trim() === team.name}>{t('console.loaderco.rename')}</Button>
         </div>
 
         <div>

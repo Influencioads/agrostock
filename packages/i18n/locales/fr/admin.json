@@ -129,6 +129,7 @@
   },
   "catAdmin": {
     "addCategory": "Ajouter une catégorie",
+    "addChild": "Ajouter un enfant",
     "addSub": "Sous",
     "catName": "Nom de la catégorie",
     "collapse": "Effondrement",
@@ -143,9 +144,11 @@
     "empty": "Aucune catégorie pour l'instant. Ajoutez la première.",
     "expand": "Développer",
     "modalAddCategory": "Ajouter une catégorie",
+    "modalAddChild": "Ajouter un enfant de moins de {{name}}",
     "modalAddSub": "Ajouter une sous-catégorie à {{name}}",
     "modalEditCategory": "Modifier la catégorie",
     "modalEditSub": "Modifier la sous-catégorie",
+    "nodeStats": "{{products}} produits · {{children}} niveaux enfant",
     "phCat": "par exemple les fruits",
     "phSub": "Par exemple, le riz basmati",
     "productsCount": "{{count}} produits",
@@ -348,6 +351,7 @@
     "overview": "Aperçu",
     "payments": "Paiements",
     "products": "Produits",
+    "profile": "Profil",
     "reports": "Rapports",
     "reviews": "Avis",
     "roleRequests": "Demandes de rôle",
@@ -377,6 +381,7 @@
     "fStaff": "Personnel",
     "fTimezone": "Fuseau horaire",
     "fType": "Taper",
+    "pickTimezone": "— sélectionnez un fuseau horaire —",
     "save": "Économisez au bureau",
     "saving": "Économie…"
   },
@@ -590,6 +595,22 @@
       "safedeal": "safedeal"
     }
   },
+  "profile": {
+    "active": "actif",
+    "inactive": "inactif",
+    "newPassword": "Nouveau mot de passe",
+    "noPermissions": "Aucune autorisation de module attribuée.",
+    "passwordError": "Impossible de modifier le mot de passe.",
+    "passwordSave": "Changer le mot de passe",
+    "passwordSaving": "Mise à jour en cours...",
+    "passwordTitle": "Mot de passe",
+    "passwordUpdated": "Mot de passe modifié.",
+    "permissions": "Autorisations",
+    "role": "Rôle",
+    "status": "Statut",
+    "subtitle": "Gérez ici votre compte administrateur et votre mot de passe. Les comptes administrateurs ne figurent pas dans la liste des utilisateurs.",
+    "title": "Profil de super administrateur"
+  },
   "range": {
     "allTime": "Tout le temps",
     "from": "Depuis",
@@ -793,6 +814,15 @@
     "whatsapp": "WhatsApp"
   },
   "users": {
+    "createActive": "Actif",
+    "createCountry": "Pays",
+    "createEmail": "E-mail",
+    "createError": "Impossible de créer l'utilisateur.",
+    "createName": "Nom",
+    "createPassword": "Mot de passe temporaire",
+    "createRole": "Rôle",
+    "createUser": "Ajouter un utilisateur",
+    "creating": "Ajout...",
     "filterAll": "Tous",
     "invite": "Inviter un utilisateur",
     "searchPlaceholder": "Rechercher un nom ou une adresse e-mail…",

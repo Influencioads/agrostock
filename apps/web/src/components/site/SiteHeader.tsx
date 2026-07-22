@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Avatar, BrandMark, Button } from '@agrotraders/ui';
+import { Avatar, BrandMark, Button, Icon } from '@agrotraders/ui';
 import { useI18n, LanguageSelect } from '../../i18n';
 import { useAuth } from '../../auth/AuthContext';
 import { useBranding } from '../../branding/BrandingProvider';
@@ -30,7 +30,7 @@ export function SiteHeader() {
       </div>
 
       {/* main bar */}
-      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-3 sm:gap-4 sm:px-4 lg:px-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-1.5 px-2.5 py-2.5 sm:gap-4 sm:px-4 sm:py-3 lg:px-6">
         {/* Hamburger holds the nav + auth actions below `lg`, where no language fits
             the full row. */}
         <MobileNav />
@@ -38,19 +38,29 @@ export function SiteHeader() {
         {/* `shrink-0`: the logo was the only shrinkable child of this row, so it was
             what got crushed when translated labels grew (170px of mark squeezed
             into 130px). */}
-        <Link to="/" className="min-w-0 shrink">
+        <Link to="/" className="min-w-0 shrink-0">
+          {/* Never clip the wordmark. A `max-w` + `overflow-hidden` clamp here
+              cut it to "AgroTrad" mid-letter. The full name is 170px at
+              `text-xl`, but only ~145px is free once the hamburger and the auth
+              buttons take their share of a 360px row — so the type scales down
+              instead of the name being truncated. */}
           <BrandMark
             logoSrc={logoSrc}
             size="md"
             glyphClassName="shadow-cta"
-            className="max-w-[190px] overflow-hidden sm:max-w-none"
+            wordmarkClassName="text-[15px] min-[400px]:text-lg sm:text-xl"
           />
         </Link>
 
         {/* Measures itself and folds any overflow into «More» — see PrimaryNav. */}
         <PrimaryNav />
 
-        <div className="ms-auto flex shrink-0 items-center gap-2 xl:ms-0">
+        {/* Auth actions stay on the bar at EVERY width. They used to be
+            `hidden sm:*` wholesale, which left a phone with nothing but a
+            hamburger and a logo — sign in / sign up / log out read as simply
+            missing. Only the secondary controls (currency, language, Dashboard)
+            still fold into the drawer; the primary action never does. */}
+        <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2 xl:ms-0">
           {/* display currency */}
           <CurrencySelect className="hidden sm:block" />
           {/* language */}
@@ -58,9 +68,23 @@ export function SiteHeader() {
 
           {user ? (
             <>
-              <Link to="/console" title={user.name} className="hidden sm:block">
+              <Link to="/console" title={user.name}>
                 <Avatar name={user.name} size={34} />
               </Link>
+              {/* Icon-only below `sm`: the label plus the avatar plus the logo
+                  will not fit 360px, but logging out must stay one tap. */}
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  navigate('/');
+                }}
+                aria-label={t('common:logOut')}
+                title={t('common:logOut')}
+                className="inline-flex min-h-9 items-center justify-center rounded-md border border-surface-border px-2 text-ink transition hover:border-brand-leaf hover:text-brand sm:hidden"
+              >
+                <Icon name="logout" size={18} />
+              </button>
               <Button
                 variant="outline"
                 size="sm"
@@ -84,15 +108,11 @@ export function SiteHeader() {
             <>
               <button
                 onClick={() => navigate('/login')}
-                className="hidden rounded-md px-3 py-2 text-sm font-bold text-ink hover:text-brand sm:block"
+                className="min-h-9 shrink-0 rounded-md px-2 text-sm font-bold text-ink transition hover:text-brand sm:px-3"
               >
                 {t('common:signIn')}
               </button>
-              <Button
-                size="sm"
-                className="hidden sm:inline-flex"
-                onClick={() => navigate('/register')}
-              >
+              <Button size="sm" className="shrink-0 px-2.5 sm:px-3" onClick={() => navigate('/register')}>
                 {t('common:signUp')}
               </Button>
             </>
