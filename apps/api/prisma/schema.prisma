@@ -696,6 +696,15 @@ model Product {
   /// Per-field SHA-1 of the source (English) text at last translation, so the
   /// translation worker skips fields whose source is unchanged. Keyed by field name.
   sourceHashes  Json?
+
+  // F21: catalog/search hot paths. FKs aren't auto-indexed in Postgres, so
+  // filtering by category/subcategory/seller/market or the live-listing +
+  // auction-expiry predicate was a sequential scan on the largest table.
+  @@index([status, categoryId])
+  @@index([subcategoryId])
+  @@index([sellerId])
+  @@index([marketId])
+  @@index([isAuction, auctionEndsAt])
 }
 
 model Order {
