@@ -136,6 +136,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    // F39: revoke the session server-side so the refresh token can't be reused.
+    // Best-effort — the local session is cleared regardless of the network call.
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) void api.auth.logout(refreshToken).catch(() => {});
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');

@@ -320,6 +320,7 @@ model User {
   emailTokens       EmailVerificationToken[]
   passwordResetTokens PasswordResetToken[]
   loginOtpTokens    LoginOtpToken[]
+  refreshSessions   RefreshSession[]
 
   // ── Chat systems (Community + Live Support) back-relations ──
   ownedCommunityGroups     CommunityGroup[]               @relation("CommunityGroupOwner")
@@ -452,6 +453,35 @@ model LoginOtpToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+/// Revocable refresh-token session family (F39). One row per device/login.
+/// Only the SHA-256 of the current token's random id (`jti`) is stored, never
+/// the token itself. Every refresh rotates `tokenHash`; presenting a superseded
+/// token (`tokenHash` mismatch) is treated as replay and revokes the whole
+/// `familyId` lineage. Logout revokes one row; logout-all revokes every row for
+/// the user. Password reset / account disable revoke all sessions.
+model RefreshSession {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Rotation lineage — replay of a rotated token revokes the entire family.
+  familyId      String
+  /// SHA-256 of the current refresh token's random jti (unique across all rows).
+  tokenHash     String    @unique
+  /// Coarse device hint (user-agent / platform), for the session-management UI.
+  device        String?
+  /// Origin IP at last use (redacted from logs elsewhere).
+  ip            String?
+  expiresAt     DateTime
+  lastUsedAt    DateTime  @default(now())
+  revokedAt     DateTime?
+  /// e.g. logout, logout_all, replay_detected, password_reset, account_disabled.
+  revokedReason String?
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([familyId])
 }
 
 /// Extended per-user profile. `phone`, `whatsapp` and `contactEmail` are

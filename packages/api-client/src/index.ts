@@ -1235,6 +1235,16 @@ export interface AuthResult {
   refreshToken: string;
 }
 
+/** An active refresh session, for the account's session-management UI (F39). */
+export interface AuthSession {
+  id: string;
+  device: string | null;
+  ip: string | null;
+  lastUsedAt: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 /** Registration when SMTP is configured: no session until the email is confirmed. */
 export interface PendingVerification {
   pendingVerification: true;
@@ -1466,6 +1476,13 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Verify an emailed login code — returns a full session on success. */
       verifyOtp: async (email: string, code: string) =>
         (await http.post<AuthResult>('/auth/verify-otp', { email, code })).data,
+      /** Revoke the session behind a refresh token server-side (idempotent). */
+      logout: async (refreshToken: string) =>
+        (await http.post<{ ok: true }>('/auth/logout', { refreshToken })).data,
+      /** Revoke every session for the signed-in account (sign out everywhere). */
+      logoutAll: async () => (await http.post<{ ok: true }>('/auth/logout-all', {})).data,
+      /** List the account's active sessions (no secrets returned). */
+      sessions: () => get<AuthSession[]>('/auth/sessions'),
       me: () => get<ApiUser>('/auth/me'),
     },
     categories: {

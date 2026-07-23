@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
-import { createHash, randomBytes, randomInt } from 'node:crypto';
+import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import type { LoginDto, RegisterDto } from './dto';
@@ -16,6 +16,14 @@ const RESET_TTL_MS = 60 * 60 * 1000;
 const OTP_TTL_MS = 10 * 60 * 1000;
 /** Wrong-code guesses allowed before a code is burned. */
 const OTP_MAX_ATTEMPTS = 5;
+/** How long a refresh session stays valid without use. */
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Optional device/network context recorded on a session for the management UI. */
+export interface SessionMeta {
+  device?: string;
+  ip?: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -33,7 +41,12 @@ export class AuthService {
     return this.config.get<string>('JWT_REFRESH_SECRET') || 'change-me-refresh-secret';
   }
 
-  private async tokens(user: { id: string; email: string; role: string }) {
+  /** Sign an access + refresh pair for a given session and rotation id. */
+  private async signPair(
+    user: { id: string; email: string; role: string },
+    sessionId: string,
+    jti: string,
+  ) {
     const payload = { sub: user.id, email: user.email, role: user.role };
     // `typ` separates token purposes: the access strategy accepts ONLY
     // `typ=access`, so refresh/download tokens can never act as Bearer tokens.
@@ -42,7 +55,7 @@ export class AuthService {
       expiresIn: this.config.get('JWT_EXPIRES_IN') || '15m',
     });
     const refreshToken = await this.jwt.signAsync(
-      { ...payload, typ: 'refresh' },
+      { sub: user.id, sid: sessionId, jti, typ: 'refresh' },
       {
         secret: this.refreshSecret(),
         expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
@@ -52,21 +65,113 @@ export class AuthService {
   }
 
   /**
-   * Exchange a valid refresh token for a fresh access/refresh pair. Re-reads the
-   * user from the DB so a deleted account (or a changed role) cannot keep a live
-   * session. Signature is verified against the dedicated refresh secret only.
+   * Open a new revocable session family (F39) and mint its first token pair.
+   * The token's random `jti` is stored only as a hash; every refresh rotates it.
    */
-  async refresh(refreshToken: string) {
-    let payload: { sub: string; typ?: string };
+  private async issueSession(
+    user: { id: string; email: string; role: string },
+    meta?: SessionMeta,
+  ) {
+    const jti = randomUUID();
+    const session = await this.prisma.refreshSession.create({
+      data: {
+        userId: user.id,
+        familyId: randomUUID(),
+        tokenHash: this.hashToken(jti),
+        device: meta?.device?.slice(0, 255),
+        ip: meta?.ip?.slice(0, 64),
+        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+      },
+    });
+    return this.signPair(user, session.id, jti);
+  }
+
+  /**
+   * Exchange a valid refresh token for a fresh pair. Re-reads the user so a
+   * deleted/disabled account cannot keep a session. Rotates the session on every
+   * use and revokes the whole family on replay of a superseded token.
+   */
+  async refresh(refreshToken: string, meta?: SessionMeta) {
+    let payload: { sub: string; typ?: string; sid?: string; jti?: string };
     try {
       payload = await this.jwt.verifyAsync(refreshToken, { secret: this.refreshSecret() });
     } catch {
       throw AppException.unauthorized('auth.refresh_invalid', 'Invalid or expired refresh token');
     }
-    if (payload.typ !== 'refresh') throw AppException.unauthorized('auth.not_a_refresh_token', 'Not a refresh token');
+    if (payload.typ !== 'refresh' || !payload.sid || !payload.jti) {
+      throw AppException.unauthorized('auth.not_a_refresh_token', 'Not a refresh token');
+    }
+    const session = await this.prisma.refreshSession.findUnique({ where: { id: payload.sid } });
+    if (!session || session.userId !== payload.sub || session.revokedAt || session.expiresAt.getTime() < Date.now()) {
+      throw AppException.unauthorized('auth.refresh_invalid', 'Invalid or expired refresh token');
+    }
+    // Replay: a token whose jti no longer matches the current hash means an old
+    // (already-rotated) token was presented — burn the entire family.
+    if (this.hashToken(payload.jti) !== session.tokenHash) {
+      await this.revokeFamily(session.familyId, 'replay_detected');
+      throw AppException.unauthorized('auth.refresh_replayed', 'Refresh token reuse detected');
+    }
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) throw AppException.unauthorized('auth.account_missing', 'Account no longer exists');
-    return { user: this.safe(user), ...(await this.tokens(user)) };
+    if (!user.active) throw AppException.unauthorized('auth.account_disabled', 'Account is deactivated');
+    // Rotate under a conditional write so two concurrent uses of the same token
+    // race and exactly one wins; the loser hits the replay branch next time.
+    const nextJti = randomUUID();
+    const rotated = await this.prisma.refreshSession.updateMany({
+      where: { id: session.id, tokenHash: session.tokenHash, revokedAt: null },
+      data: { tokenHash: this.hashToken(nextJti), lastUsedAt: new Date(), ...(meta?.ip ? { ip: meta.ip.slice(0, 64) } : {}) },
+    });
+    if (rotated.count === 0) {
+      await this.revokeFamily(session.familyId, 'replay_detected');
+      throw AppException.unauthorized('auth.refresh_replayed', 'Refresh token reuse detected');
+    }
+    return { user: this.safe(user), ...(await this.signPair(user, session.id, nextJti)) };
+  }
+
+  /** Revoke every live session in a rotation family. */
+  private async revokeFamily(familyId: string, reason: string) {
+    await this.prisma.refreshSession.updateMany({
+      where: { familyId, revokedAt: null },
+      data: { revokedAt: new Date(), revokedReason: reason },
+    });
+  }
+
+  /** Revoke a single session by presenting its (still valid) refresh token. */
+  async logout(refreshToken: string) {
+    let payload: { sid?: string; typ?: string };
+    try {
+      payload = await this.jwt.verifyAsync(refreshToken, { secret: this.refreshSecret() });
+    } catch {
+      // An unparseable/expired token has no live session to revoke — treat
+      // logout as idempotently successful.
+      return { ok: true as const };
+    }
+    if (payload.typ === 'refresh' && payload.sid) {
+      await this.prisma.refreshSession.updateMany({
+        where: { id: payload.sid, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'logout' },
+      });
+    }
+    return { ok: true as const };
+  }
+
+  /** Revoke every session for a user (logout-all / password reset / disable). */
+  async logoutAll(userId: string, reason = 'logout_all') {
+    await this.prisma.refreshSession.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date(), revokedReason: reason },
+    });
+    return { ok: true as const };
+  }
+
+  /** Active sessions for the session-management UI (no secrets returned). */
+  async sessions(userId: string) {
+    const rows = await this.prisma.refreshSession.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { lastUsedAt: 'desc' },
+      select: { id: true, device: true, ip: true, lastUsedAt: true, createdAt: true, expiresAt: true },
+    });
+    return rows;
   }
 
   private safe(user: {
@@ -93,7 +198,7 @@ export class AuthService {
     };
   }
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, meta?: SessionMeta) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw AppException.conflict('auth.email_taken', 'Email already registered');
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -169,7 +274,7 @@ export class AuthService {
         where: { id: user.id },
         data: { emailVerifiedAt: new Date() },
       });
-      return { user: this.safe(verified), ...(await this.tokens(verified)) };
+      return { user: this.safe(verified), ...(await this.issueSession(verified, meta)) };
     }
 
     await this.issueVerification(user);
@@ -207,7 +312,7 @@ export class AuthService {
   }
 
   /** Consume a confirmation token and sign the account in. */
-  async verifyEmail(rawToken: string) {
+  async verifyEmail(rawToken: string, meta?: SessionMeta) {
     const token = (rawToken ?? '').trim();
     if (!token) throw AppException.badRequest('auth.verification_invalid', 'Invalid confirmation link');
     const record = await this.prisma.emailVerificationToken.findUnique({
@@ -235,7 +340,7 @@ export class AuthService {
     });
     // First-time confirmation → welcome email (fire-and-forget, no-op if disabled).
     if (!record.user.emailVerifiedAt) void this.mail.sendWelcome(user);
-    return { user: this.safe(user), ...(await this.tokens(user)) };
+    return { user: this.safe(user), ...(await this.issueSession(user, meta)) };
   }
 
   /**
@@ -275,7 +380,7 @@ export class AuthService {
   }
 
   /** Consume a reset token, set the new password, and sign the account in. */
-  async resetPassword(rawToken: string, password: string) {
+  async resetPassword(rawToken: string, password: string, meta?: SessionMeta) {
     const token = (rawToken ?? '').trim();
     if (!token) throw AppException.badRequest('auth.reset_invalid', 'Invalid reset link');
     const record = await this.prisma.passwordResetToken.findUnique({
@@ -302,7 +407,9 @@ export class AuthService {
       // Proving inbox access also confirms the address if it wasn't already.
       data: { passwordHash, emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
     });
-    return { user: this.safe(user), ...(await this.tokens(user)) };
+    // A password change invalidates every other live session (F39).
+    await this.logoutAll(user.id, 'password_reset');
+    return { user: this.safe(user), ...(await this.issueSession(user, meta)) };
   }
 
   /* ── passwordless email OTP login ─────────────────────────────── */
@@ -331,7 +438,7 @@ export class AuthService {
   }
 
   /** Verify an emailed code and sign the account in. */
-  async verifyLoginOtp(email: string, code: string) {
+  async verifyLoginOtp(email: string, code: string, meta?: SessionMeta) {
     const user = await this.prisma.user.findUnique({ where: { email: (email ?? '').trim() } });
     if (!user) throw AppException.unauthorized('auth.otp_invalid', 'Invalid or expired code');
     const record = await this.prisma.loginOtpToken.findFirst({
@@ -363,7 +470,7 @@ export class AuthService {
       // Receiving the code proves inbox access → confirm the address.
       data: { emailVerifiedAt: user.emailVerifiedAt ?? new Date() },
     });
-    return { user: this.safe(verified), ...(await this.tokens(verified)) };
+    return { user: this.safe(verified), ...(await this.issueSession(verified, meta)) };
   }
 
   /**
@@ -388,7 +495,7 @@ export class AuthService {
     return worker?.user ?? null;
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, meta?: SessionMeta) {
     const user = await this.resolveLoginUser(dto.email);
     if (!user) throw AppException.unauthorized('auth.invalid_credentials', 'Invalid credentials');
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
@@ -398,7 +505,7 @@ export class AuthService {
     if (!user.emailVerifiedAt) {
       throw AppException.forbidden('auth.email_not_verified', 'Confirm your email address to sign in');
     }
-    return { user: this.safe(user), ...(await this.tokens(user)) };
+    return { user: this.safe(user), ...(await this.issueSession(user, meta)) };
   }
 
   async me(userId: string) {

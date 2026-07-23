@@ -50,6 +50,11 @@ function build(opts: { token: string }) {
     emailVerificationToken: tokenTable,
     passwordResetToken: tokenTable,
     loginOtpToken: tokenTable,
+    // Consuming a one-shot token opens a fresh refresh session (F39).
+    refreshSession: {
+      create: vi.fn(async ({ data }: { data: { userId: string } }) => ({ id: 'sess_1', ...data })),
+      updateMany: vi.fn(async () => ({ count: 0 })),
+    },
     user: {
       findUnique: vi.fn(async () => ({ ...baseUser })),
       update: vi.fn(async () => ({ ...baseUser, emailVerifiedAt: new Date() })),

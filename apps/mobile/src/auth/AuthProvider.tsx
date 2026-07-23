@@ -156,6 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // keeps receiving notifications after logout. Best-effort and idempotent, so
     // repeated logout is safe.
     await unregisterForPush().catch(() => {});
+    // F39: revoke the refresh session server-side before clearing local state.
+    const refreshToken = await storage.get(REFRESH_KEY).catch(() => null);
+    if (refreshToken) await api.auth.logout(refreshToken).catch(() => {});
     setApiToken(null);
     setApiRefreshToken(null);
     setApiActiveRole(null);
