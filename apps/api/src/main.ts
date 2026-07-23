@@ -11,6 +11,7 @@ import { validationExceptionFactory } from './common/validation-exception.factor
 import { RedisIoAdapter } from './realtime/redis-io.adapter';
 import { assertProductionConfig } from './config/production-config';
 import { assertProductionHasNoDemoAccounts } from './config/demo-account-guard';
+import { resolveCorsOrigins } from './config/cors';
 import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap() {
@@ -29,12 +30,9 @@ async function bootstrap() {
   // crossOriginResourcePolicy relaxed so the web/admin origins can load
   // <img> assets served from /uploads on the API origin.
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  const origins = (process.env.CORS_ORIGINS || '')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean);
+  // F22: shared fail-closed policy — same list the WebSocket gateways use.
   app.enableCors({
-    origin: origins.length ? origins : true,
+    origin: resolveCorsOrigins(),
     credentials: true,
   });
   // Errors carry a stable `code` alongside the English `message` so clients can

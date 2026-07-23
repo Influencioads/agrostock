@@ -14,6 +14,7 @@ import { NotificationsService, type NotificationCreatedEvent } from '../notifica
 import { NOTIFICATION_CREATED } from '../notifications/notification-categories';
 import type { AuthUser } from '../auth/current-user.decorator';
 import { CommunityService } from './community.service';
+import { resolveCorsOrigins } from '../config/cors';
 
 type ChatSocket = Socket & { data: { user?: AuthUser } };
 
@@ -25,7 +26,8 @@ const userRoom = (id: string) => `community:user:${id}`;
  * Real-time gateway for AgroTraders Community (System 1). Strictly separate from
  * Live Support: dedicated `/community` namespace and `community:*` rooms.
  */
-@WebSocketGateway({ namespace: '/community', cors: { origin: true, credentials: true } })
+// F22: sockets share the HTTP CORS allowlist and fail closed in production.
+@WebSocketGateway({ namespace: '/community', cors: { origin: resolveCorsOrigins(), credentials: true } })
 export class CommunityGateway implements OnGatewayConnection {
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger('CommunityGateway');

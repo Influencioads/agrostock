@@ -1,15 +1,17 @@
 /**
  * Extends app.json. Exists for one reason: cleartext HTTP.
  *
- * The `preview` EAS profile builds a *release* APK that talks to a plain-http
+ * The `preview` EAS profile may build a *release* APK that talks to a plain-http
  * API on a temp IP, and Android blocks cleartext in release builds unless the
  * manifest opts in. That attribute used to be hand-edited into the generated
  * AndroidManifest.xml, which `expo prebuild --clean` silently discards. Setting
  * it through expo-build-properties makes it survive a prebuild.
  *
- * Production must never ship the exception — it talks to https://api.agrotraders.org.
- * EAS sets EAS_BUILD_PROFILE during a cloud build; locally it is undefined, so
- * dev/preview keep working against a LAN IP.
+ * Release builds are cleartext-free BY DEFAULT (F42). A preview build against a
+ * plain-http temp IP must set ALLOW_CLEARTEXT_HTTP=1 explicitly, and production
+ * (EAS_BUILD_PROFILE=production) can never opt in — it talks to
+ * https://api.agrotraders.org. Debug builds keep cleartext through their own
+ * manifest overlay for LAN development.
  *
  * Also layers on the Firebase native config file paths. The files
  * (google-services.json / GoogleService-Info.plist) are gitignored so they never
@@ -35,6 +37,11 @@
  */
 module.exports = ({ config }) => {
   const isProduction = process.env.EAS_BUILD_PROFILE === 'production';
+  // F42: release builds never permit cleartext HTTP by default. The temp-IP
+  // preview workflow must opt in explicitly with ALLOW_CLEARTEXT_HTTP=1, and
+  // production can never opt in. Debug builds keep their own manifest overlay
+  // (android/app/src/debug/AndroidManifest.xml), so local dev is unaffected.
+  const allowCleartext = !isProduction && process.env.ALLOW_CLEARTEXT_HTTP === '1';
   const mapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   return {
@@ -61,7 +68,7 @@ module.exports = ({ config }) => {
       [
         'expo-build-properties',
         {
-          android: { usesCleartextTraffic: !isProduction },
+          android: { usesCleartextTraffic: allowCleartext },
           // @react-native-firebase requires the iOS Firebase SDK to be linked as
           // static frameworks, otherwise the CocoaPods install fails.
           ios: { useFrameworks: 'static' },

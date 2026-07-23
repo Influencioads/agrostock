@@ -220,17 +220,19 @@ export class AuthService {
     if (record.expiresAt.getTime() < Date.now()) {
       throw AppException.badRequest('auth.verification_expired', 'This confirmation link has expired');
     }
-    const [, user] = await this.prisma.$transaction([
-      this.prisma.emailVerificationToken.update({
-        where: { id: record.id },
-        data: { usedAt: new Date() },
-      }),
-      this.prisma.user.update({
-        where: { id: record.userId },
-        // Keep the first confirmation time if the account is somehow already verified.
-        data: { emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
-      }),
-    ]);
+    // F23: conditional consume — under concurrent requests exactly one wins.
+    const consumed = await this.prisma.emailVerificationToken.updateMany({
+      where: { id: record.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count === 0) {
+      throw AppException.badRequest('auth.verification_invalid', 'Invalid confirmation link');
+    }
+    const user = await this.prisma.user.update({
+      where: { id: record.userId },
+      // Keep the first confirmation time if the account is somehow already verified.
+      data: { emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
+    });
     // First-time confirmation → welcome email (fire-and-forget, no-op if disabled).
     if (!record.user.emailVerifiedAt) void this.mail.sendWelcome(user);
     return { user: this.safe(user), ...(await this.tokens(user)) };
@@ -286,15 +288,20 @@ export class AuthService {
     if (record.expiresAt.getTime() < Date.now()) {
       throw AppException.badRequest('auth.reset_expired', 'This reset link has expired');
     }
+    // F23: conditional consume — a replayed or concurrent reset must lose.
+    const consumed = await this.prisma.passwordResetToken.updateMany({
+      where: { id: record.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count === 0) {
+      throw AppException.badRequest('auth.reset_invalid', 'Invalid reset link');
+    }
     const passwordHash = await bcrypt.hash(password, 10);
-    const [, user] = await this.prisma.$transaction([
-      this.prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
-      this.prisma.user.update({
-        where: { id: record.userId },
-        // Proving inbox access also confirms the address if it wasn't already.
-        data: { passwordHash, emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
-      }),
-    ]);
+    const user = await this.prisma.user.update({
+      where: { id: record.userId },
+      // Proving inbox access also confirms the address if it wasn't already.
+      data: { passwordHash, emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
+    });
     return { user: this.safe(user), ...(await this.tokens(user)) };
   }
 
@@ -342,14 +349,20 @@ export class AuthService {
       await this.prisma.loginOtpToken.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
       throw AppException.unauthorized('auth.otp_invalid', 'Invalid or expired code');
     }
-    const [, verified] = await this.prisma.$transaction([
-      this.prisma.loginOtpToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
-      this.prisma.user.update({
-        where: { id: user.id },
-        // Receiving the code proves inbox access → confirm the address.
-        data: { emailVerifiedAt: user.emailVerifiedAt ?? new Date() },
-      }),
-    ]);
+    // F23: conditional consume — two devices submitting the same code race,
+    // and exactly one of them signs in.
+    const consumed = await this.prisma.loginOtpToken.updateMany({
+      where: { id: record.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count === 0) {
+      throw AppException.unauthorized('auth.otp_invalid', 'Invalid or expired code');
+    }
+    const verified = await this.prisma.user.update({
+      where: { id: user.id },
+      // Receiving the code proves inbox access → confirm the address.
+      data: { emailVerifiedAt: user.emailVerifiedAt ?? new Date() },
+    });
     return { user: this.safe(verified), ...(await this.tokens(verified)) };
   }
 

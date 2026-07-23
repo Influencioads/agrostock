@@ -16,6 +16,7 @@ import { NOTIFICATION_CREATED } from '../notifications/notification-categories';
 import type { AuthUser } from '../auth/current-user.decorator';
 import { SupportService } from './support.service';
 import type { CreateTicketDto, SendSupportMessageDto } from './dto';
+import { resolveCorsOrigins } from '../config/cors';
 
 type ChatSocket = Socket & { data: { user?: AuthUser } };
 
@@ -31,7 +32,8 @@ const AGENTS_ROOM = 'support:agents';
  * Also acts as the orchestration layer: both socket handlers and the REST
  * controller call these methods so realtime emits happen from one place.
  */
-@WebSocketGateway({ namespace: '/support', cors: { origin: true, credentials: true } })
+// F22: sockets share the HTTP CORS allowlist and fail closed in production.
+@WebSocketGateway({ namespace: '/support', cors: { origin: resolveCorsOrigins(), credentials: true } })
 export class SupportGateway implements OnGatewayConnection {
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger('SupportGateway');
