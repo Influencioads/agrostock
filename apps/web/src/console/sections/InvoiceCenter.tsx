@@ -143,7 +143,7 @@ export function InvoiceDetailModal({ id, onClose }: { id: string; onClose: () =>
   const { user } = useAuth();
   const { data: inv, isLoading } = useQuery<ApiInvoice>({ queryKey: ['invoice-detail', id], queryFn: () => api.invoices.get(id) });
   const setStatus = useMutation({
-    mutationFn: (status: 'paid' | 'void') => api.invoices.setStatus(id, status),
+    mutationFn: () => api.invoices.setStatus(id, 'void'),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-invoices'] }); qc.invalidateQueries({ queryKey: ['invoice-detail', id] }); },
   });
   const isIssuer = !!inv && !!user && inv.issuer?.id === user.id;
@@ -186,8 +186,7 @@ export function InvoiceDetailModal({ id, onClose }: { id: string; onClose: () =>
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-surface-border pt-3">
             {isIssuer && inv.status === 'issued' && (
               <>
-                <Button size="sm" variant="outline" disabled={setStatus.isPending} onClick={() => setStatus.mutate('void')}>{t('console.invoice.void')}</Button>
-                <Button size="sm" disabled={setStatus.isPending} onClick={() => setStatus.mutate('paid')}>{t('console.invoice.markPaid')}</Button>
+                <Button size="sm" variant="outline" disabled={setStatus.isPending} onClick={() => setStatus.mutate()}>{t('console.invoice.void')}</Button>
               </>
             )}
             <DownloadInvoiceButton id={inv.id} label={t('console.invoice.downloadPdf')} />

@@ -6,8 +6,9 @@ RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 WORKDIR /repo
 COPY . .
 RUN pnpm install --filter "@agrotraders/web..." --no-frozen-lockfile
-ARG VITE_API_URL=http://localhost:3000
+ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+RUN node -e "const u=new URL(process.env.VITE_API_URL); if(u.protocol!=='https:' || ['localhost','0.0.0.0','127.0.0.1','::1'].includes(u.hostname)) throw new Error('VITE_API_URL must be an absolute non-local HTTPS URL')"
 RUN pnpm --filter @agrotraders/web build
 
 FROM nginx:alpine AS runtime

@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Input } from '@agrotraders/ui';
+import { useQuery } from '@tanstack/react-query';
+import { Badge, Card } from '@agrotraders/ui';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
@@ -22,18 +21,9 @@ const txTone: Record<string, 'green' | 'mango' | 'slate' | 'error'> = {
 
 export function WalletSection() {
   const { t } = useI18n();
-  const qc = useQueryClient();
-  const [amount, setAmount] = useState('');
   const { data: wallet, isLoading } = useQuery<WalletData>({
     queryKey: ['wallet'],
     queryFn: () => api.me.wallet() as Promise<WalletData>,
-  });
-  const topup = useMutation({
-    mutationFn: (amt: number) => api.me.topup(amt),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['wallet'] });
-      setAmount('');
-    },
   });
 
   return (
@@ -44,18 +34,6 @@ export function WalletSection() {
         <div className="text-sm text-mint/80">{t('console.money.availableBalance')}</div>
         <div className="mt-1 font-display text-4xl font-extrabold">
           {isLoading ? '…' : usd(wallet?.balanceCents)}
-        </div>
-        <div className="mt-4 flex items-end gap-2">
-          <div className="flex-1">
-            <Input placeholder={t('console.money.amountPlaceholder')} value={amount} onChange={(e) => setAmount(e.target.value)} className="text-ink" />
-          </div>
-          <Button
-            variant="accent"
-            disabled={topup.isPending || !Number(amount)}
-            onClick={() => topup.mutate(Number(amount))}
-          >
-            {topup.isPending ? t('console.money.adding') : t('console.money.addFunds')}
-          </Button>
         </div>
       </Card>
 

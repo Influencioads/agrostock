@@ -22,6 +22,7 @@ import { NotificationsService, type NotificationParams } from '../notifications/
 import { TextTranslationService } from '../translation/text-translation.service';
 import { Locale } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
+import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
 /** "$1,180" → 1180 (dollars); 0 when unparseable. */
 const money = (s: string) => Number(String(s).replace(/[^0-9.]/g, '')) || 0;
@@ -102,7 +103,6 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, { to: OrderStatus; by: Order
     { to: 'cancelled', by: ['buyer', 'seller'] },
   ],
   processing: [
-    { to: 'paid', by: ['buyer'] },
     { to: 'packed', by: ['seller'] },
     { to: 'cancelled', by: ['buyer', 'seller'] },
     { to: 'dispute', by: ['buyer', 'seller'] },
@@ -418,6 +418,7 @@ export class OrdersService {
   // ── generic transitions ────────────────────────────────────────
 
   async setStatus(id: string, user: AuthUser, status: OrderStatus) {
+    if (status === 'paid') assertLegacyFinancialWritesEnabled('Order payment status');
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: { trip: { select: { transporterId: true } } },

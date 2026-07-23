@@ -22,6 +22,7 @@ import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
 import { EARNING_TYPES, WalletService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
 /** Roles a user may request self-service (admin is never requestable). */
 export const REQUESTABLE_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'] as const;
@@ -210,6 +211,7 @@ export class MeService {
   }
 
   async topup(userId: string, amountDollars: number) {
+    assertLegacyFinancialWritesEnabled('Wallet top-up');
     await this.wallets.credit(userId, Math.round(amountDollars * 100), 'topup', 'Top up');
     return this.wallet(userId);
   }

@@ -28,6 +28,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { monthlySeries, EARNED_STATUSES } from '../me/me.module';
 import { StatementsModule, StatementsService } from '../statements/statements.module';
+import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
 /** "$1,180" → 1180 (dollars); 0 when unparseable. */
 const parseAmount = (s: string | null | undefined): number => {
@@ -548,6 +549,7 @@ export class AdminService {
 
   /** Admin status override (bypasses the state machine), recording an event. */
   async setOrderStatus(id: string, status: OrderStatus, adminId: string, note?: string) {
+    if (status === 'paid') assertLegacyFinancialWritesEnabled('Administrative order payment status');
     const order = await this.prisma.order.findUnique({ where: { id }, select: { id: true, status: true } });
     if (!order) throw new NotFoundException('Order not found');
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -580,6 +582,7 @@ export class AdminService {
    * `dispute` (delivered on release, cancelled on full refund).
    */
   async resolveDispute(id: string, dto: ResolveDisputeDto, adminId: string) {
+    assertLegacyFinancialWritesEnabled('Dispute settlement');
     const order = await this.prisma.order.findUnique({
       where: { id },
       select: { id: true, status: true, amountCents: true, buyerId: true, sellerId: true },
@@ -946,6 +949,7 @@ export class AdminService {
 
   /** Manually credit or debit any wallet (admin adjustment / manual refund). */
   async adjustWallet(userId: string, dto: AdjustWalletDto, adminId: string) {
+    assertLegacyFinancialWritesEnabled('Manual wallet adjustment');
     if (dto.amountCents <= 0) throw new BadRequestException('Amount must be positive');
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
     if (!user) throw new NotFoundException('User not found');
@@ -969,6 +973,7 @@ export class AdminService {
   }
 
   async decidePayout(id: string, status: 'approved' | 'rejected', adminId: string, note?: string) {
+    if (status === 'approved') assertLegacyFinancialWritesEnabled('Payout approval');
     const req = await this.prisma.payoutRequest.findUnique({ where: { id } });
     if (!req) throw new NotFoundException('Payout request not found');
     if (req.status !== 'pending') throw new BadRequestException('Payout already decided');

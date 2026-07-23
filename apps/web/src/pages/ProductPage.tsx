@@ -5,7 +5,6 @@ import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import { socialProof, countryFlag } from '@agrotraders/api-client';
 import { getAttributeFields, unitSuffix } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
-import { products as mockProducts } from '../mock/data';
 import { api, toCardProduct } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
@@ -14,6 +13,7 @@ import { chatBus } from '../chat/chatBus';
 import { AuctionRoom } from '../components/site/AuctionRoom';
 import { ProductCard } from '../components/site/ProductCard';
 import { ReviewList } from '../console/components/ReviewList';
+import { resolveProductLoad } from './productResolution';
 
 // Quality-score facets. Labels are i18n keys under `page.product.quality.*`;
 // the scores are indicative demo metrics rendered as a bar.
@@ -43,12 +43,8 @@ export function ProductPage() {
   });
   // Prefer the live product; fall back to a mock only when it matches the slug
   // (offline resilience) — never silently show an unrelated product.
-  const mockMatch = mockProducts.find((p) => p.id === id);
-  const resolved = apiProduct ? toCardProduct(apiProduct) : mockMatch;
-  // Placeholder keeps hooks/render below well-typed; the not-found guard renders instead.
-  const product = resolved ?? mockProducts[0];
-  const notFound = !resolved && (isError || (!isLoading && !apiProduct));
-  const proof = socialProof(apiProduct?.id ?? product.id);
+  const load = resolveProductLoad(apiProduct ? toCardProduct(apiProduct) : undefined, isLoading, isError);
+  const product = load.product;
 
   // Real category-specific attributes captured on this listing → labelled rows.
   const attrRows = (() => {
@@ -80,14 +76,15 @@ export function ProductPage() {
 
   // Related products: same category (and market when known), excluding this one.
   const { data: related = [] } = useQuery({
-    queryKey: ['related', product.category, product.marketSlug, product.id],
+    queryKey: ['related', product?.category, product?.marketSlug, product?.id],
     queryFn: async () => {
+      if (!product) return [];
       const list = (await api.products.list({ category: product.category || undefined })).map(toCardProduct);
       const sameMarket = list.filter((p) => p.id !== product.id && p.marketSlug && p.marketSlug === product.marketSlug);
       const rest = list.filter((p) => p.id !== product.id && !sameMarket.includes(p));
       return [...sameMarket, ...rest].slice(0, 4);
     },
-    enabled: !!apiProduct,
+    enabled: load.state === 'ready',
   });
 
   // Live product reviews (keyed by the real product id, not the slug).
@@ -98,7 +95,10 @@ export function ProductPage() {
   });
 
   const place = useMutation({
-    mutationFn: () => api.orders.place({ productSlug: product.id, qty }),
+    mutationFn: () => {
+      if (!product) throw new Error('Product is not available');
+      return api.orders.place({ productSlug: product.id, qty });
+    },
     onSuccess: (o) => setNotice(`✓ ${t('page.product.orderPlaced', { ref: (o as { reference: string }).reference })}`),
     onError: () => setNotice(t('page.product.orderError')),
   });
@@ -107,10 +107,15 @@ export function ProductPage() {
     setNotice('');
     if (!user) return navigate('/login', { state: { from: `/product/${id}` } });
     if (user.role !== 'buyer') return setNotice(t('page.product.onlyBuyers'));
+    if (!product) return setNotice(t('page.product.orderError'));
     place.mutate();
   };
 
-  if (notFound) {
+  if (load.state === 'loading') {
+    return <div className="mx-auto max-w-3xl px-4 py-24 text-center text-ink-soft">{t('common:loading')}</div>;
+  }
+
+  if (load.state === 'not-found' || !product) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-24 text-center lg:px-6">
         <h1 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.product.notFound')}</h1>
@@ -119,6 +124,8 @@ export function ProductPage() {
       </div>
     );
   }
+
+  const proof = socialProof(apiProduct?.id ?? product.id);
 
   // Live auctions get the bespoke bidding room (big countdown, open bid history).
   if (product.auction) return <AuctionRoom slug={id!} product={product} />;

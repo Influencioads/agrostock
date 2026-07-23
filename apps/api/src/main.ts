@@ -9,27 +9,10 @@ import { AppModule } from './app.module';
 import { I18nExceptionFilter } from './common/i18n-exception.filter';
 import { validationExceptionFactory } from './common/validation-exception.factory';
 import { RedisIoAdapter } from './realtime/redis-io.adapter';
-
-/** Refuse to boot in production with missing or placeholder secrets. */
-function assertProductionSecrets() {
-  if (process.env.NODE_ENV !== 'production') return;
-  const insecure = ['change-me-access-secret', 'change-me-refresh-secret', '', undefined];
-  const problems: string[] = [];
-  if (insecure.includes(process.env.JWT_SECRET)) problems.push('JWT_SECRET');
-  if (insecure.includes(process.env.JWT_REFRESH_SECRET)) problems.push('JWT_REFRESH_SECRET');
-  if (process.env.JWT_SECRET && process.env.JWT_SECRET === process.env.JWT_REFRESH_SECRET) {
-    problems.push('JWT_SECRET and JWT_REFRESH_SECRET must differ');
-  }
-  if (problems.length) {
-    throw new Error(
-      `Refusing to start in production with insecure auth config: ${problems.join(', ')}. ` +
-        'Set strong, distinct secrets via environment variables.',
-    );
-  }
-}
+import { assertProductionConfig } from './config/production-config';
 
 async function bootstrap() {
-  assertProductionSecrets();
+  assertProductionConfig();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api');
 

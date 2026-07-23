@@ -948,7 +948,6 @@ export const ORDER_NEXT: Record<ApiOrderStatus, { to: ApiOrderStatus; by: ApiOrd
   enquiry: [{ to: 'quote', by: ['seller'] }, { to: 'cancelled', by: ['buyer', 'seller'] }],
   quote: [{ to: 'processing', by: ['buyer'] }, { to: 'cancelled', by: ['buyer', 'seller'] }],
   processing: [
-    { to: 'paid', by: ['buyer'] },
     { to: 'packed', by: ['seller'] },
     { to: 'cancelled', by: ['buyer', 'seller'] },
     { to: 'dispute', by: ['buyer', 'seller'] },

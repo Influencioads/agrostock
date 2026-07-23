@@ -30,6 +30,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { Locale } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
+import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
 const isAdmin = (u: AuthUser) => (u.roles ?? [u.role]).includes('admin');
 const usd = (cents: number, currency = 'USD') =>
@@ -326,6 +327,7 @@ export class InvoicesService {
   }
 
   async setStatus(id: string, user: AuthUser, status: 'paid' | 'void') {
+    if (status === 'paid') assertLegacyFinancialWritesEnabled('Invoice payment status');
     const invoice = await this.prisma.invoice.findUnique({ where: { id } });
     if (!invoice) throw new NotFoundException('Invoice not found');
     if (invoice.issuerId !== user.id && !isAdmin(user)) throw new ForbiddenException('Only the issuer can change this invoice.');

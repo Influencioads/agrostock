@@ -13,16 +13,16 @@ services:
     cpus: '1.0'
     mem_limit: 768m
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-agrostock}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrostock}
-      POSTGRES_DB: ${POSTGRES_DB:-agrostock}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
     ports:
       # local-only so bots cannot scan the database port from the internet
       - '127.0.0.1:5546:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-agrostock}']
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,8 +42,8 @@ services:
     mem_limit: 512m
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-agrostock}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-agrostock-secret}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Set S3_SECRET_KEY}
     volumes:
       - minio_data:/data
 
@@ -68,16 +68,16 @@ services:
       NODE_ENV: production
       API_PORT: 3000
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-0}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-agrostock}:${POSTGRES_PASSWORD:-agrostock}@postgres:5432/${POSTGRES_DB:-agrostock}?schema=public
-      JWT_SECRET: ${JWT_SECRET:-change-me-access-secret}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
+      DATABASE_URL: postgresql://${POSTGRES_USER:?Set POSTGRES_USER}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?Set POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET}
       REDIS_URL: redis://redis:6379
       S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-agrostock}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-agrostock-secret}
-      S3_BUCKET: ${S3_BUCKET:-agrostock}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET}
       S3_REGION: ${S3_REGION:-us-east-1}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8090,http://localhost:8091}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set CORS_ORIGINS}
       UPLOAD_DIR: /repo/apps/api/uploads
       PRIVATE_UPLOAD_DIR: /repo/apps/api/private-uploads
     ports:
@@ -99,7 +99,7 @@ services:
       - ../.env
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-agrostock}:${POSTGRES_PASSWORD:-agrostock}@postgres:5432/${POSTGRES_DB:-agrostock}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:?Set POSTGRES_USER}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?Set POSTGRES_DB}?schema=public
     entrypoint: ['npx', 'prisma', 'migrate', 'deploy']
     restart: 'no'
 
@@ -108,7 +108,7 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.web
       args:
-        VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
+        VITE_API_URL: ${VITE_API_URL:?Set VITE_API_URL to the public HTTPS API origin}
     restart: unless-stopped
     cpus: '0.25'
     mem_limit: 128m
@@ -122,7 +122,7 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.admin
       args:
-        VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
+        VITE_API_URL: ${VITE_API_URL:?Set VITE_API_URL to the public HTTPS API origin}
     restart: unless-stopped
     cpus: '0.25'
     mem_limit: 128m
