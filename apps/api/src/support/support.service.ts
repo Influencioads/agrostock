@@ -8,6 +8,7 @@ import { Prisma, SupportPriority, SupportStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { sanitizeMessage } from '../common/sanitize';
+import { isSuperAdmin } from '../auth/permissions.guard';
 import type { AuthUser } from '../auth/current-user.decorator';
 import type {
   CreateTicketDto,
@@ -23,7 +24,21 @@ const SLA_TARGETS: Record<SupportPriority, { firstMin: number; resolveHrs: numbe
   urgent: { firstMin: 15, resolveHrs: 8 },
 };
 
-const isStaff = (user: AuthUser) => user.roles.includes('admin');
+/**
+ * F17: staff status must match what the HTTP staff endpoints require — an admin
+ * who holds the `support_agent` scoped permission (or a super-admin who bypasses
+ * every per-module check). The old check trusted the coarse `admin` role alone,
+ * so any admin — regardless of scoped permission — could read and act on every
+ * ticket through the service and the WebSocket path, bypassing the same
+ * PermissionsGuard the REST controller enforces.
+ */
+export const isSupportStaff = (user: AuthUser): boolean => {
+  if (!user.roles.includes('admin')) return false;
+  const perms = user.adminPermissions ?? [];
+  return isSuperAdmin(perms) || perms.includes('support_agent');
+};
+
+const isStaff = isSupportStaff;
 
 @Injectable()
 export class SupportService {
@@ -40,7 +55,12 @@ export class SupportService {
   async agentUserIds(): Promise<string[]> {
     const [agents, admins] = await Promise.all([
       this.prisma.supportAgent.findMany({ select: { userId: true } }),
-      this.prisma.user.findMany({ where: { role: 'admin' }, select: { id: true } }),
+      // F17: only notify admins who can actually work support — those holding
+      // `support_agent` or the `staff_manage` super-admin permission.
+      this.prisma.user.findMany({
+        where: { role: 'admin', adminPermissions: { hasSome: ['support_agent', 'staff_manage'] } },
+        select: { id: true },
+      }),
     ]);
     return [...new Set([...agents.map((a) => a.userId), ...admins.map((a) => a.id)])];
   }

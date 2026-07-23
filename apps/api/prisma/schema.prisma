@@ -721,10 +721,15 @@ model Order {
 
   /// Two-OTP handshake. `pickupOtp` is shown only to the seller, `deliveryOtp`
   /// only to the buyer; the transporter enters each to advance the order.
-  pickupOtp          String?
-  pickupVerifiedAt   DateTime?
-  deliveryOtp        String?
-  deliveryVerifiedAt DateTime?
+  /// The `*Attempts` counters meter wrong guesses (F36): a party-visible code
+  /// can't be hashed at rest, so brute force is blunted by locking the code
+  /// after too many failures until the seller re-dispatches / rotates it.
+  pickupOtp             String?
+  pickupOtpAttempts     Int       @default(0)
+  pickupVerifiedAt      DateTime?
+  deliveryOtp           String?
+  deliveryOtpAttempts   Int       @default(0)
+  deliveryVerifiedAt    DateTime?
 
   // Set for platform dispatch only.
   tripId String? @unique

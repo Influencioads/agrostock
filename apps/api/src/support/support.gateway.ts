@@ -14,7 +14,7 @@ import { WsAuthService } from '../realtime/ws-auth.service';
 import { NotificationsService, type NotificationCreatedEvent, type NotificationParams } from '../notifications/notifications.service';
 import { NOTIFICATION_CREATED } from '../notifications/notification-categories';
 import type { AuthUser } from '../auth/current-user.decorator';
-import { SupportService } from './support.service';
+import { SupportService, isSupportStaff } from './support.service';
 import type { CreateTicketDto, SendSupportMessageDto } from './dto';
 import { resolveCorsOrigins } from '../config/cors';
 
@@ -49,7 +49,10 @@ export class SupportGateway implements OnGatewayConnection {
       const user = await this.wsAuth.verify(this.wsAuth.tokenFromSocket(socket));
       socket.data.user = user;
       socket.join(userRoom(user.id));
-      if (user.roles.includes('admin')) socket.join(AGENTS_ROOM);
+      // F17: only agents that actually hold the support scoped permission join
+      // the broadcast room — mirrors the HTTP `support_agent` guard, so an admin
+      // without it no longer receives every ticket event.
+      if (isSupportStaff(user)) socket.join(AGENTS_ROOM);
       socket.emit('ready', { userId: user.id });
     } catch {
       socket.emit('error', { message: 'Unauthorized' });

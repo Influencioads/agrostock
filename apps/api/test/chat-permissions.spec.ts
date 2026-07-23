@@ -12,8 +12,8 @@ import type { AuthUser } from '../src/auth/current-user.decorator';
 
 const audit = { log: vi.fn() };
 const translation = { enabled: false };
-const user = (id: string, roles: string[] = ['buyer']): AuthUser =>
-  ({ id, email: `${id}@x.dev`, name: id, role: roles[0], roles } as unknown as AuthUser);
+const user = (id: string, roles: string[] = ['buyer'], adminPermissions: string[] = []): AuthUser =>
+  ({ id, email: `${id}@x.dev`, name: id, role: roles[0], roles, adminPermissions } as unknown as AuthUser);
 
 describe('Live Support — ticket access (IDOR guard)', () => {
   function svc(ticket: unknown) {
@@ -35,9 +35,19 @@ describe('Live Support — ticket access (IDOR guard)', () => {
     await expect(s.assertCanView(user('owner'), 't1')).resolves.toMatchObject({ id: 't1' });
   });
 
-  it('allows admin/support staff on any ticket', async () => {
+  it('allows a support agent (admin + support_agent) on any ticket', async () => {
     const s = svc({ id: 't1', userId: 'owner' });
-    await expect(s.assertCanView(user('agent', ['admin']), 't1')).resolves.toMatchObject({ id: 't1' });
+    await expect(s.assertCanView(user('agent', ['admin'], ['support_agent']), 't1')).resolves.toMatchObject({ id: 't1' });
+  });
+
+  it('allows a super-admin (staff_manage) on any ticket', async () => {
+    const s = svc({ id: 't1', userId: 'owner' });
+    await expect(s.assertCanView(user('boss', ['admin'], ['staff_manage']), 't1')).resolves.toMatchObject({ id: 't1' });
+  });
+
+  it('F17: forbids an admin WITHOUT support_agent from reading a stranger\'s ticket', async () => {
+    const s = svc({ id: 't1', userId: 'owner' });
+    await expect(s.assertCanView(user('kycadmin', ['admin'], ['kyc']), 't1')).rejects.toBeInstanceOf(ForbiddenException);
   });
 });
 

@@ -29,6 +29,8 @@ import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.gua
 const money = (s: string) => Number(String(s).replace(/[^0-9.]/g, '')) || 0;
 const ref = () => secureReference('AG');
 const otp = () => secureOtp();
+/** F36: wrong dispatch-OTP guesses allowed before the code locks. */
+const DISPATCH_OTP_MAX_ATTEMPTS = 5;
 /** The display string every money-mutating path must keep in sync with `amountCents`. */
 const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`;
 
@@ -507,7 +509,7 @@ export class OrdersService {
       if (dto.mode === 'platform') {
         const trip = await tx.trip.create({
           data: {
-            reference: 'TRP-' + Math.floor(1000 + Math.random() * 9000),
+            reference: secureReference('TRP'),
             fromCity,
             toCity,
             cargo,
@@ -571,7 +573,15 @@ export class OrdersService {
     }
     if (order.status !== 'dispatched') throw new BadRequestException('This order is not awaiting pickup.');
     if (order.pickupVerifiedAt) throw new BadRequestException('Pickup was already confirmed.');
-    if (!order.pickupOtp || order.pickupOtp !== code.trim()) throw new BadRequestException('Incorrect pickup OTP.');
+    // F36: lock the code once wrong guesses are exhausted so a 6-digit code
+    // can't be brute-forced; the seller must re-dispatch to rotate it.
+    if (order.pickupOtpAttempts >= DISPATCH_OTP_MAX_ATTEMPTS) {
+      throw new BadRequestException('Too many incorrect attempts. Ask the seller to re-dispatch this order.');
+    }
+    if (!order.pickupOtp || order.pickupOtp !== code.trim()) {
+      await this.prisma.order.update({ where: { id }, data: { pickupOtpAttempts: { increment: 1 } } });
+      throw new BadRequestException('Incorrect pickup OTP.');
+    }
 
     await this.prisma.$transaction(async (tx) => {
       await tx.order.update({ where: { id }, data: { status: 'in_transit', pickupVerifiedAt: new Date() } });
@@ -600,7 +610,14 @@ export class OrdersService {
     }
     if (order.status !== 'in_transit') throw new BadRequestException('This order is not in transit.');
     if (order.deliveryVerifiedAt) throw new BadRequestException('Delivery was already confirmed.');
-    if (!order.deliveryOtp || order.deliveryOtp !== code.trim()) throw new BadRequestException('Incorrect delivery OTP.');
+    // F36: meter wrong guesses on the buyer's delivery code too.
+    if (order.deliveryOtpAttempts >= DISPATCH_OTP_MAX_ATTEMPTS) {
+      throw new BadRequestException('Too many incorrect attempts. Ask the seller to re-dispatch this order.');
+    }
+    if (!order.deliveryOtp || order.deliveryOtp !== code.trim()) {
+      await this.prisma.order.update({ where: { id }, data: { deliveryOtpAttempts: { increment: 1 } } });
+      throw new BadRequestException('Incorrect delivery OTP.');
+    }
 
     await this.prisma.$transaction(async (tx) => {
       await tx.order.update({ where: { id }, data: { status: 'delivered', deliveryVerifiedAt: new Date() } });
