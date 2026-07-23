@@ -27,7 +27,7 @@
     "pickCategory": "Pick a category to see its subcategories",
     "pickSubcategory": "Pick a subcategory to refine",
     "allOf": "All",
-    "trustedBy": "🏆 Trusted by 42,800+ verified agribusinesses",
+    "trustedBy": "🏆 Trusted by verified agribusinesses",
     "trust": {
       "verifiedSellers": "Verified Sellers",
       "safeDeal": "Safe Deal Protection",
@@ -37,7 +37,7 @@
     "safeDealTitle": "SafeDeal Escrow",
     "safeDealProtected": "Protected",
     "safeDealBody": "Funds held in escrow until you confirm delivery — on every trade.",
-    "safeDealStat": "$48M+ protected this year",
+    "safeDealStat": "Escrow protection on every trade",
     "liveTrade": "LIVE TRADE",
     "liveTradeCommodity": "Durum Wheat",
     "perMt": "/MT"
@@ -286,6 +286,7 @@
       "totalSales": "Total Sales",
       "ordersReceived": "Orders Received",
       "productViews": "Product Views",
+      "liveListings": "Live Listings",
       "buyerInquiries": "Buyer Inquiries",
       "revenue": "Revenue",
       "topProducts": "Top Products",

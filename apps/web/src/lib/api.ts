@@ -70,6 +70,10 @@ export function toCardProduct(p: ApiProduct): Product {
     priceCents: p.priceCents ?? null,
     unit: textValue(p.unit),
     rating: textValue(p.rating),
+    // Real review-derived rating; ratingCount === 0 marks an unrated listing so
+    // the UI can hide the cosmetic legacy "4.8" default instead of faking stars.
+    ratingAvg: p.ratingAvg ?? null,
+    ratingCount: p.ratingCount ?? 0,
     verified: p.verified,
     safe: p.safeDeal,
     offer: p.isOffer,

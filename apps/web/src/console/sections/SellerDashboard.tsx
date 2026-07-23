@@ -44,12 +44,14 @@ export function SellerDashboard({ name, onNavigate }: { name: string; onNavigate
     const quotes = orders.filter((o) => o.status === 'quote');
     const newOrders = orders.filter((o) => o.status === 'processing');
     const totalSales = paid.reduce((s, o) => s + parseAmount(o.amount), 0);
-    const views = products.reduce((s, p) => s + (p._count?.orders ?? 0) * 173 + 410, 0);
+    // F29: "Product views" was a fabricated formula (orders×173+410), not a real
+    // analytics figure. Replaced with the real count of live listings.
+    const liveListings = products.length;
     const inquiries = quotes.length + products.reduce((s, p) => s + (p._count?.auctionBids ?? 0), 0);
     const lowStock = products.filter((p) => parseAmount(p.qty) < 100).length;
     const top = [...products].sort((a, b) => (b._count?.orders ?? 0) - (a._count?.orders ?? 0)).slice(0, 3);
     const maxOrders = Math.max(1, ...top.map((p) => p._count?.orders ?? 0));
-    return { paid, quotes, newOrders, totalSales, views, inquiries, lowStock, top, maxOrders };
+    return { paid, quotes, newOrders, totalSales, liveListings, inquiries, lowStock, top, maxOrders };
   }, [orders, products]);
 
   const ordersReceived = kpis?.kpis.orders ?? orders.length;
@@ -65,7 +67,7 @@ export function SellerDashboard({ name, onNavigate }: { name: string; onNavigate
       <Stagger className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         <StaggerItem><Stat className="h-full" icon={<Icon name="wallet" size={18} />} value={compactUsd(m.totalSales)} label={t('console.dash.totalSales')} delta={`+${m.paid.length}`} up /></StaggerItem>
         <StaggerItem><Stat className="h-full" icon={<Icon name="box" size={18} />} value={String(ordersReceived)} label={t('console.dash.ordersReceived')} delta={`+${m.newOrders.length}`} up /></StaggerItem>
-        <StaggerItem><Stat className="h-full" icon={<Icon name="chart" size={18} />} value={compactNum(m.views)} label={t('console.dash.productViews')} delta={`+${products.length}`} up /></StaggerItem>
+        <StaggerItem><Stat className="h-full" icon={<Icon name="chart" size={18} />} value={compactNum(m.liveListings)} label={t('console.dash.liveListings')} delta={`+${products.length}`} up /></StaggerItem>
         <StaggerItem><Stat className="h-full" icon={<Icon name="bag" size={18} />} value={String(m.inquiries)} label={t('console.dash.buyerInquiries')} delta={`+${m.quotes.length}`} up /></StaggerItem>
       </Stagger>
 

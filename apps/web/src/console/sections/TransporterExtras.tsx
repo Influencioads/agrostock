@@ -448,14 +448,6 @@ export function TransporterOrders() {
   );
 }
 
-// Demo review quotes are translated via console.transporter.demoReviewN;
-// company names stay literal.
-const REVIEWS = [
-  { id: 'r1', by: 'Karim Trading', textKey: 'console.transporter.demoReview1', stars: 5 },
-  { id: 'r2', by: 'Punjab Agro Exports', textKey: 'console.transporter.demoReview2', stars: 5 },
-  { id: 'r3', by: 'Gulf Commodities', textKey: 'console.transporter.demoReview3', stars: 4 },
-];
-
 function Stars({ n }: { n: number }) {
   return (
     <span className="inline-flex text-mango-deep">
@@ -502,20 +494,10 @@ export function TransporterRatings() {
         </div>
       </Card>
 
-      <Card>
-        <h3 className="font-display text-lg font-bold text-ink">{t('console.transporter.recentReviews')}</h3>
-        <div className="mt-4 space-y-3">
-          {REVIEWS.map((r) => (
-            <div key={r.id} className="border-b border-surface-border pb-3 last:border-0 last:pb-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-ink">{r.by}</span>
-                <Stars n={r.stars} />
-              </div>
-              <p className="mt-1 text-sm text-ink-soft">{t(r.textKey)}</p>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* F29: removed the hardcoded "Recent reviews" card (three fabricated
+          5/4-star testimonials shown on every transporter account). Real
+          transporter reviews should be wired here from the reviews API once
+          available. */}
     </div>
   );
 }

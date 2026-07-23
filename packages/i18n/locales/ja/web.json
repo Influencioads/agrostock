@@ -363,6 +363,7 @@
       "perMonth": "月額$",
       "procurementSpend": "調達支出",
       "productViews": "製品ビュー",
+      "liveListings": "出品中",
       "readyToWithdraw": "撤退準備完了",
       "recentOrders": "最近の注文",
       "revenue": "収益",
@@ -1201,7 +1202,7 @@
     "pickSubcategory": "絞り込むサブカテゴリを選択してください",
     "safeDealBody": "取引ごとに、お客様が配送を確認するまで資金はエスクロー口座に保管されます。",
     "safeDealProtected": "保護されています",
-    "safeDealStat": "今年、4800万ドル以上が保護される",
+    "safeDealStat": "すべての取引をエスクローで保護",
     "safeDealTitle": "SafeDealエスクロー",
     "searchPlaceholder": "商品、カテゴリ、国などで検索…",
     "sell": "売る",
@@ -1214,7 +1215,7 @@
       "support": "英語とロシア語のサポート",
       "verifiedSellers": "認証済み販売者"
     },
-    "trustedBy": "🏆 42,800社以上の認証済み農業関連企業から信頼されています"
+    "trustedBy": "🏆 認証済み農業関連企業から信頼されています"
   },
   "page": {
     "auctions": {

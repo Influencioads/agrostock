@@ -96,7 +96,7 @@ export interface CommunityPost {
 }
 export const community: CommunityPost[] = [
   { tag: 'Market Tip', q: 'Best moisture level for long-term wheat storage?', by: 'Dr. Elena Markova', badge: 'Agronomist', replies: 34 },
-  { tag: 'Buyer Need', q: 'Looking for 200 MT organic lentils, EU delivery Q3', by: 'Green Foods GmbH', badge: 'Verified Buyer', replies: 18 },
+  { tag: 'Buyer Need', q: 'Looking for 200 MT organic lentils, EU delivery Q3', by: 'Green Foods GmbH', badge: 'Buyer', replies: 18 },
   { tag: 'Crop Advice', q: 'Aphid control in early sunflower — organic options?', by: 'Ahmet Yıldız', badge: 'Expert', replies: 27 },
 ];
 
@@ -131,7 +131,12 @@ export interface Product {
   /** USD cents baseline for currency conversion (live API only). */
   priceCents?: number | null;
   unit: string;
+  /** Legacy display rating string (cosmetic "4.8" default for unrated listings). */
   rating: string;
+  /** Real, review-derived rating (live API only). `ratingCount === 0`/undefined
+   *  means the listing is unrated and no stars should be shown. */
+  ratingAvg?: number | null;
+  ratingCount?: number;
   verified: boolean;
   safe: boolean;
   offer: boolean;

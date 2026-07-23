@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Badge, Button, Icon } from '@agrotraders/ui';
-import { socialProof } from '@agrotraders/api-client';
 import type { Product } from '../../mock/data';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
@@ -19,13 +18,16 @@ const cardText = (value: unknown, fallback = ''): string => {
 export function ProductCard({ p }: { p: Product }) {
   const { t } = useI18n();
   const { fmtPrice } = useCurrency();
-  const proof = socialProof(p.id);
   const name = cardText(p.name, 'Product');
   const flag = cardText(p.flag);
   const seller = cardText(p.seller);
   const emoji = cardText(p.emoji, '🌾');
   const grade = cardText(p.grade);
-  const rating = cardText(p.rating);
+  // F29: only show a star rating backed by real reviews. An unrated listing
+  // (ratingCount 0/undefined) shows nothing rather than the cosmetic "4.8"
+  // default the legacy `rating` string carries.
+  const rated = (p.ratingCount ?? 0) > 0;
+  const rating = rated ? (p.ratingAvg ?? 0).toFixed(1) : '';
   const unit = unitSuffix(cardText(p.unit));
   const qty = cardText(p.qty);
   const moq = cardText(p.moq);
@@ -74,20 +76,15 @@ export function ProductCard({ p }: { p: Product }) {
               {t('site.safeDeal')}
             </Badge>
           )}
-          <Badge tone="mango" icon={<Icon name="star" size={11} />}>
-            {rating}
-          </Badge>
+          {rated && (
+            <Badge tone="mango" icon={<Icon name="star" size={11} />}>
+              {rating}
+            </Badge>
+          )}
         </div>
 
         <div className="mt-2 text-xs text-ink-soft">
           {t('site.availableLine', { qty, moq, delivery })}
-        </div>
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-orange">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange opacity-60" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-orange" />
-          </span>
-          {t('site.proofLine', { watching: proof.watching, ordered: proof.orderedLastMonth })}
         </div>
 
         {/* Wraps: in the homepage's 2-up mobile grid the card is ~171px wide,

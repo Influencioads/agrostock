@@ -363,6 +363,7 @@
       "perMonth": "每月",
       "procurementSpend": "采购支出",
       "productViews": "产品视图",
+      "liveListings": "在售商品",
       "readyToWithdraw": "准备提款",
       "recentOrders": "近期订单",
       "revenue": "收入",
@@ -1200,7 +1201,7 @@
     "pickSubcategory": "选择一个子类别进行细化",
     "safeDealBody": "资金将托管，直到您确认收货为止——每笔交易都是如此。",
     "safeDealProtected": "受保护的",
-    "safeDealStat": "今年受保护的资产超过 4800 万美元",
+    "safeDealStat": "每笔交易均受托管保护",
     "safeDealTitle": "SafeDeal 托管",
     "searchPlaceholder": "搜索产品、类别、国家/地区……",
     "sell": "卖",
@@ -1213,7 +1214,7 @@
       "support": "英语和俄语支持",
       "verifiedSellers": "认证卖家"
     },
-    "trustedBy": "🏆 获得超过 42,800 家认证农业企业的信赖"
+    "trustedBy": "🏆 获得认证农业企业的信赖"
   },
   "page": {
     "auctions": {

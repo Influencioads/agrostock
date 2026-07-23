@@ -386,6 +386,7 @@
       "perMonth": "$ / mois",
       "procurementSpend": "Dépenses d'approvisionnement",
       "productViews": "Vues des produits",
+      "liveListings": "Annonces actives",
       "readyToWithdraw": "prêt à se retirer",
       "recentOrders": "Commandes récentes",
       "revenue": "Revenu",
@@ -1246,7 +1247,7 @@
     "pickSubcategory": "Choisissez une sous-catégorie à affiner.",
     "safeDealBody": "Les fonds sont conservés sous séquestre jusqu'à ce que vous confirmiez la livraison — pour chaque transaction.",
     "safeDealProtected": "Protégé",
-    "safeDealStat": "Plus de 48 millions de dollars protégés cette année",
+    "safeDealStat": "Protection sous séquestre à chaque transaction",
     "safeDealTitle": "SafeDeal Escrow",
     "searchPlaceholder": "Rechercher des produits, des catégories, des pays…",
     "sell": "Vendre",
@@ -1259,7 +1260,7 @@
       "support": "Assistance EN et RU",
       "verifiedSellers": "Vendeurs vérifiés"
     },
-    "trustedBy": "🏆 Approuvé par plus de 42 800 entreprises agroalimentaires vérifiées"
+    "trustedBy": "🏆 Approuvé par des entreprises agroalimentaires vérifiées"
   },
   "page": {
     "auctions": {

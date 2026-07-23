@@ -376,6 +376,7 @@
       "perMonth": "$ / Monat",
       "procurementSpend": "Beschaffungsausgaben",
       "productViews": "Produktansichten",
+      "liveListings": "Aktive Angebote",
       "readyToWithdraw": "bereit zum Rückzug",
       "recentOrders": "Aktuelle Bestellungen",
       "revenue": "Einnahmen",
@@ -1221,7 +1222,7 @@
     "pickSubcategory": "Wählen Sie eine Unterkategorie zur Verfeinerung aus.",
     "safeDealBody": "Die Gelder werden treuhänderisch verwahrt, bis Sie die Lieferung bestätigen – bei jedem einzelnen Geschäft.",
     "safeDealProtected": "Geschützt",
-    "safeDealStat": "Mehr als 48 Millionen Dollar wurden dieses Jahr geschützt",
+    "safeDealStat": "Treuhandschutz bei jedem Handel",
     "safeDealTitle": "SafeDeal Treuhandservice",
     "searchPlaceholder": "Produkte, Kategorien, Länder suchen…",
     "sell": "Verkaufen",
@@ -1234,7 +1235,7 @@
       "support": "EN- und RU-Unterstützung",
       "verifiedSellers": "Verifizierte Verkäufer"
     },
-    "trustedBy": "🏆 Mehr als 42.800 verifizierte Agrarunternehmen vertrauen uns."
+    "trustedBy": "🏆 Verifizierte Agrarunternehmen vertrauen uns"
   },
   "page": {
     "auctions": {

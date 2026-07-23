@@ -18,11 +18,6 @@ interface CardProduct {
 }
 
 const HERO = 'radial-gradient(900px 420px at 82% -20%,rgba(83,184,106,.22),transparent),linear-gradient(150deg,#0B3D2E,#0e4632)';
-// Labels are i18n keys under `page.product.quality.*`; scores are indicative.
-const quality = [
-  { k: 'grainPurity', v: 96 }, { k: 'moistureControl', v: 92 },
-  { k: 'packaging', v: 95 }, { k: 'documentation', v: 94 },
-];
 
 function useCountdown(end: string | null) {
   const [now, setNow] = useState(() => Date.now());
@@ -170,23 +165,9 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
             </dl>
           </Card>
 
-          {/* inspection score */}
-          <Card className="mt-4">
-            <div className="mb-3.5 flex items-center justify-between">
-              <span className="font-display font-bold text-ink">{t('auction.inspectionScore')}</span>
-              <span className="font-numeric text-xl font-bold text-status-success">93<span className="text-xs text-ink-soft">/100</span></span>
-            </div>
-            <div className="space-y-3">
-              {quality.map((q) => (
-                <div key={q.k}>
-                  <div className="flex justify-between text-xs text-ink-soft">{t(`page.product.quality.${q.k}`)}<b className="text-ink">{q.v}%</b></div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-brand-surface">
-                    <div className="h-full rounded-full bg-brand-gradient" style={{ width: `${q.v}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {/* F29: removed the fabricated "inspection score" card (fixed 93/100
+              and 92–96% facet bars on every lot) — the platform performs no such
+              inspection, so presenting a score is misleading. */}
 
           {/* price / bid section — moved below the product */}
           <div className="mt-5"><BidPanel slug={slug} /></div>

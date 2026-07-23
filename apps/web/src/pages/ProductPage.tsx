@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
-import { socialProof, countryFlag } from '@agrotraders/api-client';
+import { countryFlag } from '@agrotraders/api-client';
 import { getAttributeFields, unitSuffix } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, toCardProduct } from '../lib/api';
@@ -15,14 +15,6 @@ import { ProductCard } from '../components/site/ProductCard';
 import { ReviewList } from '../console/components/ReviewList';
 import { resolveProductLoad } from './productResolution';
 
-// Quality-score facets. Labels are i18n keys under `page.product.quality.*`;
-// the scores are indicative demo metrics rendered as a bar.
-const quality = [
-  { k: 'grainPurity', v: 96 },
-  { k: 'moistureControl', v: 92 },
-  { k: 'packaging', v: 95 },
-  { k: 'documentation', v: 94 },
-];
 const thumbs = ['🌾', '📦', '🚢', '📄', '🏭'];
 
 export function ProductPage() {
@@ -125,8 +117,6 @@ export function ProductPage() {
     );
   }
 
-  const proof = socialProof(apiProduct?.id ?? product.id);
-
   // Live auctions get the bespoke bidding room (big countdown, open bid history).
   if (product.auction) return <AuctionRoom slug={id!} product={product} />;
 
@@ -183,9 +173,13 @@ export function ProductPage() {
                 </Badge>
               )}
               {product.safe && <Badge tone="green">{t('site.safeDeal')}</Badge>}
-              <Badge tone="mango" icon={<Icon name="star" size={11} />}>
-                {reviewSummary && reviewSummary.count > 0 ? reviewSummary.avg.toFixed(1) : product.rating}
-              </Badge>
+              {/* F29: only show a rating backed by real reviews — never the
+                  cosmetic legacy "4.8" fallback. */}
+              {reviewSummary && reviewSummary.count > 0 && (
+                <Badge tone="mango" icon={<Icon name="star" size={11} />}>
+                  {reviewSummary.avg.toFixed(1)}
+                </Badge>
+              )}
               {product.offer && <Badge tone="mango">{t('site.offer')}</Badge>}
             </div>
             <h1 className="mt-3 min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{product.name}</h1>
@@ -226,19 +220,6 @@ export function ProductPage() {
                 </div>
               </div>
             )}
-            {/* social proof */}
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-              <span className="flex items-center gap-1.5 font-semibold text-orange">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange opacity-60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-orange" />
-                </span>
-                {t('page.product.watchingNow', { count: proof.watching })}
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold text-brand-dark">
-                <Icon name="bag" size={14} /> {t('page.product.orderedMonth', { count: proof.orderedLastMonth })}
-              </span>
-            </div>
           </div>
 
           {/* real category-specific attributes captured on this listing */}
@@ -260,23 +241,9 @@ export function ProductPage() {
               port/certification on every listing) that could not be honestly localized.
               Specs come only from real listing attributes, above. */}
 
-          {/* quality */}
-          <Card className="mt-4">
-            <h3 className="font-display text-lg font-bold text-ink">{t('page.product.qualityScore')}</h3>
-            <div className="mt-3 space-y-3">
-              {quality.map((q) => (
-                <div key={q.k}>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-ink-soft">{t(`page.product.quality.${q.k}`)}</span>
-                    <span className="font-bold text-ink">{q.v}%</span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-brand-surface">
-                    <div className="h-full rounded-full bg-brand-gradient" style={{ width: `${q.v}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {/* F29: the invented per-facet "quality score" bars (fixed 92–96%
+              demo values shown on every listing) were removed — they implied
+              audited quality metrics the platform does not measure. */}
 
           {/* reviews */}
           <Card className="mt-4">

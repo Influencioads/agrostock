@@ -387,6 +387,7 @@
       "perMonth": "$/mês",
       "procurementSpend": "Gastos com Aquisições",
       "productViews": "Visualizações do produto",
+      "liveListings": "Anúncios ativos",
       "readyToWithdraw": "pronto para desistir",
       "recentOrders": "Pedidos recentes",
       "revenue": "Receita",
@@ -1250,7 +1251,7 @@
     "pickSubcategory": "Selecione uma subcategoria para refinar.",
     "safeDealBody": "Os fundos ficam retidos em garantia até que você confirme a entrega — em todas as transações.",
     "safeDealProtected": "Protegido",
-    "safeDealStat": "Mais de US$ 48 milhões protegidos este ano.",
+    "safeDealStat": "Proteção de custódia em cada negócio",
     "safeDealTitle": "SafeDeal Escrow",
     "searchPlaceholder": "Pesquise produtos, categorias, países…",
     "sell": "Vender",
@@ -1263,7 +1264,7 @@
       "support": "Suporte em inglês e russo",
       "verifiedSellers": "Vendedores Verificados"
     },
-    "trustedBy": "🏆 Aprovado por mais de 42.800 agronegócios verificados"
+    "trustedBy": "🏆 Aprovado por agronegócios verificados"
   },
   "page": {
     "auctions": {

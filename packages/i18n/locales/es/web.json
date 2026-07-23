@@ -387,6 +387,7 @@
       "perMonth": "$ / mes",
       "procurementSpend": "Gasto en adquisiciones",
       "productViews": "Vistas del producto",
+      "liveListings": "Anuncios activos",
       "readyToWithdraw": "listo para retirarse",
       "recentOrders": "Pedidos recientes",
       "revenue": "Ganancia",
@@ -1250,7 +1251,7 @@
     "pickSubcategory": "Seleccione una subcategoría para refinar",
     "safeDealBody": "Los fondos se retienen en depósito hasta que usted confirme la entrega, en cada transacción.",
     "safeDealProtected": "Protegido",
-    "safeDealStat": "Más de 48 millones de dólares protegidos este año.",
+    "safeDealStat": "Protección de depósito en cada operación",
     "safeDealTitle": "Depósito en garantía de SafeDeal",
     "searchPlaceholder": "Buscar productos, categorías, países…",
     "sell": "Vender",
@@ -1263,7 +1264,7 @@
       "support": "Soporte en inglés y ruso",
       "verifiedSellers": "Vendedores verificados"
     },
-    "trustedBy": "🏆 Con la confianza de más de 42.800 empresas agroindustriales verificadas."
+    "trustedBy": "🏆 Con la confianza de empresas agroindustriales verificadas"
   },
   "page": {
     "auctions": {
