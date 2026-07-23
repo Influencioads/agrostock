@@ -68,9 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
-  const persist = useCallback((u: ApiUser, accessToken: string, refreshToken: string) => {
+  const persist = useCallback((u: ApiUser, accessToken: string, _refreshToken: string) => {
+    // F38: the refresh token is delivered as an HttpOnly cookie by the API and
+    // is intentionally NOT stored here — only the short-lived access token is.
     localStorage.setItem('token', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(u));
     localStorage.setItem('activeRole', u.role);
     setState({ user: u, token: accessToken });
@@ -136,12 +137,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    // F39: revoke the session server-side so the refresh token can't be reused.
-    // Best-effort — the local session is cleared regardless of the network call.
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) void api.auth.logout(refreshToken).catch(() => {});
+    // F39: revoke the session server-side (the API reads the refresh cookie and
+    // clears it, F38) so it can't be reused. Best-effort — the local session is
+    // cleared regardless of the network call.
+    void api.auth.logout().catch(() => {});
     localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('activeRole');
     setState({ user: null, token: null });

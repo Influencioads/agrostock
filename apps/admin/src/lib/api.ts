@@ -15,16 +15,15 @@ export function assetUrl(path?: string | null): string | undefined {
 
 export const api = createApiClient({
   baseURL: API_BASE,
+  // F38: refresh token lives in an HttpOnly cookie, never in JS-readable storage.
+  authMode: 'cookie',
   getToken: () => localStorage.getItem('token'),
-  getRefreshToken: () => localStorage.getItem('refreshToken'),
   onTokens: (r) => {
     localStorage.setItem('token', r.accessToken);
-    localStorage.setItem('refreshToken', r.refreshToken);
     localStorage.setItem('user', JSON.stringify(r.user));
   },
   onAuthError: () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     if (!location.pathname.startsWith('/login')) location.assign('/login');
   },

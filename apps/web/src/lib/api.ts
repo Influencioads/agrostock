@@ -16,21 +16,22 @@ export function assetUrl(path?: string | null): string | undefined {
 
 export const api = createApiClient({
   baseURL: API_BASE,
+  // F38: the refresh token lives in an HttpOnly cookie the browser manages, so
+  // it is never in JS-readable storage (and thus out of reach of XSS). Only the
+  // short-lived access token stays in localStorage.
+  authMode: 'cookie',
   getToken: () => localStorage.getItem('token'),
   // F27: send the dashboard role the user is actually viewing so the API acts as
   // that role, not their primary role. AuthContext keeps `activeRole` in sync
   // (only ever a role the account holds; the API re-validates membership anyway).
   getActiveRole: () => localStorage.getItem('activeRole'),
-  getRefreshToken: () => localStorage.getItem('refreshToken'),
   getLocale: () => localStorage.getItem('lang'),
   onTokens: (r) => {
     localStorage.setItem('token', r.accessToken);
-    localStorage.setItem('refreshToken', r.refreshToken);
     localStorage.setItem('user', JSON.stringify(r.user));
   },
   onAuthError: () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     if (!location.pathname.startsWith('/login')) location.assign('/login');
   },

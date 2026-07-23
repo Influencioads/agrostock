@@ -115,9 +115,12 @@ export class LoginDto {
 }
 
 export class RefreshDto {
-  @ApiProperty({ description: 'A refresh token previously issued by login/register' })
+  // Optional: browser clients (F38) send the refresh token in an HttpOnly cookie
+  // and omit it from the body; native clients pass it here.
+  @ApiProperty({ required: false, description: 'A refresh token previously issued by login/register' })
+  @IsOptional()
   @IsString()
-  refreshToken!: string;
+  refreshToken?: string;
 }
 
 export class VerifyEmailDto {

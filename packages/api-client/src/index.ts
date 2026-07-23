@@ -1369,14 +1369,24 @@ export interface ApiClientOptions {
   onTokens?: (result: AuthResult) => void;
   /** Called when refresh is impossible (no/expired refresh token) — e.g. force logout. */
   onAuthError?: () => void;
+  /**
+   * F38: `'cookie'` keeps the refresh token in an HttpOnly cookie the browser
+   * manages (never in JS-readable storage). The client then sends credentials
+   * with every request and refreshes without a body token. `'body'` (default)
+   * is for native clients that store the token themselves.
+   */
+  authMode?: 'body' | 'cookie';
 }
 
 export function createApiClient(opts: ApiClientOptions) {
   const root = opts.baseURL.replace(/\/$/, '') + '/api';
-  const http: AxiosInstance = axios.create({ baseURL: root });
+  const cookieMode = opts.authMode === 'cookie';
+  const http: AxiosInstance = axios.create({ baseURL: root, withCredentials: cookieMode });
   http.interceptors.request.use((config) => {
     const token = opts.getToken?.();
     if (token) config.headers.Authorization = `Bearer ${token}`;
+    // Tells the API to set/read the refresh cookie instead of the JSON body.
+    if (cookieMode) config.headers['x-auth-mode'] = 'cookie';
     const activeRole = opts.getActiveRole?.();
     if (activeRole) config.headers['x-agro-active-role'] = activeRole;
     const locale = opts.getLocale?.();
@@ -1394,14 +1404,21 @@ export function createApiClient(opts: ApiClientOptions) {
       const status = error.response?.status;
       const refreshTok = opts.getRefreshToken?.();
       const isRefreshCall = original?.url?.includes('/auth/refresh');
-      if (status !== 401 || !original || original._retried || !refreshTok || isRefreshCall) {
-        if (status === 401 && !refreshTok) opts.onAuthError?.();
+      // In cookie mode the refresh token lives in the HttpOnly cookie, so we can
+      // always attempt a refresh; in body mode we need a stored token to send.
+      const canRefresh = cookieMode || !!refreshTok;
+      if (status !== 401 || !original || original._retried || !canRefresh || isRefreshCall) {
+        if (status === 401 && !canRefresh) opts.onAuthError?.();
         return Promise.reject(error);
       }
       original._retried = true;
       try {
         refreshing ??= axios
-          .post<AuthResult>(`${root}/auth/refresh`, { refreshToken: refreshTok })
+          .post<AuthResult>(
+            `${root}/auth/refresh`,
+            cookieMode ? {} : { refreshToken: refreshTok },
+            cookieMode ? { withCredentials: true, headers: { 'x-auth-mode': 'cookie' } } : undefined,
+          )
           .then((res) => {
             opts.onTokens?.(res.data);
             return res.data.accessToken;
@@ -1476,9 +1493,12 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Verify an emailed login code — returns a full session on success. */
       verifyOtp: async (email: string, code: string) =>
         (await http.post<AuthResult>('/auth/verify-otp', { email, code })).data,
-      /** Revoke the session behind a refresh token server-side (idempotent). */
-      logout: async (refreshToken: string) =>
-        (await http.post<{ ok: true }>('/auth/logout', { refreshToken })).data,
+      /**
+       * Revoke the session server-side (idempotent). Body clients pass the
+       * refresh token; cookie clients (F38) omit it and the API reads the cookie.
+       */
+      logout: async (refreshToken?: string) =>
+        (await http.post<{ ok: true }>('/auth/logout', refreshToken ? { refreshToken } : {})).data,
       /** Revoke every session for the signed-in account (sign out everywhere). */
       logoutAll: async () => (await http.post<{ ok: true }>('/auth/logout-all', {})).data,
       /** List the account's active sessions (no secrets returned). */

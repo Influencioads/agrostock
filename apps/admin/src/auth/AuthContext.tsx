@@ -34,16 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Marker code — LoginPage maps it to the localized `login.adminOnly` copy.
       throw new Error('ADMIN_ONLY');
     }
+    // F38: the refresh token arrives as an HttpOnly cookie; only persist the
+    // short-lived access token and the user profile here.
     localStorage.setItem('token', res.accessToken);
-    localStorage.setItem('refreshToken', res.refreshToken);
     localStorage.setItem('user', JSON.stringify(res.user));
     setState({ user: res.user, token: res.accessToken });
     return res.user;
   }, []);
 
   const logout = useCallback(() => {
+    // Revoke server-side (API reads + clears the refresh cookie) then clear local.
+    void api.auth.logout().catch(() => {});
     localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     setState({ user: null, token: null });
   }, []);
