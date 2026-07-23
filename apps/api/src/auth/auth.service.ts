@@ -18,6 +18,14 @@ const OTP_TTL_MS = 10 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 /** How long a refresh session stays valid without use. */
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/**
+ * F37: per-account send limits for mailing endpoints (OTP / reset / verification
+ * resend). These cap how many emails a *single account* can be made to receive
+ * in a window, closing the gap the per-IP throttler leaves open when an attacker
+ * rotates source IPs to mailbomb one victim.
+ */
+const ACCOUNT_MAIL_WINDOW_MS = 15 * 60 * 1000;
+const ACCOUNT_MAIL_MAX = 5;
 
 /** Optional device/network context recorded on a session for the management UI. */
 export interface SessionMeta {
@@ -296,10 +304,22 @@ export class AuthService {
    * and logs its own failures, and the user can always ask for a resend.
    */
   private async issueVerification(user: { id: string; email: string; name: string }) {
+    // F37: cap verification emails per account per window. The first signup send
+    // is always under the limit; this only blunts resend abuse.
+    const windowStart = new Date(Date.now() - ACCOUNT_MAIL_WINDOW_MS);
+    const recent = await this.prisma.emailVerificationToken.count({
+      where: { userId: user.id, createdAt: { gt: windowStart } },
+    });
+    if (recent >= ACCOUNT_MAIL_MAX) return;
     const token = randomBytes(32).toString('hex');
     await this.prisma.$transaction([
-      // A fresh request supersedes older links so only the newest email works.
-      this.prisma.emailVerificationToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
+      // A fresh request supersedes older links (burned, not deleted, so they
+      // still count toward the window); prune anything outside the window.
+      this.prisma.emailVerificationToken.updateMany({
+        where: { userId: user.id, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.emailVerificationToken.deleteMany({ where: { userId: user.id, createdAt: { lt: windowStart } } }),
       this.prisma.emailVerificationToken.create({
         data: {
           userId: user.id,
@@ -363,9 +383,21 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email: (email ?? '').trim() } });
     if (user && this.mail.enabled) {
+      // F37: cap reset links-per-account per window (enumeration-safe no-op past it).
+      const windowStart = new Date(Date.now() - ACCOUNT_MAIL_WINDOW_MS);
+      const recent = await this.prisma.passwordResetToken.count({
+        where: { userId: user.id, createdAt: { gt: windowStart } },
+      });
+      if (recent >= ACCOUNT_MAIL_MAX) return { ok: true as const };
       const token = randomBytes(32).toString('hex');
       await this.prisma.$transaction([
-        this.prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
+        // Supersede the previous link by burning it (kept for the window count),
+        // and prune rows older than the window.
+        this.prisma.passwordResetToken.updateMany({
+          where: { userId: user.id, usedAt: null },
+          data: { usedAt: new Date() },
+        }),
+        this.prisma.passwordResetToken.deleteMany({ where: { userId: user.id, createdAt: { lt: windowStart } } }),
         this.prisma.passwordResetToken.create({
           data: {
             userId: user.id,
@@ -421,9 +453,22 @@ export class AuthService {
   async requestLoginOtp(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email: (email ?? '').trim() } });
     if (user && this.mail.enabled) {
+      // F37: cap codes-per-account per window. Silently no-op past the limit —
+      // still `{ ok: true }` so this can't be used to probe the limit or enumerate.
+      const windowStart = new Date(Date.now() - ACCOUNT_MAIL_WINDOW_MS);
+      const recent = await this.prisma.loginOtpToken.count({
+        where: { userId: user.id, createdAt: { gt: windowStart } },
+      });
+      if (recent >= ACCOUNT_MAIL_MAX) return { ok: true as const };
       const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
       await this.prisma.$transaction([
-        this.prisma.loginOtpToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
+        // Supersede the previous code by burning it (kept, not deleted, so it
+        // still counts toward the window), and prune rows outside the window.
+        this.prisma.loginOtpToken.updateMany({
+          where: { userId: user.id, usedAt: null },
+          data: { usedAt: new Date() },
+        }),
+        this.prisma.loginOtpToken.deleteMany({ where: { userId: user.id, createdAt: { lt: windowStart } } }),
         this.prisma.loginOtpToken.create({
           data: {
             userId: user.id,
