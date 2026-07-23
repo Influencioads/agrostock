@@ -14,7 +14,10 @@ describe('order state machine', () => {
   it('walks the happy path with the right party driving each edge', () => {
     expect(can('enquiry', 'quote', 'seller')).toBe(true);
     expect(can('quote', 'processing', 'buyer')).toBe(true);
-    expect(can('processing', 'paid', 'buyer')).toBe(true);
+    // Payment is not a user-driven status transition. It remains unavailable
+    // until a verified provider/ledger flow owns this edge.
+    expect(can('processing', 'paid', 'buyer')).toBe(false);
+    // Existing legacy paid rows must remain operationally fulfillable.
     expect(can('paid', 'packed', 'seller')).toBe(true);
   });
 

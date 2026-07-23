@@ -44,6 +44,11 @@ describe('client/server order transition parity', () => {
     }
   });
 
+  it('never offers the buyer a status-only payment transition', () => {
+    expect(ORDER_NEXT.processing).not.toContainEqual(expect.objectContaining({ to: 'paid' }));
+    expect(nextStatusFor('processing', 'buyer')).toBeNull();
+  });
+
   it('ORDER_STEPS is the happy path, in order, with no dead-end statuses', () => {
     expect(ORDER_STEPS).toEqual([
       'enquiry', 'quote', 'processing', 'paid', 'packed', 'dispatched', 'in_transit', 'delivered',
