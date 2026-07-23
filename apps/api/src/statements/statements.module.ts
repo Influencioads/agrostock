@@ -18,6 +18,7 @@ import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
+import { purposeSecret } from '../auth/token-purpose';
 
 const STATEMENT_TOKEN_TTL = '5m';
 const usd = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
@@ -27,6 +28,7 @@ const label = (type: string) => type.replace(/_/g, ' ');
 interface StatementTokenPayload {
   sub: string;
   stmt: 'wallet';
+  typ: 'statement_download';
 }
 
 interface Row {
@@ -63,12 +65,13 @@ export class StatementsService {
     private config: ConfigService,
   ) {}
 
+  /** Purpose-derived key (F16): statement tokens can never pass the access strategy. */
   private secret() {
-    return this.config.get<string>('JWT_SECRET') || 'change-me-access-secret';
+    return purposeSecret(this.config.get<string>('JWT_SECRET') || 'change-me-access-secret', 'statement_download');
   }
 
   async mintToken(user: AuthUser) {
-    const token = await this.jwt.signAsync({ sub: user.id, stmt: 'wallet' } satisfies StatementTokenPayload, {
+    const token = await this.jwt.signAsync({ sub: user.id, stmt: 'wallet', typ: 'statement_download' } satisfies StatementTokenPayload, {
       secret: this.secret(),
       expiresIn: STATEMENT_TOKEN_TTL,
     });
@@ -79,7 +82,7 @@ export class StatementsService {
     if (!token) throw new UnauthorizedException('Missing token');
     try {
       const payload = await this.jwt.verifyAsync<StatementTokenPayload>(token, { secret: this.secret() });
-      if (payload.stmt !== 'wallet') throw new Error('wrong subject');
+      if (payload.typ !== 'statement_download' || payload.stmt !== 'wallet') throw new Error('wrong subject');
       return payload.sub;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

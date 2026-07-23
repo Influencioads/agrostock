@@ -89,7 +89,12 @@ export function KycPage() {
         ))}
       </div>
 
-      {queue.length === 0 ? (
+      {isError ? (
+        <Card className="flex flex-col items-center py-16 text-center">
+          <Icon name="x" size={28} className="text-red-600" />
+          <p className="mt-3 font-display text-lg font-bold text-ink">{t('genericError')}</p>
+        </Card>
+      ) : queue.length === 0 ? (
         <Card className="flex flex-col items-center py-16 text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-surface text-brand-dark">
             <Icon name="check" size={28} />

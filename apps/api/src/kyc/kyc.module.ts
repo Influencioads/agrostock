@@ -28,6 +28,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
+import { purposeSecret } from '../auth/token-purpose';
 
 const DOC_TYPES: KycDocType[] = ['trade_license', 'government_id', 'bank_proof', 'tax_certificate', 'other'];
 
@@ -44,6 +45,7 @@ const DOC_INCLUDE = { record: { select: { userId: true } } } as const;
 interface FileTokenPayload {
   doc: string;
   sub: string;
+  typ: 'kyc_download';
 }
 
 export class UploadKycDocDto {
@@ -61,8 +63,9 @@ export class KycService {
     private config: ConfigService,
   ) {}
 
+  /** Purpose-derived key (F16): KYC file tokens can never pass the access strategy. */
   private secret() {
-    return this.config.get<string>('JWT_SECRET') || 'change-me-access-secret';
+    return purposeSecret(this.config.get<string>('JWT_SECRET') || 'change-me-access-secret', 'kyc_download');
   }
 
   /** The caller's own KYC record + documents, created lazily on first read. */
@@ -119,7 +122,7 @@ export class KycService {
   /** Short-lived, single-document token for the streamed file route. */
   async fileToken(id: string, user: AuthUser) {
     await this.readableDoc(id, user.id, isAdmin(user));
-    const token = await this.jwt.signAsync({ doc: id, sub: user.id } satisfies FileTokenPayload, {
+    const token = await this.jwt.signAsync({ doc: id, sub: user.id, typ: 'kyc_download' } satisfies FileTokenPayload, {
       secret: this.secret(),
       expiresIn: FILE_TOKEN_TTL,
     });
@@ -135,7 +138,9 @@ export class KycService {
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
-    if (payload.doc !== id) throw new UnauthorizedException('Token is not valid for this document');
+    if (payload.typ !== 'kyc_download' || payload.doc !== id) {
+      throw new UnauthorizedException('Token is not valid for this document');
+    }
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) throw new UnauthorizedException('Unknown user');
     const admin = new Set([user.role, ...user.roles]).has('admin');

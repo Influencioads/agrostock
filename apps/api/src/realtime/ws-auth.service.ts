@@ -9,6 +9,8 @@ interface AccessPayload {
   sub: string;
   email: string;
   role: string;
+  /** Token purpose — sockets accept only `access`, mirroring jwt.strategy.ts. */
+  typ?: string;
 }
 
 /**
@@ -42,6 +44,8 @@ export class WsAuthService {
     } catch {
       throw new UnauthorizedException('Invalid token');
     }
+    // F16: never accept refresh/download tokens on a socket handshake.
+    if (payload.typ !== 'access') throw new UnauthorizedException('Not an access token');
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: { id: true, email: true, role: true, roles: true, active: true, adminPermissions: true },

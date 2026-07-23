@@ -35,6 +35,7 @@ import { flagFor, maskName } from '../common/masking';
 import { JwtAuthGuard, OptionalJwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
+import { secureReference } from '../common/secure-random';
 import { NotificationsService, type NotificationParams } from '../notifications/notifications.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BUYER_BID_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
@@ -45,7 +46,7 @@ import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 /** Gallery cap on a buyer's requirement photos (mirrors MAX_PRODUCT_IMAGES). */
 export const MAX_BUYER_BID_IMAGES = 6;
 
-const ref = () => 'BID-' + Math.floor(1000 + Math.random() * 9000);
+const ref = () => secureReference('BID');
 const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`;
 const isAdmin = (u: AuthUser) => (u.roles ?? [u.role]).includes('admin');
 
@@ -255,7 +256,7 @@ export class BuyerBidsService {
     const result = await this.prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
-          reference: 'AG-' + Math.floor(1000 + Math.random() * 9000),
+          reference: secureReference('AG'),
           status: 'processing',
           // Numeric + display string move together — analytics parse the string.
           amountCents,

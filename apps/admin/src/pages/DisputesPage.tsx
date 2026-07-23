@@ -8,7 +8,7 @@ import { useI18n } from '../i18n';
 /** Read-only dispute queue while financial settlement is disabled. */
 export function DisputesPage() {
   const { t } = useI18n();
-  const { data: disputes = [], isLoading } = useQuery<ApiOrder[]>({
+  const { data: disputes = [], isLoading, isError } = useQuery<ApiOrder[]>({
     queryKey: ['admin-disputes'],
     queryFn: () => api.admin.disputes(),
     retry: 1,
@@ -16,9 +16,18 @@ export function DisputesPage() {
 
   return (
     <div>
-      <PageHeader title={t('nav.disputes')} subtitle={t('disputes.sub', { count: disputes.length })} action={<Badge tone="green">{t('roleReq.liveApi')}</Badge>} />
+      <PageHeader
+        title={t('nav.disputes')}
+        subtitle={t('disputes.sub', { count: disputes.length })}
+        action={<Badge tone={isError ? 'warn' : 'green'}>{isError ? t('apiBadge.offline') : t('roleReq.liveApi')}</Badge>}
+      />
 
-      {isLoading ? (
+      {isError ? (
+        <Card className="flex flex-col items-center py-16 text-center">
+          <Icon name="x" size={28} className="text-red-600" />
+          <p className="mt-3 font-display text-lg font-bold text-ink">{t('genericError')}</p>
+        </Card>
+      ) : isLoading ? (
         <p className="text-ink-soft">{t('common:loading')}</p>
       ) : disputes.length === 0 ? (
         <Card className="flex flex-col items-center py-16 text-center">

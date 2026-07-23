@@ -335,6 +335,16 @@ export class AdminService {
     return u;
   }
 
+  /**
+   * F18: `users_manage` must never mint or strip the root `admin` role. Staff
+   * provisioning is the only sanctioned path and sits behind `staff_manage`.
+   */
+  private static rejectAdminRole(role: Role) {
+    if (role === Role.admin) {
+      throw new BadRequestException('The admin role cannot be granted or revoked through user management');
+    }
+  }
+
   async updateUser(id: string, dto: UpdateUserDto, adminId: string) {
     await this.requireUser(id);
     if (dto.email) {
@@ -351,6 +361,7 @@ export class AdminService {
   }
 
   async createUser(dto: CreateUserDto, adminId: string) {
+    if (dto.role) AdminService.rejectAdminRole(dto.role);
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email }, select: { id: true } });
     if (existing) throw new BadRequestException('Email already registered');
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -382,6 +393,7 @@ export class AdminService {
 
   /** Grant an extra role (added to `roles[]`, leaving the primary role intact). */
   async grantUserRole(id: string, role: Role, adminId: string) {
+    AdminService.rejectAdminRole(role);
     const u = await this.requireUser(id);
     if (u.role !== role && !u.roles.includes(role)) {
       await this.prisma.user.update({ where: { id }, data: { roles: { push: role } } });
@@ -399,6 +411,7 @@ export class AdminService {
 
   /** Revoke an extra role. The primary `role` cannot be revoked here. */
   async revokeUserRole(id: string, role: Role, adminId: string) {
+    AdminService.rejectAdminRole(role);
     const u = await this.requireUser(id);
     if (u.role === role) throw new BadRequestException('Cannot revoke the user’s primary role');
     await this.prisma.user.update({ where: { id }, data: { roles: { set: u.roles.filter((r) => r !== role) } } });
@@ -1012,6 +1025,8 @@ export class AdminService {
     const req = await this.prisma.roleRequest.findUnique({ where: { id } });
     if (!req) throw new NotFoundException('Request not found');
     if (req.status !== 'pending') throw new BadRequestException('Request already decided');
+    // Defense in depth: admin is never requestable, but never approve one either.
+    if (status === 'approved') AdminService.rejectAdminRole(req.role);
     if (status === 'approved') {
       const user = await this.prisma.user.findUnique({ where: { id: req.userId }, select: { id: true, name: true, role: true, roles: true } });
       if (!user) throw new NotFoundException('User not found');

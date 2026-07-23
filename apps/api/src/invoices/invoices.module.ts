@@ -26,6 +26,7 @@ import { Type } from 'class-transformer';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
+import { purposeSecret } from '../auth/token-purpose';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { Locale } from '../common/locale';
@@ -85,6 +86,7 @@ const INVOICE_INCLUDE = {
 interface PdfTokenPayload {
   inv: string;
   sub: string;
+  typ: 'invoice_download';
 }
 
 @Injectable()
@@ -134,8 +136,9 @@ export class InvoicesService {
     });
   }
 
+  /** Purpose-derived key (F16): invoice tokens can never pass the access strategy. */
   private secret() {
-    return this.config.get<string>('JWT_SECRET') || 'change-me-access-secret';
+    return purposeSecret(this.config.get<string>('JWT_SECRET') || 'change-me-access-secret', 'invoice_download');
   }
 
   /**
@@ -357,7 +360,7 @@ export class InvoicesService {
    */
   async pdfToken(id: string, user: AuthUser) {
     await this.readable(id, user.id, isAdmin(user));
-    const token = await this.jwt.signAsync({ inv: id, sub: user.id } satisfies PdfTokenPayload, {
+    const token = await this.jwt.signAsync({ inv: id, sub: user.id, typ: 'invoice_download' } satisfies PdfTokenPayload, {
       secret: this.secret(),
       expiresIn: PDF_TOKEN_TTL,
     });
@@ -373,7 +376,9 @@ export class InvoicesService {
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
-    if (payload.inv !== id) throw new UnauthorizedException('Token is not valid for this invoice');
+    if (payload.typ !== 'invoice_download' || payload.inv !== id) {
+      throw new UnauthorizedException('Token is not valid for this invoice');
+    }
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) throw new UnauthorizedException('Unknown user');
     const admin = new Set([user.role, ...user.roles]).has('admin');

@@ -8,6 +8,8 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  /** Token purpose — the access strategy accepts only `access`. */
+  typ?: string;
 }
 
 @Injectable()
@@ -29,6 +31,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * (potentially outdated) token claim.
    */
   async validate(payload: JwtPayload) {
+    // F16: reject every token whose purpose is not `access` (download tokens,
+    // refresh tokens, and any legacy token minted before purposes existed).
+    if (payload.typ !== 'access') throw new UnauthorizedException('Not an access token');
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: { id: true, email: true, role: true, roles: true, active: true, adminPermissions: true },

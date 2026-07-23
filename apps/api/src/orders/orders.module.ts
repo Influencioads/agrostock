@@ -18,6 +18,7 @@ import { IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validat
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
+import { secureOtp, secureReference } from '../common/secure-random';
 import { NotificationsService, type NotificationParams } from '../notifications/notifications.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { Locale } from '../common/locale';
@@ -26,8 +27,8 @@ import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.gua
 
 /** "$1,180" → 1180 (dollars); 0 when unparseable. */
 const money = (s: string) => Number(String(s).replace(/[^0-9.]/g, '')) || 0;
-const ref = () => 'AG-' + Math.floor(1000 + Math.random() * 9000);
-const otp = () => String(Math.floor(1000 + Math.random() * 9000));
+const ref = () => secureReference('AG');
+const otp = () => secureOtp();
 /** The display string every money-mutating path must keep in sync with `amountCents`. */
 const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`;
 

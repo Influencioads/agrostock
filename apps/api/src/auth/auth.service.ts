@@ -35,7 +35,9 @@ export class AuthService {
 
   private async tokens(user: { id: string; email: string; role: string }) {
     const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = await this.jwt.signAsync(payload, {
+    // `typ` separates token purposes: the access strategy accepts ONLY
+    // `typ=access`, so refresh/download tokens can never act as Bearer tokens.
+    const accessToken = await this.jwt.signAsync({ ...payload, typ: 'access' }, {
       secret: this.accessSecret(),
       expiresIn: this.config.get('JWT_EXPIRES_IN') || '15m',
     });

@@ -21,6 +21,7 @@ import { IsBoolean, IsDateString, IsInt, IsOptional, IsString, Min, MinLength } 
 import { Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
+import { secureOtp, secureReference } from '../common/secure-random';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { AuditService } from '../common/audit.service';
@@ -31,8 +32,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { Locale } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
 
-const otp = () => String(Math.floor(1000 + Math.random() * 9000));
-const ref = (p: string) => p + '-' + Math.floor(100 + Math.random() * 900);
+const otp = () => secureOtp();
+const ref = (p: string) => secureReference(p);
 
 export class CreateVehicleDto {
   @IsString() @MinLength(1) type!: string;
