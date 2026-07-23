@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -153,19 +154,39 @@ export class TransportService {
     const quote = await this.prisma.transportQuote.findUnique({ where: { id: quoteId }, include: { request: true } });
     if (!quote) throw new NotFoundException('Quote not found');
     if (quote.request.createdById !== userId) throw new ForbiddenException('Not your request');
-    await this.prisma.transportQuote.update({ where: { id: quoteId }, data: { status: 'accepted' } });
-    await this.prisma.transportRequest.update({ where: { id: quote.requestId }, data: { status: 'assigned' } });
-    const trip = await this.prisma.trip.create({
-      data: {
-        reference: ref('TR'),
-        fromCity: quote.request.fromCity,
-        toCity: quote.request.toCity,
-        cargo: quote.request.cargo,
-        otp: otp(),
-        transporterId: quote.transporterId,
-        requestId: quote.requestId,
-        status: 'pending',
-      },
+    if (quote.status !== 'pending') throw new BadRequestException('This quote is no longer available.');
+
+    // F15: accept exactly one quote. Claim the request (open->assigned) and the
+    // quote (pending->accepted) with conditional transitions inside a single
+    // transaction; a concurrent accept or double tap matches zero rows and
+    // aborts before a second trip is created. Losing quotes are rejected.
+    const trip = await this.prisma.$transaction(async (tx) => {
+      const claimedReq = await tx.transportRequest.updateMany({
+        where: { id: quote.requestId, status: { in: ['open', 'quoted'] } },
+        data: { status: 'assigned' },
+      });
+      if (claimedReq.count === 0) throw new BadRequestException('This request already has an accepted quote.');
+      const claimedQuote = await tx.transportQuote.updateMany({
+        where: { id: quoteId, status: 'pending' },
+        data: { status: 'accepted' },
+      });
+      if (claimedQuote.count === 0) throw new BadRequestException('This quote is no longer available.');
+      await tx.transportQuote.updateMany({
+        where: { requestId: quote.requestId, id: { not: quoteId }, status: 'pending' },
+        data: { status: 'rejected' },
+      });
+      return tx.trip.create({
+        data: {
+          reference: ref('TR'),
+          fromCity: quote.request.fromCity,
+          toCity: quote.request.toCity,
+          cargo: quote.request.cargo,
+          otp: otp(),
+          transporterId: quote.transporterId,
+          requestId: quote.requestId,
+          status: 'pending',
+        },
+      });
     });
     // The transporter's quote was accepted — this is their "job assigned" moment.
     await this.notifications.create({

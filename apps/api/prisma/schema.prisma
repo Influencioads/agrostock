@@ -701,6 +701,10 @@ model Product {
 model Order {
   id        String      @id @default(cuid())
   reference String      @unique
+  /// F11: optional client idempotency key for order placement. A unique index
+  /// makes a replayed "place order" collide instead of creating a duplicate; the
+  /// service returns the prior order for the same key.
+  idempotencyKey String? @unique
   /// Display strings. `me`/`admin` analytics parse these — every money-mutating
   /// path must keep writing them alongside the numeric columns below.
   amount    String

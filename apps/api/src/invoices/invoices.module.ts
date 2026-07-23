@@ -171,6 +171,9 @@ export class InvoicesService {
           recipientId: order.buyerId,
           currency: order.currency,
           link: { orderId: order.id },
+          // F14: the order total is the server-authoritative amount — the issuer
+          // cannot invoice for more than the committed order.
+          authoritativeCents: amountCents,
           defaultLine: {
             description: `${order.product?.name ?? 'Goods'} — order ${order.reference}`,
             qty: order.qtyValue ?? 1,
@@ -206,6 +209,9 @@ export class InvoicesService {
           recipientId,
           currency: 'USD',
           link: { tripId: trip.id },
+          // F14: when the freight price came from an accepted quote or the order
+          // total, that's authoritative — the transporter can't inflate it.
+          authoritativeCents: freightCents > 0 ? freightCents : undefined,
           defaultLine: {
             description: `Freight ${trip.fromCity} → ${trip.toCity} (${trip.reference})`,
             qty: 1,
@@ -222,6 +228,7 @@ export class InvoicesService {
           recipientId: job.createdById,
           currency: 'USD',
           link: { loaderJobId: job.id },
+          authoritativeCents: job.payCents ?? undefined,
           defaultLine: {
             description: `Loading crew at ${job.location} (${job.reference})`,
             qty: job.workersNeeded,
@@ -238,15 +245,17 @@ export class InvoicesService {
         if (!assignment) throw new NotFoundException('Assignment not found');
         if (assignment.worker.userId !== issuer.id && !isAdmin(issuer)) throw new ForbiddenException('Only the assigned worker can invoice this shift.');
         const recipientId = assignment.job.loadercoId ?? assignment.job.createdById;
+        const shiftCents = assignment.job.payCents ? Math.round(assignment.job.payCents / Math.max(assignment.job.workersNeeded, 1)) : 0;
         return {
           recipientId,
           currency: 'USD',
           link: { jobAssignmentId: assignment.id },
+          authoritativeCents: shiftCents > 0 ? shiftCents : undefined,
           defaultLine: {
             description: `Shift on job ${assignment.job.reference} at ${assignment.job.location}`,
             qty: 1,
             unit: 'shift',
-            unitPriceCents: assignment.job.payCents ? Math.round(assignment.job.payCents / Math.max(assignment.job.workersNeeded, 1)) : 0,
+            unitPriceCents: shiftCents,
           },
         };
       }
@@ -270,6 +279,12 @@ export class InvoicesService {
     });
     const subtotalCents = lines.reduce((sum, l) => sum + l.amountCents, 0);
     if (subtotalCents <= 0) throw new BadRequestException('An invoice needs at least one priced line.');
+    // F14: when the subject carries a server-authoritative amount (order total,
+    // accepted freight quote, job pay), the issuer cannot bill MORE than it —
+    // custom lines can itemize/reduce but never fabricate an inflated total.
+    if (subject.authoritativeCents != null && subtotalCents > subject.authoritativeCents) {
+      throw new BadRequestException('Invoice total cannot exceed the agreed amount for this order.');
+    }
     const taxCents = dto.taxCents ?? 0;
 
     const invoice = await this.prisma.$transaction(async (tx) => {

@@ -39,6 +39,8 @@ const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US
 export class PlaceOrderDto {
   @ApiProperty() @IsString() productSlug!: string;
   @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) qty!: number;
+  /** F11: optional client idempotency key — a retry with the same key returns the original order. */
+  @ApiProperty({ required: false, maxLength: 100 }) @IsOptional() @IsString() @MaxLength(100) idempotencyKey?: string;
 }
 
 export class EnquiryDto {
@@ -327,6 +329,12 @@ export class OrdersService {
 
   /** Legacy direct purchase (skips the enquiry stage) — still used by "Buy now". */
   async place(buyerId: string, dto: PlaceOrderDto) {
+    // F11: a retry carrying the same idempotency key returns the original order
+    // instead of placing (and reserving/charging for) a duplicate.
+    if (dto.idempotencyKey) {
+      const prior = await this.prisma.order.findUnique({ where: { idempotencyKey: dto.idempotencyKey }, include: ORDER_INCLUDE });
+      if (prior) return prior;
+    }
     const product = await this.prisma.product.findUnique({ where: { slug: dto.productSlug } });
     if (!product) throw new NotFoundException('Product not found');
     // F04: a moderated/hidden/rejected/expired listing must not be orderable by
@@ -357,6 +365,7 @@ export class OrdersService {
         const created = await tx.order.create({
           data: {
             reference: ref(),
+            idempotencyKey: dto.idempotencyKey ?? null,
             amount: usd(amountCents),
             qty: `${dto.qty} MT`,
             status: 'processing',

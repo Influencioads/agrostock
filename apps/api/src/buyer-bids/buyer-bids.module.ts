@@ -254,6 +254,21 @@ export class BuyerBidsService {
     const amountCents = Math.round(sellerBid.priceCents * sellerBid.qtyValue);
 
     const result = await this.prisma.$transaction(async (tx) => {
+      // F15: claim the requirement AND the winning bid with conditional
+      // transitions FIRST. If a concurrent award (or double tap) already closed
+      // either, updateMany matches zero rows and we abort before creating a
+      // second order — a single conditional winner, no duplicate orders.
+      const claimedBid = await tx.buyerBid.updateMany({
+        where: { id: buyerBidId, status: 'open' },
+        data: { status: 'awarded', awardedSellerBidId: sellerBidId },
+      });
+      if (claimedBid.count === 0) throw new BadRequestException('This requirement is already closed.');
+      const claimedSeller = await tx.sellerBid.updateMany({
+        where: { id: sellerBidId, buyerBidId, status: 'submitted' },
+        data: { status: 'awarded' },
+      });
+      if (claimedSeller.count === 0) throw new BadRequestException('That bid is no longer available.');
+
       const order = await tx.order.create({
         data: {
           reference: secureReference('AG'),
@@ -275,11 +290,10 @@ export class BuyerBidsService {
       await tx.orderEvent.create({
         data: { orderId: order.id, type: 'order_placed', actorId: user.id, toStatus: 'processing', note: `Awarded from ${buyerBid.reference}` },
       });
-      await tx.sellerBid.update({ where: { id: sellerBidId }, data: { status: 'awarded' } });
       await tx.sellerBid.updateMany({ where: { buyerBidId, id: { not: sellerBidId }, status: 'submitted' }, data: { status: 'rejected' } });
       const updatedBuyerBid = await tx.buyerBid.update({
         where: { id: buyerBidId },
-        data: { status: 'awarded', awardedSellerBidId: sellerBidId, orderId: order.id },
+        data: { orderId: order.id },
         include: BUYER_BID_INCLUDE,
       });
       return { buyerBid: updatedBuyerBid, order };
