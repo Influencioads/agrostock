@@ -20,7 +20,8 @@ function makeService(order: Record<string, unknown>) {
   };
   const notifications = { create: vi.fn(async () => ({})) };
   const text = {};
-  const svc = new OrdersService(prisma as never, notifications as never, text as never);
+  const escrow = { hold: vi.fn(async () => {}), settle: vi.fn(async () => {}) };
+  const svc = new OrdersService(prisma as never, notifications as never, text as never, escrow as never);
   return { svc, update };
 }
 

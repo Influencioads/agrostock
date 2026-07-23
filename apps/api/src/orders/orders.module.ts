@@ -20,6 +20,7 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { secureOtp, secureReference } from '../common/secure-random';
 import { NotificationsService, type NotificationParams } from '../notifications/notifications.service';
+import { EscrowService } from '../wallet/wallet.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { Locale } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
@@ -187,6 +188,7 @@ export class OrdersService {
     private prisma: PrismaService,
     private notifications: NotificationsService,
     private text: TextTranslationService,
+    private escrow: EscrowService,
   ) {}
 
   // ── helpers ────────────────────────────────────────────────────
@@ -442,6 +444,20 @@ export class OrdersService {
       if (!edge.by.some((p) => parties.includes(p))) {
         throw new ForbiddenException(`Only the ${edge.by.join(' or ')} can move this order to "${status}".`);
       }
+    }
+
+    // F06: paying an order holds the funds in ledger-backed escrow — the buyer's
+    // wallet is debited into a per-order hold (overdraft-safe, idempotent). This
+    // runs before the status flip so an unfunded buyer can't reach `paid`. The
+    // whole path is gated by the kill switch above until real funding exists.
+    if (status === 'paid' && order.buyerId && (order.amountCents ?? 0) > 0) {
+      await this.escrow.hold({
+        orderId: id,
+        buyerId: order.buyerId,
+        sellerId: order.sellerId,
+        amountCents: order.amountCents ?? 0,
+        currency: order.currency,
+      });
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {

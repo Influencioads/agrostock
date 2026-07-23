@@ -43,13 +43,16 @@ function build(overrides: { payoutStatus?: string; orderStatus?: string } = {}) 
       }),
     },
     orderEvent: { create: vi.fn(async () => ({})) },
+    // No escrow hold → resolveDispute uses the legacy keyed direct-credit path.
+    escrowHold: { findUnique: vi.fn(async () => null) },
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
   };
   const audit = { log: vi.fn() };
   const wallet = { credit: vi.fn(async () => {}), debit: vi.fn(async () => {}) };
   const notifications = { create: vi.fn(async () => {}) };
-  const svc = new AdminService(prisma as never, audit as never, wallet as never, notifications as never);
-  return { svc, prisma, wallet };
+  const escrow = { hold: vi.fn(async () => {}), settle: vi.fn(async () => {}) };
+  const svc = new AdminService(prisma as never, audit as never, wallet as never, notifications as never, escrow as never);
+  return { svc, prisma, wallet, escrow };
 }
 
 describe('payout approval is claimed exactly once (F09)', () => {

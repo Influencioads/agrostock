@@ -991,6 +991,36 @@ model Wallet {
   txns         WalletTx[]
 }
 
+/// F06: per-order escrow holding "account". Paying an order debits the buyer's
+/// wallet into this hold; settlement releases to the seller and/or refunds the
+/// buyer FROM the hold, so money is conserved (double-entry) rather than minted
+/// by a status change. `orderId` is unique → the hold/settlement are idempotent.
+enum EscrowHoldStatus {
+  held
+  released
+  refunded
+  split
+}
+
+model EscrowHold {
+  id            String           @id @default(cuid())
+  orderId       String           @unique
+  buyerId       String
+  sellerId      String?
+  amountCents   Int
+  currency      String           @default("USD")
+  status        EscrowHoldStatus @default(held)
+  /// Amounts actually settled (for split/partial resolutions).
+  releasedCents Int              @default(0)
+  refundedCents Int              @default(0)
+  heldAt        DateTime         @default(now())
+  settledAt     DateTime?
+  createdAt     DateTime         @default(now())
+
+  @@index([status])
+  @@index([buyerId])
+}
+
 model WalletTx {
   id          String   @id @default(cuid())
   amountCents Int

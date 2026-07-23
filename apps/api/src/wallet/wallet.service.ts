@@ -122,6 +122,68 @@ export class WalletService {
   }
 }
 
+/**
+ * F06: ledger-backed escrow. Paying an order debits the buyer into a per-order
+ * hold; settlement releases to the seller and/or refunds the buyer FROM that
+ * hold. Because the money was debited at hold time, the settlement credits are
+ * backed — nothing is minted — and both hold and settlement are idempotent on
+ * the unique `orderId`, so retries/double-clicks can't move money twice.
+ */
+@Injectable()
+export class EscrowService {
+  constructor(
+    private prisma: PrismaService,
+    private wallet: WalletService,
+  ) {}
+
+  /** Debit the buyer and open a hold for the order. Idempotent on orderId. */
+  async hold(params: { orderId: string; buyerId: string; sellerId?: string | null; amountCents: number; currency?: string }): Promise<void> {
+    const { orderId, buyerId, sellerId, amountCents } = params;
+    if (amountCents <= 0) return;
+    const existing = await this.prisma.escrowHold.findUnique({ where: { orderId } });
+    if (existing) return; // already held — idempotent
+    await this.prisma.$transaction(async (tx) => {
+      // Overdraft-safe debit, keyed so a retry can't double-charge the buyer.
+      await this.wallet.debit(buyerId, amountCents, 'escrow_hold', `Escrow hold for order ${orderId}`, tx, `escrow:hold:${orderId}`);
+      await tx.escrowHold.create({
+        data: { orderId, buyerId, sellerId: sellerId ?? null, amountCents, currency: params.currency ?? 'USD' },
+      });
+    });
+  }
+
+  /**
+   * Settle a held order: `releaseCents` to the seller, `refundCents` to the
+   * buyer. Must not exceed the held amount. Claims the hold exactly once with a
+   * conditional held->settled transition, so a concurrent settlement bails
+   * before crediting.
+   */
+  async settle(params: { orderId: string; refundCents?: number; releaseCents?: number; note?: string }): Promise<void> {
+    const { orderId } = params;
+    const hold = await this.prisma.escrowHold.findUnique({ where: { orderId } });
+    if (!hold) throw new BadRequestException('No escrow hold exists for this order.');
+    if (hold.status !== 'held') throw new BadRequestException('This escrow hold was already settled.');
+
+    const refund = Math.max(0, Math.min(params.refundCents ?? 0, hold.amountCents));
+    const release = Math.max(0, Math.min(params.releaseCents ?? hold.amountCents - refund, hold.amountCents - refund));
+    const status = refund > 0 && release > 0 ? 'split' : refund > 0 ? 'refunded' : 'released';
+
+    await this.prisma.$transaction(async (tx) => {
+      // Conditional claim — the transition is the guard against double-settlement.
+      const claimed = await tx.escrowHold.updateMany({
+        where: { orderId, status: 'held' },
+        data: { status, releasedCents: release, refundedCents: refund, settledAt: new Date() },
+      });
+      if (claimed.count === 0) throw new BadRequestException('This escrow hold was already settled.');
+      if (refund > 0) {
+        await this.wallet.credit(hold.buyerId, refund, 'refund', params.note ?? `Escrow refund for order ${orderId}`, tx, `escrow:refund:${orderId}`);
+      }
+      if (release > 0 && hold.sellerId) {
+        await this.wallet.credit(hold.sellerId, release, 'escrow_release', params.note ?? `Escrow release for order ${orderId}`, tx, `escrow:release:${orderId}`);
+      }
+    });
+  }
+}
+
 @Global()
-@Module({ providers: [WalletService], exports: [WalletService] })
+@Module({ providers: [WalletService, EscrowService], exports: [WalletService, EscrowService] })
 export class WalletModule {}

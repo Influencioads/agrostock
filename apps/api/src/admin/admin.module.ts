@@ -24,7 +24,7 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions, RequireAnyPermission } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { AuditService } from '../common/audit.service';
-import { WalletService } from '../wallet/wallet.service';
+import { WalletService, EscrowService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { monthlySeries, EARNED_STATUSES } from '../me/me.module';
 import { StatementsModule, StatementsService } from '../statements/statements.module';
@@ -245,6 +245,7 @@ export class AdminService {
     private audit: AuditService,
     private walletSvc: WalletService,
     private notifications: NotificationsService,
+    private escrow: EscrowService,
   ) {}
 
   users(role?: string, search?: string) {
@@ -609,47 +610,48 @@ export class AdminService {
     const credits: Array<{ userId: string; cents: number; type: 'refund' | 'escrow_release' }> = [];
 
     const toStatus: OrderStatus = dto.resolution === 'refund_buyer' ? 'cancelled' : 'delivered';
-    const result = await this.prisma.$transaction(async (tx) => {
-      // F08: claim the dispute exactly once. The status transition is the guard —
-      // a second concurrent resolve matches zero rows and bails before any money
-      // moves, so a dispute can never settle (and credit) twice.
-      const claimed = await tx.order.updateMany({
-        where: { id, status: 'dispute' },
-        data: { status: toStatus },
-      });
-      if (claimed.count === 0) throw new BadRequestException('Order is not in dispute');
+    // Split the order total into buyer-refund and seller-release legs.
+    let refund = 0;
+    let release = 0;
+    if (dto.resolution === 'refund_buyer') refund = total;
+    else if (dto.resolution === 'release_to_seller') release = order.sellerId ? total : 0;
+    else {
+      refund = Math.max(0, Math.min(dto.amountCents ?? 0, total));
+      release = order.sellerId ? total - refund : 0;
+    }
 
-      // Idempotency keys are derived from the order so the credits can never be
-      // applied twice even under retry.
-      if (dto.resolution === 'refund_buyer') {
-        if (total > 0) {
-          await this.walletSvc.credit(order.buyerId, total, 'refund', dto.note ?? 'Dispute refund', tx, `dispute:${id}:refund`);
-          credits.push({ userId: order.buyerId, cents: total, type: 'refund' });
-        }
-      } else if (dto.resolution === 'release_to_seller') {
-        if (total > 0 && order.sellerId) {
-          await this.walletSvc.credit(order.sellerId, total, 'escrow_release', dto.note ?? 'Dispute release', tx, `dispute:${id}:release`);
-          credits.push({ userId: order.sellerId, cents: total, type: 'escrow_release' });
-        }
-      } else {
-        // partial: refund `amountCents` to buyer, release the remainder to seller.
-        const refund = Math.max(0, Math.min(dto.amountCents ?? 0, total));
-        const release = total - refund;
+    // F08: claim the dispute exactly once. The status transition is the guard —
+    // a second concurrent resolve matches zero rows and bails before any money
+    // moves, so a dispute can never settle (and credit) twice.
+    const claimed = await this.prisma.order.updateMany({ where: { id, status: 'dispute' }, data: { status: toStatus } });
+    if (claimed.count === 0) throw new BadRequestException('Order is not in dispute');
+
+    // F06: if the order was paid into escrow, settle FROM the hold (balanced —
+    // the funds were debited from the buyer at pay time). Legacy orders with no
+    // hold fall back to the keyed direct-credit path.
+    const hold = await this.prisma.escrowHold.findUnique({ where: { orderId: id } });
+    if (hold && hold.status === 'held') {
+      await this.escrow.settle({ orderId: id, refundCents: refund, releaseCents: release, note: dto.note ?? 'Dispute settlement' });
+      if (refund > 0) credits.push({ userId: order.buyerId, cents: refund, type: 'refund' });
+      if (release > 0 && order.sellerId) credits.push({ userId: order.sellerId, cents: release, type: 'escrow_release' });
+    } else {
+      await this.prisma.$transaction(async (tx) => {
+        // Idempotency keys are derived from the order so the credits can never be
+        // applied twice even under retry.
         if (refund > 0) {
-          await this.walletSvc.credit(order.buyerId, refund, 'refund', dto.note ?? 'Dispute partial refund', tx, `dispute:${id}:refund`);
+          await this.walletSvc.credit(order.buyerId, refund, 'refund', dto.note ?? 'Dispute refund', tx, `dispute:${id}:refund`);
           credits.push({ userId: order.buyerId, cents: refund, type: 'refund' });
         }
         if (release > 0 && order.sellerId) {
-          await this.walletSvc.credit(order.sellerId, release, 'escrow_release', dto.note ?? 'Dispute partial release', tx, `dispute:${id}:release`);
+          await this.walletSvc.credit(order.sellerId, release, 'escrow_release', dto.note ?? 'Dispute release', tx, `dispute:${id}:release`);
           credits.push({ userId: order.sellerId, cents: release, type: 'escrow_release' });
         }
-      }
-      const o = await tx.order.findUniqueOrThrow({ where: { id } });
-      await tx.orderEvent.create({
-        data: { orderId: id, type: 'note', actorId: adminId, fromStatus: 'dispute', toStatus, note: `Dispute resolved: ${dto.resolution}${dto.note ? ` — ${dto.note}` : ''}` },
       });
-      return o;
+    }
+    await this.prisma.orderEvent.create({
+      data: { orderId: id, type: 'note', actorId: adminId, fromStatus: 'dispute', toStatus, note: `Dispute resolved: ${dto.resolution}${dto.note ? ` — ${dto.note}` : ''}` },
     });
+    const result = await this.prisma.order.findUniqueOrThrow({ where: { id } });
     // Fan out the money-moved notifications (transactional → also emails).
     for (const c of credits) {
       await this.notifications.create({
