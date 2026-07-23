@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrotraders/api-client';
-import { api, setApiActiveRole, setApiToken, setApiRefreshToken, TOKEN_KEY, REFRESH_KEY } from '../lib/api';
+import { api, setApiActiveRole, setApiToken, setApiRefreshToken, setAuthFailureListener, TOKEN_KEY, REFRESH_KEY } from '../lib/api';
 import { storage } from '../lib/storage';
+import { unregisterForPush } from '../lib/push';
 
 const USER_KEY = 'agrotraders_user';
 const ACTIVE_KEY = 'agrotraders_active_role';
@@ -72,6 +73,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  // F25: when the api-client gives up on refreshing (terminal 401), drop the UI
+  // session so no ghost authenticated screen lingers. Tokens are already cleared
+  // by onAuthError; here we clear React state and the persisted user/role.
+  useEffect(() => {
+    setAuthFailureListener(() => {
+      setApiActiveRole(null);
+      setUser(null);
+      setActiveRoleState(null);
+      void storage.del(USER_KEY);
+      void storage.del(ACTIVE_KEY);
+    });
+    return () => setAuthFailureListener(null);
+  }, []);
+
   const roles = useMemo(() => effectiveRoles(user), [user]);
 
   const setActiveRole = useCallback(
@@ -136,6 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // F26: delete the push token server-side WHILE the access token is still
+    // present, otherwise the unregister call is unauthenticated and the device
+    // keeps receiving notifications after logout. Best-effort and idempotent, so
+    // repeated logout is safe.
+    await unregisterForPush().catch(() => {});
     setApiToken(null);
     setApiRefreshToken(null);
     setApiActiveRole(null);

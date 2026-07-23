@@ -26,6 +26,17 @@ let memRefresh: string | null = null;
 let memActiveRole: string | null = null;
 let memLocale: string | null = null;
 
+/**
+ * F25: a terminal refresh failure must clear the React auth state too, not just
+ * the token caches, or the UI keeps showing an authenticated shell over a dead
+ * session. AuthProvider registers a listener here; the api-client invokes it
+ * from onAuthError.
+ */
+let authFailureListener: (() => void) | null = null;
+export function setAuthFailureListener(listener: (() => void) | null) {
+  authFailureListener = listener;
+}
+
 export function setApiToken(token: string | null) {
   memToken = token;
 }
@@ -64,5 +75,7 @@ export const api = createApiClient({
     memActiveRole = null;
     void storage.del(TOKEN_KEY);
     void storage.del(REFRESH_KEY);
+    // Clear the UI session atomically so no ghost authenticated screen remains.
+    authFailureListener?.();
   },
 });
