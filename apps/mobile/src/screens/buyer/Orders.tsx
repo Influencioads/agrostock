@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { nextStatusFor, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
+import { canCancel, canDispute, nextStatusFor, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
@@ -30,6 +30,16 @@ export function BuyerOrders() {
     onError: (e) => setError(errMessage(e, t('buyerX.orders.errUpdate'))),
   });
 
+  // F03: confirm before taking a destructive exit path (cancel / dispute).
+  const confirmExit = (id: string, status: 'cancelled' | 'dispute') => {
+    const msg = status === 'cancelled' ? t('buyerX.orders.confirmCancel') : t('buyerX.orders.confirmDispute');
+    const yes = status === 'cancelled' ? t('buyerX.orders.cancelOrder') : t('buyerX.orders.openDispute');
+    Alert.alert(yes, msg, [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: yes, style: 'destructive', onPress: () => advance.mutate({ id, status }) },
+    ]);
+  };
+
   return (
     <Screen edges={['top']}>
       <Txt variant="h2">{t('buyerX.orders.screenTitle')}</Txt>
@@ -45,6 +55,8 @@ export function BuyerOrders() {
           // Buyers accept a quote and release escrow; the rest is the seller's or
           // the transporter's move (and dispatch/delivery need an OTP).
           const next = nextStatusFor(o.status, 'buyer');
+          const cancellable = canCancel(o.status, 'buyer');
+          const disputable = canDispute(o.status, 'buyer');
           return (
             <Card key={o.id} style={{ gap: 12 }}>
               <Row style={{ justifyContent: 'space-between' }}>
@@ -72,6 +84,24 @@ export function BuyerOrders() {
                   variant="outline"
                   onPress={() => setOpenId(o.id)}
                 />
+                {disputable && (
+                  <Button
+                    title={t('buyerX.orders.openDispute')}
+                    size="sm"
+                    variant="outline"
+                    disabled={advance.isPending}
+                    onPress={() => confirmExit(o.id, 'dispute')}
+                  />
+                )}
+                {cancellable && (
+                  <Button
+                    title={t('buyerX.orders.cancelOrder')}
+                    size="sm"
+                    variant="outline"
+                    disabled={advance.isPending}
+                    onPress={() => confirmExit(o.id, 'cancelled')}
+                  />
+                )}
                 {!!next && (
                   <Button
                     title={next === 'processing' ? t('buyerX.orders.acceptQuote') : next === 'paid' ? t('buyerX.orders.payEscrow') : t('buyerX.orders.mark', { label: orderLabel[next] })}

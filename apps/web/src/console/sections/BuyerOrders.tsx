@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card } from '@agrotraders/ui';
-import { nextStatusFor, type ApiOrder } from '@agrotraders/api-client';
+import { nextStatusFor, canCancel, canDispute, type ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { orderLabel, orderTone } from '../lib';
@@ -45,6 +45,9 @@ export function BuyerOrders() {
             // Buyers accept a quote and release escrow; everything past `packed`
             // is the seller's or the transporter's move.
             const next = nextStatusFor(o.status, 'buyer');
+            // F03: the exit paths the API allows a buyer but the UI never showed.
+            const cancellable = canCancel(o.status, 'buyer');
+            const disputable = canDispute(o.status, 'buyer');
             return (
               <Card key={o.id}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -70,6 +73,30 @@ export function BuyerOrders() {
                     {t('console.order.details')} {o.status === 'in_transit' || o.status === 'dispatched' ? t('console.order.otpSuffix') : ''}
                   </Button>
                   {o.status === 'delivered' && <OrderReviewButtons orderId={o.id} roles={['seller', 'product']} />}
+                  {disputable && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={advance.isPending}
+                      onClick={() => {
+                        if (window.confirm(t('console.order.confirmDispute'))) advance.mutate({ id: o.id, status: 'dispute' });
+                      }}
+                    >
+                      {t('console.order.openDispute')}
+                    </Button>
+                  )}
+                  {cancellable && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={advance.isPending}
+                      onClick={() => {
+                        if (window.confirm(t('console.order.confirmCancel'))) advance.mutate({ id: o.id, status: 'cancelled' });
+                      }}
+                    >
+                      {t('console.order.cancelOrder')}
+                    </Button>
+                  )}
                   {next && (
                     <Button size="sm" disabled={advance.isPending} onClick={() => advance.mutate({ id: o.id, status: next })}>
                       {next === 'processing' ? t('console.order.acceptQuote') : next === 'paid' ? t('console.order.payEscrow') : t('console.order.markStatus', { status: orderText(next) })}

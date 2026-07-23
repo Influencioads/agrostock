@@ -979,6 +979,20 @@ export function nextStatusFor(status: ApiOrderStatus, party: ApiOrderParty): Api
   return forward?.to ?? null;
 }
 
+/**
+ * F03: whether this party may cancel the order right now — the exit transition
+ * `nextStatusFor` deliberately hides. Buyers use it to reach the cancellation
+ * path that the API allows but the clients never surfaced.
+ */
+export function canCancel(status: ApiOrderStatus, party: ApiOrderParty): boolean {
+  return !!ORDER_NEXT[status]?.some((e) => e.to === 'cancelled' && e.by.includes(party));
+}
+
+/** F03: whether this party may open a dispute on the order right now. */
+export function canDispute(status: ApiOrderStatus, party: ApiOrderParty): boolean {
+  return !!ORDER_NEXT[status]?.some((e) => e.to === 'dispute' && e.by.includes(party));
+}
+
 export interface ApiOrderEvent {
   id: string;
   type: string;
