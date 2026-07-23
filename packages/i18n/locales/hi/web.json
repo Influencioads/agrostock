@@ -1753,6 +1753,7 @@
   "site": {
     "allBidsOwner": "सभी बोलियां (मालिक का दृष्टिकोण)",
     "auction": "नीलामी",
+    "sponsored": "प्रायोजित",
     "availableLine": "{{qty}} उपलब्ध · MOQ {{moq}} · {{delivery}}",
     "bid": "बोली",
     "bidError": "बोली नहीं लगाई जा सकी।",

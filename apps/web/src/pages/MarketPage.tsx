@@ -138,7 +138,8 @@ export function MarketPage() {
     staleTime: 3600e3,
     retry: 1,
   });
-  // Products behind a live ad campaign. No "Sponsored" label — they simply rank first.
+  // Products behind a live ad campaign. They rank first on the default view AND
+  // carry a visible "Sponsored" label (F30).
   const { data: promoted = [] } = useQuery({
     queryKey: ['ads', 'promoted'],
     queryFn: () => api.ads.promoted(24),
@@ -179,11 +180,14 @@ export function MarketPage() {
   const total = data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  // On the default view an explicit sort isn't set, so float promoted products first.
+  // Flag every promoted listing so the card shows a "Sponsored" disclosure, and
+  // on the default view (no explicit sort) float those paid placements first.
   const list = useMemo(() => {
-    if (sort !== 'relevance' || !promoted.length) return items;
+    if (!promoted.length) return items;
     const promotedKeys = new Set(promoted.flatMap((p) => [p.id, p.slug]).filter(Boolean));
-    return [...items].sort((a, b) => Number(promotedKeys.has(b.id)) - Number(promotedKeys.has(a.id)));
+    const flagged = items.map((p) => (promotedKeys.has(p.id) ? { ...p, sponsored: true } : p));
+    if (sort !== 'relevance') return flagged;
+    return [...flagged].sort((a, b) => Number(!!b.sponsored) - Number(!!a.sponsored));
   }, [items, promoted, sort]);
 
   // Type-ahead over the whole subtree. With five levels of taxonomy, drilling one

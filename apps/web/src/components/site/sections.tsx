@@ -623,20 +623,21 @@ export function Hero() {
   );
 }
 
-/* ── Highlighted products (ad slot, presented as featured) ───────── */
+/* ── Highlighted products (ad slot) ──────────────────────────────── */
 
 /**
  * Promoted listings shown directly below the hero. These are seller ad
- * placements, but by design they render as ordinary "highlighted products" —
- * NO "Sponsored"/"Ad" label is shown to the buyer.
+ * placements, so each promoted card carries a visible "Sponsored" label (F30);
+ * organic filler listings do not.
  */
 export function Highlighted() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  // The paid slots: products behind an approved, unpaused ad campaign.
+  // The paid slots: products behind an approved, unpaused ad campaign. Each is
+  // flagged `sponsored` so the card renders a disclosure label.
   const { data: promoted = [] } = useQuery({
     queryKey: ['ads', 'promoted'],
-    queryFn: async () => (await api.ads.promoted(8)).map(toCardProduct),
+    queryFn: async () => (await api.ads.promoted(8)).map((x) => ({ ...toCardProduct(x), sponsored: true })),
     retry: 1,
   });
   const { data: products = [] } = useQuery({

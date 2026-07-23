@@ -20,8 +20,10 @@ import { useI18n } from '../i18n';
  */
 
 /** Trust markers overlaid on the image. Kept to two so the strip stays one line. */
-function ImageBadges({ product, t }: { product: ApiProduct; t: (k: string) => string }) {
+function ImageBadges({ product, t, sponsored }: { product: ApiProduct; t: (k: string) => string; sponsored?: boolean }) {
   const marks: { label: string; bg: string; fg: string }[] = [];
+  // F30: a paid placement is disclosed first, ahead of trust markers.
+  if (sponsored) marks.push({ label: t('compX.product.sponsored'), bg: C.dark, fg: C.white });
   if (product.isAuction) marks.push({ label: t('compX.product.auction'), bg: C.mangoDeep, fg: C.white });
   if (product.verified) marks.push({ label: t('compX.product.verified'), bg: C.evergreen, fg: C.white });
   else if (product.safeDeal) marks.push({ label: t('compX.product.safeDeal'), bg: C.white, fg: C.dark });
@@ -88,7 +90,7 @@ function placeLine(product: ApiProduct): string | null {
 }
 
 /** Compact product card for carousels (fixed width) or grids (flex). */
-export function ProductCard({ product, onPress, width }: { product: ApiProduct; onPress?: () => void; width?: number }) {
+export function ProductCard({ product, onPress, width, sponsored }: { product: ApiProduct; onPress?: () => void; width?: number; sponsored?: boolean }) {
   const { fmtPrice } = useCurrency();
   const { t } = useI18n();
   const supply = useSupplyLine(product);
@@ -104,7 +106,7 @@ export function ProductCard({ product, onPress, width }: { product: ApiProduct; 
     >
       <View>
         <Cover product={product} height={width ? width * 1.25 : undefined} />
-        <ImageBadges product={product} t={t} />
+        <ImageBadges product={product} t={t} sponsored={sponsored} />
         {rated ? (
           <View style={s.ratingSlot}>
             <RatingPill avg={product.ratingAvg ?? 0} count={product.ratingCount ?? 0} />

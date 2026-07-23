@@ -1776,6 +1776,7 @@
   "site": {
     "allBidsOwner": "Todas las ofertas (vista del propietario)",
     "auction": "Subasta",
+    "sponsored": "Patrocinado",
     "availableLine": "{{qty}} disponibles · MOQ {{moq}} · {{delivery}}",
     "bid": "Licitación",
     "bidError": "No se pudo realizar la oferta.",

@@ -1724,6 +1724,7 @@
   "site": {
     "allBidsOwner": "すべての入札（所有者の視点）",
     "auction": "オークション",
+    "sponsored": "スポンサー",
     "availableLine": "{{qty}} 利用可能 · MOQ {{moq}} · {{delivery}}",
     "bid": "入札",
     "bidError": "入札できませんでした。",

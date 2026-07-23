@@ -76,6 +76,8 @@ export function Home() {
     const seen = new Set(promoted.map((p) => p.id));
     return [...promoted, ...allProducts.filter((p) => !seen.has(p.id))];
   }, [promoted, allProducts]);
+  // F30: ids of paid ad placements, so their cards render a "Sponsored" label.
+  const promotedIds = useMemo(() => new Set(promoted.map((p) => p.id)), [promoted]);
 
   const open = (p: ApiProduct) => nav.navigate('ProductDetail', { slug: p.slug });
   const toSearch = (category?: string, title?: string) => nav.navigate('Search', category ? { category, title: title ?? category } : undefined);
@@ -203,7 +205,7 @@ export function Home() {
           ) : (
             featured.slice(0, 8).map((p) => (
               <View key={p.id} style={{ width: '47.5%' }}>
-                <ProductCard product={p} onPress={() => open(p)} />
+                <ProductCard product={p} onPress={() => open(p)} sponsored={promotedIds.has(p.id)} />
               </View>
             ))
           )}

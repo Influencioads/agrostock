@@ -51,6 +51,8 @@ export function ProductCard({ p }: { p: Product }) {
         ) : null}
         <span className={p.imageUrl ? 'hidden' : ''}>{emoji}</span>
         <div className="absolute start-2 top-2 flex flex-col gap-1">
+          {/* F30: paid placements must be disclosed to the buyer. */}
+          {p.sponsored && <Badge tone="slate">{t('site.sponsored')}</Badge>}
           {p.offer && <Badge tone="mango">{t('site.offer')}</Badge>}
           {p.auction && <Badge tone="info">{t('site.auction')}</Badge>}
         </div>

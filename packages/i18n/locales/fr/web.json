@@ -1771,6 +1771,7 @@
   "site": {
     "allBidsOwner": "Toutes les offres (vue du propriétaire)",
     "auction": "Enchères",
+    "sponsored": "Sponsorisé",
     "availableLine": "{{qty}} disponible · MOQ {{moq}} · {{delivery}}",
     "bid": "Offre",
     "bidError": "Impossible de placer l'offre.",

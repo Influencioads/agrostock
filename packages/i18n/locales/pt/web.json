@@ -1777,6 +1777,7 @@
   "site": {
     "allBidsOwner": "Todas as ofertas (visão do proprietário)",
     "auction": "Leilão",
+    "sponsored": "Patrocinado",
     "availableLine": "{{qty}} disponível · MOQ {{moq}} · {{delivery}}",
     "bid": "Oferta",
     "bidError": "Não foi possível efetuar a oferta.",

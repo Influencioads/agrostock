@@ -1824,6 +1824,7 @@
   "site": {
     "allBidsOwner": "جميع العروض (من وجهة نظر المالك)",
     "auction": "مزاد",
+    "sponsored": "إعلان ممول",
     "availableLine": "{{qty}} متوفر · MOQ {{moq}} · {{delivery}}",
     "bid": "مُنَاقَصَة",
     "bidError": "لم يتم تقديم العرض.",

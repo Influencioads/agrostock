@@ -141,6 +141,9 @@ export interface Product {
   safe: boolean;
   offer: boolean;
   auction: boolean;
+  /** Paid ad placement — cards flagged true render a visible "Sponsored" label
+   *  (F30). Set by the promoted-ad query paths, never by the organic catalog. */
+  sponsored?: boolean;
   delivery: string;
   category: string;
   marketName?: string;

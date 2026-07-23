@@ -1188,6 +1188,7 @@
     "offer": "Offer",
     "auction": "Auction",
     "safeDeal": "Safe Deal",
+    "sponsored": "Sponsored",
     "availableLine": "{{qty}} available · MOQ {{moq}} · {{delivery}}",
     "proofLine": "{{watching}}+ watching · {{ordered}} ordered last month",
     "buy": "Buy",

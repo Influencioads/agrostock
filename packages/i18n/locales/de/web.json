@@ -1745,6 +1745,7 @@
   "site": {
     "allBidsOwner": "Alle Gebote (Ansicht des Eigentümers)",
     "auction": "Auktion",
+    "sponsored": "Gesponsert",
     "availableLine": "{{qty}} verfügbar · MOQ {{moq}} · {{delivery}}",
     "bid": "Gebot",
     "bidError": "Das Gebot konnte nicht abgegeben werden.",

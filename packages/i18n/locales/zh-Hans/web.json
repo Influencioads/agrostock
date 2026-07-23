@@ -1723,6 +1723,7 @@
   "site": {
     "allBidsOwner": "所有出价（业主视角）",
     "auction": "拍卖",
+    "sponsored": "赞助",
     "availableLine": "{{qty}} 可用 · MOQ {{moq}} · {{delivery}}",
     "bid": "出价",
     "bidError": "无法出价。",

@@ -1569,6 +1569,7 @@
       "verified": "Verified",
       "safeDeal": "Safe Deal",
       "auction": "Auction",
+      "sponsored": "Sponsored",
       "moq": "MOQ {{value}}",
       "available": "{{value}} available"
     },
