@@ -19,6 +19,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { secureOtp, secureReference } from '../common/secure-random';
+import { assertProductSellable, resolveUnitPriceCents } from '../products/sellable';
 import { NotificationsService, type NotificationParams } from '../notifications/notifications.service';
 import { EscrowService } from '../wallet/wallet.service';
 import { TextTranslationService } from '../translation/text-translation.service';
@@ -26,8 +27,6 @@ import { Locale } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
 import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
-/** "$1,180" → 1180 (dollars); 0 when unparseable. */
-const money = (s: string) => Number(String(s).replace(/[^0-9.]/g, '')) || 0;
 const ref = () => secureReference('AG');
 const otp = () => secureOtp();
 /** F36: wrong dispatch-OTP guesses allowed before the code locks. */
@@ -258,9 +257,10 @@ export class OrdersService {
   async enquiry(buyer: AuthUser, dto: EnquiryDto) {
     const product = await this.prisma.product.findUnique({ where: { slug: dto.productSlug } });
     if (!product) throw new NotFoundException('Product not found');
-    if (!product.sellerId) throw new ForbiddenException('Product has no seller');
-
-    const unitPriceCents = product.priceCents ?? Math.round(money(product.price) * 100);
+    // F04/F12: enquiries are a purchase-intent path too — the listing must be
+    // live and validly priced.
+    assertProductSellable(product);
+    const unitPriceCents = resolveUnitPriceCents(product);
     const amountCents = unitPriceCents * dto.qty;
 
     const order = await this.prisma.$transaction(async (tx) => {
@@ -329,30 +329,58 @@ export class OrdersService {
   async place(buyerId: string, dto: PlaceOrderDto) {
     const product = await this.prisma.product.findUnique({ where: { slug: dto.productSlug } });
     if (!product) throw new NotFoundException('Product not found');
-    if (!product.sellerId) throw new ForbiddenException('Product has no seller');
-    const unitPriceCents = product.priceCents ?? Math.round(money(product.price) * 100);
+    // F04: a moderated/hidden/rejected/expired listing must not be orderable by
+    // slug even though it can't be browsed. F12: reject listings with no valid
+    // canonical price rather than coercing an unparseable string to 0.
+    assertProductSellable(product);
+    const unitPriceCents = resolveUnitPriceCents(product);
     const amountCents = unitPriceCents * dto.qty;
 
-    const order = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.order.create({
-        data: {
-          reference: ref(),
-          amount: usd(amountCents),
-          qty: `${dto.qty} MT`,
-          status: 'processing',
-          amountCents,
-          unitPriceCents,
-          qtyValue: dto.qty,
-          qtyUnit: 'MT',
-          productId: product.id,
-          buyerId,
-          sellerId: product.sellerId!,
-        },
-        include: ORDER_INCLUDE,
+    // F10: reserve stock atomically before creating the order. The guard
+    // `stockQty - reservedQty >= qty` is evaluated inside a single UPDATE (row
+    // lock), so two buyers racing for the last unit can't both succeed — a
+    // read-then-write check in application code could. Column-to-column
+    // comparison isn't expressible in Prisma's typed API, hence raw SQL.
+    if (product.stockQty !== null) {
+      const reserved = await this.prisma.$executeRaw`
+        UPDATE "Product"
+        SET "reservedQty" = "reservedQty" + ${dto.qty}
+        WHERE "id" = ${product.id}
+          AND "stockQty" IS NOT NULL
+          AND "stockQty" - "reservedQty" >= ${dto.qty}`;
+      if (reserved === 0) throw new BadRequestException('Not enough stock available for this quantity.');
+    }
+
+    let order;
+    try {
+      order = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.order.create({
+          data: {
+            reference: ref(),
+            amount: usd(amountCents),
+            qty: `${dto.qty} MT`,
+            status: 'processing',
+            amountCents,
+            unitPriceCents,
+            qtyValue: dto.qty,
+            qtyUnit: 'MT',
+            productId: product.id,
+            buyerId,
+            sellerId: product.sellerId!,
+          },
+          include: ORDER_INCLUDE,
+        });
+        await this.event(tx, created.id, 'order_placed', buyerId, null, 'processing');
+        return created;
       });
-      await this.event(tx, created.id, 'order_placed', buyerId, null, 'processing');
-      return created;
-    });
+    } catch (e) {
+      // Release the reservation if the order couldn't be created, so stock isn't
+      // stranded.
+      if (product.stockQty !== null) {
+        await this.prisma.product.update({ where: { id: product.id }, data: { reservedQty: { decrement: dto.qty } } }).catch(() => {});
+      }
+      throw e;
+    }
 
     // Notify the seller of the new direct ("buy now") order.
     await this.notify(
@@ -420,6 +448,33 @@ export class OrdersService {
     return { ...this.maskOtps(order, parties, user), parties };
   }
 
+  // ── inventory settlement ───────────────────────────────────────
+
+  /**
+   * F10: settle the stock a placed order reserved. `capture` (order fulfilled)
+   * consumes the units — reservedQty AND stockQty drop. Otherwise (cancellation)
+   * the reservation is released back to available — only reservedQty drops.
+   * No-op for unmanaged listings. Clamped at zero so a double call can't drive a
+   * counter negative.
+   */
+  private async settleReservation(order: { productId: string | null; qtyValue: number | null }, capture: boolean) {
+    if (!order.productId) return;
+    const qty = Math.max(0, Math.round(order.qtyValue ?? 0));
+    if (qty <= 0) return;
+    if (capture) {
+      await this.prisma.$executeRaw`
+        UPDATE "Product"
+        SET "reservedQty" = GREATEST(0, "reservedQty" - ${qty}),
+            "stockQty" = GREATEST(0, "stockQty" - ${qty})
+        WHERE "id" = ${order.productId} AND "stockQty" IS NOT NULL`;
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE "Product"
+        SET "reservedQty" = GREATEST(0, "reservedQty" - ${qty})
+        WHERE "id" = ${order.productId} AND "stockQty" IS NOT NULL`;
+    }
+  }
+
   // ── generic transitions ────────────────────────────────────────
 
   async setStatus(id: string, user: AuthUser, status: OrderStatus) {
@@ -465,6 +520,9 @@ export class OrdersService {
       await this.event(tx, id, EVENT_FOR_STATUS[status] ?? 'note', user.id, order.status, status);
       return next;
     });
+
+    // F10: a cancelled order frees the stock it reserved.
+    if (status === 'cancelled') await this.settleReservation(order, false);
 
     const counterparty = order.buyerId === user.id ? order.sellerId : order.buyerId;
     await this.notify(counterparty, 'order.status_changed', { reference: updated.reference, status: { enum: 'order_status', value: status } }, { orderId: id });
@@ -640,6 +698,9 @@ export class OrdersService {
       if (order.trip) await tx.trip.update({ where: { id: order.trip.id }, data: { status: 'delivered' } });
       await this.event(tx, id, 'delivery_verified', user.id, 'in_transit', 'delivered');
     });
+
+    // F10: delivery consumes the reserved units from on-hand stock.
+    await this.settleReservation(order, true);
 
     await this.notify(order.buyerId, 'order.delivered_buyer', { reference: order.reference }, { orderId: id });
     await this.notify(order.sellerId, 'order.delivered_seller', { reference: order.reference }, { orderId: id });

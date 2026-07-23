@@ -318,6 +318,11 @@ export class ProductsService {
       },
     });
     if (!product) throw new NotFoundException('Product not found');
+    // F04: this is the public, unauthenticated detail route — a moderated,
+    // hidden or rejected listing must not be readable by slug just because it
+    // can't be browsed. 404 (not 403) so we don't confirm the listing exists.
+    // (Expired auctions keep status 'live', so result pages still resolve.)
+    if (product.status !== 'live') throw new NotFoundException('Product not found');
     return localizeProduct(product);
   }
 

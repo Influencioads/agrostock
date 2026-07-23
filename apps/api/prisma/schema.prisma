@@ -666,6 +666,12 @@ model Product {
   status          ProductStatus @default(live)
   rejectionReason String?
   delivery      String?
+  /// F10: optional inventory. `stockQty` null = unmanaged (unlimited, legacy
+  /// behaviour). When set, it is the on-hand whole-unit count; `reservedQty` is
+  /// how much is held by open orders. Available = stockQty - reservedQty, and
+  /// reservation decrements atomically to prevent oversell.
+  stockQty      Int?
+  reservedQty   Int       @default(0)
   /// Category/subcategory-specific attributes captured at listing time, keyed by
   /// the field `key` from the shared attribute schema (@agrotraders/types). Scalar
   /// fields store a value; multiselect fields store an array. Buyers filter on it.
