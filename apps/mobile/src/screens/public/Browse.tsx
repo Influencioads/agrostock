@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { ApiCategory, ApiProduct } from '@agrotraders/api-client';
 import { attrKey } from '@agrotraders/i18n';
 import { api } from '../../lib/api';
@@ -49,14 +49,27 @@ export function Browse() {
 
   // The whole committed query is the cache key, so a repeated filter
   // combination is served from cache; `keepPreviousData` stops the grid
-  // flashing empty between refetches.
-  const { data, isLoading } = useQuery({
+  // flashing empty between refetches. F31: paginate the full catalog with an
+  // infinite query rather than showing only the first page of results.
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['products', 'browse', query],
-    queryFn: () => api.products.listPaged(query),
+    queryFn: ({ pageParam }) => api.products.listPaged({ ...query, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page * last.pageSize < last.total ? last.page + 1 : undefined),
     placeholderData: keepPreviousData,
   });
-  const products: ApiProduct[] = data?.items ?? [];
-  const total = data?.total ?? 0;
+  const products: ApiProduct[] = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
+  const total = data?.pages[0]?.total ?? 0;
+
+  // Fetch the next page when the grid scrolls within ~600px of the bottom.
+  const onScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+      const distanceToEnd = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+      if (distanceToEnd < 600 && hasNextPage && !isFetchingNextPage) fetchNextPage();
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
+  );
 
   const { data: cats = [] } = useQuery<ApiCategory[]>({
     queryKey: ['categories'],
@@ -111,7 +124,12 @@ export function Browse() {
         </View>
       </AppBar>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: space.lg }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: space.lg }}
+        showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         <View style={s.summary}>
           <Text style={s.count}>
             {isLoading ? '' : t('pubX.plp.results', { count: total })}
@@ -142,6 +160,12 @@ export function Browse() {
             onAction: () => setFilters(EMPTY_FILTERS),
           }}
         />
+
+        {isFetchingNextPage ? (
+          <View style={{ paddingVertical: space.lg }}>
+            <ActivityIndicator color={C.green} />
+          </View>
+        ) : null}
       </ScrollView>
 
       <FilterBar
