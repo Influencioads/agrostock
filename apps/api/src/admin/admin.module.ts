@@ -608,35 +608,43 @@ export class AdminService {
     // run inside the tx and WalletService stays silent in that case).
     const credits: Array<{ userId: string; cents: number; type: 'refund' | 'escrow_release' }> = [];
 
+    const toStatus: OrderStatus = dto.resolution === 'refund_buyer' ? 'cancelled' : 'delivered';
     const result = await this.prisma.$transaction(async (tx) => {
-      let toStatus: OrderStatus = 'delivered';
+      // F08: claim the dispute exactly once. The status transition is the guard —
+      // a second concurrent resolve matches zero rows and bails before any money
+      // moves, so a dispute can never settle (and credit) twice.
+      const claimed = await tx.order.updateMany({
+        where: { id, status: 'dispute' },
+        data: { status: toStatus },
+      });
+      if (claimed.count === 0) throw new BadRequestException('Order is not in dispute');
+
+      // Idempotency keys are derived from the order so the credits can never be
+      // applied twice even under retry.
       if (dto.resolution === 'refund_buyer') {
         if (total > 0) {
-          await this.walletSvc.credit(order.buyerId, total, 'refund', dto.note ?? 'Dispute refund', tx);
+          await this.walletSvc.credit(order.buyerId, total, 'refund', dto.note ?? 'Dispute refund', tx, `dispute:${id}:refund`);
           credits.push({ userId: order.buyerId, cents: total, type: 'refund' });
         }
-        toStatus = 'cancelled';
       } else if (dto.resolution === 'release_to_seller') {
         if (total > 0 && order.sellerId) {
-          await this.walletSvc.credit(order.sellerId, total, 'escrow_release', dto.note ?? 'Dispute release', tx);
+          await this.walletSvc.credit(order.sellerId, total, 'escrow_release', dto.note ?? 'Dispute release', tx, `dispute:${id}:release`);
           credits.push({ userId: order.sellerId, cents: total, type: 'escrow_release' });
         }
-        toStatus = 'delivered';
       } else {
         // partial: refund `amountCents` to buyer, release the remainder to seller.
         const refund = Math.max(0, Math.min(dto.amountCents ?? 0, total));
         const release = total - refund;
         if (refund > 0) {
-          await this.walletSvc.credit(order.buyerId, refund, 'refund', dto.note ?? 'Dispute partial refund', tx);
+          await this.walletSvc.credit(order.buyerId, refund, 'refund', dto.note ?? 'Dispute partial refund', tx, `dispute:${id}:refund`);
           credits.push({ userId: order.buyerId, cents: refund, type: 'refund' });
         }
         if (release > 0 && order.sellerId) {
-          await this.walletSvc.credit(order.sellerId, release, 'escrow_release', dto.note ?? 'Dispute partial release', tx);
+          await this.walletSvc.credit(order.sellerId, release, 'escrow_release', dto.note ?? 'Dispute partial release', tx, `dispute:${id}:release`);
           credits.push({ userId: order.sellerId, cents: release, type: 'escrow_release' });
         }
-        toStatus = 'delivered';
       }
-      const o = await tx.order.update({ where: { id }, data: { status: toStatus } });
+      const o = await tx.order.findUniqueOrThrow({ where: { id } });
       await tx.orderEvent.create({
         data: { orderId: id, type: 'note', actorId: adminId, fromStatus: 'dispute', toStatus, note: `Dispute resolved: ${dto.resolution}${dto.note ? ` — ${dto.note}` : ''}` },
       });
@@ -990,13 +998,29 @@ export class AdminService {
     const req = await this.prisma.payoutRequest.findUnique({ where: { id } });
     if (!req) throw new NotFoundException('Payout request not found');
     if (req.status !== 'pending') throw new BadRequestException('Payout already decided');
-    if (status === 'approved') {
-      // Debit now; throws (and aborts) if the balance no longer covers it.
-      await this.walletSvc.debit(req.userId, req.amountCents, 'payout', note ?? 'Payout approved');
-    }
-    const updated = await this.prisma.payoutRequest.update({
-      where: { id },
+    // F09: claim the request exactly once with a conditional transition BEFORE
+    // moving money. If a second admin (or a retry) races us, updateMany matches
+    // zero rows and we abort without debiting — no double payout.
+    const claimed = await this.prisma.payoutRequest.updateMany({
+      where: { id, status: 'pending' },
       data: { status: status === 'approved' ? 'paid' : 'rejected', decidedById: adminId, decidedAt: new Date(), note: note ?? req.note },
+    });
+    if (claimed.count === 0) throw new BadRequestException('Payout already decided');
+    if (status === 'approved') {
+      try {
+        // Debit is overdraft-safe and idempotent (keyed to this payout).
+        await this.walletSvc.debit(req.userId, req.amountCents, 'payout', note ?? 'Payout approved', this.prisma, `payout:${id}`);
+      } catch (e) {
+        // Roll the claim back so the request can be retried once funds cover it.
+        await this.prisma.payoutRequest.updateMany({
+          where: { id, status: 'paid' },
+          data: { status: 'pending', decidedById: null, decidedAt: null },
+        });
+        throw e;
+      }
+    }
+    const updated = await this.prisma.payoutRequest.findUniqueOrThrow({
+      where: { id },
       include: { user: { select: { id: true, name: true } } },
     });
     await this.audit.log({ actorId: adminId, action: `payout.${status}`, entityType: 'PayoutRequest', entityId: id, meta: { userId: req.userId, amountCents: req.amountCents, note } });

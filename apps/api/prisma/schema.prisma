@@ -996,9 +996,15 @@ model WalletTx {
   amountCents Int
   type        TxType
   note        String?
+  /// F08/F09: optional idempotency key. A unique index makes a replayed money
+  /// operation collide on insert (P2002) instead of applying the balance change
+  /// twice, so retries and duplicate settlements are safe.
+  idempotencyKey String? @unique
   createdAt   DateTime @default(now())
   walletId    String
   wallet      Wallet   @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
 }
 
 /// A user's request to withdraw wallet funds. Created (pending) by the user;
