@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar, BrandMark, Button, Icon, motion, useReducedMotion, type IconName } from '@agrotraders/ui';
 import { LanguageSelect, useI18n } from '../i18n';
 import { useAuth } from '../auth/AuthContext';
@@ -43,6 +43,7 @@ export function ConsoleLayout({
   const { user, roles, activeRole, setActiveRole, logout } = useAuth();
   const { t } = useI18n();
   const { logoSrc } = useBranding();
+  const qc = useQueryClient();
   // Shared key with the Profile section, so a new photo lands here immediately.
   const { data: profile } = useQuery({ queryKey: ['my-profile'], queryFn: () => api.me.profile(), enabled: !!user });
   const navigate = useNavigate();
@@ -53,6 +54,10 @@ export function ConsoleLayout({
   function switchRole(roleId: string) {
     if (roleId === activeRole || !roles.includes(roleId)) return;
     setActiveRole(roleId);
+    // F27: the active-role header changes with the switch, so drop cached
+    // role-scoped data and refetch as the newly-selected role. Without this the
+    // console would keep showing the previous role's results.
+    void qc.invalidateQueries();
     onSelect('dashboard');
   }
 

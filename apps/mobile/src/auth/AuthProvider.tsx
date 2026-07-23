@@ -3,6 +3,7 @@ import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrot
 import { api, setApiActiveRole, setApiToken, setApiRefreshToken, setAuthFailureListener, TOKEN_KEY, REFRESH_KEY } from '../lib/api';
 import { storage } from '../lib/storage';
 import { unregisterForPush } from '../lib/push';
+import { queryClient } from '../lib/queryClient';
 
 const USER_KEY = 'agrotraders_user';
 const ACTIVE_KEY = 'agrotraders_active_role';
@@ -95,6 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setActiveRoleState(role);
       setApiActiveRole(role);
       void storage.set(ACTIVE_KEY, role);
+      // F27: the active-role header changes with the switch — drop cached
+      // role-scoped data so screens refetch as the newly-selected role.
+      void queryClient.invalidateQueries();
     },
     [user],
   );

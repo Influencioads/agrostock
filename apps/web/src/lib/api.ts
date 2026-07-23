@@ -17,6 +17,10 @@ export function assetUrl(path?: string | null): string | undefined {
 export const api = createApiClient({
   baseURL: API_BASE,
   getToken: () => localStorage.getItem('token'),
+  // F27: send the dashboard role the user is actually viewing so the API acts as
+  // that role, not their primary role. AuthContext keeps `activeRole` in sync
+  // (only ever a role the account holds; the API re-validates membership anyway).
+  getActiveRole: () => localStorage.getItem('activeRole'),
   getRefreshToken: () => localStorage.getItem('refreshToken'),
   getLocale: () => localStorage.getItem('lang'),
   onTokens: (r) => {
