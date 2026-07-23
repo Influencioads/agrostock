@@ -38,9 +38,16 @@ async function bootstrap() {
   // Errors carry a stable `code` alongside the English `message` so clients can
   // translate them; see I18nExceptionFilter.
   app.useGlobalFilters(new I18nExceptionFilter());
+  // F20: whitelist strips any property not declared on the DTO so unvalidated
+  // fields never reach Prisma, and transform coerces payloads into their typed
+  // DTOs (with class-validator constraints) before any money/state write.
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true, exceptionFactory: validationExceptionFactory }),
   );
+
+  // F49: flush in-flight work and close DB/Redis connections on SIGTERM/SIGINT
+  // instead of dropping them, so rolling deploys don't sever live requests.
+  app.enableShutdownHooks();
 
   // ── realtime: Socket.IO with a Redis adapter (both chat systems) ──
   const redisAdapter = new RedisIoAdapter(app, process.env.REDIS_URL || 'redis://localhost:6380');

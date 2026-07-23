@@ -1,11 +1,11 @@
-import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 /** Wait between connection attempts, capped so startup never stalls for long. */
 const RETRY_DELAYS_MS = [500, 1000, 2000, 4000, 6000];
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger('PrismaService');
 
   /**
@@ -44,5 +44,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
+  }
+
+  /** F49: close the connection pool cleanly when Nest shuts down (SIGTERM). */
+  async onModuleDestroy() {
+    await this.$disconnect();
   }
 }
