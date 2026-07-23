@@ -85,42 +85,21 @@ function TxnList({ txns, emptyBody }: { txns: ApiWallet['txns']; emptyBody: stri
 }
 
 /**
- * Add-money wallet — balance, top-up and full transaction history. Every role
- * uses this to fund orders and to hire transporters, loaders or workers.
+ * Read-only wallet balance and transaction history.
  *
  * Every route that hosts this screen shows a navigator header titled "Wallet",
  * so the screen deliberately renders no heading of its own — only the subtitle.
  */
 export function WalletScreen() {
-  const qc = useQueryClient();
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
   const { user } = useAuth();
-  const [amount, setAmount] = useState('');
-  const [err, setErr] = useState('');
   const { data: wallet } = useQuery<ApiWallet>({ queryKey: ['me-wallet'], queryFn: () => api.me.wallet(), enabled: !!user });
-
-  const topup = useMutation({
-    mutationFn: () => api.me.topup(Number(amount)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['me-wallet'] }); setAmount(''); setErr(''); },
-    onError: (e) => setErr(errMessage(e, t('compX.wallet.topUpError'))),
-  });
 
   return (
     <Screen>
       <Txt variant="muted">{t('compX.wallet.subtitle')}</Txt>
       <BalanceCard label={t('compX.wallet.availableBalance')} amount={fmtCents(wallet?.balanceCents)} />
-
-      <Card style={{ gap: 10 }}>
-        <Txt variant="title">{t('compX.wallet.addFunds')}</Txt>
-        {!!err && <Txt color={C.error} variant="small">{err}</Txt>}
-        <Row gap={8}>
-          <View style={{ flex: 1 }}>
-            <Input placeholder={t('compX.common.amountUsd')} keyboardType="numeric" value={amount} onChangeText={setAmount} />
-          </View>
-          <Button title={topup.isPending ? t('compX.wallet.adding') : t('compX.wallet.topUp')} disabled={topup.isPending || !Number(amount)} onPress={() => topup.mutate()} />
-        </Row>
-      </Card>
 
       <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <Txt variant="h3">{t('compX.wallet.transactions')}</Txt>

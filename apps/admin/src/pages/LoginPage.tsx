@@ -9,7 +9,7 @@ export function LoginPage() {
   const { t } = useI18n();
   const { login } = useAuth();
   const { logoSrc } = useBranding();
-  const [email, setEmail] = useState('admin@agrotraders.org');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,7 +47,7 @@ export function LoginPage() {
             <Input
               label={t('login.password')}
               type="password"
-              placeholder="password123"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={error || undefined}
@@ -57,7 +57,6 @@ export function LoginPage() {
               {busy ? t('login.signingIn') : t('common:signIn')}
             </Button>
           </form>
-          <p className="mt-3 text-center text-[11px] text-ink-soft">{t('login.demo')}</p>
         </Card>
       </div>
     </div>

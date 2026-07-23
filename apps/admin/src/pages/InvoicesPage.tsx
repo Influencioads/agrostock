@@ -33,7 +33,7 @@ export function InvoicesPage() {
   });
 
   const setStatusMut = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'paid' | 'void' }) => api.invoices.setStatus(id, status),
+    mutationFn: (id: string) => api.invoices.setStatus(id, 'void'),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-invoices'] }),
   });
 
@@ -131,21 +131,12 @@ export function InvoicesPage() {
                         <Button size="sm" variant="outline" onClick={() => openPdf(inv.id)} leftIcon={<Icon name="file" size={14} />}>
                           {t('invoicesAdmin.pdf')}
                         </Button>
-                        {inv.status !== 'paid' && inv.status !== 'void' && (
-                          <Button
-                            size="sm"
-                            disabled={setStatusMut.isPending}
-                            onClick={() => setStatusMut.mutate({ id: inv.id, status: 'paid' })}
-                          >
-                            {t('invoicesAdmin.markPaid')}
-                          </Button>
-                        )}
                         {inv.status !== 'void' && inv.status !== 'paid' && (
                           <Button
                             size="sm"
                             variant="danger"
                             disabled={setStatusMut.isPending}
-                            onClick={() => setStatusMut.mutate({ id: inv.id, status: 'void' })}
+                            onClick={() => setStatusMut.mutate(inv.id)}
                           >
                             {t('invoicesAdmin.void')}
                           </Button>

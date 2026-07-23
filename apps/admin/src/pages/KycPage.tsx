@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, type BadgeTone } from '@agrotraders/ui';
 import { PageHeader } from '../components/widgets';
 import { useI18n } from '../i18n';
-import { kycQueue as mockQueue } from '../mock/data';
 import { api } from '../lib/api';
 import { KycDocsDrawer } from './KycDocsDrawer';
 
@@ -65,17 +64,14 @@ export function KycPage() {
     },
   });
 
-  // fall back to mock queue (no live mutation) when the API is unreachable
-  const queue: KycCard[] = isError
-    ? mockQueue.map((k) => ({ id: k.id, company: k.company, role: k.role, country: k.country, docs: k.docs, submitted: k.submitted, status: 'pending' }))
-    : items;
+  const queue: KycCard[] = items;
 
   return (
     <div>
       <PageHeader
         title={t('page.kyc.title')}
         subtitle={t('page.kyc.subtitle', { count: queue.length })}
-        action={<Badge tone={isError ? 'warn' : 'green'}>{isError ? t('apiBadge.offlineMock') : t('apiBadge.live')}</Badge>}
+        action={<Badge tone={isError ? 'warn' : 'green'}>{isError ? t('apiBadge.offline') : t('apiBadge.live')}</Badge>}
       />
 
       <div className="mb-4 flex gap-2">

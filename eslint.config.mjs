@@ -52,7 +52,8 @@ export default tseslint.config(
   },
   // React Native: lazy `require()` of native modules and asset requires are idiomatic.
   {
-    files: ['apps/mobile/**/*.{ts,tsx}'],
+    files: ['apps/mobile/**/*.{js,jsx,ts,tsx}'],
+    languageOptions: { globals: { ...globals.commonjs } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   // CommonJS config/token files.

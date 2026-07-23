@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Stat, Icon, Input, type BadgeTone } from '@agrotraders/ui';
-import type { ApiAdminWallet } from '@agrotraders/api-client';
+import { Badge, Button, Card, Stat, Icon, type BadgeTone } from '@agrotraders/ui';
 import { PageHeader } from '../components/widgets';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
@@ -53,23 +52,14 @@ export function PaymentsPage() {
   const qc = useQueryClient();
   const [downloading, setDownloading] = useState<'csv' | 'pdf' | null>(null);
   const [range, setRange] = useState<{ from?: string; to?: string }>({});
-  const [walletSearch, setWalletSearch] = useState('');
-  const [adjust, setAdjust] = useState<{ userId: string; amount: string; type: 'topup' | 'refund' | 'payout' | 'withdraw' } | null>(null);
 
   const { data, isLoading } = useQuery({ queryKey: ['admin-payments', range], queryFn: () => api.admin.payments(range), retry: 1 });
   const { data: payouts = [] } = useQuery({ queryKey: ['admin-payouts'], queryFn: () => api.admin.payouts('pending'), retry: 1 });
-  const { data: searchWallets = [] } = useQuery<ApiAdminWallet[]>({
-    queryKey: ['admin-wallets-search', walletSearch],
-    queryFn: () => api.admin.wallets(walletSearch),
-    enabled: walletSearch.length >= 2,
-    retry: 1,
-  });
-
   const byType = data?.byType ?? {};
   const txns = data?.txns ?? [];
 
   const decidePayout = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'approved' | 'rejected' }) => api.admin.decidePayout(id, status),
+    mutationFn: (id: string) => api.admin.decidePayout(id, 'rejected'),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['admin-payouts'] });
       void qc.invalidateQueries({ queryKey: ['admin-payments'] });
@@ -77,18 +67,6 @@ export function PaymentsPage() {
     },
     onError: (e) => window.alert(errMessage(e, t('genericError'))),
   });
-  const addMoney = useMutation({
-    mutationFn: (a: { userId: string; amount: string; type: 'topup' | 'refund' | 'payout' | 'withdraw' }) =>
-      api.admin.adjustWallet(a.userId, { amountCents: Math.round(parseFloat(a.amount) * 100), type: a.type }),
-    onSuccess: () => {
-      setAdjust(null);
-      void qc.invalidateQueries({ queryKey: ['admin-payments'] });
-      void qc.invalidateQueries({ queryKey: ['admin-wallets-search'] });
-      void qc.invalidateQueries({ queryKey: ['admin-wallets'] });
-    },
-    onError: (e) => window.alert(errMessage(e, t('genericError'))),
-  });
-
   async function exportStatement(kind: 'csv' | 'pdf') {
     setDownloading(kind);
     try {
@@ -168,64 +146,12 @@ export function PaymentsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-numeric font-bold text-ink">{usd(p.amountCents)}</span>
-                  <Button size="sm" disabled={decidePayout.isPending} onClick={() => decidePayout.mutate({ id: p.id, status: 'approved' })}>
-                    {t('prodMod.approve')}
-                  </Button>
-                  <Button size="sm" variant="outline" disabled={decidePayout.isPending} onClick={() => decidePayout.mutate({ id: p.id, status: 'rejected' })}>
+                  <Button size="sm" variant="outline" disabled={decidePayout.isPending} onClick={() => decidePayout.mutate(p.id)}>
                     {t('prodMod.reject')}
                   </Button>
                 </div>
               </div>
             ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Add money to a wallet */}
-      <Card className="mt-6">
-        <h3 className="mb-2 font-display text-lg font-bold text-ink">{t('payments.addMoney')}</h3>
-        <label className="flex items-center gap-2 rounded-md border border-surface-border px-3">
-          <Icon name="search" size={16} className="text-ink-soft" />
-          <input value={walletSearch} onChange={(e) => setWalletSearch(e.target.value)} placeholder={t('payments.searchUser')} className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft" />
-        </label>
-        {walletSearch.length >= 2 && (
-          <div className="mt-3 divide-y divide-surface-border rounded-md border border-surface-border">
-            {searchWallets.length === 0 ? (
-              <p className="px-3 py-3 text-sm text-ink-soft">{t('payments.noMatches')}</p>
-            ) : (
-              searchWallets.slice(0, 6).map((w) => (
-                <div key={w.userId} className="px-3 py-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-ink">{w.user?.name}</div>
-                      <div className="text-xs text-ink-soft">
-                        {w.user?.role ? t(`enums:role.${w.user.role}`, { defaultValue: w.user.role }) : ''} · {t('payments.balance', { amount: usd(w.balanceCents) })}
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={() => setAdjust({ userId: w.userId, amount: '', type: 'topup' })}>
-                      {t('payments.adjust')}
-                    </Button>
-                  </div>
-                  {adjust?.userId === w.userId && (
-                    <div className="mt-2 flex flex-wrap items-end gap-2">
-                      <Input label={t('payments.amountUsd')} value={adjust.amount} onChange={(e) => setAdjust({ ...adjust, amount: e.target.value })} />
-                      <select value={adjust.type} onChange={(e) => setAdjust({ ...adjust, type: e.target.value as typeof adjust.type })} className="h-9 rounded-md border border-surface-border bg-white px-2 text-sm">
-                        <option value="topup">{t('payments.creditTopup')}</option>
-                        <option value="refund">{t('payments.creditRefund')}</option>
-                        <option value="withdraw">{t('payments.debitWithdraw')}</option>
-                        <option value="payout">{t('payments.debitPayout')}</option>
-                      </select>
-                      <Button size="sm" disabled={!adjust.amount || addMoney.isPending} onClick={() => addMoney.mutate(adjust)}>
-                        {addMoney.isPending ? t('payments.applying') : t('payments.apply')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setAdjust(null)}>
-                        {t('common:cancel')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
           </div>
         )}
       </Card>

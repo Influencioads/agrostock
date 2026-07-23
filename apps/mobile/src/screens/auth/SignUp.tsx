@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
-import { isPendingVerification } from '@agrotraders/api-client';
+import { isPendingVerification, validateSignupPassword } from '@agrotraders/api-client';
 import { ALL_COUNTRIES } from '@agrotraders/geo';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
@@ -35,6 +35,7 @@ export function SignUp() {
   const nav = useNavigation<Nav>();
   const { register } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '', country: '', role: 'buyer', phone: '', location: '' });
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [ops, setOps] = useState({
     operatingCities: [] as string[],
     operatingCountries: [] as string[],
@@ -71,6 +72,15 @@ export function SignUp() {
 
   async function submit() {
     setErr('');
+    const passwordResult = validateSignupPassword(form.password, confirmPassword);
+    if (passwordResult === 'too_short') {
+      setErr(t('auth.signUp.passwordTooShort', { defaultValue: 'Password must be at least 8 characters.' }));
+      return;
+    }
+    if (passwordResult === 'mismatch') {
+      setErr(t('auth.signUp.passwordMismatch', { defaultValue: "Passwords don't match." }));
+      return;
+    }
     setBusy(true);
     const numOrUndef = (v: string) => {
       const n = Number(v);
@@ -169,6 +179,14 @@ export function SignUp() {
         <Input label={t('auth.signUp.fullName')} placeholder={t('auth.signUp.fullNamePh')} value={form.name} onChangeText={set('name')} />
         <Input label={t('auth.signUp.email')} autoCapitalize="none" keyboardType="email-address" placeholder={t('auth.signUp.emailPh')} value={form.email} onChangeText={set('email')} />
         <Input label={t('auth.password')} secureTextEntry placeholder={t('auth.passwordPh')} value={form.password} onChangeText={set('password')} />
+        <Input
+          label={t('auth.signUp.confirmPassword', { defaultValue: 'Confirm password' })}
+          secureTextEntry
+          placeholder={t('auth.passwordPh')}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          error={err === t('auth.signUp.passwordMismatch', { defaultValue: "Passwords don't match." }) ? err : undefined}
+        />
         <PickerField
           label={t('auth.signUp.country')}
           placeholder={t('auth.signUp.countryPh')}
@@ -218,7 +236,7 @@ export function SignUp() {
         {err ? <Txt color={C.error} variant="small">{err}</Txt> : null}
       </View>
 
-      <Button title={t('auth.signUp.cta')} full size="lg" loading={busy} disabled={!form.name || !form.email || !form.password} onPress={submit} />
+      <Button title={t('auth.signUp.cta')} full size="lg" loading={busy} disabled={!form.name || !form.email || !form.password || !confirmPassword} onPress={submit} />
       <Text style={s.terms}>{t('auth.signUp.terms')}</Text>
     </Screen>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Icon } from '@agrotraders/ui';
+import { Button, Card, Icon } from '@agrotraders/ui';
 import type { ApiAuctionBidRow, ApiAuctionDetail } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';

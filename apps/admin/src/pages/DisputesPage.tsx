@@ -1,31 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Icon } from '@agrotraders/ui';
+import { useQuery } from '@tanstack/react-query';
+import { Badge, Card, Icon } from '@agrotraders/ui';
 import type { ApiOrder } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
 import { api } from '../lib/api';
-import { errMessage } from '../lib/errors';
 import { useI18n } from '../i18n';
 
-/** Live dispute resolution — release escrow to the seller or refund the buyer. */
+/** Read-only dispute queue while financial settlement is disabled. */
 export function DisputesPage() {
   const { t } = useI18n();
-  const qc = useQueryClient();
   const { data: disputes = [], isLoading } = useQuery<ApiOrder[]>({
     queryKey: ['admin-disputes'],
     queryFn: () => api.admin.disputes(),
     retry: 1,
-  });
-
-  const resolve = useMutation({
-    mutationFn: ({ id, resolution }: { id: string; resolution: 'release_to_seller' | 'refund_buyer' }) =>
-      api.admin.resolveDispute(id, { resolution }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['admin-disputes'] });
-      void qc.invalidateQueries({ queryKey: ['admin-orders'] });
-      void qc.invalidateQueries({ queryKey: ['admin-payments'] });
-      void qc.invalidateQueries({ queryKey: ['admin-stats'] });
-    },
-    onError: (e) => window.alert(errMessage(e, t('genericError'))),
   });
 
   return (
@@ -60,14 +46,6 @@ export function DisputesPage() {
                 <div className="flex items-center gap-2 text-ink">
                   <Icon name="wallet" size={15} className="text-ink-soft" /> {t('disputes.amount', { amount: d.amount })}
                 </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button size="sm" disabled={resolve.isPending} onClick={() => resolve.mutate({ id: d.id, resolution: 'release_to_seller' })}>
-                  {t('disputes.release')}
-                </Button>
-                <Button size="sm" variant="outline" disabled={resolve.isPending} onClick={() => resolve.mutate({ id: d.id, resolution: 'refund_buyer' })}>
-                  {t('disputes.refund')}
-                </Button>
               </div>
             </Card>
           ))}

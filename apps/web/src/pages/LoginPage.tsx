@@ -7,11 +7,9 @@ import { api } from '../lib/api';
 import { useBranding } from '../branding/BrandingProvider';
 import { useI18n } from '../i18n';
 
-const demoRoles = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'];
-
 export function LoginPage() {
   const { t } = useI18n();
-  const { login, loginDemo } = useAuth();
+  const { login } = useAuth();
   const { logoSrc } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
@@ -132,25 +130,6 @@ export function LoginPage() {
             </Link>
           </p>
 
-          <div className="mt-6 border-t border-surface-border pt-5">
-            <p className="mb-2 text-center text-xs font-bold uppercase tracking-wide text-ink-soft">
-              {t('page.login.demoAccounts')}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {demoRoles.map((id) => (
-                <Button
-                  key={id}
-                  variant="outline"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => void submit(() => loginDemo(id))}
-                >
-                  {t(`console.role.${id}`)}
-                </Button>
-              ))}
-            </div>
-            <p className="mt-2 text-center text-[11px] text-ink-soft">{t('page.login.demoHint')}</p>
-          </div>
         </Card>
       </div>
     </div>

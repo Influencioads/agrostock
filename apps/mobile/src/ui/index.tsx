@@ -360,7 +360,7 @@ export function Accordion({ title, children, defaultOpen = false, count }: {
 
 /* ── Input ────────────────────────────────────────────────────────── */
 export function Input({
-  label, error, style, icon, trailing, ...rest
+  label, error, style, icon, trailing, secureTextEntry, ...rest
 }: TextInputProps & {
   label?: string;
   error?: string;
@@ -369,9 +369,22 @@ export function Input({
   /** Trailing adornment (e.g. a password eye toggle). */
   trailing?: ReactNode;
 }) {
+  const [showSecureText, setShowSecureText] = useState(false);
+  const canToggleSecureText = secureTextEntry === true && !trailing;
+  const effectiveTrailing = trailing ?? (canToggleSecureText ? (
+    <Pressable
+      onPress={() => setShowSecureText((v) => !v)}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={showSecureText ? 'Hide password' : 'Show password'}
+    >
+      <Ionicons name={showSecureText ? 'eye-off-outline' : 'eye-outline'} size={19} color={C.inkMuted} />
+    </Pressable>
+  ) : null);
   // With an icon or trailing node the field becomes a flex row wrapping the bare
   // TextInput; without either it stays a plain padded input.
-  const framed = icon || trailing;
+  const framed = icon || effectiveTrailing;
+  const effectiveSecureTextEntry = canToggleSecureText ? !showSecureText : secureTextEntry;
   return (
     <View style={{ gap: 6 }}>
       {label ? <Text style={txt.label}>{label}</Text> : null}
@@ -381,14 +394,16 @@ export function Input({
           <TextInput
             placeholderTextColor={C.inkMuted}
             style={[{ flex: 1, ...type.body, fontSize: 15, color: C.ink, paddingVertical: 0 }, style]}
+            secureTextEntry={effectiveSecureTextEntry}
             {...rest}
           />
-          {trailing}
+          {effectiveTrailing}
         </View>
       ) : (
         <TextInput
           placeholderTextColor={C.inkMuted}
           style={[s.input, error ? { borderColor: C.error } : null, style]}
+          secureTextEntry={effectiveSecureTextEntry}
           {...rest}
         />
       )}

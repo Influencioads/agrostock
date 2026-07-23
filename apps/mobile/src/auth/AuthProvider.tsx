@@ -33,7 +33,6 @@ interface AuthValue {
     location?: string;
     marketId?: string;
   }) => Promise<RegisterResult>;
-  loginDemo: (role: string) => Promise<ApiUser>;
   /** Verify an emailed login code and start the session it returns. */
   verifyOtp: (email: string, code: string) => Promise<ApiUser>;
   logout: () => Promise<void>;
@@ -124,8 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
-  const loginDemo = useCallback((role: string) => login(`${role}@agrotraders.org`, 'password123'), [login]);
-
   const verifyOtp = useCallback(
     async (email: string, code: string) => {
       const res = await api.auth.verifyOtp(email, code);
@@ -162,11 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ready,
       login,
       register,
-      loginDemo,
       verifyOtp,
       logout,
     }),
-    [user, activeRole, roles, setActiveRole, ready, login, register, loginDemo, verifyOtp, logout],
+    [user, activeRole, roles, setActiveRole, ready, login, register, verifyOtp, logout],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

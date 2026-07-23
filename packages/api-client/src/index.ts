@@ -1,6 +1,14 @@
 import axios, { type AxiosInstance } from 'axios';
 import { io, type Socket } from 'socket.io-client';
 
+export type SignupPasswordValidation = 'ok' | 'too_short' | 'mismatch';
+
+export function validateSignupPassword(password: string, confirmPassword: string): SignupPasswordValidation {
+  if (password.length < 8) return 'too_short';
+  if (password !== confirmPassword) return 'mismatch';
+  return 'ok';
+}
+
 /* ── notification preferences ───────────────────────────────────── */
 
 export type NotificationCategoryKey =

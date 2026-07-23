@@ -28,7 +28,6 @@ interface AuthContextValue {
   resetPassword: (token: string, password: string) => Promise<ApiUser>;
   /** Verify an emailed login code and start the session it returns. */
   verifyOtp: (email: string, code: string) => Promise<ApiUser>;
-  loginDemo: (role: string) => Promise<ApiUser>;
   logout: () => void;
 }
 
@@ -136,11 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
-  const loginDemo = useCallback(
-    (role: string) => login(`${role}@agrotraders.org`, 'password123'),
-    [login],
-  );
-
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
@@ -150,8 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, resetPassword, verifyOtp, loginDemo, logout }),
-    [user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, resetPassword, verifyOtp, loginDemo, logout],
+    () => ({ user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, resetPassword, verifyOtp, logout }),
+    [user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, resetPassword, verifyOtp, logout],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

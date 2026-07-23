@@ -14,7 +14,7 @@ import { FormModal } from './parts';
 
 interface Trip { id: string; reference: string; fromCity: string; toCity: string; cargo: string; status: string }
 
-/** Freight invoices — raise from delivered trips, list issued/received, mark paid. */
+/** Freight invoices — raise from delivered trips and list issued/received records. */
 export function TransporterInvoices() {
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
@@ -28,11 +28,6 @@ export function TransporterInvoices() {
 
   const invoicedTripIds = new Set((issued.data ?? []).filter((i) => i.kind === 'trip').map((i) => i.tripId));
   const billable = trips.filter((trip) => trip.status === 'delivered' && !invoicedTripIds.has(trip.id));
-
-  const setStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'paid' | 'void' }) => api.invoices.setStatus(id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['invoices'] }),
-  });
 
   return (
     <Screen>
@@ -75,9 +70,6 @@ export function TransporterInvoices() {
             </Row>
             <Row gap={8}>
               <View style={{ flex: 1 }}><OpenInvoiceButton id={inv.id} /></View>
-              {tab === 'issued' && inv.status === 'issued' && (
-                <View style={{ flex: 1 }}><Button title={t('transX.invoices.markPaid')} size="sm" full loading={setStatus.isPending} onPress={() => setStatus.mutate({ id: inv.id, status: 'paid' })} /></View>
-              )}
             </Row>
           </Card>
         ))

@@ -1,6 +1,6 @@
 import { WalletScreen } from '../components/MoneyScreens';
 
-/** Wallet — balance, top-up and transaction history. */
+/** Read-only wallet balance and transaction history. */
 export function BuyerWallet() {
   return <WalletScreen />;
 }

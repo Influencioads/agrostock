@@ -21,7 +21,12 @@ function serviceFor(role: string) {
       upsert: vi.fn(async () => ({ id: 'w1' })),
     },
   };
-  return { svc: new AdminService(prisma as never), prisma };
+  const audit = { log: vi.fn(async () => undefined) };
+  const notifications = { create: vi.fn(async () => undefined) };
+  return {
+    svc: new AdminService(prisma as never, audit as never, {} as never, notifications as never),
+    prisma,
+  };
 }
 
 describe('AdminService role approval provisioning', () => {

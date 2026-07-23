@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BrandMark, Button, Card, Combobox, Icon, Input, type IconName } from '@agrotraders/ui';
 import { ALL_COUNTRIES } from '@agrotraders/geo';
-import { isPendingVerification } from '@agrotraders/api-client';
+import { isPendingVerification, validateSignupPassword } from '@agrotraders/api-client';
 import { useAuth } from '../auth/AuthContext';
 import { useBranding } from '../branding/BrandingProvider';
 import { api } from '../lib/api';
@@ -34,6 +34,7 @@ export function RegisterPage() {
   const initialRole = roles.some((r) => r.id === roleFromUrl) ? roleFromUrl! : 'buyer';
 
   const [form, setForm] = useState({ name: '', email: '', password: '', role: initialRole, country: '', phone: '', location: '', marketId: '' });
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [ops, setOps] = useState({
     operatingCities: [] as string[],
     operatingCountries: [] as string[],
@@ -70,8 +71,13 @@ export function RegisterPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (form.password.length < 8) {
+    const passwordResult = validateSignupPassword(form.password, confirmPassword);
+    if (passwordResult === 'too_short') {
       setError(t('page.register.pwTooShort'));
+      return;
+    }
+    if (passwordResult === 'mismatch') {
+      setError(t('page.resetPassword.mismatch'));
       return;
     }
     setBusy(true);
@@ -226,6 +232,15 @@ export function RegisterPage() {
               placeholder={t('page.register.passwordHint')}
               value={form.password}
               onChange={set('password')}
+              required
+            />
+            <Input
+              label={t('page.resetPassword.confirmPassword')}
+              type="password"
+              placeholder={t('page.register.passwordHint')}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={error === t('page.resetPassword.mismatch') ? error : undefined}
               required
             />
             {/* Two inputs side by side leave ~155px each on a phone, which

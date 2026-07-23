@@ -5,6 +5,9 @@ import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { seedAllLabelTranslations } from './seed-translations';
 import { buildTaxonomyPlan, subKey } from './taxonomy/plan';
+import { assertDemoSeedAllowed } from './seed-guard';
+
+assertDemoSeedAllowed(process.env.NODE_ENV);
 
 /** A tiny but valid PDF used as a placeholder KYC document in demo data. */
 const SAMPLE_PDF = Buffer.from(

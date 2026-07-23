@@ -12,7 +12,6 @@ import App from './App';
 // where any data-only background work would go. Guarded so Expo Go (no native
 // module) doesn't crash on import.
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const messaging = require('@react-native-firebase/messaging').default;
   messaging().setBackgroundMessageHandler(async () => {});
 } catch {

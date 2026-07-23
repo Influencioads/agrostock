@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { ApiInvoice } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
+import { Badge, Card, EmptyState, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { OpenInvoiceButton } from './order-parts';
 
 export function InvoiceCenter({
@@ -20,7 +20,6 @@ export function InvoiceCenter({
 }) {
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
-  const qc = useQueryClient();
   const { user } = useAuth();
   const [tab, setTab] = useState<'issued' | 'received'>(defaultTab);
   const { data: invoices = [], isLoading } = useQuery<ApiInvoice[]>({
@@ -28,11 +27,6 @@ export function InvoiceCenter({
     queryFn: () => api.invoices.mine(tab),
     enabled: !!user,
   });
-  const setStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'paid' | 'void' }) => api.invoices.setStatus(id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['invoices'] }),
-  });
-
   return (
     <Screen>
       <Txt variant="h2">{title ?? t('mobile2.invoices.title')}</Txt>
@@ -66,11 +60,6 @@ export function InvoiceCenter({
             </Row>
             <Row gap={8}>
               <View style={{ flex: 1 }}><OpenInvoiceButton id={inv.id} /></View>
-              {tab === 'issued' && inv.status === 'issued' ? (
-                <View style={{ flex: 1 }}>
-                  <Button title={t('mobile2.invoices.markPaid')} size="sm" full loading={setStatus.isPending} onPress={() => setStatus.mutate({ id: inv.id, status: 'paid' })} />
-                </View>
-              ) : null}
             </Row>
           </Card>
         ))

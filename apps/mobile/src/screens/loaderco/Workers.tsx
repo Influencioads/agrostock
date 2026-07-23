@@ -138,7 +138,7 @@ function AddWorkerSheet({ onClose }: { onClose: () => void }) {
       {f.withLogin && (
         <>
           <Input label={t('loaderX.workers.loginHandle')} placeholder={t('loaderX.workers.loginHandlePlaceholder')} value={f.loginHandle} onChangeText={set('loginHandle')} />
-          <Input label={t('loaderX.workers.tempPassword')} value={f.loginPassword} onChangeText={set('loginPassword')} />
+          <Input label={t('loaderX.workers.tempPassword')} secureTextEntry value={f.loginPassword} onChangeText={set('loginPassword')} />
         </>
       )}
       {add.isError ? <Txt color={C.error} variant="small">{(add.error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? t('loaderX.workers.addError')}</Txt> : null}

@@ -10,10 +10,14 @@ import { I18nExceptionFilter } from './common/i18n-exception.filter';
 import { validationExceptionFactory } from './common/validation-exception.factory';
 import { RedisIoAdapter } from './realtime/redis-io.adapter';
 import { assertProductionConfig } from './config/production-config';
+import { assertProductionHasNoDemoAccounts } from './config/demo-account-guard';
+import { PrismaService } from './prisma/prisma.service';
 
 async function bootstrap() {
   assertProductionConfig();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Fail closed before serving traffic if seeded demo accounts reached prod.
+  await assertProductionHasNoDemoAccounts(app.get(PrismaService));
   app.setGlobalPrefix('api');
 
   // ── public uploads (product images etc.) served as static files ──

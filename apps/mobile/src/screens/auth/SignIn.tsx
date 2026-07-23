@@ -8,17 +8,15 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { Button, Input, Row, Txt } from '../../ui';
-import { C, radius, space, type } from '../../theme/tokens';
-import { microLabel } from '../../theme/casing';
+import { C, space, type } from '../../theme/tokens';
 import { BrandTile } from '../../ui/BrandLogo';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-const DEMOS = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'];
 
 export function SignIn() {
   const { t } = useI18n();
   const nav = useNavigation<Nav>();
-  const { login, loginDemo } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -99,23 +97,6 @@ export function SignIn() {
             </Row>
           </View>
 
-          <View style={s.demo}>
-            <Text style={[s.demoTitle, microLabel()]}>{t('auth.signIn.demoTitle')}</Text>
-            <View style={s.demoRow}>
-              {DEMOS.map((r) => (
-                <Pressable
-                  key={r}
-                  onPress={() => run(() => loginDemo(r), r)}
-                  style={[s.demoChip, busy === r && { opacity: 0.5 }]}
-                >
-                  <Text style={s.demoChipText}>{t(`enums:role.${r}`)}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Txt variant="muted" style={{ textAlign: 'center' }}>
-              {t('auth.signIn.demoHint', { password: 'password123' })}
-            </Txt>
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -128,16 +109,4 @@ const s = StyleSheet.create({
   form: { marginTop: space.xxl, gap: space.lg },
   link: { ...type.title, fontSize: 14, color: C.green },
   linkMuted: { ...type.body, fontSize: 14, color: C.inkSoft },
-  demo: { marginTop: space.xxl, gap: space.md, alignItems: 'center' },
-  demoTitle: { ...type.micro, color: C.inkMuted },
-  demoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, justifyContent: 'center' },
-  demoChip: {
-    borderWidth: 1,
-    borderColor: C.border,
-    backgroundColor: C.white,
-    borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  demoChipText: { ...type.caption, color: C.ink },
 });

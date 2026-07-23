@@ -143,6 +143,9 @@
       "resent": "Link sent — check your inbox",
       "iAmA": "I am a…",
       "cta": "Create account",
+      "confirmPassword": "Confirm password",
+      "passwordMismatch": "Passwords don't match.",
+      "passwordTooShort": "Password must be at least 8 characters.",
       "error": "Could not create the account. Try a different email.",
       "subtitle": "Pick your role — you can add more later.",
       "terms": "By continuing you agree to the Terms and Privacy policy."

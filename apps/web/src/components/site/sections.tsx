@@ -2,18 +2,16 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import type { ApiCategory, ApiSubcategory } from '@agrotraders/api-client';
+import type { ApiCategory } from '@agrotraders/api-client';
 import { Badge, Button, Card, Icon, Reveal, Stagger, StaggerItem } from '@agrotraders/ui';
-import { ATTRIBUTE_SCHEMA, getFilterFields } from '@agrotraders/types';
+import { getFilterFields } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { useI18n } from '../../i18n';
 import {
-  categories,
   community,
   insights,
   intl,
   officesPreview,
-  products as mockProducts,
   safeSteps,
 } from '../../mock/data';
 import { Sparkline } from './Sparkline';
@@ -237,37 +235,13 @@ function CategoryMegaMenu() {
 
   // Categories come from the live catalogue (same source as the marketplace
   // filter and admin), so anything an admin adds/edits shows up here too. The
-  // static ATTRIBUTE_SCHEMA is only a fallback for when the API is unreachable.
   const { data: liveCats = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: () => api.categories.list(),
     staleTime: 3600e3,
     retry: 1,
   });
-  const fallbackCategories = useMemo<ApiCategory[]>(
-    () =>
-      ATTRIBUTE_SCHEMA.map((c, catIndex) => {
-        const categoryId = `fallback-cat-${catIndex}`;
-        return {
-          id: categoryId,
-          name: c.name,
-          slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          emoji: c.emoji,
-          tint: null,
-          subcategories: c.subcategories.map((s, subIndex): ApiSubcategory => ({
-            id: `fallback-sub-${catIndex}-${subIndex}`,
-            name: s.name,
-            slug: s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            emoji: null,
-            sort: subIndex,
-            categoryId,
-            parentId: null,
-          })),
-        };
-      }),
-    [],
-  );
-  const menuCategories = liveCats.length ? liveCats : fallbackCategories;
+  const menuCategories = liveCats;
   const activeCat = menuCategories.find((c) => c.id === catId) ?? null;
   const subTree = useMemo(() => buildSubcategoryTree(activeCat?.subcategories ?? []), [activeCat?.subcategories]);
   const flatSubs = useMemo(() => flattenSubcategoryTree(subTree), [subTree]);
@@ -292,8 +266,6 @@ function CategoryMegaMenu() {
   const leadField = activeCat && selectedSub ? getFilterFields(activeCat.name, selectedSub.name)[0] : undefined;
   const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
   const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
-  const isFallbackId = (id?: string) => !id || id.startsWith('fallback-');
-
   const toggle = () => {
     // Reset the drill-down each time the panel is (re)opened.
     setOpen((o) => {
@@ -304,9 +276,9 @@ function CategoryMegaMenu() {
   const go = (category: ApiCategory, subcategory?: SubcategoryNode, extra: Record<string, string> = {}) => {
     const q: Record<string, string> = {
       category: category.name,
-      ...(!isFallbackId(category.id) ? { categoryId: category.id } : {}),
+      categoryId: category.id,
       ...(subcategory ? { subcategory: subcategory.name } : {}),
-      ...(subcategory && !isFallbackId(subcategory.id) ? { subcategoryId: subcategory.id } : {}),
+      ...(subcategory ? { subcategoryId: subcategory.id } : {}),
       ...extra,
     };
     setOpen(false);
@@ -667,7 +639,7 @@ export function Highlighted() {
     queryFn: async () => (await api.ads.promoted(8)).map(toCardProduct),
     retry: 1,
   });
-  const { data: products = mockProducts } = useQuery({
+  const { data: products = [] } = useQuery({
     queryKey: ['products', 'highlighted'],
     queryFn: async () => (await api.products.list()).map(toCardProduct),
     retry: 1,
@@ -709,6 +681,12 @@ function categoryKey(name: string) {
 export function Categories() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.categories.list(),
+    staleTime: 3600e3,
+    retry: 1,
+  });
   return (
     <Section>
       <SectionHeader title={t('section.categories')} action={t('common:viewAll')} onAction={() => navigate('/market')} />
@@ -719,16 +697,15 @@ export function Categories() {
               onClick={() => navigate('/market')}
               className="flex w-full flex-col items-center gap-2 rounded-lg border border-surface-border bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:border-brand-leaf hover:shadow-[0_10px_30px_rgba(11,61,46,0.10)]"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-lg text-2xl" style={{ background: c.tint }}>
-                {c.emoji}
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-surface text-2xl" style={c.tint ? { background: c.tint } : undefined}>
+                {c.emoji ?? '🌱'}
               </span>
               <span className="max-w-full break-words text-center text-sm font-bold text-ink">
-                {/* Category names live in the mock list in English — look each one up in
-                    the `categoryName` catalog (key = camelCased name) and fall back to
-                    the English label if a locale is missing the key. */}
+                {/* Look up the API label in the localized category catalog and fall
+                    back to the live English label when a locale has no matching key. */}
                 {t(`categoryName.${categoryKey(c.name)}`, { defaultValue: c.name })}
               </span>
-              <span className="text-xs text-ink-soft">{c.count}</span>
+              <span className="text-xs text-ink-soft">{c._count?.products ?? 0}</span>
             </button>
           </StaggerItem>
         ))}
