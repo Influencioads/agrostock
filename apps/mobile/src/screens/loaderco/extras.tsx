@@ -6,10 +6,10 @@ import type {
   ApiLoaderWorker, ApiLoaderTeam, ApiLoaderJob, ApiLoaderRate, ApiLoaderReviews, ApiAttendance,
 } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { usd } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Input, Loading, RatingStars, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, RatingStars, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { forwardChevron } from '../../lib/rtl';
 
@@ -28,6 +28,7 @@ export function LoaderPricing() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const [service, setService] = useState('');
   const [rate, setRate] = useState('');
   const { data: rates = [], isLoading } = useQuery<ApiLoaderRate[]>({ queryKey: ['loader-rates'], queryFn: () => api.loaders.rates(), enabled: !!user });
@@ -45,14 +46,14 @@ export function LoaderPricing() {
           <Button title={t('loaderX.common.add')} icon="add" loading={add.isPending} disabled={!service.trim() || !Number(rate)} onPress={() => add.mutate()} />
         </Row>
       </Card>
-      {isLoading ? <Loading /> : rates.length === 0 ? (
+      {isLoading ? <SkeletonRows /> : rates.length === 0 ? (
         <EmptyState icon="cash-outline" title={t('loaderX.pricing.emptyTitle')} body={t('loaderX.pricing.emptyBody')} />
       ) : rates.map((r) => (
         <Card key={r.id}>
           <Row style={{ justifyContent: 'space-between' }}>
             <Txt variant="title">{r.service}</Txt>
             <Row gap={10}>
-              <Txt variant="title">{usd(r.rateCents)}/{r.unit}</Txt>
+              <Txt variant="title">{fmtCents(r.rateCents)}/{r.unit}</Txt>
               <Pressable onPress={() => del.mutate(r.id)} hitSlop={8}><Ionicons name="trash-outline" size={18} color={C.error} /></Pressable>
             </Row>
           </Row>
@@ -71,7 +72,7 @@ export function LoaderReviews() {
   return (
     <Screen>
       <Txt variant="h2">{t('loaderX.reviews.title')}</Txt>
-      {isLoading ? <Loading /> : list.length === 0 ? (
+      {isLoading ? <SkeletonRows /> : list.length === 0 ? (
         <EmptyState icon="star-outline" title={t('loaderX.reviews.emptyTitle')} body={t('loaderX.reviews.emptyBody')} />
       ) : (
         <>
@@ -84,7 +85,7 @@ export function LoaderReviews() {
           {list.map((r) => (
             <Card key={r.id}>
               <Row style={{ justifyContent: 'space-between' }}>
-                <Txt variant="title">{r.rater?.name ?? t('loaderX.reviews.clientFallback')}{r.job?.reference ? ` · #${r.job.reference}` : ''}</Txt>
+                <Txt variant="title">{r.rater?.name ?? t('loaderX.reviews.clientFallback')}</Txt>
                 <RatingStars n={r.stars} />
               </Row>
               {r.text ? <Txt variant="muted" style={{ marginTop: 4 }}>{r.text}</Txt> : null}
@@ -111,7 +112,7 @@ export function LoaderAvailability() {
     <Screen>
       <Txt variant="h2">{t('loaderX.availability.title')}</Txt>
       <Txt variant="muted">{t('loaderX.availability.subtitle')}</Txt>
-      {isLoading ? <Loading /> : (
+      {isLoading ? <SkeletonRows /> : (
         <Card style={{ gap: 8 }}>
           <Row gap={6}>
             <View style={{ width: 74 }} />
@@ -157,7 +158,7 @@ export function LoaderAttendance() {
   return (
     <Screen>
       <Txt variant="h2">{t('loaderX.attendance.title')}</Txt>
-      {isLoading ? <Loading /> : workers.length === 0 ? (
+      {isLoading ? <SkeletonRows /> : workers.length === 0 ? (
         <EmptyState icon="checkmark-done-outline" title={t('loaderX.attendance.emptyTitle')} body={t('loaderX.attendance.emptyBody')} />
       ) : (
         <>
@@ -216,7 +217,7 @@ export function LoaderTeams() {
           <Button title={t('loaderX.common.add')} icon="add" loading={add.isPending} disabled={!name.trim()} onPress={() => add.mutate()} />
         </Row>
       </Card>
-      {isLoading ? <Loading /> : teams.length === 0 ? (
+      {isLoading ? <SkeletonRows /> : teams.length === 0 ? (
         <EmptyState icon="grid-outline" title={t('loaderX.teams.emptyTitle')} body={t('loaderX.teams.emptyBody')} />
       ) : teams.map((tm) => (
         <Card key={tm.id} onPress={() => setDetail(tm)}>

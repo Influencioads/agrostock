@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ApiAuctionListing } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
-import { Badge, Button, Card, EmptyState, Loading, Row, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -48,7 +48,7 @@ export function AuctionsBoard() {
             <Txt variant="small" style={{ flex: 1 }}>{t('pubX.auc.openInfo')}</Txt>
           </Card>
         }
-        ListEmptyComponent={isLoading ? <Loading /> : <EmptyState icon="hammer-outline" title={t('pubX.auc.empty')} />}
+        ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="hammer-outline" title={t('pubX.auc.empty')} />}
         renderItem={({ item: a }) => {
           const ended = a.auctionEndsAt ? new Date(a.auctionEndsAt).getTime() <= Date.now() : false;
           const price = a.highestCents ?? a.startBidCents ?? 0;

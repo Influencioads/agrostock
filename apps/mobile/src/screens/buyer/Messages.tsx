@@ -7,7 +7,7 @@ import type { ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Avatar, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Avatar, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { forwardChevron } from '../../lib/rtl';
@@ -40,7 +40,7 @@ export function BuyerMessages() {
       {!user ? (
         <EmptyState icon="lock-closed-outline" title={t('buyerX.messages.signInTitle')} />
       ) : isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : contacts.size === 0 ? (
         <EmptyState icon="chatbubbles-outline" title={t('buyerX.messages.emptyTitle')} body={t('buyerX.messages.emptyBody')} />
       ) : (

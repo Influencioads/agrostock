@@ -3,9 +3,10 @@ import { Image, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiDriver } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
-import { Avatar, Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Avatar, Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { FormModal, PhotoPicker, type PickedImage } from './parts';
@@ -15,6 +16,7 @@ const empty: Form = { name: '', vehicle: '', rating: '96', onTime: '95', phone: 
 
 export function TransporterDrivers() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const { user } = useAuth();
   const [editing, setEditing] = useState<ApiDriver | null>(null);
@@ -32,7 +34,7 @@ export function TransporterDrivers() {
       </Row>
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : drivers.length === 0 ? (
         <EmptyState icon="people-outline" title={t('transX.drivers.emptyTitle')} body={t('transX.drivers.emptyBody')} />
       ) : (
@@ -53,7 +55,7 @@ export function TransporterDrivers() {
                 {d.phone ? <Txt variant="muted">☎ {d.phone}</Txt> : null}
                 {d.licenseNumber ? <Txt variant="muted">{t('transX.drivers.licence')} {d.licenseNumber}{d.licenseExpiry ? ` · ${t('transX.drivers.exp')} ${new Date(d.licenseExpiry).toLocaleDateString()}` : ''}</Txt> : null}
                 {(d.experienceYears != null || d.ratePerHourCents != null) ? (
-                  <Txt variant="muted">{d.experienceYears != null ? t('transX.drivers.yrsExp', { years: d.experienceYears }) : ''}{d.experienceYears != null && d.ratePerHourCents != null ? ' · ' : ''}{d.ratePerHourCents != null ? `${usd(d.ratePerHourCents)}${t('transX.drivers.perHr')}` : ''}</Txt>
+                  <Txt variant="muted">{d.experienceYears != null ? t('transX.drivers.yrsExp', { years: d.experienceYears }) : ''}{d.experienceYears != null && d.ratePerHourCents != null ? ' · ' : ''}{d.ratePerHourCents != null ? `${fmtCents(d.ratePerHourCents)}${t('transX.drivers.perHr')}` : ''}</Txt>
                 ) : null}
               </View>
             )}

@@ -131,3 +131,36 @@ export class ResendVerificationDto {
   @IsEmail()
   email!: string;
 }
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'buyer@agrotraders.org' })
+  @IsEmail()
+  email!: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ description: 'The one-shot token from the reset link' })
+  @IsString()
+  token!: string;
+
+  @ApiProperty({ example: 'newPassword123', minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password!: string;
+}
+
+export class RequestOtpDto {
+  @ApiProperty({ example: 'buyer@agrotraders.org' })
+  @IsEmail()
+  email!: string;
+}
+
+export class VerifyOtpDto {
+  @ApiProperty({ example: 'buyer@agrotraders.org' })
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({ example: '482913', description: 'The 6-digit code emailed to the user' })
+  @IsString()
+  code!: string;
+}

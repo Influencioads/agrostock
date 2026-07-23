@@ -7,6 +7,8 @@ export type RootStackParamList = {
   Checkout: { slug?: string } | undefined;
   SignIn: { reason?: string } | undefined;
   SignUp: undefined;
+  ForgotPassword: undefined;
+  OtpSignIn: undefined;
   Notifications: undefined;
   NotificationSettings: undefined;
   Offices: undefined;

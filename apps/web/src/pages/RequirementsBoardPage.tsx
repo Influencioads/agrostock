@@ -119,7 +119,7 @@ function PostRequirementCard({ onDone, onCancel }: { onDone: () => void; onCance
   return (
     <Card className="mb-5 border-brand-leaf">
       <h3 className="font-display font-bold text-ink">{t('page.requirements.newRequirement')}</h3>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label={t('page.requirements.fTitle')} placeholder={t('page.requirements.phTitle')} value={f.title} onChange={set('title')} />
         <Input label={t('page.requirements.fProduct')} placeholder={t('page.requirements.phProduct')} value={f.productName} onChange={set('productName')} />
         <div className="grid grid-cols-2 gap-2">
@@ -176,7 +176,7 @@ function RequirementDetail({ id, isSeller }: { id: string; isSeller: boolean }) 
       </div>
 
       {isSeller && !sent && (
-        <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_140px_140px_auto]">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px_140px_auto]">
           <input
             value={offer.body}
             onChange={(e) => setOffer((p) => ({ ...p, body: e.target.value }))}

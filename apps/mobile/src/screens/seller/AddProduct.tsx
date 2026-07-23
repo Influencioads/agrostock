@@ -16,6 +16,7 @@ import { useI18n } from '../../i18n';
 import { Badge, Button, Card, Chip, ChipSelect, Input, Row, Screen, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
 import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
+import { MultiPickerField, PickerField } from '../components/PickerSheet';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -217,44 +218,42 @@ export function GalleryEditor({
 
 /* ── Country pickers (single origin + multi supply) ───────────────── */
 
+/**
+ * Both pickers used to render all ~60 countries as inline chips behind a search
+ * box, which buried the rest of the form under several screens of flags. They
+ * are searchable sheets now, showing only what the seller actually picked.
+ */
+const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c.name, label: `${c.flag} ${c.name}` }));
+
 /** Searchable single-select for the country the goods sit in. */
 function CountryPicker({ value, onChange }: { value: string; onChange: (name: string) => void }) {
   const { t } = useI18n();
-  const [query, setQuery] = useState('');
-  const q = query.trim().toLowerCase();
-  const shown = q ? COUNTRIES.filter((c) => c.name.toLowerCase().includes(q)) : COUNTRIES;
   return (
-    <View style={{ gap: 8 }}>
-      <Txt variant="label">{t('sellerX.add.country')}</Txt>
-      <Input placeholder={t('sellerX.add.searchCountry')} value={query} onChangeText={setQuery} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {shown.map((c) => (
-          <Chip key={c.name} label={`${c.flag} ${c.name}`} active={c.name === value} onPress={() => onChange(c.name)} />
-        ))}
-      </View>
-    </View>
+    <PickerField
+      label={t('sellerX.add.country')}
+      placeholder={t('sellerX.add.searchCountry')}
+      value={value}
+      displayValue={COUNTRY_OPTIONS.find((o) => o.value === value)?.label}
+      options={COUNTRY_OPTIONS}
+      onChange={onChange}
+      searchPlaceholder={t('sellerX.add.searchCountry')}
+    />
   );
 }
 
 /** Searchable multi-select for the countries the seller can supply to. */
 function SupplyCountriesPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
   const { t } = useI18n();
-  const [query, setQuery] = useState('');
-  const toggle = (name: string) =>
-    onChange(value.includes(name) ? value.filter((c) => c !== name) : [...value, name]);
-  const q = query.trim().toLowerCase();
-  const shown = q ? COUNTRIES.filter((c) => c.name.toLowerCase().includes(q)) : COUNTRIES;
   return (
-    <View style={{ gap: 8 }}>
-      <Txt variant="label">{t('sellerX.add.supplyCountries')}</Txt>
-      <Txt variant="small">{t('sellerX.add.supplyCountriesHint')}</Txt>
-      <Input placeholder={t('sellerX.add.searchCountry')} value={query} onChangeText={setQuery} />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {shown.map((c) => (
-          <Chip key={c.name} label={`${c.flag} ${c.name}`} active={value.includes(c.name)} onPress={() => toggle(c.name)} />
-        ))}
-      </View>
-    </View>
+    <MultiPickerField
+      label={t('sellerX.add.supplyCountries')}
+      hint={t('sellerX.add.supplyCountriesHint')}
+      placeholder={t('sellerX.add.searchCountry')}
+      values={value}
+      options={COUNTRY_OPTIONS}
+      onChange={onChange}
+      searchPlaceholder={t('sellerX.add.searchCountry')}
+    />
   );
 }
 

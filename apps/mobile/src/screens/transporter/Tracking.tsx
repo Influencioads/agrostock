@@ -4,7 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { RootStackParamList } from '../../navigation/types';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { tripTone } from '../../lib/format';
 import { useI18n } from '../../i18n';
 
@@ -25,7 +25,7 @@ export function TransporterTracking() {
       <Txt variant="h2">{t('transX.tracking.title')}</Txt>
       <Txt variant="muted">{t('transX.tracking.subtitle')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : active.length === 0 ? (
         <EmptyState icon="map-outline" title={t('transX.tracking.emptyTitle')} body={t('transX.tracking.emptyBody')} />
       ) : (

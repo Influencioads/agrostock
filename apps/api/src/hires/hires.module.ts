@@ -337,11 +337,19 @@ export class HiresService {
     if (hire.requesterId !== user.id) throw new ForbiddenException('Not your hire request');
     if (hire.status !== 'pending') throw new BadRequestException('Only pending requests can be cancelled.');
     await this.refundEscrow(hire);
-    return this.prisma.hireRequest.update({
+    const updated = await this.prisma.hireRequest.update({
       where: { id },
       data: { status: 'cancelled', decidedAt: new Date() },
       include: HIRE_INCLUDE,
     });
+    // Let the provider know the requester withdrew (transactional → also emails).
+    await this.notify(
+      updated.targetUserId,
+      'hire.cancelled',
+      { actor: await this.nameOf(user.id), reference: updated.reference },
+      { hireId: updated.id },
+    );
+    return updated;
   }
 
   /** Return a still-held escrow budget to the requester (decline / cancel). */

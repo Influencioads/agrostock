@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiAuctionDetail } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useApiError } from '../../lib/useApiError';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Button, Card, Input, Row, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
@@ -14,8 +15,6 @@ import { useI18n } from '../../i18n';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const usd = (c: number | null | undefined) => (c == null ? '—' : '$' + Math.round(c / 100).toLocaleString());
-
 /**
  * Open ascending auction bidding card — current highest bid, the viewer's
  * standing, a min-increment stepper with quick raises, and a proxy auto-bid
@@ -23,6 +22,7 @@ const usd = (c: number | null | undefined) => (c == null ? '—' : '$' + Math.ro
  */
 export function BidPanel({ slug }: { slug: string }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const apiError = useApiError();
   const { user, role } = useAuth();
   const nav = useNavigation<Nav>();
@@ -84,7 +84,7 @@ export function BidPanel({ slug }: { slug: string }) {
         <View>
           <Txt variant="muted">{t('compX.bid.currentHighest')}</Txt>
           <Txt style={{ fontSize: 30, fontWeight: '800', color: C.dark }}>
-            {usd(auction?.highestCents ?? auction?.startBidCents ?? 0)}
+            {fmtCents(auction?.highestCents ?? auction?.startBidCents ?? 0)}
           </Txt>
         </View>
         <Badge label={t('compX.bid.bidsN', { count: auction?.bidCount ?? 0 })} tone="green" />
@@ -97,7 +97,7 @@ export function BidPanel({ slug }: { slug: string }) {
             <Txt style={{ color: C.white, fontSize: 11, fontWeight: '700' }}>#{standing.yourRank}</Txt>
           </View>
           <Txt variant="small" style={{ flex: 1, fontWeight: '600' }}>
-            {standing.leading ? t('compX.bid.leading') : t('compX.bid.outbid', { amount: usd(standing.yourMaxCents) })}
+            {standing.leading ? t('compX.bid.leading') : t('compX.bid.outbid', { amount: fmtCents(standing.yourMaxCents) })}
           </Txt>
         </Row>
       ) : null}
@@ -108,7 +108,7 @@ export function BidPanel({ slug }: { slug: string }) {
         <>
           {/* stepper */}
           <View style={{ gap: 6 }}>
-            <Txt variant="muted">{t('compX.bid.minNext', { amount: usd((auction?.minNextCents ?? 0)) })}</Txt>
+            <Txt variant="muted">{t('compX.bid.minNext', { amount: fmtCents((auction?.minNextCents ?? 0)) })}</Txt>
             <Row style={{ borderWidth: 2, borderColor: C.leaf, borderRadius: radius.md, overflow: 'hidden' }}>
               <Pressable onPress={() => step(-1)} style={{ width: 46, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
                 <Txt style={{ fontSize: 22, color: C.dark }}>−</Txt>

@@ -42,6 +42,14 @@
       "title": "Order {{reference}} — {{status}}",
       "body": "The order is now {{status}}."
     },
+    "new_order": {
+      "title": "New order {{reference}}",
+      "body": "{{buyer}} placed an order for {{product}}."
+    },
+    "bid_awarded": {
+      "title": "Your bid was awarded",
+      "body": "You won {{reference}}. Order {{orderReference}} is now open."
+    },
     "dispatched": {
       "title": "Order dispatched",
       "body": "{{cargo}} is on its way. Share your delivery OTP with the driver on arrival."
@@ -79,6 +87,14 @@
     "invoice": {
       "title": "New invoice",
       "body": "{{issuer}} issued {{number}} for {{amount}}."
+    },
+    "invoice_paid": {
+      "title": "Invoice paid",
+      "body": "{{number}} for {{amount}} has been marked paid."
+    },
+    "payout_requested": {
+      "title": "Payout requested",
+      "body": "Your withdrawal request for {{amount}} was received and is under review."
     },
     "payout_approved": {
       "title": "Payout sent",
@@ -139,6 +155,38 @@
     "declined": {
       "title": "Hire request declined",
       "body": "{{actor}} declined your hire request {{reference}}."
+    },
+    "cancelled": {
+      "title": "Hire cancelled",
+      "body": "{{actor}} cancelled the hire {{reference}}. Any held funds were refunded."
+    }
+  },
+  "loader": {
+    "job_claimed": {
+      "title": "Job claimed",
+      "body": "{{loaderco}} claimed your loading job {{reference}}."
+    },
+    "assigned": {
+      "title": "You've been assigned a job",
+      "body": "You were assigned to loading job {{reference}}."
+    },
+    "completed": {
+      "title": "Loading job completed",
+      "body": "Loading job {{reference}} is complete."
+    }
+  },
+  "transport": {
+    "quote_new": {
+      "title": "New transport quote",
+      "body": "A transporter quoted {{amount}} on your request."
+    },
+    "assigned": {
+      "title": "Trip assigned",
+      "body": "Your quote was accepted — trip {{reference}} from {{fromCity}} to {{toCity}} is assigned to you."
+    },
+    "delivered": {
+      "title": "Trip delivered",
+      "body": "Trip {{reference}} was delivered."
     }
   },
   "kyc": {

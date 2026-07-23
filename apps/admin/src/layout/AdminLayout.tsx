@@ -43,6 +43,7 @@ const MODULES: Mod[] = [
   { to: '/transport', key: 'transport', icon: 'truck', group: 'Logistics', perm: 'transport_manage' },
   { to: '/loaders', key: 'loaders', icon: 'worker', group: 'Logistics', perm: 'loaders_manage' },
   { to: '/cms', key: 'cms', icon: 'file', group: 'Company', perm: 'cms_manage' },
+  { to: '/email-templates', key: 'emailTemplates', icon: 'message', group: 'Company', perm: 'email_templates' },
   { to: '/offices', key: 'offices', icon: 'globe', group: 'Company', perm: 'offices_manage' },
   { to: '/branding', key: 'branding', icon: 'leaf', group: 'Company', perm: 'branding_manage' },
   { to: '/payments', key: 'payments', icon: 'wallet', group: 'Company', perm: 'finance_manage' },

@@ -1,15 +1,71 @@
-import { useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Fragment, useState } from 'react';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { ORDER_STEPS, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
-import { Badge, Button, Card, Input, Loading, ProgressBar, Row, Txt } from '../../ui';
-import { C, space } from '../../theme/tokens';
+import { Badge, Button, Card, Input, ProgressBar, Row, SkeletonRows, Txt } from '../../ui';
+import { C, space, type } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { alignEnd } from '../../lib/rtl';
+
+/**
+ * Four-stage horizontal stepper for an order card — Escrow → Dispatched →
+ * In transit → QC & release — with the many API statuses bucketed into those
+ * stages, matching the prototype's order timeline.
+ */
+const STEP_BUCKET: Partial<Record<ApiOrderStatus, number>> = {
+  enquiry: 0, quote: 0, processing: 0, paid: 0,
+  packed: 1, dispatched: 1,
+  shipped: 2, in_transit: 2,
+  delivered: 3,
+};
+export function OrderSteps({ status }: { status: ApiOrderStatus }) {
+  const { t } = useI18n();
+  const cur = STEP_BUCKET[status] ?? 0;
+  const labels = [t('buyerX.orders.stepEscrow'), t('buyerX.orders.stepDispatched'), t('buyerX.orders.stepTransit'), t('buyerX.orders.stepRelease')];
+  return (
+    <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {labels.map((_, i) => {
+          const done = i < cur;
+          const current = i === cur;
+          return (
+            <Fragment key={i}>
+              {i > 0 ? <View style={{ flex: 1, height: 2, backgroundColor: i <= cur ? C.green : C.border }} /> : null}
+              <View
+                style={[
+                  ts.dot,
+                  done && { backgroundColor: C.green, borderColor: C.green },
+                  current && { backgroundColor: C.white, borderColor: C.green, borderWidth: 3 },
+                  !done && !current && { backgroundColor: C.page, borderColor: C.border },
+                ]}
+              />
+            </Fragment>
+          );
+        })}
+      </View>
+      <View style={{ flexDirection: 'row', marginTop: 8 }}>
+        {labels.map((l, i) => (
+          <Text
+            key={i}
+            numberOfLines={1}
+            style={[ts.label, { flex: 1, textAlign: i === 0 ? 'left' : i === labels.length - 1 ? 'right' : 'center', color: i <= cur ? C.ink : C.inkMuted }]}
+          >
+            {l}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const ts = StyleSheet.create({
+  dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
+  label: { ...type.caption, fontSize: 11 },
+});
 
 /** Refresh every list/detail that can show an order after it moves. */
 export function useOrderInvalidation() {
@@ -161,7 +217,7 @@ export function OrderDetailSheet({ orderId, onClose }: { orderId: string; onClos
           </Row>
 
           {isLoading || !order ? (
-            <Loading />
+            <SkeletonRows />
           ) : (
             <>
               <Row style={{ justifyContent: 'space-between' }}>

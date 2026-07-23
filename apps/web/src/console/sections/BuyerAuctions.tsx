@@ -100,7 +100,7 @@ export function BuyerAuctions() {
         ) : auctions.length === 0 ? (
           <Card className="py-10 text-center text-ink-soft">{t('console.buyer.noAuctionsRunning')}</Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {auctions.map((a) => {
               const mine = bidBySlug.get(a.slug);
               const time = hms(a.auctionEndsAt);

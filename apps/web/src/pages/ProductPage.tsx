@@ -131,7 +131,7 @@ export function ProductPage() {
         <span className="text-ink">{product.name}</span>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         {/* left: gallery + info */}
         <div>
           {/* Real photos when the seller uploaded any; emoji placeholders otherwise. */}
@@ -141,7 +141,7 @@ export function ProductPage() {
             const tiles = hasPhotos ? photos : thumbs;
             const current = Math.min(active, tiles.length - 1);
             return (
-              <div className="grid gap-4 sm:grid-cols-[80px_1fr]">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-[80px_1fr]">
                 <div className="flex gap-2 overflow-x-auto sm:flex-col sm:overflow-visible">
                   {tiles.map((tile, i) => (
                     <button
@@ -238,7 +238,7 @@ export function ProductPage() {
           {attrRows.length > 0 && (
             <Card className="mt-6">
               <h3 className="font-display text-lg font-bold text-ink">{t('page.product.specifications')}</h3>
-              <dl className="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
                 {attrRows.map((r) => (
                   <div key={r.label} className="flex justify-between border-b border-surface-border py-2 text-sm">
                     <dt className="text-ink-soft">{r.label}</dt>
@@ -340,7 +340,7 @@ export function ProductPage() {
       {related.length > 0 && (
         <div className="mt-12">
           <h2 className="mb-4 font-display text-2xl font-extrabold text-ink">{t('page.product.related')}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {related.map((p) => (
               <ProductCard key={p.id} p={p} />
             ))}

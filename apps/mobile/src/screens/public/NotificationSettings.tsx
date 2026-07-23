@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NotificationPreferences } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
-import { Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 
@@ -49,7 +49,7 @@ export function NotificationSettings() {
   if (q.isLoading || !q.data) {
     return (
       <Screen>
-        <Loading />
+        <SkeletonRows />
       </Screen>
     );
   }

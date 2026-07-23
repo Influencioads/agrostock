@@ -6,7 +6,7 @@ import type { Tone } from '../lib/format';
 import { api } from '../lib/api';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Txt } from '../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../ui';
 
 const REQUESTABLE = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'];
 const STATUS_TONE: Record<string, Tone> = { pending: 'warn', approved: 'green', rejected: 'error' };
@@ -84,7 +84,7 @@ export function RolesAccess() {
 
       <Txt variant="title">{t('rolesAccess.history')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : requests.length === 0 ? (
         <EmptyState icon="documents-outline" title={t('rolesAccess.emptyTitle')} body={t('rolesAccess.emptyBody')} />
       ) : (

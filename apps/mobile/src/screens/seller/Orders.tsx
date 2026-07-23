@@ -7,7 +7,7 @@ import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, ChipSelect, EmptyState, Input, Loading, Row, Screen, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { OrderDetailSheet, OtpCard, useOrderInvalidation } from '../components/order-parts';
 import { ArrangeLogisticsSheet } from '../components/ArrangeLogisticsSheet';
@@ -174,7 +174,7 @@ export function SellerOrders() {
       <Txt variant="h2">{t('sellerX.orders.title')}</Txt>
       {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : orders.length === 0 ? (
         <EmptyState icon="cube-outline" title={t('sellerX.orders.emptyTitle')} body={t('sellerX.orders.emptyBody')} />
       ) : (

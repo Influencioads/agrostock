@@ -116,6 +116,15 @@ export function LoginPage() {
             </Button>
           </form>
 
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <Link to="/otp-login" className="font-semibold text-brand hover:text-brand-dark">
+              {t('page.login.otpSignIn')}
+            </Link>
+            <Link to="/forgot-password" className="text-ink-soft hover:text-ink">
+              {t('page.login.forgotPassword')}
+            </Link>
+          </div>
+
           <p className="mt-4 text-center text-sm text-ink-soft">
             {t('page.login.noAccount')}{' '}
             <Link to="/register" className="font-bold text-brand hover:text-brand-dark">

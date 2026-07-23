@@ -69,7 +69,7 @@ export function SellerDashboard({ name, onNavigate }: { name: string; onNavigate
         <StaggerItem><Stat className="h-full" icon={<Icon name="bag" size={18} />} value={String(m.inquiries)} label={t('console.dash.buyerInquiries')} delta={`+${m.quotes.length}`} up /></StaggerItem>
       </Stagger>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* revenue chart */}
         <BarChart title={t('console.dash.revenue')} caption={t('console.dash.perMonth')} className="lg:col-span-2" data8={series?.data8} data12={series?.data12} />
 
@@ -96,7 +96,7 @@ export function SellerDashboard({ name, onNavigate }: { name: string; onNavigate
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* recent orders */}
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between">

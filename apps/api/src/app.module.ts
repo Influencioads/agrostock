@@ -21,6 +21,7 @@ import { LoadersModule } from './loaders/loaders.module';
 import { AdsModule } from './ads/ads.module';
 import { DriversModule } from './drivers/drivers.module';
 import { CmsModule } from './cms/cms.module';
+import { EmailTemplatesModule } from './email-templates/email-templates.module';
 import { BrandingModule } from './branding/branding.module';
 import { MeModule } from './me/me.module';
 import { MarketsModule } from './markets/markets.module';
@@ -62,6 +63,7 @@ import { TranslationModule } from './translation/translation.module';
     AdsModule,
     DriversModule,
     CmsModule,
+    EmailTemplatesModule,
     BrandingModule,
     MeModule,
     MarketsModule,

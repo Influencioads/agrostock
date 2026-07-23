@@ -9,6 +9,9 @@ import { StatusBar } from 'expo-status-bar';
 LogBox.ignoreLogs([
   'expo-notifications: Android Push notifications',
   '`expo-notifications` functionality is not fully supported in Expo Go',
+  // @react-native-firebase logs this on every Expo Go launch (no native module);
+  // push is already guarded off in that client, so the message is pure noise.
+  'Native module RNFBAppModule not found',
 ]);
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
@@ -18,10 +21,12 @@ import { AuthProvider, useAuth } from './src/auth/AuthProvider';
 import { I18nProvider } from './src/i18n';
 import { CurrencyProvider } from './src/currency/CurrencyContext';
 import { ChatBadgeProvider } from './src/chat/ChatBadgeContext';
+import { BasketProvider } from './src/basket/BasketContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { navigationRef } from './src/navigation/navigationRef';
 import { registerForPush, unregisterForPush } from './src/lib/push';
 import { C } from './src/theme/tokens';
+import { useAppFonts } from './src/theme/fonts';
 
 /** Registers/tears down FCM push as the signed-in user changes. */
 function PushManager() {
@@ -37,7 +42,11 @@ function PushManager() {
 
 function Gate() {
   const { ready } = useAuth();
-  if (!ready) {
+  // One startup gate, not two: the session restore and the font registration
+  // race in parallel and the splash holds until both settle. `useAppFonts`
+  // resolves truthy on failure too, so a bad font asset can't wedge the boot.
+  const fontsReady = useAppFonts();
+  if (!ready || !fontsReady) {
     return (
       <View style={{ flex: 1, backgroundColor: C.evergreen, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#fff" />
@@ -60,10 +69,12 @@ export default function App() {
           <I18nProvider>
             <CurrencyProvider>
               <ChatBadgeProvider>
-                <NavigationContainer ref={navigationRef}>
-                  <StatusBar style="dark" />
-                  <Gate />
-                </NavigationContainer>
+                <BasketProvider>
+                  <NavigationContainer ref={navigationRef}>
+                    <StatusBar style="dark" />
+                    <Gate />
+                  </NavigationContainer>
+                </BasketProvider>
               </ChatBadgeProvider>
             </CurrencyProvider>
           </I18nProvider>

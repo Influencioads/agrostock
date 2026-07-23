@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ApiOffice } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
-import { Badge, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 
 export function Offices() {
   const { t } = useI18n();
@@ -11,7 +11,7 @@ export function Offices() {
     <Screen>
       <Txt variant="h2">{t('mobile2.offices.title')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : offices.length === 0 ? (
         <EmptyState icon="business-outline" title={t('mobile2.offices.empty')} />
       ) : (

@@ -1342,7 +1342,43 @@
       "demoAccounts": "Demo accounts · one click",
       "demoHint": "password: password123",
       "resendVerification": "Resend confirmation link",
-      "verificationSent": "Link sent \u2014 check your inbox"
+      "verificationSent": "Link sent \u2014 check your inbox",
+      "forgotPassword": "Forgot password?",
+      "otpSignIn": "Sign in with an email code"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter your email and we'll send a reset link.",
+      "email": "Email",
+      "send": "Send reset link",
+      "sending": "Sending\u2026",
+      "sent": "If that email is registered, a reset link is on its way. Check your inbox.",
+      "backToSignIn": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "subtitle": "Enter a new password for your account.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "submit": "Set new password",
+      "submitting": "Saving\u2026",
+      "mismatch": "Passwords don't match.",
+      "tooShort": "Password must be at least 8 characters.",
+      "invalidLink": "This reset link is invalid or has expired.",
+      "requestNew": "Request a new link"
+    },
+    "otpLogin": {
+      "title": "Sign in with a code",
+      "subtitle": "We'll email you a 6-digit code to sign in \u2014 no password needed.",
+      "email": "Email",
+      "sendCode": "Email me a code",
+      "sending": "Sending\u2026",
+      "codeSent": "If that email is registered, a code is on its way.",
+      "code": "6-digit code",
+      "verify": "Sign in",
+      "verifying": "Signing in\u2026",
+      "usePassword": "Sign in with a password instead",
+      "resend": "Send a new code"
     },
     "register": {
       "title": "Create your account",

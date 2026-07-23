@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { errMessage, type Tone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 
@@ -47,7 +47,7 @@ export function TransporterMyRequests() {
       </Card>
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : requests.length === 0 ? (
         <EmptyState icon="cube-outline" title={t('transX.myRequests.emptyTitle')} body={t('transX.myRequests.emptyBody')} />
       ) : (

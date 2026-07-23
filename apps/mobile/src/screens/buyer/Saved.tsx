@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
-import { Badge, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { unitSuffix } from '@agrotraders/types';
@@ -25,7 +25,7 @@ export function BuyerSaved() {
       <Txt variant="h2">{t('buyerX.saved.screenTitle')}</Txt>
       <Txt variant="muted">{t('buyerX.saved.subtitle')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : saved.length === 0 ? (
         <EmptyState icon="heart-outline" title={t('buyerX.saved.emptyTitle')} body={t('buyerX.saved.emptyBody')} />
       ) : (

@@ -547,7 +547,7 @@ export function Hero() {
                 </button>
               ))}
             </div>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
               <label className="flex min-w-0 items-center gap-2 rounded-md border border-surface-border px-3">
                 <Icon name="search" size={18} className="text-ink-soft" />
                 <input
@@ -753,7 +753,7 @@ export function Offers() {
   return (
     <Section className="bg-white">
       <SectionHeader title={t('section.offers')} action={t('common:viewAll')} onAction={() => navigate('/market')} />
-      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {list.slice(0, 8).map((p) => (
           <StaggerItem key={p.id}>
             <ProductCard p={p} />
@@ -806,7 +806,7 @@ export function Auctions() {
       {list.length === 0 ? (
         <Card className="py-10 text-center text-ink-soft">{t('auction.noLive')}</Card>
       ) : (
-        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((a) => (
             <StaggerItem key={a.id}>
             <Card interactive>
@@ -910,7 +910,7 @@ export function Services() {
   return (
     <Section id="services">
       <SectionHeader title={t('section.services')} />
-      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {svc.map((s) => (
           <StaggerItem key={s.key}>
             <Card interactive className="group h-full cursor-pointer" onClick={() => navigate(s.to)}>
@@ -942,7 +942,7 @@ export function Insights() {
   return (
     <Section className="bg-white">
       <SectionHeader title={t('section.insights')} action={t('common:viewAll')} />
-      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {insights.map((i) => (
           <StaggerItem key={i.name}>
             <Card interactive className="h-full">
@@ -969,7 +969,7 @@ export function Community() {
   return (
     <Section id="community">
       <SectionHeader title={t('section.community')} action={t('common:viewAll')} />
-      <Stagger className="grid gap-4 lg:grid-cols-3">
+      <Stagger className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {community.map((c) => (
           <StaggerItem key={c.q}>
             <Card interactive className="h-full">
@@ -1005,7 +1005,7 @@ export function SafeDeal() {
           <h2 className="mt-3 font-display text-3xl font-extrabold">{t('section.safeDeal')}</h2>
           <p className="mt-2 text-mint/80">{t('section.safeDealSub')}</p>
         </div>
-        <Stagger className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stagger className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {safeSteps.map((s) => (
             <StaggerItem key={s.n}>
               <div className="h-full rounded-lg border border-white/10 bg-white/5 p-5 transition hover:border-white/25 hover:bg-white/10">
@@ -1034,7 +1034,7 @@ export function OfficesPreview() {
   return (
     <Section className="bg-white">
       <SectionHeader title={t('section.offices')} action={t('common:viewAll')} onAction={() => navigate('/offices')} />
-      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {officesPreview.map((o) => (
           <StaggerItem key={o.city}>
             <Card interactive className="h-full">

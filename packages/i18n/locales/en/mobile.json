@@ -49,7 +49,10 @@
     "displayCurrency": "Display currency",
     "notifications": "Notifications",
     "logOut": "Log out",
-    "restartNotice": "The app will restart to apply the new text direction."
+    "restartNotice": "The app will restart to apply the new text direction.",
+    "marketplace": "Marketplace",
+    "account": "Account",
+    "kycVerified": "KYC verified"
   },
   "rolesAccess": {
     "pending": "{{role}} · pending",
@@ -92,7 +95,33 @@
       "newHere": "New here?",
       "createAccount": "Create an account",
       "demoTitle": "Or try a demo account.",
-      "demoHint": "{{password}} · all demo roles"
+      "demoHint": "{{password}} · all demo roles",
+      "forgot": "Forgot password?",
+      "or": "or",
+      "otp": "Log in with OTP"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter your email and we'll send a reset link.",
+      "email": "Email",
+      "send": "Send reset link",
+      "sending": "Sending…",
+      "sent": "If that email is registered, a reset link is on its way. Open it to set a new password.",
+      "back": "Back to sign in"
+    },
+    "otpLogin": {
+      "title": "Sign in with a code",
+      "subtitle": "We'll email you a 6-digit code — no password needed.",
+      "email": "Email",
+      "sendCode": "Email me a code",
+      "sending": "Sending…",
+      "codeSent": "If that email is registered, a code is on its way.",
+      "code": "6-digit code",
+      "verify": "Sign in",
+      "verifying": "Signing in…",
+      "usePassword": "Use a password instead",
+      "resend": "Send a new code",
+      "invalid": "Invalid or expired code."
     },
     "signUp": {
       "title": "Create your account",
@@ -111,10 +140,12 @@
       "checkInboxTitle": "Confirm your email",
       "checkInboxBody": "We sent a confirmation link to {{email}}. Open it to activate your account, then sign in here.",
       "resend": "Resend the link",
-      "resent": "Link sent \u2014 check your inbox",
+      "resent": "Link sent — check your inbox",
       "iAmA": "I am a…",
       "cta": "Create account",
-      "error": "Could not create the account. Try a different email."
+      "error": "Could not create the account. Try a different email.",
+      "subtitle": "Pick your role — you can add more later.",
+      "terms": "By continuing you agree to the Terms and Privacy policy."
     }
   },
   "chat": {
@@ -261,7 +292,16 @@
     "allTime": "all time",
     "assignments": "Assignments",
     "rating": "Rating",
-    "avg": "avg"
+    "avg": "avg",
+    "quickPostRfq": "Post RFQ",
+    "quickHireTransport": "Hire transport",
+    "quickWallet": "Wallet",
+    "quickKyc": "KYC docs",
+    "addProduct": "Add product",
+    "product": "Product",
+    "liveListings": "Live listings",
+    "openRfqs": "Open RFQs",
+    "earningsWeek": "Earnings this week"
   },
   "loaderX": {
     "common": {
@@ -805,7 +845,8 @@
       "fieldPrice": "Your price /{{unit}}",
       "fieldQty": "Qty you can supply ({{unit}})",
       "fieldEta": "ETA (days)",
-      "fieldMessage": "Message (optional)"
+      "fieldMessage": "Message (optional)",
+      "sealedBanner": "Sealed mode. Seller names and photos are masked until you accept a quote. Quotes can't see each other."
     },
     "bids": {
       "photosHint": "Add up to 6 photos of what you need. Optional.",
@@ -964,7 +1005,11 @@
       "acceptQuote": "Accept quote",
       "payEscrow": "Pay into escrow",
       "mark": "Mark {{label}}",
-      "errUpdate": "Could not update this order."
+      "errUpdate": "Could not update this order.",
+      "stepEscrow": "Escrow",
+      "stepDispatched": "Dispatched",
+      "stepTransit": "In transit",
+      "stepRelease": "QC & release"
     }
   },
   "pubX": {
@@ -1005,7 +1050,14 @@
       "transportBody": "Book transport from your buyer console.",
       "alsoLike": "You may also like",
       "price": "Price",
-      "buyNow": "Buy Now"
+      "buyNow": "Buy Now",
+      "addToRfq": "Add to RFQ",
+      "supplier": "Supplier",
+      "tradeTerms": "Trade terms",
+      "origin": "Origin",
+      "delivery": "Delivery",
+      "chat": "Chat",
+      "escrowNote": "Safe-Deal escrow · funds held until QC passes"
     },
     "req": {
       "searchPlaceholder": "Search — wheat, lentils, maize…",
@@ -1138,7 +1190,25 @@
         "loaders": "Loaders",
         "safeDeal": "Safe Deal",
         "offices": "Offices"
-      }
+      },
+      "categories": "Shop by category",
+      "promoted": "Highlighted",
+      "services": "Services",
+      "requirements": "Buyers looking to source",
+      "viewAll": "View all",
+      "deliverTo": "Deliver to",
+      "promoTitle": "Flat 4% off first order",
+      "promoBody": "Use code AGRO4 · escrow protected",
+      "promoCta": "CLAIM",
+      "heroTag": "Harvest week",
+      "heroTitle": "Rabi wheat, direct from mandi",
+      "heroCta": "Explore lots",
+      "dealOfDay": "Deal of the day",
+      "freshArrivals": "Fresh arrivals",
+      "cantFindTitle": "Can't find your commodity?",
+      "cantFindBody": "Post an RFQ and get sealed quotes in hours.",
+      "postRfq": "Post RFQ",
+      "catAll": "All"
     },
     "notif": {
       "title": "Notifications",
@@ -1151,14 +1221,18 @@
       "email": "Email",
       "push": "Push",
       "inApp": "In-app",
-      "channelGeneral": "General"
+      "channelGeneral": "General",
+      "today": "Today",
+      "earlier": "Earlier"
     },
     "search": {
       "placeholder": "Search grains, pulses, oils…",
       "emptyTitle": "Search AgroTraders",
       "emptyBody": "Type to find products across the marketplace.",
       "noMatchTitle": "No matches",
-      "noMatchBody": "Nothing found for \"{{q}}\"."
+      "noMatchBody": "Nothing found for \"{{q}}\".",
+      "recent": "Recent searches",
+      "trending": "Trending in your region"
     },
     "offers": {
       "title": "Offers of the Day",
@@ -1292,6 +1366,49 @@
       "millingWheat": "Milling Wheat",
       "locationMoscow": "Moscow, Russia",
       "locationAmritsarIndia": "Amritsar, India"
+    },
+    "filter": {
+      "title": "Filters",
+      "clear": "Clear",
+      "clearAll": "Clear all",
+      "apply": "Apply",
+      "applyN": "Apply ({{count}})",
+      "sortBy": "Sort by",
+      "searchOptions": "Search",
+      "categoryHint": "Pick a category to unlock its specification filters.",
+      "groups": {
+        "category": "Category",
+        "dealType": "Deal type",
+        "price": "Price",
+        "country": "Country",
+        "city": "City",
+        "grade": "Grade",
+        "market": "Market"
+      }
+    },
+    "plp": {
+      "results": "{{count}} results",
+      "filters": "Filter",
+      "sort": "Sort",
+      "clearFilters": "Clear filters",
+      "noResults": "Nothing matched"
+    },
+    "rfq": {
+      "title": "Quote basket",
+      "emptyTitle": "Your quote basket is empty",
+      "emptyBody": "Add listings from any supplier, then send one request for quote per supplier.",
+      "addedTitle": "Added to quote basket",
+      "addedBody": "{{name}} is in your basket. Send the request when you have added everything.",
+      "requestQuotes": "Request quotes",
+      "sentLabel": "Request sent",
+      "sentTitle": "Request sent",
+      "sentBody": "The supplier will respond with a quote. Track it under Bids.",
+      "failTitle": "Could not send the request",
+      "failBody": "Please try again.",
+      "lineCount": "{{count}} items",
+      "noteFromBasket": "Sent from the quote basket to {{supplier}}.",
+      "footNote": "Each supplier receives its own request. Quotes stay private to you.",
+      "escrow": "Escrow"
     }
   },
   "auction": {
@@ -1446,10 +1563,11 @@
       "hire": "Hire"
     },
     "product": {
-      "social": "{{watching}}+ watching · {{ordered}} ordered",
       "verified": "Verified",
       "safeDeal": "Safe Deal",
-      "auction": "Auction"
+      "auction": "Auction",
+      "moq": "MOQ {{value}}",
+      "available": "{{value}} available"
     },
     "community": {
       "dmSubtitle": "Direct message · contacts stay private",

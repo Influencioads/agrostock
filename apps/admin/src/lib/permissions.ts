@@ -20,7 +20,7 @@ export const PERMISSION_GROUPS: { group: string; perms: AdminPermission[] }[] = 
   { group: 'Finance', perms: ['finance_manage'] },
   { group: 'Logistics', perms: ['transport_manage', 'loaders_manage'] },
   { group: 'Messaging', perms: ['support_agent', 'community_moderate'] },
-  { group: 'Company', perms: ['offices_manage', 'cms_manage', 'branding_manage', 'reports_view', 'audit_view'] },
+  { group: 'Company', perms: ['offices_manage', 'cms_manage', 'email_templates', 'branding_manage', 'reports_view', 'audit_view'] },
 ];
 
 export const ALL_PERMISSIONS: AdminPermission[] = PERMISSION_GROUPS.flatMap((g) => g.perms);

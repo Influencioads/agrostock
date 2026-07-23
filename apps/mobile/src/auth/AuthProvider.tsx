@@ -34,6 +34,8 @@ interface AuthValue {
     marketId?: string;
   }) => Promise<RegisterResult>;
   loginDemo: (role: string) => Promise<ApiUser>;
+  /** Verify an emailed login code and start the session it returns. */
+  verifyOtp: (email: string, code: string) => Promise<ApiUser>;
   logout: () => Promise<void>;
 }
 
@@ -124,6 +126,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginDemo = useCallback((role: string) => login(`${role}@agrotraders.org`, 'password123'), [login]);
 
+  const verifyOtp = useCallback(
+    async (email: string, code: string) => {
+      const res = await api.auth.verifyOtp(email, code);
+      if (effectiveRoles(res.user).includes('admin')) {
+        throw new Error('Administrators sign in at admin.agrotraders.org');
+      }
+      await persist(res.user, res.accessToken, res.refreshToken);
+      return res.user;
+    },
+    [persist],
+  );
+
   const logout = useCallback(async () => {
     setApiToken(null);
     setApiRefreshToken(null);
@@ -149,9 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       loginDemo,
+      verifyOtp,
       logout,
     }),
-    [user, activeRole, roles, setActiveRole, ready, login, register, loginDemo, logout],
+    [user, activeRole, roles, setActiveRole, ready, login, register, loginDemo, verifyOtp, logout],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -65,7 +65,7 @@ export function BuyerDashboard({ name, onNavigate }: { name: string; onNavigate:
         <StaggerItem><Stat className="h-full" icon={<Icon name="shield" size={18} />} value={usd(wallet?.balanceCents)} label={t('console.dash.safeDealBalance')} delta={t('console.dash.escrow')} up /></StaggerItem>
       </Stagger>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* spend chart */}
         <BarChart title={t('console.dash.procurementSpend')} caption={t('console.dash.perMonth')} className="lg:col-span-2" data8={series?.data8} data12={series?.data12} />
 
@@ -94,7 +94,7 @@ export function BuyerDashboard({ name, onNavigate }: { name: string; onNavigate:
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* recent orders */}
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between">

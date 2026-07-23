@@ -24,6 +24,10 @@ interface AuthContextValue {
   }) => Promise<RegisterResult>;
   /** Consume a confirmation link and start the session it returns. */
   verifyEmail: (token: string) => Promise<ApiUser>;
+  /** Consume a reset token, set the new password, and start the session. */
+  resetPassword: (token: string, password: string) => Promise<ApiUser>;
+  /** Verify an emailed login code and start the session it returns. */
+  verifyOtp: (email: string, code: string) => Promise<ApiUser>;
   loginDemo: (role: string) => Promise<ApiUser>;
   logout: () => void;
 }
@@ -108,6 +112,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
+  const resetPassword = useCallback(
+    async (token: string, password: string) => {
+      const res = await api.auth.resetPassword(token, password);
+      if (effectiveRoles(res.user).includes('admin')) {
+        throw new Error('Administrators sign in at admin.agrotraders.org');
+      }
+      persist(res.user, res.accessToken, res.refreshToken);
+      return res.user;
+    },
+    [persist],
+  );
+
+  const verifyOtp = useCallback(
+    async (email: string, code: string) => {
+      const res = await api.auth.verifyOtp(email, code);
+      if (effectiveRoles(res.user).includes('admin')) {
+        throw new Error('Administrators sign in at admin.agrotraders.org');
+      }
+      persist(res.user, res.accessToken, res.refreshToken);
+      return res.user;
+    },
+    [persist],
+  );
+
   const loginDemo = useCallback(
     (role: string) => login(`${role}@agrotraders.org`, 'password123'),
     [login],
@@ -122,8 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, loginDemo, logout }),
-    [user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, loginDemo, logout],
+    () => ({ user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, resetPassword, verifyOtp, loginDemo, logout }),
+    [user, token, roles, activeRole, setActiveRole, login, register, verifyEmail, resetPassword, verifyOtp, loginDemo, logout],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

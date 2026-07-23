@@ -18,7 +18,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useChatSocket } from '../../chat/useChatSocket';
 import { useChatStrings, useSupportCategoryLabel, useSupportStatusLabel, statusTone } from '../../chat/strings';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { backChevron } from '../../lib/rtl';
@@ -125,7 +125,7 @@ function Thread({ ticketId, socket, onBack, s }: { ticketId: string; socket: Soc
           keyExtractor={(m) => String(m.id)}
           contentContainerStyle={{ padding: space.lg, gap: 8, flexGrow: 1 }}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-          ListEmptyComponent={ticket.isLoading ? <Loading /> : <Txt variant="muted" style={{ textAlign: 'center', marginTop: 40 }}>{s.empty}</Txt>}
+          ListEmptyComponent={ticket.isLoading ? <SkeletonRows /> : <Txt variant="muted" style={{ textAlign: 'center', marginTop: 40 }}>{s.empty}</Txt>}
           renderItem={({ item: m }) => {
             const system = m.authorType === 'system';
             const mine = isAdmin ? m.authorType === 'agent' : m.authorType === 'user';
@@ -329,7 +329,7 @@ export function Support() {
         data={tickets}
         keyExtractor={(t) => String(t.id)}
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: 32, gap: 10 }}
-        ListEmptyComponent={activeQuery.isLoading ? <Loading /> : <EmptyState icon="headset-outline" title={s.noTickets} />}
+        ListEmptyComponent={activeQuery.isLoading ? <SkeletonRows /> : <EmptyState icon="headset-outline" title={s.noTickets} />}
         renderItem={({ item: t }) => (
           <Card onPress={() => setView(t.id)}>
             <Row style={{ justifyContent: 'space-between' }}>

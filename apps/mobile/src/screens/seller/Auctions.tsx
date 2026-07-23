@@ -6,10 +6,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiAuctionBid, ApiAuctionListing, ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, ChipSelect, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -94,6 +95,7 @@ function StartAuctionSheet({ onClose }: { onClose: () => void }) {
 /** The owner's full bid book for one auction. */
 function BidBookSheet({ slug, name, onClose }: { slug: string; name: string; onClose: () => void }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const { data: bids = [], isLoading } = useQuery<ApiAuctionBid[]>({
     queryKey: ['auction-bids', slug],
     queryFn: () => api.auctions.bids(slug) as Promise<ApiAuctionBid[]>,
@@ -110,7 +112,7 @@ function BidBookSheet({ slug, name, onClose }: { slug: string; name: string; onC
             <Pressable onPress={onClose} hitSlop={10}><Ionicons name="close" size={22} color={C.inkSoft} /></Pressable>
           </Row>
           {isLoading ? (
-            <Loading />
+            <SkeletonRows />
           ) : bids.length === 0 ? (
             <Txt variant="muted">{t('sellerX.auctions.noBids')}</Txt>
           ) : (
@@ -121,7 +123,7 @@ function BidBookSheet({ slug, name, onClose }: { slug: string; name: string; onC
                     <Txt variant="title">{b.bidder?.name ?? t('sellerX.auctions.bidderFallback')}</Txt>
                     {i === 0 && <Badge label={t('sellerX.auctions.highest')} tone="green" />}
                   </Row>
-                  <Txt variant="title">{usd(b.amountCents)}</Txt>
+                  <Txt variant="title">{fmtCents(b.amountCents)}</Txt>
                 </Row>
               </Card>
             ))
@@ -135,6 +137,7 @@ function BidBookSheet({ slug, name, onClose }: { slug: string; name: string; onC
 /** Auctions — start, watch, and close the seller's own auctions. */
 export function SellerAuctions() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const nav = useNavigation<Nav>();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -165,7 +168,7 @@ export function SellerAuctions() {
       {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : auctions.length === 0 ? (
         <EmptyState icon="hammer-outline" title={t('sellerX.auctions.emptyTitle')} body={t('sellerX.auctions.emptyBody')} />
       ) : (
@@ -181,7 +184,7 @@ export function SellerAuctions() {
                   <View style={{ flexShrink: 1 }}>
                     <Txt variant="title">{p.name}</Txt>
                     <Txt variant="muted">
-                      {t('sellerX.auctions.startPrefix')} {p.startBidCents != null ? usd(p.startBidCents) : p.price} · {t('sellerX.auctions.bids', { count: p.bidCount })}
+                      {t('sellerX.auctions.startPrefix')} {p.startBidCents != null ? fmtCents(p.startBidCents) : p.price} · {t('sellerX.auctions.bids', { count: p.bidCount })}
                     </Txt>
                   </View>
                 </Row>
@@ -191,7 +194,7 @@ export function SellerAuctions() {
               <Row style={{ justifyContent: 'space-between' }}>
                 <Txt variant="muted">{t('sellerX.auctions.highestBid')}</Txt>
                 <Txt variant="title">
-                  {p.highestCents != null ? usd(p.highestCents) : '—'}
+                  {p.highestCents != null ? fmtCents(p.highestCents) : '—'}
                   {p.highBidder ? ` · ${p.highBidder}` : ''}
                 </Txt>
               </Row>

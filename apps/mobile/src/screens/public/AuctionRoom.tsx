@@ -3,12 +3,11 @@ import { Image, ScrollView, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiAuctionBidRow, ApiAuctionDetail, ApiProduct } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Card, Row, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import { BidPanel } from '../components/BidPanel';
 import { useI18n } from '../../i18n';
-
-const usd = (c: number | null | undefined) => (c == null ? '—' : '$' + Math.round(c / 100).toLocaleString());
 
 function useCountdown(end: string | null) {
   const [now, setNow] = useState(() => Date.now());
@@ -39,6 +38,7 @@ function TimeBox({ value, label, danger }: { value: string; label: string; dange
 /** Mobile live-auction room — countdown header, hero, bid panel, masked history. */
 export function AuctionRoom({ slug, product }: { slug: string; product: ApiProduct }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const { data: auction } = useQuery<ApiAuctionDetail>({
     queryKey: ['auction', slug], queryFn: () => api.auctions.detail(slug), refetchInterval: 4000,
   });
@@ -79,7 +79,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
           <Txt variant="h2">{product.name}</Txt>
           <Txt variant="muted">{product.flag} {product.seller?.name} · {t('auction.biddersN', { count: auction?.bidCount ?? 0 })}</Txt>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-            <Badge label={t('auction.minIncrement', { amount: usd(auction?.bidIncrementCents ?? 0) })} tone="slate" />
+            <Badge label={t('auction.minIncrement', { amount: fmtCents(auction?.bidIncrementCents ?? 0) })} tone="slate" />
             {auction?.hasReserve ? <Badge label={auction.reserveMet ? t('auction.reserveMet') : t('auction.reserveNotMet')} tone={auction.reserveMet ? 'green' : 'error'} /> : null}
           </Row>
         </View>
@@ -103,7 +103,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
                 <Txt style={{ fontSize: 12, fontWeight: '600' }}>{b.masked}{b.auto ? ` · ${t('auction.auto')}` : ''}</Txt>
                 <Txt style={{ fontSize: 10, color: C.inkSoft }}>{ago(b.createdAt)}</Txt>
               </View>
-              <Txt style={{ fontSize: 13, fontWeight: '700', color: b.isTop ? C.success : C.ink }}>{usd(b.amountCents)}</Txt>
+              <Txt style={{ fontSize: 13, fontWeight: '700', color: b.isTop ? C.success : C.ink }}>{fmtCents(b.amountCents)}</Txt>
             </Row>
           ))}
         </Card>

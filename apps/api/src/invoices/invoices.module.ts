@@ -329,11 +329,23 @@ export class InvoicesService {
     const invoice = await this.prisma.invoice.findUnique({ where: { id } });
     if (!invoice) throw new NotFoundException('Invoice not found');
     if (invoice.issuerId !== user.id && !isAdmin(user)) throw new ForbiddenException('Only the issuer can change this invoice.');
-    return this.prisma.invoice.update({
+    const updated = await this.prisma.invoice.update({
       where: { id },
       data: { status, paidAt: status === 'paid' ? new Date() : null },
       include: INVOICE_INCLUDE,
     });
+    // Tell the issuer their invoice was settled (transactional → also emails).
+    if (status === 'paid') {
+      await this.notifications.create({
+        userId: updated.issuerId,
+        system: 'wallet',
+        type: 'wallet.invoice_paid',
+        params: { number: updated.number, amount: usd(updated.totalCents, updated.currency) },
+        data: { invoiceId: updated.id },
+        linkUrl: '/console/invoices',
+      });
+    }
+    return updated;
   }
 
   /**

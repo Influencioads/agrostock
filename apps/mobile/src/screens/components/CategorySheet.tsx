@@ -15,35 +15,21 @@ import { Row, Txt } from '../../ui';
 import { api } from '../../lib/api';
 import { C, radius, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
+import { EMPTY_SELECTION, type CategorySelection } from './categorySelection';
+
+// Re-exported so existing importers keep resolving these from the sheet.
+export { EMPTY_SELECTION, type CategorySelection } from './categorySelection';
 
 /**
  * Cascading category picker as a bottom sheet. Drills an ARBITRARY number of
  * levels — the taxonomy runs five deep — with a back stack, a breadcrumb, and a
  * search that spans the whole category rather than just the level in view.
  *
- * Selecting emits ids, not names: the products API is branch-inclusive by
- * `subcategoryId`, so picking a parent returns everything beneath it.
+ * The selection value itself lives in `categorySelection.ts` so non-UI modules
+ * can depend on it without importing this component.
  */
 
-export interface CategorySelection {
-  categoryId: string;
-  categoryName: string;
-  subcategoryId: string;
-  subcategoryName: string;
-  /** Names from the category down to the selected node, for the trigger label. */
-  trail: string[];
-  /** Name to look attribute fields up under — the nearest schema-bearing ancestor. */
-  attrSource: string | null;
-}
-
-const EMPTY: CategorySelection = {
-  categoryId: '',
-  categoryName: '',
-  subcategoryId: '',
-  subcategoryName: '',
-  trail: [],
-  attrSource: null,
-};
+const EMPTY = EMPTY_SELECTION;
 
 export function CategorySheet({
   visible,
@@ -303,5 +289,3 @@ export function CategorySheet({
     </Modal>
   );
 }
-
-export const EMPTY_SELECTION = EMPTY;

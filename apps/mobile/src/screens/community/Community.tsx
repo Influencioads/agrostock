@@ -4,6 +4,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  StyleSheet,
+  Text,
   TextInput,
   View,
 } from 'react-native';
@@ -18,8 +20,8 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useChatSocket } from '../../chat/useChatSocket';
 import { useChatStrings } from '../../chat/strings';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Txt } from '../../ui';
-import { C, radius, space } from '../../theme/tokens';
+import { Badge, Button, Card, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
+import { C, radius, space, type } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { backChevron } from '../../lib/rtl';
 
@@ -163,15 +165,22 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
                   style={{
                     maxWidth: '82%',
                     backgroundColor: mine ? C.green : C.white,
-                    borderWidth: mine ? 0 : 1,
+                    borderWidth: mine ? 0 : StyleSheet.hairlineWidth,
                     borderColor: C.border,
-                    borderRadius: radius.lg,
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
+                    borderRadius: 18,
+                    borderBottomRightRadius: mine ? 5 : 18,
+                    borderBottomLeftRadius: mine ? 18 : 5,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
                   }}
                 >
-                  {!mine && <Txt variant="muted" style={{ fontWeight: '700', marginBottom: 2 }}>{m.sender?.name}</Txt>}
+                  {!mine && <Text style={{ ...type.micro, color: C.green, marginBottom: 3 }}>{m.sender?.name}</Text>}
                   <BubbleBody m={m} mine={mine} />
+                  {m.createdAt ? (
+                    <Text style={{ ...type.caption, fontSize: 10.5, marginTop: 4, textAlign: 'right', color: mine ? 'rgba(255,255,255,0.7)' : C.inkMuted }}>
+                      {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
             );
@@ -179,23 +188,29 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
         />
 
         {user ? (
-          <Row style={{ padding: space.sm, gap: 8, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.white }}>
-            <TextInput
-              value={text}
-              onChangeText={(v) => {
-                setText(v);
-                socket?.emit('typing', { groupId: group.id, typing: true });
-              }}
-              placeholder={s.typeMessage}
-              placeholderTextColor={C.inkSoft}
-              style={{ flex: 1, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, color: C.ink, backgroundColor: C.white }}
-              onSubmitEditing={send}
-              returnKeyType="send"
-            />
+          <Row style={{ paddingHorizontal: space.md, paddingVertical: space.sm, gap: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.border, backgroundColor: C.white }}>
+            <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="add" size={22} color={C.inkSoft} />
+            </View>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 46, borderRadius: 23, backgroundColor: C.page, paddingHorizontal: 16 }}>
+              <TextInput
+                value={text}
+                onChangeText={(v) => {
+                  setText(v);
+                  socket?.emit('typing', { groupId: group.id, typing: true });
+                }}
+                placeholder={s.typeMessage}
+                placeholderTextColor={C.inkMuted}
+                style={{ flex: 1, ...type.body, fontSize: 15, color: C.ink, paddingVertical: 0 }}
+                onSubmitEditing={send}
+                returnKeyType="send"
+              />
+              <Ionicons name="mic-outline" size={19} color={C.inkMuted} />
+            </View>
             <Pressable
               onPress={send}
               disabled={!text.trim()}
-              style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: text.trim() ? C.green : C.border, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: text.trim() ? C.green : C.border, alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="send" size={18} color={C.white} />
             </Pressable>
@@ -298,34 +313,47 @@ function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: str
                   style={{
                     maxWidth: '82%',
                     backgroundColor: mine ? C.green : C.white,
-                    borderWidth: mine ? 0 : 1,
+                    borderWidth: mine ? 0 : StyleSheet.hairlineWidth,
                     borderColor: C.border,
-                    borderRadius: radius.lg,
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
+                    borderRadius: 18,
+                    borderBottomRightRadius: mine ? 5 : 18,
+                    borderBottomLeftRadius: mine ? 18 : 5,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
                   }}
                 >
                   <BubbleBody m={m} mine={mine} />
+                  {m.createdAt ? (
+                    <Text style={{ ...type.caption, fontSize: 10.5, marginTop: 4, textAlign: 'right', color: mine ? 'rgba(255,255,255,0.7)' : C.inkMuted }}>
+                      {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
             );
           }}
         />
         {user ? (
-          <Row style={{ padding: space.sm, gap: 8, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.white }}>
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder={s.typeMessage}
-              placeholderTextColor={C.inkSoft}
-              style={{ flex: 1, height: 44, borderRadius: radius.md, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, color: C.ink, backgroundColor: C.white }}
-              onSubmitEditing={send}
-              returnKeyType="send"
-            />
+          <Row style={{ paddingHorizontal: space.md, paddingVertical: space.sm, gap: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.border, backgroundColor: C.white }}>
+            <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="add" size={22} color={C.inkSoft} />
+            </View>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 46, borderRadius: 23, backgroundColor: C.page, paddingHorizontal: 16 }}>
+              <TextInput
+                value={text}
+                onChangeText={setText}
+                placeholder={s.typeMessage}
+                placeholderTextColor={C.inkMuted}
+                style={{ flex: 1, ...type.body, fontSize: 15, color: C.ink, paddingVertical: 0 }}
+                onSubmitEditing={send}
+                returnKeyType="send"
+              />
+              <Ionicons name="mic-outline" size={19} color={C.inkMuted} />
+            </View>
             <Pressable
               onPress={send}
               disabled={!text.trim()}
-              style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: text.trim() ? C.green : C.border, alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: text.trim() ? C.green : C.border, alignItems: 'center', justifyContent: 'center' }}
             >
               <Ionicons name="send" size={18} color={C.white} />
             </Pressable>
@@ -435,6 +463,9 @@ export function Community() {
       setActiveGroup(null);
       setActiveDm({ userId: route.params.dmUserId, name: route.params.dmName ?? s.chat });
     }
+    // Only route-param changes should re-open the DM; `s.chat` is a static
+    // fallback label and must not re-trigger this effect on a locale switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.params?.dmUserId, route.params?.dmName]);
 
   const feed = useQuery({ queryKey: ['community-feed', lang], queryFn: () => api.community.feed(), enabled: tab === 'feed' });
@@ -495,7 +526,7 @@ export function Community() {
           ListHeaderComponent={
             user ? <FeedComposer onPosted={() => qc.invalidateQueries({ queryKey: ['community-feed'] })} s={s} /> : null
           }
-          ListEmptyComponent={feed.isLoading ? <Loading /> : <EmptyState icon="chatbubbles-outline" title={s.empty} />}
+          ListEmptyComponent={feed.isLoading ? <SkeletonRows /> : <EmptyState icon="chatbubbles-outline" title={s.empty} />}
           renderItem={({ item: p }) => {
             const isMine = p.author?.id && p.author.id === user?.id;
             const canChat = !!user && !!p.author?.id && !isMine;
@@ -539,7 +570,7 @@ export function Community() {
           data={(groups.data as AnyRec[]) ?? []}
           keyExtractor={(g) => String(g.id)}
           contentContainerStyle={{ padding: space.lg, gap: 10 }}
-          ListEmptyComponent={groups.isLoading ? <Loading /> : <EmptyState icon="people-outline" title="—" />}
+          ListEmptyComponent={groups.isLoading ? <SkeletonRows /> : <EmptyState icon="people-outline" title="—" />}
           renderItem={({ item: g }) => (
             <Card>
               <Row style={{ justifyContent: 'space-between' }}>
@@ -567,7 +598,7 @@ export function Community() {
           ListHeaderComponent={
             user ? <Button title={s.newRequirement} icon="add" size="sm" onPress={() => setCreatingReq(true)} /> : null
           }
-          ListEmptyComponent={reqs.isLoading ? <Loading /> : <EmptyState icon="clipboard-outline" title={s.noReqs} />}
+          ListEmptyComponent={reqs.isLoading ? <SkeletonRows /> : <EmptyState icon="clipboard-outline" title={s.noReqs} />}
           renderItem={({ item: r }) => (
             <Card>
               <Txt variant="title">{r.title}</Txt>
@@ -591,7 +622,7 @@ export function Community() {
             data={(mine.data as AnyRec[]) ?? []}
             keyExtractor={(g) => String(g.id)}
             contentContainerStyle={{ padding: space.lg, gap: 10 }}
-            ListEmptyComponent={mine.isLoading ? <Loading /> : <EmptyState icon="chatbubbles-outline" title={s.noGroups} />}
+            ListEmptyComponent={mine.isLoading ? <SkeletonRows /> : <EmptyState icon="chatbubbles-outline" title={s.noGroups} />}
             renderItem={({ item: g }) => (
               <Card onPress={() => setActiveGroup(g)}>
                 <Row style={{ justifyContent: 'space-between' }}>

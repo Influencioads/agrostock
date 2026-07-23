@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiLoaderWorker, ApiLoaderTeam } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { usd } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { TagInput } from '../components/TagInput';
 
@@ -17,6 +17,7 @@ export function LoaderWorkers() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<ApiLoaderWorker | null>(null);
   const { data: workers = [], isLoading } = useQuery<ApiLoaderWorker[]>({ queryKey: ['workers'], queryFn: () => api.loaders.workers(), enabled: !!user });
@@ -28,7 +29,7 @@ export function LoaderWorkers() {
         <Txt variant="h2">{t('loaderX.workers.title')}</Txt>
         <Button title={t('loaderX.common.add')} icon="add" size="sm" onPress={() => setAddOpen(true)} />
       </Row>
-      {isLoading ? <Loading /> : workers.length === 0 ? (
+      {isLoading ? <SkeletonRows /> : workers.length === 0 ? (
         <EmptyState icon="people-outline" title={t('loaderX.workers.emptyTitle')} body={t('loaderX.workers.emptyBody')} />
       ) : workers.map((w) => (
         <Card key={w.id}>
@@ -36,7 +37,7 @@ export function LoaderWorkers() {
             <View style={{ flex: 1 }}>
               <Txt variant="title">{w.name}</Txt>
               <Txt variant="muted">{w.skill ?? t('loaderX.workers.generalCrew')} · ★ {w.rating ?? '—'}{w.team?.name ? ` · ${w.team.name}` : ''}</Txt>
-              {w.phone ? <Txt variant="muted">{w.phone}{w.dailyWageCents != null ? ` · ${usd(w.dailyWageCents)}/day` : ''}</Txt> : null}
+              {w.phone ? <Txt variant="muted">{w.phone}{w.dailyWageCents != null ? ` · ${fmtCents(w.dailyWageCents)}/day` : ''}</Txt> : null}
               <Txt variant="small" color={w.user ? C.dark : C.inkSoft}>{w.user ? t('loaderX.workers.loginEnabled') : t('loaderX.workers.loginDisabled')}</Txt>
             </View>
             <View style={{ gap: 8, alignItems: 'flex-end' }}>

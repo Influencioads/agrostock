@@ -62,7 +62,7 @@ export function SafeDealPage() {
           <h2 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.safeDeal.howTitle')}</h2>
           <p className="mt-2 text-ink-soft">{t('page.safeDeal.howSub')}</p>
         </Reveal>
-        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((s) => (
             <StaggerItem key={s.key}>
               <Card className="h-full">
@@ -97,7 +97,7 @@ export function SafeDealPage() {
             <h2 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.safeDeal.coverTitle')}</h2>
             <p className="mt-2 text-ink-soft">{t('page.safeDeal.coverSub')}</p>
           </Reveal>
-          <Stagger className="grid gap-4 sm:grid-cols-2">
+          <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {COVERAGE.map((c) => (
               <StaggerItem key={c.key}>
                 <Card interactive className="h-full">
@@ -121,7 +121,7 @@ export function SafeDealPage() {
         <Reveal as="div" className="mb-8 text-center">
           <h2 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('page.safeDeal.guaranteesTitle')}</h2>
         </Reveal>
-        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {GUARANTEES.map((g) => (
             <StaggerItem key={g.key}>
               <Card className="flex h-full items-start gap-3">

@@ -4,10 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiBuyerBid, ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { usd } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -16,6 +16,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** Buyer Bids — open buyer requirements the seller can bid on, plus direct enquiries. */
 export function SellerBids() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const nav = useNavigation<Nav>();
   const { user } = useAuth();
 
@@ -76,7 +77,7 @@ export function SellerBids() {
 
       <Txt variant="title" style={{ marginTop: 8 }}>{t('sellerX.bids.openRequirements')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : buyerBids.length === 0 ? (
         <EmptyState
           icon="document-text-outline"
@@ -100,7 +101,7 @@ export function SellerBids() {
               {r.mode === 'auction' && r.bestPriceCents != null && (
                 <View style={{ alignItems: 'flex-end' }}>
                   <Txt variant="muted">{t('sellerX.bids.priceToBeat')}</Txt>
-                  <Txt variant="title">{usd(r.bestPriceCents)}</Txt>
+                  <Txt variant="title">{fmtCents(r.bestPriceCents)}</Txt>
                 </View>
               )}
             </Row>

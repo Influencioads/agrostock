@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { C } from '../theme/tokens';
+import { C, elevation, type } from '../theme/tokens';
 import { MotiView, useReduceMotion } from '../ui';
 import { useI18n } from '../i18n';
 import { useChatBadge } from '../chat/ChatBadgeContext';
@@ -29,12 +29,27 @@ const Tab = createBottomTabNavigator();
 function TabIcon({ name, color, size, focused }: { name: keyof typeof Ionicons.glyphMap; color: string; size: number; focused: boolean }) {
   const reduce = useReduceMotion();
   return (
-    <MotiView
-      animate={{ scale: reduce ? 1 : focused ? 1.16 : 1, translateY: reduce ? 0 : focused ? -1 : 0 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-    >
-      <Ionicons name={name} size={size} color={color} />
-    </MotiView>
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      {/* Tinted pill behind the active icon — the selected tab reads at a glance
+          rather than relying on a colour difference alone. */}
+      <MotiView
+        animate={{ opacity: focused ? 1 : 0, scale: reduce ? 1 : focused ? 1 : 0.8 }}
+        transition={{ type: 'timing', duration: 160 }}
+        style={{
+          position: 'absolute',
+          width: 46,
+          height: 26,
+          borderRadius: 13,
+          backgroundColor: C.surface,
+        }}
+      />
+      <MotiView
+        animate={{ scale: reduce ? 1 : focused ? 1.08 : 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+      >
+        <Ionicons name={name} size={size} color={color} />
+      </MotiView>
+    </View>
   );
 }
 
@@ -54,7 +69,7 @@ function TabLabel({ label, color }: { label: string; color: string }) {
       numberOfLines={1}
       adjustsFontSizeToFit
       minimumFontScale={0.8}
-      style={{ fontSize: 11, fontWeight: '600', color, textAlign: 'center', paddingHorizontal: 2 }}
+      style={{ ...type.micro, fontSize: 10.5, color, textAlign: 'center', paddingHorizontal: 2 }}
     >
       {label}
     </Text>
@@ -71,9 +86,18 @@ function tabLabel(label: string) {
 const screenOptions = {
   headerShown: false,
   tabBarActiveTintColor: C.green,
-  tabBarInactiveTintColor: C.inkSoft,
-  tabBarStyle: { backgroundColor: C.white, borderTopColor: C.border, height: 58, paddingBottom: 6, paddingTop: 6 },
-  tabBarLabelStyle: { fontSize: 11, fontWeight: '600' as const },
+  tabBarInactiveTintColor: C.inkMuted,
+  // A hairline plus a soft lift, rather than a 1px grey rule: the bar should
+  // float over the content, not look welded to it.
+  tabBarStyle: {
+    backgroundColor: C.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.hairline,
+    height: 64,
+    paddingBottom: 8,
+    paddingTop: 8,
+    ...elevation.low,
+  },
 };
 
 /**

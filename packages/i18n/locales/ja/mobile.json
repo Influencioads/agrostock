@@ -473,8 +473,9 @@
     "product": {
       "auction": "オークション",
       "safeDeal": "セーフディール",
-      "social": "{{watching}}+が視聴中 · {{ordered}}が注文しました",
-      "verified": "検証済み"
+      "verified": "検証済み",
+      "moq": "最小ロット {{value}}",
+      "available": "在庫 {{value}}"
     },
     "profile": {
       "about": "について",
@@ -622,7 +623,9 @@
     "notifications": "通知",
     "restartNotice": "新しいテキストの方向を適用するために、アプリが再起動します。",
     "rolesAccess": "役割とアクセス権限",
-    "support": "ライブサポート"
+    "support": "ライブサポート",
+    "marketplace": "マーケットプレイス",
+    "account": "アカウント"
   },
   "loaderX": {
     "attendance": {
@@ -959,7 +962,12 @@
         "offices": "オフィス",
         "safeDeal": "セーフディール",
         "transport": "輸送"
-      }
+      },
+      "categories": "カテゴリーから探す",
+      "promoted": "注目",
+      "services": "サービス",
+      "requirements": "調達を探している買い手",
+      "viewAll": "すべて見る"
     },
     "kyc": {
       "doc": {
@@ -1042,7 +1050,12 @@
       "transportBody": "購入者コンソールから輸送の手配を行ってください。",
       "transportTitle": "輸送",
       "verified": "検証済み",
-      "watching": "{{count}}+が視聴中"
+      "watching": "{{count}}+が視聴中",
+      "addToRfq": "見積依頼に追加",
+      "supplier": "サプライヤー",
+      "tradeTerms": "取引条件",
+      "origin": "原産地",
+      "delivery": "納品"
     },
     "ph": {
       "bidTitle": "バスマティライス — ジェベル・アリ行き 100 MT",
@@ -1114,7 +1127,50 @@
       "emptyTitle": "検索 AgroTraders",
       "noMatchBody": "「{{q}}」に一致する結果は見つかりませんでした。",
       "noMatchTitle": "一致する項目はありません",
-      "placeholder": "穀物、豆類、油などを検索…"
+      "placeholder": "穀物、豆類、油などを検索…",
+      "recent": "最近の検索"
+    },
+    "filter": {
+      "title": "絞り込み",
+      "clear": "クリア",
+      "clearAll": "すべてクリア",
+      "apply": "適用",
+      "applyN": "適用（{{count}}）",
+      "sortBy": "並び替え",
+      "searchOptions": "検索",
+      "categoryHint": "カテゴリーを選ぶと仕様の絞り込みが使えます。",
+      "groups": {
+        "category": "カテゴリー",
+        "dealType": "取引タイプ",
+        "price": "価格",
+        "country": "国",
+        "city": "都市",
+        "grade": "等級",
+        "market": "市場"
+      }
+    },
+    "plp": {
+      "results": "{{count}} 件",
+      "filters": "絞り込み",
+      "sort": "並び替え",
+      "clearFilters": "条件をクリア",
+      "noResults": "該当なし"
+    },
+    "rfq": {
+      "title": "見積カート",
+      "emptyTitle": "見積カートは空です",
+      "emptyBody": "どのサプライヤーの出品でも追加でき、サプライヤーごとに見積依頼を送れます。",
+      "addedTitle": "見積カートに追加しました",
+      "addedBody": "{{name}} をカートに追加しました。すべて追加してから依頼を送信してください。",
+      "requestQuotes": "見積を依頼",
+      "sentLabel": "依頼を送信しました",
+      "sentTitle": "依頼を送信しました",
+      "sentBody": "サプライヤーから見積が届きます。入札一覧で確認できます。",
+      "failTitle": "依頼を送信できませんでした",
+      "failBody": "もう一度お試しください。",
+      "lineCount": "{{count}} 点",
+      "noteFromBasket": "見積カートから {{supplier}} に送信しました。",
+      "footNote": "サプライヤーごとに個別の依頼が送られます。見積内容は非公開です。"
     }
   },
   "reviews": {

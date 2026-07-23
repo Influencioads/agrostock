@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
-import { Button, Card, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { useI18n } from '../../i18n';
 
 interface Req { id: string; reference: string; fromCity: string; toCity: string; cargo: string; createdBy?: { name: string }; _count?: { quotes: number } }
@@ -25,7 +25,7 @@ export function TransporterRequests() {
     <Screen edges={['top']}>
       <Txt variant="h2">{t('transX.requests.title')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : requests.length === 0 ? (
         <EmptyState icon="cube-outline" title={t('transX.requests.emptyTitle')} body={t('transX.requests.emptyBody')} />
       ) : (

@@ -41,7 +41,7 @@ export function WorkerReviews() {
               <RatingStars n={r.stars} />
             </Row>
             {r.text ? <Txt variant="body" style={{ marginTop: 4 }}>{r.text}</Txt> : null}
-            <Txt variant="muted" style={{ marginTop: 4 }}>#{r.job?.reference} · {new Date(r.createdAt).toLocaleDateString()}</Txt>
+            <Txt variant="muted" style={{ marginTop: 4 }}>{new Date(r.createdAt).toLocaleDateString()}</Txt>
           </Card>
         ))
       )}

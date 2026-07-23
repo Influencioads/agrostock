@@ -496,8 +496,9 @@
     "product": {
       "auction": "Enchères",
       "safeDeal": "Offre sécurisée",
-      "social": "{{watching}}+ personnes regardent · {{ordered}} personnes ont commandé",
-      "verified": "Vérifié"
+      "verified": "Vérifié",
+      "moq": "MOQ {{value}}",
+      "available": "{{value}} disponible"
     },
     "profile": {
       "about": "À propos",
@@ -650,7 +651,9 @@
     "notifications": "Notifications",
     "restartNotice": "L'application va redémarrer pour appliquer la nouvelle direction du texte.",
     "rolesAccess": "Rôles et accès",
-    "support": "Assistance en direct"
+    "support": "Assistance en direct",
+    "marketplace": "Place de marché",
+    "account": "Compte"
   },
   "loaderX": {
     "attendance": {
@@ -1016,7 +1019,12 @@
         "offices": "Bureaux",
         "safeDeal": "Offre sécurisée",
         "transport": "Transport"
-      }
+      },
+      "categories": "Acheter par catégorie",
+      "promoted": "À la une",
+      "services": "Services",
+      "requirements": "Acheteurs en recherche",
+      "viewAll": "Tout voir"
     },
     "kyc": {
       "doc": {
@@ -1098,7 +1106,12 @@
       "transport": "Transport",
       "transportBody": "Réservez votre transport depuis votre console client.",
       "transportTitle": "Transport",
-      "verified": "Vérifié"
+      "verified": "Vérifié",
+      "addToRfq": "Ajouter à la demande",
+      "supplier": "Fournisseur",
+      "tradeTerms": "Conditions commerciales",
+      "origin": "Origine",
+      "delivery": "Livraison"
     },
     "ph": {
       "cargoBasmati": "riz basmati",
@@ -1171,7 +1184,50 @@
       "emptyTitle": "Recherche AgroTraders",
       "noMatchBody": "Aucun résultat trouvé pour \"{{q}}\".",
       "noMatchTitle": "Aucun résultat",
-      "placeholder": "Recherchez des céréales, des légumineuses, des huiles…"
+      "placeholder": "Recherchez des céréales, des légumineuses, des huiles…",
+      "recent": "Recherches récentes"
+    },
+    "filter": {
+      "title": "Filtres",
+      "clear": "Effacer",
+      "clearAll": "Tout effacer",
+      "apply": "Appliquer",
+      "applyN": "Appliquer ({{count}})",
+      "sortBy": "Trier par",
+      "searchOptions": "Rechercher",
+      "categoryHint": "Choisis une catégorie pour débloquer ses filtres de spécifications.",
+      "groups": {
+        "category": "Catégorie",
+        "dealType": "Type d’offre",
+        "price": "Prix",
+        "country": "Pays",
+        "city": "Ville",
+        "grade": "Qualité",
+        "market": "Marché"
+      }
+    },
+    "plp": {
+      "results": "{{count}} résultats",
+      "filters": "Filtrer",
+      "sort": "Trier",
+      "clearFilters": "Effacer les filtres",
+      "noResults": "Aucun résultat"
+    },
+    "rfq": {
+      "title": "Panier de devis",
+      "emptyTitle": "Ton panier de devis est vide",
+      "emptyBody": "Ajoute des annonces de n’importe quel fournisseur, puis envoie une demande de devis par fournisseur.",
+      "addedTitle": "Ajouté au panier de devis",
+      "addedBody": "{{name}} est dans ton panier. Envoie la demande quand tu as tout ajouté.",
+      "requestQuotes": "Demander des devis",
+      "sentLabel": "Demande envoyée",
+      "sentTitle": "Demande envoyée",
+      "sentBody": "Le fournisseur répondra par un devis. Suis-le dans Offres.",
+      "failTitle": "Impossible d’envoyer la demande",
+      "failBody": "Réessaie.",
+      "lineCount": "{{count}} articles",
+      "noteFromBasket": "Envoyé depuis le panier de devis à {{supplier}}.",
+      "footNote": "Chaque fournisseur reçoit sa propre demande. Les devis restent privés."
     }
   },
   "reviews": {

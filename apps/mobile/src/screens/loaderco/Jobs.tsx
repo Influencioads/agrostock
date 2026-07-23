@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiLoaderJob, ApiLoaderJobDetail, ApiLoaderWorker, ApiLoaderTeam } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { usd } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 
 type TFn = (key: string, options?: Record<string, unknown>) => string;
@@ -23,6 +23,7 @@ export function LoaderJobs() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const [tab, setTab] = useState('requests');
   const [manageId, setManageId] = useState<string | null>(null);
   const { data: open = [], isLoading: l1 } = useQuery<ApiLoaderJob[]>({ queryKey: ['jobs', 'open'], queryFn: () => api.loaders.openJobs(), enabled: !!user });
@@ -37,14 +38,14 @@ export function LoaderJobs() {
       <Segmented options={[{ id: 'requests', label: t('loaderX.jobs.tabRequests') }, { id: 'active', label: t('loaderX.jobs.tabActive') }]} value={tab} onChange={setTab} />
 
       {tab === 'requests' ? (
-        l1 ? <Loading /> : open.length === 0 ? (
+        l1 ? <SkeletonRows /> : open.length === 0 ? (
           <EmptyState icon="cube-outline" title={t('loaderX.jobs.emptyRequestsTitle')} body={t('loaderX.jobs.emptyRequestsBody')} />
         ) : open.map((j) => (
           <Card key={j.id}>
             <Row style={{ justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
                 <Txt variant="title">{j.location}</Txt>
-                <Txt variant="muted">#{j.reference} · {t('loaderX.plurals.workers', { count: j.workersNeeded })}{j.payCents != null ? ` · ${usd(j.payCents)}` : ''}</Txt>
+                <Txt variant="muted">#{j.reference} · {t('loaderX.plurals.workers', { count: j.workersNeeded })}{j.payCents != null ? ` · ${fmtCents(j.payCents)}` : ''}</Txt>
                 {jobContext(j, t) ? <Txt variant="small" color={C.dark}>{jobContext(j, t)}</Txt> : null}
               </View>
               <Row gap={8}>
@@ -54,7 +55,7 @@ export function LoaderJobs() {
             </Row>
           </Card>
         ))
-      ) : l2 ? <Loading /> : mine.length === 0 ? (
+      ) : l2 ? <SkeletonRows /> : mine.length === 0 ? (
         <EmptyState icon="people-outline" title={t('loaderX.jobs.emptyActiveTitle')} body={t('loaderX.jobs.emptyActiveBody')} />
       ) : mine.map((j) => (
         <Card key={j.id}>
@@ -80,6 +81,7 @@ export function LoaderJobs() {
 function JobSheet({ jobId, onClose, onChanged }: { jobId: string; onClose: () => void; onChanged: () => void }) {
   const qc = useQueryClient();
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const { data: job, isLoading } = useQuery<ApiLoaderJobDetail>({ queryKey: ['loader-job', jobId], queryFn: () => api.loaders.jobDetail(jobId) });
   const { data: workers = [] } = useQuery<ApiLoaderWorker[]>({ queryKey: ['workers'], queryFn: () => api.loaders.workers() });
@@ -110,7 +112,7 @@ function JobSheet({ jobId, onClose, onChanged }: { jobId: string; onClose: () =>
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={onClose} />
       <View style={{ backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
         <ScrollView contentContainerStyle={{ padding: space.lg, gap: 12 }} keyboardShouldPersistTaps="handled">
-          {isLoading || !job ? <Loading /> : (
+          {isLoading || !job ? <SkeletonRows /> : (
             <>
               <Row style={{ justifyContent: 'space-between' }}>
                 <Txt variant="h3">{job.location}</Txt>
@@ -125,7 +127,7 @@ function JobSheet({ jobId, onClose, onChanged }: { jobId: string; onClose: () =>
                 {job.createdBy ? <Txt variant="small">{t('loaderX.jobs.placedBy', { name: job.createdBy.name, role: job.createdBy.role })}</Txt> : null}
                 {job.order?.product ? <Txt variant="small">{t('loaderX.jobs.productLabel')}: {job.order.product.name}{job.order.qty ? ` · ${job.order.qty}` : ''}</Txt> : job.cargo ? <Txt variant="small">{t('loaderX.jobs.cargoLabel')}: {job.cargo}</Txt> : null}
                 {job.order?.reference ? <Txt variant="small">{t('loaderX.jobs.orderLabel')} #{job.order.reference}{job.order.buyer ? ` · ${t('loaderX.jobs.buyer', { name: job.order.buyer.name })}` : ''}</Txt> : null}
-                {job.payCents != null ? <Txt variant="small">{t('loaderX.jobs.payLabel')}: {usd(job.payCents)}</Txt> : null}
+                {job.payCents != null ? <Txt variant="small">{t('loaderX.jobs.payLabel')}: {fmtCents(job.payCents)}</Txt> : null}
                 {job.neededDate ? <Txt variant="small">{t('loaderX.jobs.neededLabel')}: {new Date(job.neededDate).toLocaleDateString()}</Txt> : null}
                 {owned && job.otp ? <Txt variant="small">{t('loaderX.jobs.otpLabel')}: {job.otp}</Txt> : null}
                 {job.notes ? <Txt variant="muted">“{job.notes}”</Txt> : null}

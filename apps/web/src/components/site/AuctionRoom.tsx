@@ -135,7 +135,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
       </section>
 
       {/* ===== MAIN GRID ===== */}
-      <div className="mx-auto grid max-w-7xl items-start gap-8 px-4 py-7 lg:grid-cols-2 lg:px-8">
+      <div className="mx-auto grid grid-cols-1 max-w-7xl items-start gap-8 px-4 py-7 lg:grid-cols-2 lg:px-8">
         {/* LEFT: product */}
         <div>
           <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border border-surface-border" style={{ background: 'linear-gradient(140deg,#0e4632,#146B3A)' }}>
@@ -161,7 +161,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
           {/* lot details */}
           <Card className="mt-5">
             <h3 className="font-display text-lg font-bold text-ink">{t('auction.lotDetails')}</h3>
-            <dl className="mt-3 grid gap-x-8 sm:grid-cols-2">
+            <dl className="mt-3 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
               {specs.map(([k, v]) => (
                 <div key={k} className="flex justify-between border-b border-surface-border py-2.5 text-sm">
                   <dt className="text-ink-soft">{k}</dt><dd className="text-end font-semibold text-ink">{v}</dd>

@@ -235,7 +235,7 @@ function StartAuctionModal({ onClose }: { onClose: () => void }) {
                 {eligible.map((p) => <option key={p.id} value={p.id}>{p.emoji} {p.name} — {p.price}{unitSuffix(p.unit)}</option>)}
               </select>
             </label>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input label={t('console.seller.startingBid')} type="number" placeholder="800" value={startBid} onChange={(e) => setStartBid(e.target.value)} />
               <Input label={t('console.seller.auctionCloses')} type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
             </div>
@@ -325,7 +325,7 @@ export function SellerAuctions() {
       ) : auctions.length === 0 ? (
         <EmptyHint icon="gavel" title={t('console.seller.noAuctionsTitle')} body={t('console.seller.noAuctionsBody')} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {auctions.map((p) => {
             const ended = p.auctionEndsAt ? new Date(p.auctionEndsAt).getTime() <= Date.now() : false;
             return (
@@ -463,7 +463,7 @@ export function SellerAds() {
     <div className="max-w-3xl">
       <SectionHead title={t('console.nav.ads')} sub={t('console.seller.adsSub')} />
       <Card className="mb-5">
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.seller.product')}</span>
             <select

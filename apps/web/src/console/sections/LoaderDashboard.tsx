@@ -50,7 +50,7 @@ export function LoaderDashboard({ name, onNavigate }: { name: string; onNavigate
         <StaggerItem><Stat className="h-full" icon={<Icon name="wallet" size={18} />} value={compactUsd((wallet?.balanceCents ?? 0) / 100)} label={t('console.dash.thisMonth')} delta="+11%" up /></StaggerItem>
       </Stagger>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* earnings chart */}
         <BarChart title={t('console.dash.earningsTitle')} caption={t('console.dash.perMonth')} className="lg:col-span-2" data8={series?.data8} data12={series?.data12} />
 
@@ -81,7 +81,7 @@ export function LoaderDashboard({ name, onNavigate }: { name: string; onNavigate
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* active jobs */}
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between">

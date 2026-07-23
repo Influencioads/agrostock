@@ -62,7 +62,7 @@ export function TransporterDashboard({ name, onNavigate }: { name: string; onNav
         <StaggerItem><Stat className="h-full" icon={<Icon name="gauge" size={18} />} value={`${utilization}%`} label={t('console.dash.fleetUtilization')} delta="+5%" up /></StaggerItem>
       </Stagger>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* earnings chart */}
         <BarChart title={t('console.dash.earningsTitle')} caption={t('console.dash.perMonth')} className="lg:col-span-2" data8={series?.data8} data12={series?.data12} />
 
@@ -91,7 +91,7 @@ export function TransporterDashboard({ name, onNavigate }: { name: string; onNav
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* active trips */}
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between">

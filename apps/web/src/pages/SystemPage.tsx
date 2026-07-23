@@ -195,7 +195,7 @@ export function SystemPage() {
 
         {/* inputs + tabs */}
         <Section title={t('page.system.inputsTabs')}>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
               <div className="space-y-4">
                 <Input label={t('page.system.sample.searchLabel')} placeholder={t('page.system.sample.searchPlaceholder')} leftIcon={<Icon name="search" size={16} />} />

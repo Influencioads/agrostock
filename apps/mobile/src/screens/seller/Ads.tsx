@@ -3,10 +3,11 @@ import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiAdCampaign, ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, ChipSelect, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 
 /**
@@ -15,6 +16,7 @@ import { C } from '../../theme/tokens';
  */
 export function SellerAds() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const { user } = useAuth();
   const [productId, setProductId] = useState('');
@@ -91,7 +93,7 @@ export function SellerAds() {
       </Card>
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : campaigns.length === 0 ? (
         <EmptyState icon="megaphone-outline" title={t('sellerX.ads.emptyTitle')} body={t('sellerX.ads.emptyBody')} />
       ) : (
@@ -102,7 +104,7 @@ export function SellerAds() {
               <Row style={{ justifyContent: 'space-between' }}>
                 <View style={{ flexShrink: 1 }}>
                   <Txt variant="title">{c.product?.emoji ?? '🌾'} {c.product?.name ?? t('sellerX.ads.listingFallback')}</Txt>
-                  <Txt variant="muted">{t('sellerX.ads.perDay', { amount: usd(c.dailyBudgetCents) })}</Txt>
+                  <Txt variant="muted">{t('sellerX.ads.perDay', { amount: fmtCents(c.dailyBudgetCents) })}</Txt>
                 </View>
                 {c.status === 'pending' && <Badge label={t('sellerX.ads.pendingReview')} tone="warn" />}
                 {c.status === 'rejected' && <Badge label={t('sellerX.ads.rejected')} tone="error" />}

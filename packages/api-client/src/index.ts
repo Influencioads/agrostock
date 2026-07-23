@@ -106,7 +106,15 @@ export interface ApiProduct {
   /** USD cents baseline for currency conversion (null when the price string is unparseable). */
   priceCents?: number | null;
   unit: string;
+  /**
+   * Legacy display rating (string, defaults to "4.8" for listings with no
+   * reviews at all). Prefer `ratingAvg`/`ratingCount` — they are the real,
+   * review-derived figures, and `ratingCount === 0` is how you tell an unrated
+   * listing from a well-rated one.
+   */
   rating: string;
+  ratingAvg?: number | null;
+  ratingCount?: number;
   verified: boolean;
   safeDeal: boolean;
   isOffer: boolean;
@@ -286,6 +294,34 @@ export interface ApiCmsPage {
   published: boolean;
   updatedAt: string;
   createdAt: string;
+}
+
+export interface ApiEmailTemplateTranslation {
+  id: string;
+  locale: string;
+  subject: string;
+  bodyHtml: string;
+  ctaLabel: string | null;
+}
+
+/** An admin-editable transactional email template (DB row + registry metadata). */
+export interface ApiEmailTemplate {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  subject: string;
+  bodyHtml: string;
+  ctaLabel: string | null;
+  enabled: boolean;
+  updatedAt: string;
+  createdAt: string;
+  /** From the server-side registry (static): grouping + editable variables. */
+  category: string;
+  variables: string[];
+  defaultSubject: string;
+  defaultBodyHtml: string;
+  translations?: ApiEmailTemplateTranslation[];
 }
 
 /** The three admin-uploadable brand assets. `null` = use the built-in default. */
@@ -517,8 +553,7 @@ export interface ApiLoaderReview {
   text: string | null;
   createdAt: string;
   rater?: { id: string; name: string } | null;
-  job?: { reference: string } | null;
-  team?: { name: string } | null;
+  job?: { id?: string; reference?: string | null; location?: string | null } | null;
 }
 export interface ApiLoaderReviews {
   avg: number;
@@ -597,6 +632,16 @@ export interface ApiEarnings {
   txns: ApiWalletTx[];
 }
 
+/**
+ * The trimmed product shape the directory profile endpoint returns for a
+ * seller's featured listings — `directory.module.ts` selects only these keys,
+ * NOT the full `ApiProduct`. Kept as a `Pick` so it can never drift from it.
+ */
+export type ApiProfileProduct = Pick<
+  ApiProduct,
+  'id' | 'slug' | 'name' | 'emoji' | 'imageUrl' | 'price' | 'priceCents' | 'unit' | 'flag' | 'rating'
+>;
+
 export interface ApiPublicProfile {
   id: string;
   name: string;
@@ -607,7 +652,7 @@ export interface ApiPublicProfile {
   createdAt: string;
   profile: ApiProfile | null;
   contactMasked: { phone: string | null; email: string | null };
-  products?: ApiProduct[];
+  products?: ApiProfileProduct[];
   routes?: { name: string; fromCity: string; toCity: string; distanceKm: number | null }[];
   workerProfile?: {
     id: string;
@@ -704,6 +749,7 @@ export type AdminPermission =
   | 'community_moderate'
   | 'support_agent'
   | 'cms_manage'
+  | 'email_templates'
   | 'branding_manage'
   | 'audit_view'
   | 'reports_view'
@@ -1401,6 +1447,18 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Re-send the confirmation link. Always resolves, even for unknown addresses. */
       resendVerification: async (email: string) =>
         (await http.post<{ ok: true }>('/auth/resend-verification', { email })).data,
+      /** Start a password reset. Always resolves (no account enumeration). */
+      forgotPassword: async (email: string) =>
+        (await http.post<{ ok: true }>('/auth/forgot-password', { email })).data,
+      /** Consume a reset token and set a new password — returns a full session. */
+      resetPassword: async (token: string, password: string) =>
+        (await http.post<AuthResult>('/auth/reset-password', { token, password })).data,
+      /** Request a passwordless login code by email. Always resolves. */
+      requestOtp: async (email: string) =>
+        (await http.post<{ ok: true }>('/auth/request-otp', { email })).data,
+      /** Verify an emailed login code — returns a full session on success. */
+      verifyOtp: async (email: string, code: string) =>
+        (await http.post<AuthResult>('/auth/verify-otp', { email, code })).data,
       me: () => get<ApiUser>('/auth/me'),
     },
     categories: {
@@ -1844,6 +1902,22 @@ export function createApiClient(opts: ApiClientOptions) {
         post<ApiCmsPage>('/admin/cms', body),
       updateCmsPage: (id: string, body: { title?: string; body?: string; published?: boolean }) =>
         patch<ApiCmsPage>(`/admin/cms/${id}`, body),
+      // ── Email templates ──
+      emailTemplates: () => get<ApiEmailTemplate[]>('/admin/email-templates'),
+      emailTemplate: (key: string) => get<ApiEmailTemplate>(`/admin/email-templates/${key}`),
+      updateEmailTemplate: (
+        key: string,
+        body: { subject?: string; bodyHtml?: string; ctaLabel?: string; enabled?: boolean; locale?: string },
+      ) => patch<ApiEmailTemplate>(`/admin/email-templates/${key}`, body),
+      previewEmailTemplate: (
+        key: string,
+        body: { locale?: string; subject?: string; bodyHtml?: string; ctaLabel?: string; params?: Record<string, string | number> },
+      ) => post<{ subject: string; html: string }>(`/admin/email-templates/${key}/preview`, body),
+      testEmailTemplate: (key: string, body: { to?: string; locale?: string }) =>
+        post<{ ok: boolean; delivered: boolean; to: string; mailEnabled: boolean }>(
+          `/admin/email-templates/${key}/test`,
+          body,
+        ),
       branding: () => get<ApiBranding>('/admin/branding'),
       /** Replace a brand asset. Server re-encodes (PNG for icons, WebP for the logo). */
       uploadBranding: async (

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ApiBuyerBid } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
-import { Badge, Button, Card, EmptyState, Loading, Row, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -53,7 +53,7 @@ export function BuyerBidsBoard() {
             <Txt variant="small" style={{ flex: 1 }}>{t('buyerX.room.maskedNote')}</Txt>
           </Card>
         }
-        ListEmptyComponent={isLoading ? <Loading /> : <EmptyState icon="clipboard-outline" title={t('pubX.bids.empty')} />}
+        ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="clipboard-outline" title={t('pubX.bids.empty')} />}
         renderItem={({ item: b }) => {
           const ended = b.auctionEndsAt ? new Date(b.auctionEndsAt).getTime() <= Date.now() : false;
           const bidCount = b._count?.sellerBids ?? 0;

@@ -22,6 +22,7 @@ import { MarketsPage } from './pages/MarketsPage';
 import { CompaniesPage } from './pages/CompaniesPage';
 import { DisputesPage } from './pages/DisputesPage';
 import { CmsPage } from './pages/CmsPage';
+import { EmailTemplatesPage } from './pages/EmailTemplatesPage';
 import { OfficesPage } from './pages/OfficesPage';
 import { BrandingPage } from './pages/BrandingPage';
 import { AuditPage } from './pages/AuditPage';
@@ -61,6 +62,7 @@ export function App() {
         <Route path="/transport" element={<CompaniesPage kind="transport" />} />
         <Route path="/loaders" element={<CompaniesPage kind="loaders" />} />
         <Route path="/cms" element={<CmsPage />} />
+        <Route path="/email-templates" element={<EmailTemplatesPage />} />
         <Route path="/offices" element={<OfficesPage />} />
         <Route path="/branding" element={<BrandingPage />} />
         <Route path="/payments" element={<PaymentsPage />} />

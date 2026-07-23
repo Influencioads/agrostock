@@ -230,7 +230,7 @@ export function RegisterPage() {
             />
             {/* Two inputs side by side leave ~155px each on a phone, which
                 truncates both the label and the placeholder. */}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-semibold text-ink">{t('page.register.country')}</span>
                 <select
@@ -331,7 +331,7 @@ export function RegisterPage() {
                     />
                   </>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {form.role === 'transporter' && (
                     <Input
                       label={t('page.register.minDistanceKm')}

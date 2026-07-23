@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ApiDirectoryEntry, ApiMarket, ApiWorkerEntry } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, Chip, EmptyState, Input, Loading, Row, Txt } from '../../ui';
+import { Badge, Button, Card, Chip, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from '../components/HireModal';
 import { useI18n } from '../../i18n';
@@ -146,7 +146,7 @@ export function Directory({ type }: { type: DirectoryType }) {
         data={entries}
         keyExtractor={(e) => e.id}
         contentContainerStyle={{ padding: space.lg, gap: 12 }}
-        ListEmptyComponent={isLoading ? <Loading /> : <EmptyState icon="search-outline" title={t('pubX.dir.emptyFilters')} />}
+        ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="search-outline" title={t('pubX.dir.emptyFilters')} />}
         renderItem={({ item: e }) => {
           const isWorker = type === 'workers';
           const w = e as ApiWorkerEntry;

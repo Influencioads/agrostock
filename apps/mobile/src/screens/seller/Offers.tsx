@@ -4,7 +4,7 @@ import type { ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { unitSuffix } from '@agrotraders/types';
 
@@ -31,7 +31,7 @@ export function SellerOffers() {
       <Txt variant="h2">{t('sellerX.offers.title')}</Txt>
       <Txt variant="muted">{t('sellerX.offers.subtitle')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : products.length === 0 ? (
         <EmptyState icon="star-outline" title={t('sellerX.offers.emptyTitle')} body={t('sellerX.offers.emptyBody')} />
       ) : (

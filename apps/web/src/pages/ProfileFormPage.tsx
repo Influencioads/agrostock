@@ -184,7 +184,7 @@ export function ProfileForm() {
           <Icon name="user" size={18} /> {t('page.profileForm.publicProfile')}
         </h3>
         <p className="mt-0.5 text-sm text-ink-soft">{t('page.profileForm.publicSub')}</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="sm:col-span-2">
             <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.profileForm.about')}</span>
             <textarea value={f.bio} onChange={set('bio')} rows={2} placeholder={t('page.profileForm.aboutPlaceholder')} className="w-full rounded-md border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand-leaf" />
@@ -235,7 +235,7 @@ export function ProfileForm() {
             <Icon name="mapPin" size={18} /> {t('page.register.opsTitle')}
           </h3>
           <p className="mt-0.5 text-sm text-ink-soft">{t('page.register.opsHint')}</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <TagInput
               label={t('page.register.operatingCountries')}
               value={ops.operatingCountries}
@@ -306,7 +306,7 @@ export function ProfileForm() {
           <Badge tone="green" className="me-1.5">{t('page.profileForm.adminOnly')}</Badge>
           {t('page.profileForm.privateSub')}
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Input label={t('page.profileForm.phone')} placeholder="+971 50 123 4567" value={f.phone} onChange={set('phone')} />
           <Input label={t('page.profileForm.whatsapp')} placeholder="+971 50 123 4567" value={f.whatsapp} onChange={set('whatsapp')} />
           <Input label={t('page.profileForm.contactEmail')} type="email" placeholder="trade@company.com" value={f.contactEmail} onChange={set('contactEmail')} />

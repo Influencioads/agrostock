@@ -74,7 +74,7 @@ export function LoaderWorkers() {
         <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.workers')}</h2>
         <Button onClick={() => { setForm(emptyForm); setAddOpen(true); }} leftIcon={<Icon name="plus" size={16} />}>{t('console.loaderco.addWorker')}</Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {workers.map((w) => (
           <Card key={w.id}>
             <div className="flex items-center justify-between">
@@ -227,7 +227,7 @@ export function LoaderTeams() {
         <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.teams')}</h2>
         <Button onClick={() => setAddOpen(true)} leftIcon={<Icon name="plus" size={16} />}>{t('console.loaderco.addTeam')}</Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {teams.map((tm) => (
           <Card key={tm.id} className="cursor-pointer transition hover:border-brand-leaf" onClick={() => setDetailId(tm.id)}>
             <Icon name="grid" size={22} className="text-brand-dark" />

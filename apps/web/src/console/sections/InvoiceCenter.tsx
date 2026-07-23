@@ -118,7 +118,7 @@ export function InvoiceBuilderModal({ subject, onClose }: { subject: BillableSub
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label={t('console.order.tax')} type="number" value={tax} onChange={(e) => setTax(e.target.value)} />
           <Input label={t('console.invoice.dueOptional')} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
         </div>
@@ -158,7 +158,7 @@ export function InvoiceDetailModal({ id, onClose }: { id: string; onClose: () =>
             <Badge tone={statusTone[inv.status] ?? 'slate'}>{t(`console.invoice.status.${inv.status}`, { defaultValue: inv.status })}</Badge>
             <span className="font-display text-2xl font-extrabold text-ink">{usd(inv.totalCents)}</span>
           </div>
-          <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
             <Row k={t('console.invoice.from')} v={inv.issuer?.name} />
             <Row k={t('console.invoice.to')} v={inv.recipient?.name} />
             <Row k={t('console.invoice.issued')} v={new Date(inv.issuedAt).toLocaleDateString()} />

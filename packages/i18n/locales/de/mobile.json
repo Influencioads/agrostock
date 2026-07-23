@@ -482,8 +482,9 @@
     "product": {
       "auction": "Auktion",
       "safeDeal": "Sicheres Angebot",
-      "social": "{{watching}}+ Zuschauer · {{ordered}} bestellt",
-      "verified": "Bestätigt"
+      "verified": "Bestätigt",
+      "moq": "MOQ {{value}}",
+      "available": "{{value}} verfügbar"
     },
     "profile": {
       "about": "Um",
@@ -633,7 +634,9 @@
     "notifications": "Benachrichtigungen",
     "restartNotice": "Die App wird neu gestartet, um die neue Textrichtung anzuwenden.",
     "rolesAccess": "Rollen und Zugriff",
-    "support": "Live-Support"
+    "support": "Live-Support",
+    "marketplace": "Marktplatz",
+    "account": "Konto"
   },
   "loaderX": {
     "attendance": {
@@ -983,7 +986,12 @@
         "offices": "Büros",
         "safeDeal": "Sicheres Angebot",
         "transport": "Transport"
-      }
+      },
+      "categories": "Nach Kategorie einkaufen",
+      "promoted": "Hervorgehoben",
+      "services": "Dienstleistungen",
+      "requirements": "Käufer mit Bedarf",
+      "viewAll": "Alle ansehen"
     },
     "kyc": {
       "doc": {
@@ -1066,7 +1074,12 @@
       "transportBody": "Buchen Sie den Transport über Ihre Käuferkonsole.",
       "transportTitle": "Transport",
       "verified": "Bestätigt",
-      "watching": "{{count}}+ sehen sich das gerade an"
+      "watching": "{{count}}+ sehen sich das gerade an",
+      "addToRfq": "Zur Anfrage",
+      "supplier": "Lieferant",
+      "tradeTerms": "Handelskonditionen",
+      "origin": "Herkunft",
+      "delivery": "Lieferung"
     },
     "ph": {
       "bidTitle": "Basmatireis — 100 MT für Jebel Ali",
@@ -1139,7 +1152,50 @@
       "emptyTitle": "Suche AgroTraders",
       "noMatchBody": "Für \"{{q}}\" wurden keine Ergebnisse gefunden.",
       "noMatchTitle": "Keine Übereinstimmungen",
-      "placeholder": "Suche nach Getreide, Hülsenfrüchten, Ölen…"
+      "placeholder": "Suche nach Getreide, Hülsenfrüchten, Ölen…",
+      "recent": "Letzte Suchen"
+    },
+    "filter": {
+      "title": "Filter",
+      "clear": "Zurücksetzen",
+      "clearAll": "Alle zurücksetzen",
+      "apply": "Anwenden",
+      "applyN": "Anwenden ({{count}})",
+      "sortBy": "Sortieren nach",
+      "searchOptions": "Suchen",
+      "categoryHint": "Wähle eine Kategorie, um ihre Spezifikationsfilter freizuschalten.",
+      "groups": {
+        "category": "Kategorie",
+        "dealType": "Geschäftsart",
+        "price": "Preis",
+        "country": "Land",
+        "city": "Stadt",
+        "grade": "Güteklasse",
+        "market": "Markt"
+      }
+    },
+    "plp": {
+      "results": "{{count}} Ergebnisse",
+      "filters": "Filter",
+      "sort": "Sortieren",
+      "clearFilters": "Filter zurücksetzen",
+      "noResults": "Keine Treffer"
+    },
+    "rfq": {
+      "title": "Anfragekorb",
+      "emptyTitle": "Dein Anfragekorb ist leer",
+      "emptyBody": "Füge Angebote beliebiger Lieferanten hinzu und sende dann pro Lieferant eine Angebotsanfrage.",
+      "addedTitle": "Zum Anfragekorb hinzugefügt",
+      "addedBody": "{{name}} liegt im Korb. Sende die Anfrage, sobald du alles hinzugefügt hast.",
+      "requestQuotes": "Angebote anfragen",
+      "sentLabel": "Anfrage gesendet",
+      "sentTitle": "Anfrage gesendet",
+      "sentBody": "Der Lieferant antwortet mit einem Angebot. Verfolge es unter Gebote.",
+      "failTitle": "Anfrage konnte nicht gesendet werden",
+      "failBody": "Bitte versuche es erneut.",
+      "lineCount": "{{count}} Positionen",
+      "noteFromBasket": "Aus dem Anfragekorb an {{supplier}} gesendet.",
+      "footNote": "Jeder Lieferant erhält eine eigene Anfrage. Angebote bleiben für dich privat."
     }
   },
   "reviews": {

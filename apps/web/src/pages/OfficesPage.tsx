@@ -21,7 +21,7 @@ export function OfficesPage() {
       <h1 className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('section.offices')}</h1>
       <p className="mt-1 text-ink-soft">{t('page.offices.sub')}</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {offices.map((o) => (
           <Card key={o.key} hoverable className={o.gold ? 'border-gold/40' : ''}>
             <div className="flex items-start justify-between">

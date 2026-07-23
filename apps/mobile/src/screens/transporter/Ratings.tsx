@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiDriver } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { Card, EmptyState, Loading, ProgressBar, Row, Screen, Txt } from '../../ui';
+import { Card, EmptyState, ProgressBar, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 
@@ -18,7 +18,7 @@ export function TransporterRatings() {
       <Txt variant="h2">{t('transX.ratings.title')}</Txt>
       <Txt variant="muted">{t('transX.ratings.subtitle')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : drivers.length === 0 ? (
         <EmptyState icon="star-outline" title={t('transX.ratings.emptyTitle')} body={t('transX.ratings.emptyBody')} />
       ) : (

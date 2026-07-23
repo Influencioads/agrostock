@@ -41,6 +41,7 @@ enum AdminPermission {
   community_moderate
   support_agent
   cms_manage
+  email_templates
   branding_manage
   audit_view
   reports_view
@@ -317,6 +318,8 @@ model User {
   payoutRequests    PayoutRequest[]    @relation("PayoutUser")
   payoutDecisions   PayoutRequest[]    @relation("PayoutDecider")
   emailTokens       EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  loginOtpTokens    LoginOtpToken[]
 
   // ── Chat systems (Community + Live Support) back-relations ──
   ownedCommunityGroups     CommunityGroup[]               @relation("CommunityGroupOwner")
@@ -415,6 +418,37 @@ model EmailVerificationToken {
   tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// One-shot password-reset token. Mirrors EmailVerificationToken: only the
+/// SHA-256 hash is stored, a fresh request supersedes older ones, and consuming
+/// it stamps `usedAt`.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Passwordless email login code (OTP). The 6-digit code is stored only as a
+/// SHA-256 hash; `attempts` caps brute-force guesses and a fresh request
+/// supersedes older codes for the user.
+model LoginOtpToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int       @default(0)
   createdAt DateTime  @default(now())
 
   @@index([userId])
@@ -1302,6 +1336,42 @@ model CmsPage {
   createdAt DateTime @default(now())
 
   translations CmsPageTranslation[]
+}
+
+/// Admin-editable transactional email templates. One row per event `key` (the
+/// notification `type` such as `order.dispatched`, or a bespoke `auth.*` key).
+/// Admins edit `subject` + `bodyHtml` (a fragment with `{{variables}}`); the
+/// fixed branded shell is applied at send time. A missing or `enabled=false`
+/// row makes MailService fall back to the built-in default, so email is never
+/// lost. `ctaLabel` overrides the button text when the event supplies a link.
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  subject     String
+  bodyHtml    String
+  ctaLabel    String?
+  enabled     Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  translations EmailTemplateTranslation[]
+}
+
+/// Per-locale override of an EmailTemplate's editable copy. Absent locales fall
+/// back to the base (English) row — same pattern as CmsPageTranslation.
+model EmailTemplateTranslation {
+  id         String        @id @default(cuid())
+  templateId String
+  locale     String
+  subject    String
+  bodyHtml   String
+  ctaLabel   String?
+  template   EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, locale])
+  @@index([locale])
 }
 
 /// Admin-uploaded brand assets. Singleton — always row id = 1. A null column

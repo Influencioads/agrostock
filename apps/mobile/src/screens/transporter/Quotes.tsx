@@ -1,9 +1,10 @@
 import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import { usd, type Tone } from '../../lib/format';
+import { type Tone } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { useI18n } from '../../i18n';
 
 interface Quote {
@@ -15,6 +16,7 @@ const quoteTone: Record<string, Tone> = { pending: 'warn', accepted: 'green', re
 /** Quotes the transporter has placed, with the ability to withdraw pending ones. */
 export function TransporterQuotes() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const { user } = useAuth();
   const { data: quotes = [], isLoading } = useQuery<Quote[]>({ queryKey: ['quotes', 'mine'], queryFn: () => api.transport.myQuotes() as Promise<Quote[]>, enabled: !!user });
@@ -29,7 +31,7 @@ export function TransporterQuotes() {
       <Txt variant="muted">{t('transX.quotes.subtitle')}</Txt>
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : quotes.length === 0 ? (
         <EmptyState icon="document-text-outline" title={t('transX.quotes.emptyTitle')} body={t('transX.quotes.emptyBody')} />
       ) : (
@@ -45,7 +47,7 @@ export function TransporterQuotes() {
                 </Txt>
               </View>
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <Txt variant="title">{usd(q.priceCents)}</Txt>
+                <Txt variant="title">{fmtCents(q.priceCents)}</Txt>
                 <Badge label={q.status} tone={quoteTone[q.status] ?? 'slate'} />
               </View>
             </Row>

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiBuyerBidDetail, ApiBuyerBidRow } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
-import { Badge, Button, Card, Loading, Row, Txt } from '../../ui';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
+import { Badge, Button, Card, Row, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import { BuyerBidPanel } from '../components/BuyerBidPanel';
 import { useI18n } from '../../i18n';
@@ -43,6 +45,7 @@ function TimeBox({ value, label, danger }: { value: string; label: string; dange
  */
 export function BuyerBidRoom({ id }: { id: string }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const [error, setError] = useState('');
 
@@ -67,7 +70,7 @@ export function BuyerBidRoom({ id }: { id: string }) {
     onError: (e) => setError(errMessage(e, t('buyerX.bids.errAward'))),
   });
 
-  if (isLoading || !bid) return <View style={{ flex: 1, backgroundColor: C.bg }}><Loading /></View>;
+  if (isLoading || !bid) return <View style={{ flex: 1, backgroundColor: C.bg }}><SkeletonRows /></View>;
 
   const photos = bid.images ?? [];
   // Quote mode is sealed by design: a non-owner never sees the book.
@@ -121,14 +124,22 @@ export function BuyerBidRoom({ id }: { id: string }) {
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             <Badge label={bid.status} tone={bid.status === 'open' ? 'green' : 'slate'} />
             {bid.bestPriceCents != null ? (
-              <Badge label={t('buyerX.room.bestOffer', { price: usd(bid.bestPriceCents), unit: bid.qtyUnit })} tone="mango" />
+              <Badge label={t('buyerX.room.bestOffer', { price: fmtCents(bid.bestPriceCents), unit: bid.qtyUnit })} tone="mango" />
             ) : null}
             {bid.targetPriceCents != null ? (
-              <Badge label={t('buyerX.room.targetPrice', { price: usd(bid.targetPriceCents), unit: bid.qtyUnit })} tone="slate" />
+              <Badge label={t('buyerX.room.targetPrice', { price: fmtCents(bid.targetPriceCents), unit: bid.qtyUnit })} tone="slate" />
             ) : null}
           </Row>
           {!!bid.notes && <Txt variant="muted">{bid.notes}</Txt>}
         </View>
+
+        {/* sealed-mode reassurance — the prototype's amber note */}
+        {bid.mode === 'quote' ? (
+          <View style={{ flexDirection: 'row', gap: 10, backgroundColor: C.mangoSoft, borderWidth: 1, borderColor: '#E7C88A', borderRadius: radius.card, padding: 14 }}>
+            <Ionicons name="eye-off-outline" size={18} color={C.gold} />
+            <Txt variant="small" color="#7A5A12" style={{ flex: 1, lineHeight: 19 }}>{t('buyerX.room.sealedBanner')}</Txt>
+          </View>
+        ) : null}
 
         {/* masked bid book — above the bid panel */}
         <Card style={{ gap: 10 }}>
@@ -161,7 +172,7 @@ export function BuyerBidRoom({ id }: { id: string }) {
                     {b.qtyValue} {bid.qtyUnit}{b.etaDays ? t('buyerX.bids.etaSuffix', { days: b.etaDays }) : ''} · {ago(b.createdAt)}
                   </Txt>
                 </View>
-                <Txt style={{ fontSize: 13, fontWeight: '700', color: b.isTop ? C.success : C.ink }}>{usd(b.priceCents)}</Txt>
+                <Txt style={{ fontSize: 13, fontWeight: '700', color: b.isTop ? C.success : C.ink }}>{fmtCents(b.priceCents)}</Txt>
               </Row>
               {bid.isOwner && bid.status === 'open' && b.status === 'submitted' ? (
                 <Button

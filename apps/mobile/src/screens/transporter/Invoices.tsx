@@ -3,9 +3,10 @@ import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiInvoice } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { OpenInvoiceButton } from '../components/order-parts';
@@ -16,6 +17,7 @@ interface Trip { id: string; reference: string; fromCity: string; toCity: string
 /** Freight invoices — raise from delivered trips, list issued/received, mark paid. */
 export function TransporterInvoices() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const { user } = useAuth();
   const [tab, setTab] = useState('issued');
@@ -55,7 +57,7 @@ export function TransporterInvoices() {
       <Segmented options={[{ id: 'issued', label: t('transX.invoices.tabIssued') }, { id: 'received', label: t('transX.invoices.tabReceived') }]} value={tab} onChange={setTab} />
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : invoices.length === 0 ? (
         <EmptyState icon="receipt-outline" title={tab === 'issued' ? t('transX.invoices.emptyIssued') : t('transX.invoices.emptyReceived')} body={t('transX.invoices.emptyBody')} />
       ) : (
@@ -67,7 +69,7 @@ export function TransporterInvoices() {
                 <Txt variant="muted">{t('transX.invoices.kind.' + inv.kind, { defaultValue: inv.kind })} · {tab === 'issued' ? t('transX.invoices.toLabel', { name: inv.recipient?.name ?? '—' }) : t('transX.invoices.fromLabel', { name: inv.issuer?.name ?? '—' })}</Txt>
               </View>
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <Txt variant="title">{usd(inv.totalCents)}</Txt>
+                <Txt variant="title">{fmtCents(inv.totalCents)}</Txt>
                 <Badge label={inv.status} tone={inv.status === 'paid' ? 'green' : inv.status === 'void' ? 'slate' : 'gold'} />
               </View>
             </Row>

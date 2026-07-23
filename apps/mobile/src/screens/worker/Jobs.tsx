@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { View } from 'react-native';
 import { useI18n } from '../../i18n';
 
@@ -31,7 +31,7 @@ export function WorkerJobs() {
     <Screen edges={['top']}>
       <Txt variant="h2">{t('compX.jobs.title')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : jobs.length === 0 ? (
         <EmptyState icon="briefcase-outline" title={t('compX.jobs.emptyTitle')} body={t('compX.jobs.emptyBody')} />
       ) : (

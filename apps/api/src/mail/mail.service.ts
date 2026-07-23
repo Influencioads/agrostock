@@ -10,7 +10,14 @@ import {
   channelEnabled,
 } from '../notifications/notification-categories';
 import type { NotificationCreatedEvent } from '../notifications/notifications.service';
-import { renderNotificationEmail, subjectFor } from './mail.templates';
+import {
+  renderNotificationEmail,
+  renderEditableTemplate,
+  subjectFor,
+  type EditableTemplateInput,
+  type TemplateVars,
+} from './mail.templates';
+import { EMAIL_TEMPLATE_MAP } from './template-registry';
 
 /**
  * Transactional email over SMTP (nodemailer). Configured from `SMTP_*` env; when
@@ -62,6 +69,56 @@ export class MailService implements OnModuleInit {
     return (this.config.get<string>('APP_WEB_URL') ?? '').replace(/\/$/, '');
   }
 
+  private settingsUrl() {
+    return this.webUrl() ? `${this.webUrl()}/console` : undefined;
+  }
+
+  /**
+   * Resolve an admin-edited template (locale translation → base). Returns null
+   * when the row is missing or disabled so callers fall back to a built-in
+   * default. Queries Prisma directly rather than injecting EmailTemplatesService,
+   * which would create a circular provider dependency.
+   */
+  private async resolveTemplate(key: string, locale?: string): Promise<EditableTemplateInput | null> {
+    try {
+      const useLocale = locale && locale !== 'en';
+      const row = await this.prisma.emailTemplate.findUnique({
+        where: { key },
+        include: useLocale ? { translations: { where: { locale } } } : undefined,
+      });
+      if (!row || !row.enabled) return null;
+      const tr = (row as { translations?: Array<{ subject: string; bodyHtml: string; ctaLabel: string | null }> })
+        .translations?.[0];
+      return {
+        subject: tr?.subject ?? row.subject,
+        bodyHtml: tr?.bodyHtml ?? row.bodyHtml,
+        ctaLabel: tr?.ctaLabel ?? row.ctaLabel,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Render a keyed template (DB row → registry default) with the given vars.
+   * Used by the direct auth emails (verify / reset / OTP / welcome).
+   */
+  private async renderKeyed(
+    key: string,
+    locale: string | undefined,
+    vars: TemplateVars,
+    ctx: { name?: string; ctaUrl?: string; settingsUrl?: string },
+  ) {
+    const saved = await this.resolveTemplate(key, locale);
+    const def = EMAIL_TEMPLATE_MAP[key];
+    const tpl: EditableTemplateInput = saved ?? {
+      subject: def?.subject ?? `[AgroTraders] ${key}`,
+      bodyHtml: def?.bodyHtml ?? '<p>{{body}}</p>',
+      ctaLabel: def?.ctaLabel,
+    };
+    return renderEditableTemplate(tpl, vars, ctx);
+  }
+
   /**
    * Send one arbitrary transactional email. Returns false (never throws) when
    * mail is disabled or the send fails — callers decide whether that is fatal.
@@ -82,22 +139,79 @@ export class MailService implements OnModuleInit {
     return `${this.webUrl()}/verify-email?token=${encodeURIComponent(token)}`;
   }
 
+  /** Where the reset link points. */
+  resetUrl(token: string): string {
+    return `${this.webUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+  }
+
   /** Confirm-your-address email carrying a one-shot token. */
-  async sendVerificationEmail(user: { email: string; name: string }, token: string): Promise<boolean> {
+  async sendVerificationEmail(
+    user: { email: string; name: string; locale?: string | null },
+    token: string,
+  ): Promise<boolean> {
     const url = this.verificationUrl(token);
-    const { html, text } = renderNotificationEmail({
-      title: 'Confirm your email address',
-      body: 'Tap the button below to activate your AgroTraders account. The link is valid for 24 hours — if it expires, request a new one from the sign-in page.',
-      ctaUrl: url,
-      ctaLabel: 'Confirm my email',
-      name: user.name,
-    });
-    return this.send({
-      to: user.email,
-      subject: '[AgroTraders] Confirm your email address',
-      html,
-      text,
-    });
+    const { subject, html, text } = await this.renderKeyed(
+      'auth.email_verify',
+      user.locale ?? undefined,
+      { name: user.name },
+      { name: user.name, ctaUrl: url, settingsUrl: this.settingsUrl() },
+    );
+    return this.send({ to: user.email, subject, html, text });
+  }
+
+  /** Password-reset email carrying a one-shot token link. */
+  async sendPasswordReset(
+    user: { email: string; name: string; locale?: string | null },
+    token: string,
+  ): Promise<boolean> {
+    const url = this.resetUrl(token);
+    const { subject, html, text } = await this.renderKeyed(
+      'auth.password_reset',
+      user.locale ?? undefined,
+      { name: user.name },
+      { name: user.name, ctaUrl: url, settingsUrl: this.settingsUrl() },
+    );
+    return this.send({ to: user.email, subject, html, text });
+  }
+
+  /** Passwordless login: email a 6-digit code. */
+  async sendLoginOtp(
+    user: { email: string; name: string; locale?: string | null },
+    code: string,
+  ): Promise<boolean> {
+    const { subject, html, text } = await this.renderKeyed(
+      'auth.login_otp',
+      user.locale ?? undefined,
+      { name: user.name, code },
+      { name: user.name, settingsUrl: this.settingsUrl() },
+    );
+    return this.send({ to: user.email, subject, html, text });
+  }
+
+  /** One-off welcome email after an account is verified. */
+  async sendWelcome(user: { email: string; name: string; locale?: string | null }): Promise<boolean> {
+    const { subject, html, text } = await this.renderKeyed(
+      'auth.welcome',
+      user.locale ?? undefined,
+      { name: user.name },
+      { name: user.name, ctaUrl: this.webUrl() || undefined, settingsUrl: this.settingsUrl() },
+    );
+    return this.send({ to: user.email, subject, html, text });
+  }
+
+  /**
+   * Flatten a notification's `params` JSON to scalar template vars. Enum-ref
+   * params (`{ enum, value }`) need locale resolution and already appear in the
+   * rendered title/body, so they are skipped here.
+   */
+  private scalarParams(params: unknown): TemplateVars {
+    const out: TemplateVars = {};
+    if (params && typeof params === 'object' && !Array.isArray(params)) {
+      for (const [k, v] of Object.entries(params as Record<string, unknown>)) {
+        if (typeof v === 'string' || typeof v === 'number') out[k] = v;
+      }
+    }
+    return out;
   }
 
   /** Absolute URL from a notification's relative linkUrl (best-effort). */
@@ -116,14 +230,36 @@ export class MailService implements OnModuleInit {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: notification.userId },
-        select: { email: true, name: true, notificationPrefs: true },
+        select: { email: true, name: true, locale: true, notificationPrefs: true },
       });
       if (!user?.email) return;
       const emailAllowed = overrides.email ?? channelEnabled(user.notificationPrefs, notification.system, 'email');
       if (!emailAllowed) return;
 
       const ctaUrl = (this.absolute(notification.linkUrl) ?? this.webUrl()) || undefined;
-      const settingsUrl = this.webUrl() ? `${this.webUrl()}/console` : undefined;
+      const settingsUrl = this.settingsUrl();
+
+      // Prefer an admin-edited template keyed by the notification type; fall back
+      // to the built-in generic layout when none exists / is disabled.
+      const tpl = await this.resolveTemplate(notification.type, user.locale ?? undefined);
+      if (tpl) {
+        const vars: TemplateVars = {
+          name: user.name,
+          title: notification.title,
+          body: notification.body ?? '',
+          ...this.scalarParams(notification.params),
+        };
+        const rendered = renderEditableTemplate(tpl, vars, { name: user.name, ctaUrl, settingsUrl });
+        await this.transporter!.sendMail({
+          from: this.from,
+          to: user.email,
+          subject: rendered.subject,
+          html: rendered.html,
+          text: rendered.text,
+        });
+        return;
+      }
+
       const { html, text } = renderNotificationEmail({
         title: notification.title,
         body: notification.body ?? undefined,

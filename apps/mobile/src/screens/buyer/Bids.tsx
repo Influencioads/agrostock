@@ -7,10 +7,11 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ApiBuyerBid, ApiBuyerBidMode } from '@agrotraders/api-client';
 import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, ChipSelect, EmptyState, Input, Loading, Row, Screen, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import { GalleryEditor } from '../seller/AddProduct';
 import type { RootStackParamList } from '../../navigation/types';
@@ -116,6 +117,7 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
 /** Buyer Bids — post requirements, watch seller bids land, award the winner. */
 export function BuyerBids() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const nav = useNavigation<Nav>();
   const { user } = useAuth();
   const [creating, setCreating] = useState(false);
@@ -141,7 +143,7 @@ export function BuyerBids() {
       {!user ? (
         <EmptyState icon="lock-closed-outline" title={t('buyerX.bids.signInTitle')} />
       ) : isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : (
         <>
           {requirements.length === 0 ? (
@@ -170,7 +172,7 @@ export function BuyerBids() {
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <Txt variant="muted">{r.bestPriceCents != null ? t('buyerX.bids.bestOffer') : t('buyerX.bids.bidCount', { count: r._count?.sellerBids ?? 0 })}</Txt>
-                      <Txt variant="h3" color={C.dark}>{r.bestPriceCents != null ? `${usd(r.bestPriceCents)}/${r.qtyUnit}` : '—'}</Txt>
+                      <Txt variant="h3" color={C.dark}>{r.bestPriceCents != null ? `${fmtCents(r.bestPriceCents)}/${r.qtyUnit}` : '—'}</Txt>
                     </View>
                   </Row>
                 </Card>
@@ -186,7 +188,7 @@ export function BuyerBids() {
               <Card key={b.id} onPress={b.product ? () => nav.navigate('ProductDetail', { slug: b.product!.slug }) : undefined}>
                 <Row style={{ justifyContent: 'space-between' }}>
                   <Txt variant="title">{b.product?.emoji ?? '🌾'} {b.product?.name ?? t('buyerX.bids.auctionFallback')}</Txt>
-                  <Txt variant="title">{usd(b.amountCents)}</Txt>
+                  <Txt variant="title">{fmtCents(b.amountCents)}</Txt>
                 </Row>
               </Card>
             ))

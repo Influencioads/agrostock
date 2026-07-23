@@ -496,8 +496,9 @@
     "product": {
       "auction": "Subasta",
       "safeDeal": "Oferta segura",
-      "social": "{{watching}}+ viendo · {{ordered}} pedido",
-      "verified": "Verificado"
+      "verified": "Verificado",
+      "moq": "MOQ {{value}}",
+      "available": "{{value}} disponible"
     },
     "profile": {
       "about": "Acerca de",
@@ -650,7 +651,9 @@
     "notifications": "Notificaciones",
     "restartNotice": "La aplicación se reiniciará para aplicar la nueva dirección del texto.",
     "rolesAccess": "Roles y acceso",
-    "support": "Soporte en vivo"
+    "support": "Soporte en vivo",
+    "marketplace": "Mercado",
+    "account": "Cuenta"
   },
   "loaderX": {
     "attendance": {
@@ -1016,7 +1019,12 @@
         "offices": "Oficinas",
         "safeDeal": "Oferta segura",
         "transport": "Transporte"
-      }
+      },
+      "categories": "Comprar por categoría",
+      "promoted": "Destacados",
+      "services": "Servicios",
+      "requirements": "Compradores que buscan proveedor",
+      "viewAll": "Ver todo"
     },
     "kyc": {
       "doc": {
@@ -1099,7 +1107,12 @@
       "transportBody": "Reserva el transporte desde tu consola de comprador.",
       "transportTitle": "Transporte",
       "verified": "Verificado",
-      "watching": "{{count}}+ viendo ahora"
+      "watching": "{{count}}+ viendo ahora",
+      "addToRfq": "Añadir a solicitud",
+      "supplier": "Proveedor",
+      "tradeTerms": "Condiciones comerciales",
+      "origin": "Origen",
+      "delivery": "Entrega"
     },
     "ph": {
       "bidTitle": "Arroz basmati — 100 MT para Jebel Ali",
@@ -1174,7 +1187,50 @@
       "emptyTitle": "Buscar AgroTraders",
       "noMatchBody": "No se encontró nada para \"{{q}}\".",
       "noMatchTitle": "No hay coincidencias",
-      "placeholder": "Buscar cereales, legumbres, aceites…"
+      "placeholder": "Buscar cereales, legumbres, aceites…",
+      "recent": "Búsquedas recientes"
+    },
+    "filter": {
+      "title": "Filtros",
+      "clear": "Borrar",
+      "clearAll": "Borrar todo",
+      "apply": "Aplicar",
+      "applyN": "Aplicar ({{count}})",
+      "sortBy": "Ordenar por",
+      "searchOptions": "Buscar",
+      "categoryHint": "Elige una categoría para desbloquear sus filtros de especificaciones.",
+      "groups": {
+        "category": "Categoría",
+        "dealType": "Tipo de operación",
+        "price": "Precio",
+        "country": "País",
+        "city": "Ciudad",
+        "grade": "Calidad",
+        "market": "Mercado"
+      }
+    },
+    "plp": {
+      "results": "{{count}} resultados",
+      "filters": "Filtrar",
+      "sort": "Ordenar",
+      "clearFilters": "Borrar filtros",
+      "noResults": "Sin coincidencias"
+    },
+    "rfq": {
+      "title": "Cesta de cotización",
+      "emptyTitle": "Tu cesta de cotización está vacía",
+      "emptyBody": "Añade productos de cualquier proveedor y envía una solicitud de cotización por proveedor.",
+      "addedTitle": "Añadido a la cesta de cotización",
+      "addedBody": "{{name}} está en tu cesta. Envía la solicitud cuando lo hayas añadido todo.",
+      "requestQuotes": "Solicitar cotizaciones",
+      "sentLabel": "Solicitud enviada",
+      "sentTitle": "Solicitud enviada",
+      "sentBody": "El proveedor responderá con una cotización. Síguela en Ofertas.",
+      "failTitle": "No se pudo enviar la solicitud",
+      "failBody": "Inténtalo de nuevo.",
+      "lineCount": "{{count}} artículos",
+      "noteFromBasket": "Enviado desde la cesta de cotización a {{supplier}}.",
+      "footNote": "Cada proveedor recibe su propia solicitud. Las cotizaciones son privadas."
     }
   },
   "reviews": {

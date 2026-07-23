@@ -11,8 +11,13 @@ import { routeForNotification } from '../navigation/navigationRef';
 // Returns null when the native module is unavailable.
 function loadMessaging(): typeof FirebaseMessaging | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('@react-native-firebase/messaging').default;
+    const messaging = require('@react-native-firebase/messaging').default;
+    // In Expo Go the JS module resolves, but the native `RNFBAppModule` is
+    // absent — the failure only surfaces when messaging() first constructs its
+    // native event emitter. Probe it here so an unavailable module returns null
+    // (push stays disabled) instead of throwing an uncaught error at launch.
+    messaging();
+    return messaging;
   } catch {
     return null;
   }

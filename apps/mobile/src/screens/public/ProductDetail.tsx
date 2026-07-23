@@ -1,29 +1,73 @@
 import { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { socialProof, countryFlag, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
+import { countryFlag, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
 import { getAttributeFields, unitSuffix } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
-import { Badge, Button, Card, Loading, ProgressBar, RatingStars, Row, Txt } from '../../ui';
-import { C, space } from '../../theme/tokens';
+import { Accordion, Avatar, Badge, Button, Divider, KeyValue, Loading, ProgressBar, RatingStars, Row, SectionHeader, SkeletonRows, Txt } from '../../ui';
+import { C, radius, space, type } from '../../theme/tokens';
+import { microLabel } from '../../theme/casing';
 import { AuctionRoom } from './AuctionRoom';
 import { ProductCard } from '../components';
+import { useBasket } from '../../basket/BasketContext';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
-import { alignEnd } from '../../lib/rtl';
+import { forwardChevron } from '../../lib/rtl';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, 'ProductDetail'>;
 
-// Quality-score facets. Labels are i18n keys under `pubX.pd.quality.*`; the
-// scores are indicative demo metrics rendered as a progress bar.
-const QUALITY = [['purity', 98], ['moisture', 92], ['packaging', 95], ['documentation', 90]] as const;
+/** Full-bleed swipeable gallery with dot indicators. */
+function Gallery({ photos, emoji }: { photos: string[]; emoji: string | null | undefined }) {
+  const width = Dimensions.get('window').width;
+  const [index, setIndex] = useState(0);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (i !== index) setIndex(i);
+  };
+
+  if (photos.length === 0) {
+    return (
+      <View style={[s.slide, { width, height: width * 0.9 }]}>
+        <Text style={{ fontSize: 96 }}>{emoji ?? '🌾'}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={32}
+      >
+        {photos.map((src, i) => (
+          <Image
+            key={src + i}
+            source={{ uri: assetUrl(src) }}
+            style={{ width, height: width * 0.9, backgroundColor: C.surface }}
+            resizeMode="cover"
+          />
+        ))}
+      </ScrollView>
+      {photos.length > 1 ? (
+        <View style={s.dots}>
+          {photos.map((_, i) => (
+            <View key={i} style={[s.dot, i === index && s.dotActive]} />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 
 export function ProductDetail() {
   const nav = useNavigation<Nav>();
@@ -31,8 +75,8 @@ export function ProductDetail() {
   const { user } = useAuth();
   const { fmtPrice } = useCurrency();
   const { t } = useI18n();
+  const basket = useBasket();
   const [qty, setQty] = useState(1);
-  const [activePhoto, setActivePhoto] = useState(0);
   const { data: p, isLoading } = useQuery<ApiProduct>({ queryKey: ['product', params.slug], queryFn: () => api.products.get(params.slug) });
   const categoryName = p?.category && 'name' in p.category ? p.category.name : undefined;
   const { data: related = [] } = useQuery<ApiProduct[]>({
@@ -51,23 +95,23 @@ export function ProductDetail() {
     onError: () => Alert.alert(t('pubX.pd.orderFailTitle'), t('pubX.pd.orderFailBody')),
   });
 
-  if (isLoading || !p) return <View style={{ flex: 1, backgroundColor: C.bg }}><Loading label={t('pubX.pd.loading')} /></View>;
+  if (isLoading || !p) return <View style={{ flex: 1, backgroundColor: C.page }}><Loading label={t('pubX.pd.loading')} /></View>;
 
   // Live auctions get the bespoke bidding room (countdown, open bid history).
   if (p.isAuction) return <AuctionRoom slug={params.slug} product={p} />;
 
   const onBuy = () => (user ? buy.mutate() : nav.navigate('SignIn', { reason: 'buy' }));
-  const proof = socialProof(p.id);
   const sellerId = p.seller?.id;
   // Older rows may predate the gallery; fall back to the single cover image.
   const photos = p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [];
+  const rated = (p.ratingCount ?? 0) > 0;
 
   // Real category-specific attributes captured on this listing → labelled rows.
   // Schema labels and select/multiselect values are English constants, so they
   // render through the generated `attrs` catalog; free-text values arrive already
   // localized from the API. Unknown text falls back to itself.
-  const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
-  const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
+  const aLabel = (str: string) => t(`attrs:label.${attrKey(str)}`, { defaultValue: str });
+  const aOpt = (str: string) => t(`attrs:option.${attrKey(str)}`, { defaultValue: str });
   const subName = p.subcategory && typeof p.subcategory === 'object' && 'name' in p.subcategory ? p.subcategory.name : undefined;
   const attrVals = (p.attributes ?? {}) as Record<string, unknown>;
   const attrRows = getAttributeFields(categoryName, subName)
@@ -87,180 +131,285 @@ export function ProductDetail() {
     })
     .filter((r): r is { label: string; value: string } => r !== null);
 
+  const addToRfq = () => {
+    basket.add(p, qty);
+    Alert.alert(t('pubX.rfq.addedTitle'), t('pubX.rfq.addedBody', { name: p.name }));
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
-        {/* Gallery: tap a thumbnail to swap the hero. Falls back to the emoji. */}
-        <View style={{ gap: 8 }}>
-          <View style={{ height: 160, borderRadius: 16, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {photos.length > 0 ? (
-              <Image source={{ uri: assetUrl(photos[Math.min(activePhoto, photos.length - 1)]) }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-            ) : (
-              <Txt style={{ fontSize: 72 }}>{p.emoji ?? '🌾'}</Txt>
-            )}
-          </View>
-          {photos.length > 1 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {photos.map((src, i) => (
-                <Pressable
-                  key={src + i}
-                  onPress={() => setActivePhoto(i)}
-                  style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', borderWidth: i === activePhoto ? 2 : 1, borderColor: i === activePhoto ? C.leaf : C.border }}
-                >
-                  <Image source={{ uri: assetUrl(src) }} style={{ width: '100%', height: '100%' }} />
-                </Pressable>
-              ))}
-            </ScrollView>
-          )}
+    <View style={{ flex: 1, backgroundColor: C.page }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: space.lg, gap: space.sm }} showsVerticalScrollIndicator={false}>
+        <Gallery photos={photos} emoji={p.emoji} />
+
+        {/* headline block — trust pills, then title, then rating + origin line */}
+        <View style={s.block}>
+          <Row gap={8} style={{ flexWrap: 'wrap', marginBottom: 12 }}>
+            {p.verified ? <View style={[s.pill, { backgroundColor: C.surface }]}><Text style={[s.pillText, { color: C.green }]}>{t('pubX.pd.verified')}</Text></View> : null}
+            {p.grade ? <View style={[s.pill, { backgroundColor: C.mangoSoft }]}><Text style={[s.pillText, { color: C.gold }]}>{p.grade}</Text></View> : null}
+            {p.market ? <View style={[s.pill, { backgroundColor: C.mangoSoft }]}><Text style={[s.pillText, { color: C.gold }]}>{`${p.market.flag ?? ''} ${p.market.name}`}</Text></View> : null}
+          </Row>
+          <Text style={s.name}>{p.name}</Text>
+          <Row gap={7} style={{ marginTop: 8, flexWrap: 'wrap' }}>
+            {rated ? (
+              <>
+                <RatingStars n={Math.round(p.ratingAvg ?? 0)} size={14} />
+                <Txt variant="muted">{(p.ratingAvg ?? 0).toFixed(1)} · {t('reviews.count', { count: p.ratingCount ?? 0 })}</Txt>
+              </>
+            ) : null}
+            {(p.city || p.country) ? (
+              <Txt variant="muted">{rated ? '· ' : ''}{[p.city, p.country].filter(Boolean).join(', ')}</Txt>
+            ) : null}
+          </Row>
         </View>
-        <View style={{ gap: 6 }}>
-          <Txt variant="h2">{p.name}</Txt>
-          <Row gap={8}>
-            <RatingStars n={Math.round(Number(p.rating) || 5)} />
-            <Txt variant="muted">{p.rating} · {p.seller?.name} {p.seller?.country ?? ''}</Txt>
-          </Row>
-          <Row gap={6}>
-            {p.verified ? <Badge label={t('pubX.pd.verified')} tone="green" /> : null}
-            {p.safeDeal ? <Badge label={t('pubX.pd.safeDeal')} tone="info" /> : null}
-            {p.isOffer ? <Badge label={t('pubX.pd.offer')} tone="mango" /> : null}
-            {p.market ? <Badge label={`${p.market.flag ?? ''} ${p.market.name}`} tone="mango" /> : null}
-          </Row>
-          {(p.city || p.country) ? (
-            <Row gap={5}>
-              <Ionicons name="location-outline" size={13} color={C.inkSoft} />
-              <Txt variant="small" color={C.inkSoft}>{[p.city, p.country].filter(Boolean).join(', ')}</Txt>
+
+        {/* price card — headline price, trade terms, escrow reassurance */}
+        <View style={{ paddingHorizontal: space.lg }}>
+          <View style={s.priceCard}>
+            <View style={s.priceHead}>
+              <Text style={s.bigPrice}>{fmtPrice(p)}</Text>
+              <Text style={s.priceUnit}>
+                {unitSuffix(p.unit)}{p.moq ? ` · ${t('pubX.pd.moq')} ${p.moq}` : ''}
+              </Text>
+            </View>
+            <View style={s.priceTerms}>
+              {[
+                { label: t('pubX.pd.available'), value: p.qty ?? '—' },
+                { label: t('pubX.pd.delivery'), value: p.delivery ?? '—' },
+                ...(p.origin ? [{ label: t('pubX.pd.origin'), value: p.origin }] : []),
+              ].map((it, i) => (
+                <View key={it.label} style={{ flex: 1, flexDirection: 'row' }}>
+                  {i > 0 ? <View style={s.termRule} /> : null}
+                  <View style={{ flex: 1, paddingHorizontal: space.sm, gap: 3 }}>
+                    <Text numberOfLines={1} style={s.termValue}>{it.value}</Text>
+                    <Text numberOfLines={1} style={[s.termLabel, microLabel()]}>{it.label}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            <View style={s.qtyRow}>
+              <View style={s.stepper}>
+                <Pressable onPress={() => setQty((q) => Math.max(1, q - 1))} hitSlop={6} style={s.stepBtn}>
+                  <Ionicons name="remove" size={18} color={C.ink} />
+                </Pressable>
+                <Text style={s.stepValue}>{qty}</Text>
+                <Pressable onPress={() => setQty((q) => q + 1)} hitSlop={6} style={s.stepBtn}>
+                  <Ionicons name="add" size={18} color={C.ink} />
+                </Pressable>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button full title={t('pubX.pd.buyNow')} variant="primaryOutline" loading={buy.isPending} onPress={onBuy} />
+              </View>
+            </View>
+            {p.safeDeal !== false ? (
+              <View style={s.escrowRow}>
+                <Ionicons name="shield-checkmark-outline" size={15} color={C.green} />
+                <Text style={s.escrowText}>{t('pubX.pd.escrowNote')}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        {/* supplier */}
+        {p.seller ? (
+          <Pressable
+            style={s.block}
+            onPress={() => (sellerId ? nav.navigate('PublicProfile', { userId: sellerId }) : undefined)}
+          >
+            <Text style={[s.blockLabel, microLabel()]}>{t('pubX.pd.supplier')}</Text>
+            <Row gap={space.md} style={{ marginTop: space.sm }}>
+              <Avatar name={p.seller.name} size={42} />
+              <View style={{ flex: 1 }}>
+                <Text style={s.sellerName}>{p.seller.name}</Text>
+                <Txt variant="muted">
+                  {p.seller.country ? `${countryFlag(p.seller.country)} ${p.seller.country}` : ''}
+                  {p.seller.kycStatus === 'verified' ? ` · ${t('pubX.pd.verified')}` : ''}
+                </Txt>
+              </View>
+              <Ionicons name={forwardChevron()} size={18} color={C.inkSoft} />
             </Row>
-          ) : null}
+            {sellerId && sellerId !== user?.id ? (
+              <View style={{ marginTop: space.md, alignSelf: 'flex-start' }}>
+                <Button
+                  title={t('pubX.pd.chatSeller')}
+                  variant="outline"
+                  size="sm"
+                  icon="chatbubbles-outline"
+                  onPress={() => nav.navigate('Community', { dmUserId: sellerId, dmName: p.seller?.name ?? t('pubX.pd.sellerFallback') })}
+                />
+              </View>
+            ) : null}
+          </Pressable>
+        ) : null}
+
+        {/* specifications — a two-column grid of labelled spec cards */}
+        {attrRows.length > 0 ? (
+          <View style={s.block}>
+            <Text style={[s.name, { fontSize: 20, marginBottom: space.md }]}>{subName ?? t('pubX.pd.specifications')}</Text>
+            <View style={s.specGrid}>
+              {attrRows.map((r) => (
+                <View key={r.label} style={s.specCard}>
+                  <Text numberOfLines={1} style={[s.specLabel, microLabel()]}>{r.label}</Text>
+                  <Text numberOfLines={2} style={s.specValue}>{r.value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* logistics + supplies, collapsed accordions */}
+        <View style={[s.block, { paddingVertical: 0 }]}>
+          <Accordion title={t('pubX.pd.tradeTerms')} defaultOpen={attrRows.length === 0}>
+            <KeyValue label={t('pubX.pd.available')} value={p.qty ?? '—'} />
+            <KeyValue label={t('pubX.pd.moq')} value={p.moq ?? '—'} />
+            {p.grade ? <KeyValue label={t('pubX.browse.grade')} value={p.grade} /> : null}
+            {/* `origin` already embeds its own flag (e.g. "🇺🇸 USA"), as does the
+                misleadingly-named `flag` field — never concatenate the two. */}
+            {p.origin ? <KeyValue label={t('pubX.pd.origin')} value={p.origin} /> : null}
+            {p.delivery ? <KeyValue label={t('pubX.pd.delivery')} value={p.delivery} /> : null}
+          </Accordion>
+
           {p.supplyCountries && p.supplyCountries.length > 0 ? (
-            <View style={{ gap: 4, marginTop: 2 }}>
-              <Txt variant="small" style={{ fontWeight: '700' }}>{t('pubX.pd.suppliesTo')}</Txt>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            <Accordion title={t('pubX.pd.suppliesTo')} count={p.supplyCountries.length}>
+              <Row gap={6} style={{ flexWrap: 'wrap' }}>
                 {p.supplyCountries.map((c) => (
                   <Badge key={c} label={`${countryFlag(c)} ${c}`.trim()} tone="green" />
                 ))}
-              </View>
-            </View>
-          ) : null}
-          {/* social proof */}
-          <Row gap={12} style={{ marginTop: 2 }}>
-            <Row gap={5}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.orange }} />
-              <Txt variant="small" color={C.orange} style={{ fontWeight: '700' }}>{t('pubX.pd.watching', { count: proof.watching })}</Txt>
-            </Row>
-            <Row gap={5}>
-              <Ionicons name="bag-check-outline" size={13} color={C.dark} />
-              <Txt variant="small" color={C.dark} style={{ fontWeight: '700' }}>{t('pubX.pd.ordered', { count: proof.orderedLastMonth })}</Txt>
-            </Row>
-          </Row>
-          {sellerId && sellerId !== user?.id ? (
-            <Button
-              title={t('pubX.pd.chatSeller')}
-              variant="outline"
-              size="sm"
-              icon="chatbubbles-outline"
-              onPress={() => nav.navigate('Community', { dmUserId: sellerId, dmName: p.seller?.name ?? t('pubX.pd.sellerFallback') })}
-            />
+              </Row>
+            </Accordion>
           ) : null}
         </View>
 
-
-        {attrRows.length > 0 && (
-          <Card style={{ gap: 10 }}>
-            <Txt variant="h3">{subName ?? t('pubX.pd.specifications')}</Txt>
-            {attrRows.map((r) => (
-              <Row key={r.label} style={{ justifyContent: 'space-between' }}>
-                <Txt variant="muted">{r.label}</Txt>
-                <Txt variant="title" style={{ flexShrink: 1, textAlign: alignEnd() }}>{r.value}</Txt>
-              </Row>
-            ))}
-          </Card>
-        )}
-
-        {/* Availability card — only real listing data (qty/moq). Category-specific
-            specs render in the attributes card above when present. */}
-        <Card style={{ gap: 10 }}>
-          <Txt variant="h3">{t('pubX.pd.specifications')}</Txt>
-          <Row style={{ justifyContent: 'space-between' }}><Txt variant="muted">{t('pubX.pd.available')}</Txt><Txt variant="title">{p.qty ?? '—'}</Txt></Row>
-          <Row style={{ justifyContent: 'space-between' }}><Txt variant="muted">{t('pubX.pd.moq')}</Txt><Txt variant="title">{p.moq ?? '—'}</Txt></Row>
-        </Card>
-
-        <Card style={{ gap: 12 }}>
-          <Txt variant="h3">{t('pubX.pd.qualityScore')}</Txt>
-          {QUALITY.map(([k, v]) => (
-            <View key={k} style={{ gap: 6 }}>
-              <Row style={{ justifyContent: 'space-between' }}><Txt variant="muted">{t(`pubX.pd.quality.${k}`)}</Txt><Txt variant="title">{v}%</Txt></Row>
-              <ProgressBar pct={v} />
-            </View>
-          ))}
-        </Card>
-
-        <Card style={{ gap: 12 }}>
-          <Txt variant="h3">{t('pubX.pd.buyerReviews')}</Txt>
+        {/* reviews — real data only */}
+        <View style={s.block}>
+          <SectionHeader title={t('pubX.pd.buyerReviews')} />
           {reviewsLoading ? (
-            <Loading />
-          ) : (
+            <SkeletonRows />
+          ) : reviews && reviews.count > 0 ? (
             <>
-              {reviews && reviews.count > 0 ? (
-                <Row gap={8}>
-                  <RatingStars n={Math.round(reviews.avg)} size={16} />
-                  <Txt variant="title">{reviews.avg.toFixed(1)}</Txt>
+              <Row gap={space.md} style={{ marginTop: space.md }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={s.bigRating}>{reviews.avg.toFixed(1)}</Text>
+                  <RatingStars n={Math.round(reviews.avg)} size={12} />
                   <Txt variant="muted">{t('reviews.count', { count: reviews.count })}</Txt>
-                </Row>
-              ) : (
-                <Row gap={8}>
-                  <RatingStars n={Math.round(Number(p.rating) || 0)} size={16} />
-                  <Txt variant="muted">{t('reviews.emptyBody')}</Txt>
-                </Row>
-              )}
-              {reviews?.list.map((r) => (
-                <View key={r.id} style={{ gap: 4 }}>
-                  <Row style={{ justifyContent: 'space-between' }}>
-                    <Txt variant="title">{r.rater?.name ?? t('reviews.reviewerFallback')}</Txt>
-                    <RatingStars n={r.stars} />
-                  </Row>
-                  {!!r.text && <Txt variant="muted">{r.text}</Txt>}
-                  <Txt variant="muted">{new Date(r.createdAt).toLocaleDateString()}</Txt>
                 </View>
-              ))}
+                {/* distribution, 5★ at the top */}
+                <View style={{ flex: 1, gap: 4 }}>
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const n = reviews.list.filter((r) => r.stars === star).length;
+                    const pct = reviews.list.length ? (n / reviews.list.length) * 100 : 0;
+                    return (
+                      <Row key={star} gap={7}>
+                        <Txt variant="muted" style={{ width: 12 }}>{star}</Txt>
+                        <View style={{ flex: 1 }}><ProgressBar pct={pct} height={4} /></View>
+                      </Row>
+                    );
+                  })}
+                </View>
+              </Row>
+              <View style={{ marginTop: space.md }}>
+                {reviews.list.map((r) => (
+                  <View key={r.id} style={{ paddingVertical: space.md, gap: 4 }}>
+                    <Row style={{ justifyContent: 'space-between' }}>
+                      <Txt variant="title">{r.rater?.name ?? t('reviews.reviewerFallback')}</Txt>
+                      <RatingStars n={r.stars} />
+                    </Row>
+                    {!!r.text && <Txt variant="body" color={C.inkMuted}>{r.text}</Txt>}
+                    <Txt variant="muted">{new Date(r.createdAt).toLocaleDateString()}</Txt>
+                    <Divider />
+                  </View>
+                ))}
+              </View>
             </>
+          ) : (
+            <Txt variant="muted" style={{ marginTop: space.sm }}>{t('reviews.emptyBody')}</Txt>
           )}
-        </Card>
-
-        <Row gap={8}>
-          <View style={{ flex: 1 }}>
-            <Button full title={t('pubX.pd.requestQuote')} variant="outline" onPress={() => (user ? Alert.alert(t('pubX.pd.quoteRequestedTitle'), t('pubX.pd.quoteRequestedBody')) : nav.navigate('SignIn', {}))} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Button full title={t('pubX.pd.transport')} variant="outline" icon="car-outline" onPress={() => Alert.alert(t('pubX.pd.transportTitle'), t('pubX.pd.transportBody'))} />
-          </View>
-        </Row>
+        </View>
 
         {/* related products */}
         {related.length > 0 ? (
-          <View style={{ gap: 10 }}>
-            <Txt variant="h3">{t('pubX.pd.alsoLike')}</Txt>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+          <View style={[s.block, { paddingHorizontal: 0 }]}>
+            <View style={{ paddingHorizontal: space.lg }}>
+              <SectionHeader title={t('pubX.pd.alsoLike')} />
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm, paddingHorizontal: space.lg, paddingTop: space.md }}>
               {related.map((rp) => (
-                <ProductCard key={rp.id} product={rp} width={150} onPress={() => nav.push('ProductDetail', { slug: rp.slug })} />
+                <ProductCard key={rp.id} product={rp} width={148} onPress={() => nav.push('ProductDetail', { slug: rp.slug })} />
               ))}
             </ScrollView>
           </View>
         ) : null}
       </ScrollView>
 
-      {/* sticky buy bar */}
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.white, borderTopWidth: 1, borderTopColor: C.border, padding: space.lg, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ flexShrink: 1 }}>
-          <Txt variant="muted">{t('pubX.pd.price')}</Txt>
-          <Txt variant="h3" numberOfLines={1}>{fmtPrice(p)}<Txt variant="muted">{unitSuffix(p.unit)}</Txt></Txt>
+      {/* sticky action bar — chat the seller, or add the lot to the RFQ basket */}
+      <View style={s.bar}>
+        <View style={{ width: 118 }}>
+          <Button
+            full
+            title={t('pubX.pd.chat')}
+            variant="outline"
+            onPress={() => (sellerId ? nav.navigate('Community', { dmUserId: sellerId, dmName: p.seller?.name ?? t('pubX.pd.sellerFallback') }) : undefined)}
+          />
         </View>
-        <Row gap={8} style={{ marginStart: 'auto' }}>
-          <Button title="−" variant="outline" size="sm" onPress={() => setQty((q) => Math.max(1, q - 1))} />
-          <Txt variant="title">{qty}</Txt>
-          <Button title="+" variant="outline" size="sm" onPress={() => setQty((q) => q + 1)} />
-        </Row>
-        <Button title={t('pubX.pd.buyNow')} icon="cart" loading={buy.isPending} onPress={onBuy} />
+        <View style={{ flex: 1 }}>
+          <Button full title={t('pubX.pd.addToRfq')} onPress={addToRfq} />
+        </View>
       </View>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  slide: { backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
+  dots: { position: 'absolute', bottom: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' },
+  dotActive: { width: 16, backgroundColor: C.white },
+
+  block: { backgroundColor: C.white, paddingHorizontal: space.lg, paddingVertical: space.lg },
+  blockLabel: { ...type.micro, color: C.inkMuted },
+  name: { ...type.h1, fontSize: 26 },
+  sellerName: { ...type.title, fontSize: 15 },
+
+  pill: { borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
+  pillText: { ...type.micro, fontSize: 11, letterSpacing: 0.4 },
+
+  priceCard: { backgroundColor: C.white, borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, padding: space.lg, gap: space.md, shadowColor: '#0F2819', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  priceHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
+  bigPrice: { ...type.numeric, fontSize: 32, color: C.ink, letterSpacing: -0.5 },
+  priceUnit: { ...type.body, color: C.inkMuted },
+  priceTerms: { flexDirection: 'row', paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.hairline },
+  termRule: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: C.hairline },
+  termValue: { ...type.title, fontSize: 14, color: C.ink },
+  termLabel: { ...type.micro, fontSize: 9.5, color: C.inkMuted },
+  escrowRow: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.hairline },
+  escrowText: { ...type.caption, color: C.inkSoft },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+
+  specGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  specCard: { width: '47%', flexGrow: 1, backgroundColor: C.page, borderRadius: radius.input, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
+  specLabel: { ...type.micro, fontSize: 10, color: C.inkMuted },
+  specValue: { ...type.h3, fontSize: 16, color: C.ink },
+
+  bigRating: { ...type.display, fontSize: 34, color: C.ink },
+
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    backgroundColor: C.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.hairline,
+    paddingHorizontal: space.md,
+    paddingVertical: space.md,
+    paddingBottom: space.lg,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    borderRadius: radius.card,
+    height: 44,
+  },
+  stepBtn: { paddingHorizontal: 9, height: '100%', justifyContent: 'center' },
+  stepValue: { ...type.title, minWidth: 20, textAlign: 'center' },
+});

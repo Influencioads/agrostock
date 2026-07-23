@@ -3,9 +3,10 @@ import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiRoute } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { FormModal } from './parts';
@@ -15,6 +16,7 @@ const empty: Form = { name: '', fromCity: '', fromCountry: '', toCity: '', toCou
 
 export function TransporterRoutes() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const { user } = useAuth();
   const [editing, setEditing] = useState<ApiRoute | null>(null);
@@ -31,7 +33,7 @@ export function TransporterRoutes() {
       </Row>
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : routes.length === 0 ? (
         <EmptyState icon="git-network-outline" title={t('transX.routes.emptyTitle')} body={t('transX.routes.emptyBody')} />
       ) : (
@@ -43,7 +45,7 @@ export function TransporterRoutes() {
                 <View style={{ flexShrink: 1 }}>
                   <Txt variant="title">{r.name}</Txt>
                   <Txt variant="muted">{r.fromCity}{r.fromCountry ? `, ${r.fromCountry}` : ''} → {r.toCity}{r.toCountry ? `, ${r.toCountry}` : ''}</Txt>
-                  <Txt variant="muted">{r.distanceKm ? t('transX.routes.kmUnit', { km: r.distanceKm }) : '—'}{r.baseRateCents ? ` · ${t('transX.routes.base')} ${usd(r.baseRateCents)}` : ''}</Txt>
+                  <Txt variant="muted">{r.distanceKm ? t('transX.routes.kmUnit', { km: r.distanceKm }) : '—'}{r.baseRateCents ? ` · ${t('transX.routes.base')} ${fmtCents(r.baseRateCents)}` : ''}</Txt>
                 </View>
                 {intl ? <Badge label={t('transX.routes.international')} tone="info" /> : null}
               </Row>

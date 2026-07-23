@@ -288,6 +288,16 @@ export class BuyerBidsService {
       buyerBidId,
       orderId: result.order.id,
     });
+    // Buyer copy under the transactional `orders` category so it also emails
+    // (the `bids` category above is push/in-app only).
+    await this.notifications.create({
+      userId: buyerBid.buyerId,
+      system: 'orders',
+      type: 'order.bid_awarded',
+      params: { reference: buyerBid.reference, orderReference: result.order.reference },
+      data: { buyerBidId, orderId: result.order.id },
+      linkUrl: `/orders/${result.order.id}`,
+    });
     return result;
   }
 

@@ -36,6 +36,8 @@ npm-debug.log*
 pnpm-debug.log*
 tatus
 backups/
+tmp.mjs
+apps/mobile.zip
 
 # os / editor
 .DS_Store

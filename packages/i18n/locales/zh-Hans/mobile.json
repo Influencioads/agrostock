@@ -473,8 +473,9 @@
     "product": {
       "auction": "拍卖",
       "safeDeal": "安全交易",
-      "social": "{{watching}}+ 正在观看 · {{ordered}} 已订购",
-      "verified": "已验证"
+      "verified": "已验证",
+      "moq": "起订量 {{value}}",
+      "available": "现货 {{value}}"
     },
     "profile": {
       "about": "关于",
@@ -623,7 +624,9 @@
     "notifications": "通知",
     "restartNotice": "应用程序将重新启动以应用新的文本方向。",
     "rolesAccess": "角色与访问权限",
-    "support": "在线客服"
+    "support": "在线客服",
+    "marketplace": "交易市场",
+    "account": "账户"
   },
   "loaderX": {
     "attendance": {
@@ -961,7 +964,12 @@
         "offices": "办公室",
         "safeDeal": "安全交易",
         "transport": "运输"
-      }
+      },
+      "categories": "按类目选购",
+      "promoted": "精选",
+      "services": "服务",
+      "requirements": "正在寻源的买家",
+      "viewAll": "查看全部"
     },
     "kyc": {
       "doc": {
@@ -1044,7 +1052,12 @@
       "transportBody": "通过您的买家控制台预订运输服务。",
       "transportTitle": "运输",
       "verified": "已验证",
-      "watching": "{{count}}+ 正在观看"
+      "watching": "{{count}}+ 正在观看",
+      "addToRfq": "加入询价",
+      "supplier": "供应商",
+      "tradeTerms": "交易条件",
+      "origin": "产地",
+      "delivery": "交付"
     },
     "ph": {
       "bidTitle": "巴斯马蒂大米——杰贝阿里地区 100 MT",
@@ -1117,7 +1130,50 @@
       "emptyTitle": "搜索 AgroTraders",
       "noMatchBody": "未找到“{{q}}”。",
       "noMatchTitle": "没有匹配项",
-      "placeholder": "搜索谷物、豆类、油类……"
+      "placeholder": "搜索谷物、豆类、油类……",
+      "recent": "最近搜索"
+    },
+    "filter": {
+      "title": "筛选",
+      "clear": "清除",
+      "clearAll": "全部清除",
+      "apply": "应用",
+      "applyN": "应用（{{count}}）",
+      "sortBy": "排序方式",
+      "searchOptions": "搜索",
+      "categoryHint": "选择一个类目即可使用其规格筛选。",
+      "groups": {
+        "category": "类目",
+        "dealType": "交易类型",
+        "price": "价格",
+        "country": "国家",
+        "city": "城市",
+        "grade": "等级",
+        "market": "市场"
+      }
+    },
+    "plp": {
+      "results": "{{count}} 个结果",
+      "filters": "筛选",
+      "sort": "排序",
+      "clearFilters": "清除筛选",
+      "noResults": "没有匹配结果"
+    },
+    "rfq": {
+      "title": "询价单",
+      "emptyTitle": "你的询价单是空的",
+      "emptyBody": "添加任意供应商的商品，然后按供应商分别发送询价请求。",
+      "addedTitle": "已加入询价单",
+      "addedBody": "{{name}} 已在询价单中。全部添加完成后再发送请求。",
+      "requestQuotes": "发送询价",
+      "sentLabel": "请求已发送",
+      "sentTitle": "请求已发送",
+      "sentBody": "供应商将回复报价，可在“出价”中查看。",
+      "failTitle": "请求发送失败",
+      "failBody": "请重试。",
+      "lineCount": "{{count}} 项",
+      "noteFromBasket": "通过询价单发送给 {{supplier}}。",
+      "footNote": "每个供应商都会收到各自的请求。报价仅你可见。"
     }
   },
   "reviews": {

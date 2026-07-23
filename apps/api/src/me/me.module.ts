@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
 import { EARNING_TYPES, WalletService } from '../wallet/wallet.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /** Roles a user may request self-service (admin is never requestable). */
 export const REQUESTABLE_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'] as const;
@@ -145,6 +146,7 @@ export class MeService {
     private prisma: PrismaService,
     private uploads: UploadsService,
     private wallets: WalletService,
+    private notifications: NotificationsService,
   ) {}
 
   /** Stores the photo as a local WebP and points the profile at it. */
@@ -228,7 +230,16 @@ export class MeService {
     const reserved = pending._sum.amountCents ?? 0;
     if (cents <= 0) throw new BadRequestException('Enter a valid amount.');
     if (cents > balance - reserved) throw new BadRequestException('Amount exceeds your available balance.');
-    await this.prisma.payoutRequest.create({ data: { userId, amountCents: cents, status: 'pending' } });
+    const payout = await this.prisma.payoutRequest.create({ data: { userId, amountCents: cents, status: 'pending' } });
+    // Confirm receipt of the request (transactional → also emails).
+    await this.notifications.create({
+      userId,
+      system: 'wallet',
+      type: 'wallet.payout_requested',
+      params: { amount: `$${(cents / 100).toFixed(2)}` },
+      data: { payoutId: payout.id },
+      linkUrl: '/console/wallet',
+    });
     return this.wallet(userId);
   }
 

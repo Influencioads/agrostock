@@ -253,7 +253,7 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
           {t('page.directory.noMatch')}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {entries.map((e) => {
             const isWorker = type === 'workers';
             const w = e as ApiWorkerEntry;

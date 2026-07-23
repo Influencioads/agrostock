@@ -219,7 +219,7 @@ export function LoaderPricing() {
         ))}
       </Card>
       <Card>
-        <div className="grid gap-3 sm:grid-cols-[1.6fr_1fr_auto] sm:items-end">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.6fr_1fr_auto] sm:items-end">
           <Input label={t('console.loaderco.newService')} placeholder={t('console.loaderco.phService')} value={service} onChange={(e) => setService(e.target.value)} />
           <Input label={t('console.loaderco.ratePerMt')} placeholder="5.00" value={rate} onChange={(e) => setRate(e.target.value)} />
           <Button leftIcon={<Icon name="plus" size={16} />} onClick={() => add.mutate()} disabled={add.isPending || !service.trim() || !Number(rate)}>{t('console.loaderco.add')}</Button>
@@ -262,7 +262,7 @@ export function LoaderAttendance() {
         <EmptyHint icon="check" title={t('console.loaderco.noWorkersAttTitle')} body={t('console.loaderco.noWorkersAttBody')} />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {([['on_site', t('console.loaderco.onSiteCount')], ['available', t('console.loaderco.availableForWork')], ['off', t('console.loaderco.offDuty')]] as const).map(([k, label]) => (
               <Card key={k}>
                 <div className="text-xs text-ink-soft">{label}</div>

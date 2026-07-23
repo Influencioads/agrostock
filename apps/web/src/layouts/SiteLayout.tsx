@@ -17,7 +17,10 @@ function AnimatedOutlet() {
 
 export function SiteLayout() {
   return (
-    <div className="min-h-screen bg-surface-bg font-body text-ink">
+    // `overflow-x-clip`: long translated labels (e.g. Russian) must never let a
+    // page scroll sideways / drift off-centre on phones. `clip` (not `hidden`)
+    // does not create a scroll container, so the sticky header keeps working.
+    <div className="min-h-screen overflow-x-clip bg-surface-bg font-body text-ink">
       <SiteHeader />
       <AnimatedOutlet />
       <SiteFooter />

@@ -6,7 +6,7 @@ import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Input, Loading, ProgressBar, Row, Screen, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, ProgressBar, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { OrderDetailSheet, OtpCard, ShipmentFacts, progressOf } from '../components/order-parts';
 
@@ -99,7 +99,7 @@ export function BuyerTransport() {
 
       {tab === 'shipments' ? (
         isLoading ? (
-          <Loading />
+          <SkeletonRows />
         ) : shipments.length === 0 ? (
           <EmptyState icon="car-outline" title={t('buyerX.transport.emptyShipTitle')} body={t('buyerX.transport.emptyShipBody')} />
         ) : (

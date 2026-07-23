@@ -2,7 +2,8 @@ import { View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { usd, orderLabel } from '../../lib/format';
+import { orderLabel } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Card, EmptyState, Row, Screen, Txt } from '../../ui';
@@ -11,6 +12,7 @@ import { C } from '../../theme/tokens';
 /** Safe Deal — escrow balance + orders held until delivery is confirmed. */
 export function BuyerSafeDeal() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const { data: wallet } = useQuery<{ balanceCents: number }>({
     queryKey: ['me-wallet'], queryFn: () => api.me.wallet() as Promise<{ balanceCents: number }>, enabled: !!user,
@@ -27,7 +29,7 @@ export function BuyerSafeDeal() {
         <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
             <Txt variant="muted" color={C.mint}>{t('buyerX.safeDeal.escrowBalance')}</Txt>
-            <Txt color={C.white} style={{ fontSize: 28, fontWeight: '800', marginTop: 4 }}>{usd(wallet?.balanceCents)}</Txt>
+            <Txt color={C.white} style={{ fontSize: 28, fontWeight: '800', marginTop: 4 }}>{fmtCents(wallet?.balanceCents)}</Txt>
           </View>
           <Badge label={t('buyerX.safeDeal.protected')} tone="mango" />
         </Row>

@@ -4,7 +4,7 @@ import type { ApiOrder } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
 import { orderLabel, orderTone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { OtpEntry } from '../components/order-parts';
@@ -29,7 +29,7 @@ export function TransporterLoads() {
       <Txt variant="muted">{t('transX.loads.subtitle')}</Txt>
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : orders.length === 0 ? (
         <EmptyState icon="cube-outline" title={t('transX.loads.emptyTitle')} body={t('transX.loads.emptyBody')} />
       ) : (

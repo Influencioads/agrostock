@@ -268,7 +268,7 @@ function MarketSelect({
       {creating && (
         <div className="mt-3 space-y-3 rounded-xl border border-surface-border bg-brand-surface/40 p-3">
           <p className="text-xs text-ink-soft">{t('console.productForm.newMarketNote')}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label={t('console.productForm.marketName')} placeholder={t('console.productForm.phMarketName')} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
             <Input label={t('console.productForm.country')} placeholder={t('console.productForm.phCountry')} value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })} />
             <Input label={t('console.productForm.cityOptional')} placeholder={t('console.productForm.phCity')} value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value })} />
@@ -405,7 +405,7 @@ function AttributeFields({
         {t('console.productForm.attrSectionTitle', { name: subcategory })}{' '}
         <span className="font-normal text-ink-soft">{t('console.productForm.attrSectionHint')}</span>
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {fields.map((f: AttrField) => {
           const raw = value[f.key];
           const label = (
@@ -528,7 +528,7 @@ export function ProductForm({
 
       <Input label={t('console.productForm.productName')} placeholder={t('console.productForm.phName')} value={value.name} onChange={(e) => set('name')(e.target.value)} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.category')}</span>
           <select
@@ -563,7 +563,7 @@ export function ProductForm({
 
       <MarketSelect value={value.marketId} onChange={set('marketId')} onError={onError} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label={t('console.productForm.price')} placeholder="840" value={value.price} onChange={(e) => set('price')(e.target.value)} />
         <Input label={t('console.productForm.grade')} placeholder={t('console.productForm.phGrade')} value={value.grade} onChange={(e) => set('grade')(e.target.value)} />
         <Input label={t('console.productForm.quantity')} placeholder={t('console.productForm.phQty')} value={value.qty} onChange={(e) => set('qty')(e.target.value)} />
@@ -585,7 +585,7 @@ export function ProductForm({
       </div>
 
       {/* Location: where the goods physically sit */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Country first — the city options are fetched per-country. */}
         <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.country')}</span>
@@ -625,7 +625,7 @@ export function ProductForm({
       </div>
 
       {value.isAuction && (
-        <div className="grid gap-3 rounded-xl border border-surface-border bg-brand-surface/40 p-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 rounded-xl border border-surface-border bg-brand-surface/40 p-3 sm:grid-cols-2">
           <Input label={t('console.seller.startingBid')} type="number" placeholder="800" value={value.startBid} onChange={(e) => set('startBid')(e.target.value)} />
           <Input label={t('console.seller.auctionCloses')} type="datetime-local" value={value.auctionEndsAt} onChange={(e) => set('auctionEndsAt')(e.target.value)} />
         </div>

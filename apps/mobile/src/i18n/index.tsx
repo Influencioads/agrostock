@@ -29,6 +29,15 @@ export function translateGlobal(key: string, fallback: string): string {
   return globalI18n ? globalI18n.t(key, { defaultValue: fallback }) : fallback;
 }
 
+/**
+ * The active locale, readable outside the React tree — style helpers need it to
+ * decide script-dependent things (see `theme/casing.ts`) without becoming hooks.
+ */
+export function currentLang(): Lang {
+  const l = globalI18n?.language;
+  return l && isLang(l) ? l : FALLBACK_LNG;
+}
+
 /** First supported locale matching the device: exact tag, then bare language code. */
 function deviceLang(): Lang {
   for (const { languageTag, languageCode } of getLocales()) {

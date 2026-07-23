@@ -138,7 +138,7 @@ export function TransporterVehicles() {
         <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.vehicles')}</h2>
         <Button onClick={() => { setEditing(null); setOpen(true); }} leftIcon={<Icon name="plus" size={16} />}>{t('console.transporter.addVehicle')}</Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {vehicles.map((v) => (
           <Card key={v.id}>
             <div className="mb-2 h-32 overflow-hidden rounded-xl border border-surface-border bg-brand-surface">
@@ -192,7 +192,7 @@ function VehicleModal({ vehicle, onClose, onSaved }: { vehicle: ApiVehicle | nul
       footer={<><Button variant="ghost" onClick={onClose}>{t('common:cancel')}</Button><Button disabled={!form.type.trim() || !form.plate.trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t('console.transporter.saving') : t('console.transporter.save')}</Button></>}>
       <div className="space-y-3">
         <PhotoField url={clearPhoto ? null : vehicle?.photoUrl} pending={pendingPhoto} onFile={(f) => { setPendingPhoto(f); setClearPhoto(false); }} onClear={() => { setPendingPhoto(null); setClearPhoto(true); }} />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label={t('console.transporter.type')} placeholder={t('console.ph.vehicleType')} value={form.type} onChange={s('type')} />
           <Input label={t('console.transporter.plate')} placeholder="GJ-01-AB-1234" value={form.plate} onChange={s('plate')} />
           <Input label={t('console.transporter.capacity')} placeholder="28" value={form.capacityMt} onChange={s('capacityMt')} />
@@ -226,7 +226,7 @@ export function TransporterRoutes() {
         <h2 className="min-w-0 break-words font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.routes')}</h2>
         <Button onClick={() => { setEditing(null); setOpen(true); }} leftIcon={<Icon name="plus" size={16} />}>{t('console.transporter.addRoute')}</Button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {routes.map((r) => (
           <Card key={r.id}>
             <Icon name="globe" size={22} className="text-brand-dark" />
@@ -276,7 +276,7 @@ function RouteModal({ route, onClose, onSaved }: { route: ApiRoute | null; onClo
       footer={<><Button variant="ghost" onClick={onClose}>{t('common:cancel')}</Button><Button disabled={!form.name.trim() || !form.fromCity.trim() || !form.toCity.trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t('console.transporter.saving') : t('console.transporter.save')}</Button></>}>
       <div className="space-y-3">
         <Input label={t('console.transporter.routeName')} placeholder={t('console.ph.routeName')} value={form.name} onChange={s('name')} />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label={t('console.transporter.fromCountry')} placeholder={t('console.ph.country')} value={form.fromCountry} onChange={s('fromCountry')} />
           <Input label={t('console.transporter.fromCity')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={s('fromCity')} />
           <Input label={t('console.transporter.toCountry')} placeholder={t('console.ph.countryUae')} value={form.toCountry} onChange={s('toCountry')} />

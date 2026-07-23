@@ -124,7 +124,7 @@ export function TransporterMyRequests() {
     <div>
       <SectionHead title={t('console.nav.myrequests')} sub={t('console.transporter.myRequestsSub')} />
       <Card className="mb-5">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
           <Input label={t('console.transporter.from')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={(e) => setForm((f) => ({ ...f, fromCity: e.target.value }))} />
           <Input label={t('console.transporter.to')} placeholder={t('console.ph.toCity')} value={form.toCity} onChange={(e) => setForm((f) => ({ ...f, toCity: e.target.value }))} />
           <Input label={t('console.transporter.cargo')} placeholder={t('console.ph.cargo')} value={form.cargo} onChange={(e) => setForm((f) => ({ ...f, cargo: e.target.value }))} />
@@ -181,7 +181,7 @@ export function TransporterDrivers() {
       ) : drivers.length === 0 ? (
         <EmptyHint icon="user" title={t('console.transporter.noDriversTitle')} body={t('console.transporter.noDriversBody')} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {drivers.map((d) => (
             <Card key={d.id}>
               <div className="flex items-center justify-between">
@@ -262,7 +262,7 @@ function DriverModal({ driver, onClose, onSaved }: { driver: ApiDriver | null; o
             <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setPendingPhoto(f); }} />
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label={t('console.transporter.name')} placeholder="Ravi K." value={form.name} onChange={s('name')} />
           <Input label={t('console.transporter.assignedVehicle')} placeholder="TR-441" value={form.vehicle} onChange={s('vehicle')} />
           <Input label={t('console.order.phone')} placeholder="+91…" value={form.phone} onChange={s('phone')} />

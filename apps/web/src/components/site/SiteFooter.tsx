@@ -28,7 +28,7 @@ export function SiteFooter() {
   const { logoSrc } = useBranding();
   return (
     <footer className="bg-brand-evergreen text-mint/90">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:gap-10 sm:px-6 sm:py-14 lg:grid-cols-5">
+      <div className="mx-auto grid grid-cols-1 max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:gap-10 sm:px-6 sm:py-14 lg:grid-cols-5">
         <div className="lg:col-span-1">
           <BrandMark
             logoSrc={logoSrc}

@@ -115,7 +115,7 @@ export function SellerProducts() {
       ) : products.length === 0 ? (
         <Card className="py-12 text-center text-ink-soft">{t('console.productForm.noProducts')}</Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {products.map((p) => {
             // Older rows may predate the gallery; fall back to the single cover.
             const gallery = p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [];

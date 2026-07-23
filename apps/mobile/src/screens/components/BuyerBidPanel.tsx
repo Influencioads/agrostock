@@ -5,7 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiBuyerBidDetail } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, usd } from '../../lib/format';
+import { errMessage } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, Input, Row, Txt } from '../../ui';
@@ -17,6 +18,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** The buyer's own view: the headline price plus the award action lives in the book. */
 function OwnerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   return (
     <Card style={{ gap: 8 }}>
       <Txt variant="h3">{t('buyerX.room.ownerNote')}</Txt>
@@ -25,7 +27,7 @@ function OwnerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
         <View>
           <Txt variant="muted">{bid.bestPriceCents != null ? t('buyerX.bids.bestOffer') : t('buyerX.room.awaitingBids')}</Txt>
           <Txt variant="h3" color={C.dark}>
-            {bid.bestPriceCents != null ? `${usd(bid.bestPriceCents)}/${bid.qtyUnit}` : '—'}
+            {bid.bestPriceCents != null ? `${fmtCents(bid.bestPriceCents)}/${bid.qtyUnit}` : '—'}
           </Txt>
         </View>
         <Badge label={bid.status} tone={bid.status === 'open' ? 'green' : 'slate'} />
@@ -37,6 +39,7 @@ function OwnerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
 /** Seller offers a price. In auction mode it must undercut the current best. */
 function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const [price, setPrice] = useState('');
   const [qty, setQty] = useState(String(bid.qtyValue));
@@ -71,14 +74,14 @@ function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
       <Txt variant="h3">{bid.yourBestPriceCents != null ? t('buyerX.room.updateBid') : t('buyerX.room.yourOffer')}</Txt>
 
       {bid.yourBestPriceCents != null ? (
-        <Txt variant="muted">{t('buyerX.room.yourCurrent', { price: usd(bid.yourBestPriceCents), unit: bid.qtyUnit })}</Txt>
+        <Txt variant="muted">{t('buyerX.room.yourCurrent', { price: fmtCents(bid.yourBestPriceCents), unit: bid.qtyUnit })}</Txt>
       ) : null}
 
       {/* Reverse auctions publish the floor; sealed quote-mode requirements never do. */}
       {bid.mode === 'auction' ? (
         <Txt variant="muted" color={C.dark}>
           {bid.bestPriceCents != null
-            ? t('buyerX.room.mustBeat', { price: usd(bid.bestPriceCents), unit: bid.qtyUnit })
+            ? t('buyerX.room.mustBeat', { price: fmtCents(bid.bestPriceCents), unit: bid.qtyUnit })
             : t('buyerX.room.noBidsOpening')}
         </Txt>
       ) : null}

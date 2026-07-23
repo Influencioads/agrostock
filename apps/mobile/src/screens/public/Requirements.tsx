@@ -3,7 +3,7 @@ import { FlatList, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 
@@ -50,7 +50,7 @@ export function RequirementsBoard() {
         data={reqs}
         keyExtractor={(r) => String(r.id)}
         contentContainerStyle={{ padding: space.lg, gap: 12 }}
-        ListEmptyComponent={isLoading ? <Loading /> : <EmptyState icon="clipboard-outline" title={t('pubX.req.empty')} />}
+        ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="clipboard-outline" title={t('pubX.req.empty')} />}
         renderItem={({ item: r }) => (
           <Card style={{ gap: 8 }}>
             <Txt variant="title">{r.title}</Txt>

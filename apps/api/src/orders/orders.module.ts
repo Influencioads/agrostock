@@ -328,8 +328,8 @@ export class OrdersService {
     const unitPriceCents = product.priceCents ?? Math.round(money(product.price) * 100);
     const amountCents = unitPriceCents * dto.qty;
 
-    return this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.create({
+    const order = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
         data: {
           reference: ref(),
           amount: usd(amountCents),
@@ -345,9 +345,18 @@ export class OrdersService {
         },
         include: ORDER_INCLUDE,
       });
-      await this.event(tx, order.id, 'order_placed', buyerId, null, 'processing');
-      return order;
+      await this.event(tx, created.id, 'order_placed', buyerId, null, 'processing');
+      return created;
     });
+
+    // Notify the seller of the new direct ("buy now") order.
+    await this.notify(
+      order.sellerId,
+      'order.new_order',
+      { reference: order.reference, buyer: order.buyer.name, product: product.name },
+      { orderId: order.id },
+    );
+    return order;
   }
 
   // ── reads ──────────────────────────────────────────────────────

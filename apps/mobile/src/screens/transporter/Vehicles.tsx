@@ -5,7 +5,7 @@ import type { ApiVehicle } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Input, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { FormModal, PhotoPicker, type PickedImage } from './parts';
@@ -31,7 +31,7 @@ export function TransporterVehicles() {
       </Row>
 
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : vehicles.length === 0 ? (
         <EmptyState icon="bus-outline" title={t('transX.vehicles.emptyTitle')} body={t('transX.vehicles.emptyBody')} />
       ) : (

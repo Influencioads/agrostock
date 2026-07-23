@@ -24,13 +24,16 @@ import { TransporterMyRequests } from './transporter/MyRequests';
 import { TransporterInvoices } from './transporter/Invoices';
 import { TransporterRatings } from './transporter/Ratings';
 import { TransporterTracking } from './transporter/Tracking';
-import { LoaderTeams, LoaderAvailability, LoaderAttendance, LoaderPricing, LoaderReviews, LoaderEarnings } from './loaderco/extras';
+import { LoaderTeams, LoaderAvailability, LoaderAttendance, LoaderPricing, LoaderReviews } from './loaderco/extras';
 import { WorkerAttendance } from './worker/Attendance';
 import { WorkerReviews } from './worker/Reviews';
 import { WalletScreen, EarningsScreen } from './components/MoneyScreens';
 import { InvoiceCenter } from './components/InvoiceCenter';
 import { HiresScreen } from './HiresScreen';
 import { Kyc } from './auth/Kyc';
+
+/** Section-routed earnings sit under a navigator header — no internal heading. */
+const SectionEarnings = () => <EarningsScreen showTitle={false} />;
 
 /**
  * Maps `${role}:${section}` → screen component. Sections register here as they
@@ -75,7 +78,7 @@ export const sectionRegistry: Record<string, SectionComponent> = {
   'transporter:drivers': TransporterDrivers,
   'transporter:routes': TransporterRoutes,
   'transporter:invoices': TransporterInvoices,
-  'transporter:earnings': EarningsScreen,
+  'transporter:earnings': SectionEarnings,
   'transporter:wallet': WalletScreen,
   'transporter:hires': HiresScreen,
   'transporter:ratings': TransporterRatings,
@@ -85,14 +88,14 @@ export const sectionRegistry: Record<string, SectionComponent> = {
   'loaderco:availability': LoaderAvailability,
   'loaderco:attendance': LoaderAttendance,
   'loaderco:pricing': LoaderPricing,
-  'loaderco:earnings': LoaderEarnings,
+  'loaderco:earnings': SectionEarnings,
   'loaderco:wallet': WalletScreen,
   'loaderco:reviews': LoaderReviews,
   'loaderco:invoices': InvoiceCenter,
   'loaderco:hires': HiresScreen,
   // Worker
   'worker:wallet': WalletScreen,
-  'worker:earnings': EarningsScreen,
+  'worker:earnings': SectionEarnings,
   'worker:attendance': WorkerAttendance,
   'worker:reviews': WorkerReviews,
   'worker:invoices': InvoiceCenter,

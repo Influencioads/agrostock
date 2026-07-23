@@ -4,11 +4,11 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { nextStatusFor, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
-import { Badge, Button, Card, EmptyState, Loading, ProgressBar, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { OrderDetailSheet, progressOf, useOrderInvalidation } from '../components/order-parts';
+import { OrderDetailSheet, OrderSteps, useOrderInvalidation } from '../components/order-parts';
 import { OrderReviewButton } from '../components/ReviewSheet';
 
 export function BuyerOrders() {
@@ -37,7 +37,7 @@ export function BuyerOrders() {
       {!user ? (
         <EmptyState icon="lock-closed-outline" title={t('buyerX.orders.signInTitle')} body={t('buyerX.orders.signInBody')} />
       ) : isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : orders.length === 0 ? (
         <EmptyState icon="cube-outline" title={t('buyerX.orders.emptyTitle')} body={t('buyerX.orders.emptyBody')} />
       ) : (
@@ -63,7 +63,7 @@ export function BuyerOrders() {
                 </View>
               </Row>
 
-              <ProgressBar pct={progressOf(o.status)} />
+              <OrderSteps status={o.status} />
 
               <Row gap={8} style={{ justifyContent: 'flex-end' }}>
                 <Button

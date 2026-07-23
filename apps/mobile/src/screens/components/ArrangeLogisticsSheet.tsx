@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiHireRequest, ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { Badge, Button, Card, Loading, Row, Segmented, Txt } from '../../ui';
+import { Badge, Button, Card, Row, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from './HireModal';
 import { useI18n } from '../../i18n';
@@ -101,7 +101,7 @@ export function ArrangeLogisticsSheet({ order, onClose }: { order: ApiOrder; onC
             />
 
             {isLoading ? (
-              <Loading />
+              <SkeletonRows />
             ) : providers.length === 0 ? (
               <Txt variant="muted">{t('compX.logistics.emptyDirectory')}</Txt>
             ) : (

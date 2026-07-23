@@ -7,13 +7,15 @@ import { SectionScreen } from './SectionScreen';
 import { ProductDetail } from '../screens/public/ProductDetail';
 import { Search } from '../screens/public/Search';
 import { Offices } from '../screens/public/Offices';
-import { Cart } from '../screens/public/Cart';
+import { RfqBasket } from '../screens/public/RfqBasket';
 import { Checkout } from '../screens/public/Checkout';
 import { Notifications } from '../screens/public/Notifications';
 import { NotificationSettings } from '../screens/public/NotificationSettings';
 import { LiveTracking } from '../screens/public/LiveTracking';
 import { SignIn } from '../screens/auth/SignIn';
 import { SignUp } from '../screens/auth/SignUp';
+import { ForgotPassword } from '../screens/auth/ForgotPassword';
+import { OtpSignIn } from '../screens/auth/OtpSignIn';
 import { Kyc } from '../screens/auth/Kyc';
 import { RolesAccess } from '../screens/RolesAccess';
 import { Community } from '../screens/community/Community';
@@ -52,16 +54,21 @@ export function RootNavigator() {
     >
       <Stack.Screen name="App" component={RoleRouter} options={{ headerShown: false }} />
       <Stack.Screen name="ProductDetail" component={ProductDetail} options={title('ProductDetail')} />
-      <Stack.Screen name="Search" component={Search} options={title('Search')} />
+      {/* Screens rendering their own <AppBar> must hide the stack header, or the
+          two stack up with duplicate titles and back chevrons. */}
+      <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
       <Stack.Screen name="Offices" component={Offices} options={title('Offices')} />
       <Stack.Screen name="SafeDeal" component={BuyerSafeDeal} options={title('SafeDeal')} />
-      <Stack.Screen name="Cart" component={Cart} options={title('Cart')} />
-      <Stack.Screen name="Checkout" component={Checkout} options={title('Checkout')} />
+      {/* Route id stays `Cart` — it is the basket icon's target across the app. */}
+      <Stack.Screen name="Cart" component={RfqBasket} options={{ headerShown: false }} />
+      <Stack.Screen name="Checkout" component={Checkout} options={{ headerShown: false }} />
       <Stack.Screen name="Notifications" component={Notifications} options={title('Notifications')} />
       <Stack.Screen name="NotificationSettings" component={NotificationSettings} options={{ title: t('mobile:pubX.notif.settingsTitle') }} />
       <Stack.Screen name="LiveTracking" component={LiveTracking} options={title('LiveTracking')} />
       <Stack.Screen name="SignIn" component={SignIn} options={{ ...title('SignIn'), presentation: 'modal' }} />
       <Stack.Screen name="SignUp" component={SignUp} options={{ ...title('SignUp'), presentation: 'modal' }} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{ title: t('mobile:auth.forgotPassword.title'), presentation: 'modal' }} />
+      <Stack.Screen name="OtpSignIn" component={OtpSignIn} options={{ title: t('mobile:auth.otpLogin.title'), presentation: 'modal' }} />
       <Stack.Screen name="Kyc" component={Kyc} options={title('Kyc')} />
       <Stack.Screen name="RolesAccess" component={RolesAccess} options={title('RolesAccess')} />
       <Stack.Screen name="Community" component={Community} options={{ title: t('mobile:hub.community'), headerShown: false }} />

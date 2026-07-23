@@ -60,7 +60,7 @@ export function BuyerBidsPage() {
       {list.length === 0 ? (
         <Card className="py-16 text-center text-ink-soft">{t('page.bids.noBids')}</Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((b) => {
             const cover = b.images?.[0];
             const bidCount = b._count?.sellerBids ?? 0;

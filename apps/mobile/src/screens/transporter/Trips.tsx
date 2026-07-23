@@ -4,7 +4,7 @@ import { api } from '../../lib/api';
 import { tripNext, tripTone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 
 interface Trip { id: string; reference: string; fromCity: string; toCity: string; cargo: string; status: string; otp: string | null }
 
@@ -22,7 +22,7 @@ export function TransporterTrips() {
     <Screen edges={['top']}>
       <Txt variant="h2">{t('mobile2.trips.title')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : trips.length === 0 ? (
         <EmptyState icon="car-outline" title={t('mobile2.trips.empty')} body={t('mobile2.trips.emptyBody')} />
       ) : (

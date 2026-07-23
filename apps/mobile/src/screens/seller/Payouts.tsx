@@ -1,8 +1,7 @@
 import { EarningsScreen } from '../components/MoneyScreens';
-import { useI18n } from '../../i18n';
 
-/** Seller payouts — earnings from sales, ready to withdraw. */
+/** Seller payouts — earnings from sales, ready to withdraw. The Section route's
+ * navigator header already carries the "Payouts" title. */
 export function SellerPayouts() {
-  const { t } = useI18n();
-  return <EarningsScreen title={t('mobile2.payouts.title')} />;
+  return <EarningsScreen showTitle={false} />;
 }

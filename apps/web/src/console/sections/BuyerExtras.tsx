@@ -48,7 +48,7 @@ export function BrowseSection() {
           <Button leftIcon={<Icon name="bag" size={16} />}>{t('console.buyer.openMarketplace')}</Button>
         </Link>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {products.slice(0, 9).map((p) => (
           <Card key={p.id} hoverable className="flex items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-surface text-2xl">{p.emoji ?? '🌾'}</span>
@@ -77,7 +77,7 @@ export function SavedSection() {
       {saved.length === 0 ? (
         <EmptyHint icon="heart" title={t('console.buyer.noSavedTitle')} body={t('console.buyer.noSavedBody')} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {saved.slice(0, 9).map((p) => (
             <Card key={p.id} hoverable className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-mango-soft text-2xl">{p.emoji ?? '🌾'}</span>

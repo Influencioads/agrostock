@@ -49,7 +49,7 @@ export const CURRENCIES = [
 ] as const;
 export type CurrencyCode = (typeof CURRENCIES)[number];
 
-const SYMBOLS: Record<string, string> = {
+export const SYMBOLS: Record<string, string> = {
   USD: '$', EUR: '€', GBP: '£', AED: 'د.إ', INR: '₹', CNY: '¥', TRY: '₺',
   RUB: '₽', BRL: 'R$', PKR: '₨', BDT: '৳', VND: '₫', THB: '฿', EGP: 'E£',
   KZT: '₸', UAH: '₴', SAR: '﷼', NGN: '₦', KES: 'KSh', JPY: '¥',

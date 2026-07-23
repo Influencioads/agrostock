@@ -97,7 +97,7 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
         <p className="rounded-lg bg-mango-soft px-3 py-2 text-xs text-ink-soft">{t(MODE_KEY[mode])}</p>
 
         <Input label={t('console.buyer.title')} placeholder={t('console.buyer.phTitle')} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label={t('console.buyer.product')} placeholder={t('console.buyer.phProduct')} value={f.productName} onChange={(e) => setF({ ...f, productName: e.target.value })} />
           <label className="block">
             <span className="mb-1 block text-sm font-semibold text-ink">{t('console.buyer.category')}</span>

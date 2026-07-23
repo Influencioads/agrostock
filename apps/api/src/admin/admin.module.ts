@@ -588,20 +588,36 @@ export class AdminService {
     if (order.status !== 'dispute') throw new BadRequestException('Order is not in dispute');
     const total = order.amountCents ?? 0;
 
+    // Collected here so the wallet notifications fire AFTER commit (the credits
+    // run inside the tx and WalletService stays silent in that case).
+    const credits: Array<{ userId: string; cents: number; type: 'refund' | 'escrow_release' }> = [];
+
     const result = await this.prisma.$transaction(async (tx) => {
       let toStatus: OrderStatus = 'delivered';
       if (dto.resolution === 'refund_buyer') {
-        if (total > 0) await this.walletSvc.credit(order.buyerId, total, 'refund', dto.note ?? 'Dispute refund', tx);
+        if (total > 0) {
+          await this.walletSvc.credit(order.buyerId, total, 'refund', dto.note ?? 'Dispute refund', tx);
+          credits.push({ userId: order.buyerId, cents: total, type: 'refund' });
+        }
         toStatus = 'cancelled';
       } else if (dto.resolution === 'release_to_seller') {
-        if (total > 0 && order.sellerId) await this.walletSvc.credit(order.sellerId, total, 'escrow_release', dto.note ?? 'Dispute release', tx);
+        if (total > 0 && order.sellerId) {
+          await this.walletSvc.credit(order.sellerId, total, 'escrow_release', dto.note ?? 'Dispute release', tx);
+          credits.push({ userId: order.sellerId, cents: total, type: 'escrow_release' });
+        }
         toStatus = 'delivered';
       } else {
         // partial: refund `amountCents` to buyer, release the remainder to seller.
         const refund = Math.max(0, Math.min(dto.amountCents ?? 0, total));
         const release = total - refund;
-        if (refund > 0) await this.walletSvc.credit(order.buyerId, refund, 'refund', dto.note ?? 'Dispute partial refund', tx);
-        if (release > 0 && order.sellerId) await this.walletSvc.credit(order.sellerId, release, 'escrow_release', dto.note ?? 'Dispute partial release', tx);
+        if (refund > 0) {
+          await this.walletSvc.credit(order.buyerId, refund, 'refund', dto.note ?? 'Dispute partial refund', tx);
+          credits.push({ userId: order.buyerId, cents: refund, type: 'refund' });
+        }
+        if (release > 0 && order.sellerId) {
+          await this.walletSvc.credit(order.sellerId, release, 'escrow_release', dto.note ?? 'Dispute partial release', tx);
+          credits.push({ userId: order.sellerId, cents: release, type: 'escrow_release' });
+        }
         toStatus = 'delivered';
       }
       const o = await tx.order.update({ where: { id }, data: { status: toStatus } });
@@ -610,6 +626,17 @@ export class AdminService {
       });
       return o;
     });
+    // Fan out the money-moved notifications (transactional → also emails).
+    for (const c of credits) {
+      await this.notifications.create({
+        userId: c.userId,
+        system: 'wallet',
+        type: c.type === 'refund' ? 'wallet.refund' : 'wallet.escrow_release',
+        params: { amount: `$${(c.cents / 100).toFixed(2)}` },
+        data: { orderId: id },
+        linkUrl: '/console/wallet',
+      });
+    }
     await this.audit.log({ actorId: adminId, action: 'order.dispute_resolve', entityType: 'Order', entityId: id, meta: { resolution: dto.resolution, amountCents: dto.amountCents, note: dto.note } });
     return result;
   }

@@ -8,13 +8,16 @@ import {
   TextInput,
   View,
   type TextInputProps,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { C, cardShadow, radius, space } from '../theme/tokens';
+import { C, elevation, font, radius, space, type } from '../theme/tokens';
+import { microLabel } from '../theme/casing';
 import type { Tone } from '../lib/format';
 import { useI18n } from '../i18n';
+import { forwardChevron } from '../lib/rtl';
 import { AnimatedNumber, AnimatedProgress, PressableScale, Reveal, Stagger, MotiView, useReduceMotion } from './motion';
 
 export {
@@ -26,35 +29,60 @@ export {
   MotiView,
   useReduceMotion,
 } from './motion';
+export { Skeleton, SkeletonCard, SkeletonGrid, SkeletonRows, SkeletonStats } from './Skeleton';
+export { AppBar } from './AppBar';
+export { Sheet } from './Sheet';
+export { FilterBar } from './FilterBar';
+export { Carousel } from './Carousel';
+export { Tile } from './Tile';
 
 /* ── Text ─────────────────────────────────────────────────────────── */
-type TxtVariant = 'h1' | 'h2' | 'h3' | 'title' | 'body' | 'small' | 'muted' | 'label';
+type TxtVariant =
+  | 'display' | 'h1' | 'h2' | 'h3' | 'title' | 'body' | 'small' | 'muted' | 'label'
+  | 'caption' | 'micro' | 'numeric';
 export function Txt({
   children, variant = 'body', color, style, numberOfLines,
 }: { children: ReactNode; variant?: TxtVariant; color?: string; style?: object; numberOfLines?: number }) {
+  // The caps treatment is locale-dependent, so it can't live in the StyleSheet.
+  const casing = variant === 'micro' ? microLabel() : null;
   return (
-    <Text numberOfLines={numberOfLines} style={[txt[variant], color ? { color } : null, style]}>
+    <Text numberOfLines={numberOfLines} style={[txt[variant], casing, color ? { color } : null, style]}>
       {children}
     </Text>
   );
 }
 
 const txt = StyleSheet.create({
-  h1: { fontSize: 26, fontWeight: '800', color: C.ink },
-  h2: { fontSize: 21, fontWeight: '800', color: C.ink },
-  h3: { fontSize: 17, fontWeight: '700', color: C.ink },
-  title: { fontSize: 15, fontWeight: '700', color: C.ink },
-  body: { fontSize: 14, color: C.ink },
-  small: { fontSize: 12, color: C.ink },
-  muted: { fontSize: 12, color: C.inkSoft },
-  label: { fontSize: 13, fontWeight: '600', color: C.ink },
+  display: { ...type.display, color: C.ink },
+  h1: { ...type.h1, color: C.ink },
+  h2: { ...type.h2, color: C.ink },
+  h3: { ...type.h3, color: C.ink },
+  title: { ...type.title, color: C.ink },
+  body: { ...type.body, color: C.ink },
+  small: { ...type.caption, color: C.ink },
+  muted: { ...type.caption, color: C.inkMuted },
+  label: { ...type.title, fontSize: 13, color: C.ink },
+  caption: { ...type.caption, color: C.inkMuted },
+  micro: { ...type.micro, color: C.inkMuted },
+  numeric: { ...type.numeric, color: C.ink },
 });
 
 /* ── Screen ───────────────────────────────────────────────────────── */
 export function Screen({
-  children, scroll = true, padded = true, edges, animate = true,
-}: { children: ReactNode; scroll?: boolean; padded?: boolean; edges?: ('top' | 'bottom')[]; animate?: boolean }) {
-  const pad = padded ? { padding: space.lg } : undefined;
+  children, scroll = true, padded = true, edges, animate = true, edgeToEdge = false, footer,
+}: {
+  children: ReactNode;
+  scroll?: boolean;
+  padded?: boolean;
+  edges?: ('top' | 'bottom')[];
+  animate?: boolean;
+  /** Drops horizontal padding so grids and rails can bleed to the screen edge. */
+  edgeToEdge?: boolean;
+  /** Sticky bar pinned below the content, above the tab bar (PDP buy bar, basket total). */
+  footer?: ReactNode;
+}) {
+  const showPad = padded && !edgeToEdge;
+  const pad = showPad ? { padding: space.lg } : edgeToEdge ? { paddingVertical: space.lg } : undefined;
   const gap = padded ? { gap: space.lg } : undefined;
   // In scroll mode we stagger the top-level children in on mount for a lively entrance.
   const body =
@@ -66,40 +94,64 @@ export function Screen({
   return (
     <SafeAreaView style={s.screen} edges={edges ?? []}>
       {scroll ? (
-        <ScrollView contentContainerStyle={[{ paddingBottom: 32 }, pad]} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[{ paddingBottom: footer ? 16 : 32 }, pad]}
+          showsVerticalScrollIndicator={false}
+        >
           {body}
         </ScrollView>
       ) : (
         <View style={[{ flex: 1 }, pad, gap]}>{children}</View>
       )}
+      {/* A sibling of the scroller rather than an absolute overlay, so it never
+          covers the last row of content and needs no bottom padding hack. */}
+      {footer ? <View style={s.footer}>{footer}</View> : null}
     </SafeAreaView>
   );
 }
 
 /* ── Card ─────────────────────────────────────────────────────────── */
-export function Card({ children, style, onPress }: { children: ReactNode; style?: ViewStyle; onPress?: () => void }) {
+type CardVariant = 'flat' | 'raised' | 'inset';
+export function Card({ children, style, onPress, variant = 'flat' }: {
+  children: ReactNode; style?: ViewStyle; onPress?: () => void; variant?: CardVariant;
+}) {
+  const v = [s.card, variant === 'raised' && s.cardRaised, variant === 'inset' && s.cardInset, style];
   if (onPress) {
     return (
-      <PressableScale onPress={onPress} style={[s.card, style]}>
+      <PressableScale onPress={onPress} style={StyleSheet.flatten(v)}>
         {children}
       </PressableScale>
     );
   }
-  return <View style={[s.card, style]}>{children}</View>;
+  return <View style={v}>{children}</View>;
+}
+
+/* ── Divider ──────────────────────────────────────────────────────── */
+export function Divider({ inset = 0 }: { inset?: number }) {
+  return <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: C.hairline, marginStart: inset }} />;
 }
 
 /* ── Button ───────────────────────────────────────────────────────── */
-type BtnVariant = 'primary' | 'outline' | 'ghost' | 'accent' | 'danger';
+type BtnVariant = 'primary' | 'outline' | 'ghost' | 'accent' | 'danger' | 'primaryOutline';
 export function Button({
-  title, onPress, variant = 'primary', size = 'md', icon, disabled, loading, full,
+  title, onPress, variant = 'primary', size = 'md', icon, iconRight, disabled, loading, full,
 }: {
   title: string; onPress?: () => void; variant?: BtnVariant; size?: 'sm' | 'md' | 'lg';
-  icon?: keyof typeof Ionicons.glyphMap; disabled?: boolean; loading?: boolean; full?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+  /** Places the icon after the label — used by "Continue →"-style CTAs. */
+  iconRight?: boolean;
+  disabled?: boolean; loading?: boolean; full?: boolean;
 }) {
   const v = btnVariants[variant];
-  const h = size === 'sm' ? 36 : size === 'lg' ? 52 : 44;
+  // The prototype's buttons are tall pills: the primary CTA is 52px, list/sheet
+  // actions 44, and the compact inline button 38. The radius is always the
+  // half-height, so every size reads as a full pill.
+  const h = size === 'sm' ? 38 : size === 'lg' ? 52 : 44;
+  const fontSize = size === 'sm' ? 13 : size === 'lg' ? 15 : 14.5;
   const reduce = useReduceMotion();
   const [pressed, setPressed] = useState(false);
+  const glyph = icon ? <Ionicons name={icon} size={size === 'sm' ? 16 : 18} color={v.fg} /> : null;
   return (
     <Pressable
       onPress={onPress}
@@ -109,19 +161,29 @@ export function Button({
       style={full ? { alignSelf: 'stretch' } : undefined}
     >
       <MotiView
-        animate={{ scale: reduce || disabled ? 1 : pressed ? 0.96 : 1 }}
+        animate={{ scale: reduce || disabled ? 1 : pressed ? 0.97 : 1 }}
         transition={{ type: 'timing', duration: 100 }}
         style={[
           s.btn,
-          { height: h, backgroundColor: v.bg, borderColor: v.border ?? v.bg, opacity: disabled ? 0.5 : 1 },
+          { height: h, borderRadius: h / 2, backgroundColor: v.bg, borderColor: v.border ?? v.bg },
+          // Filled brand/accent CTAs carry a soft coloured glow; disabled and
+          // outline/ghost buttons stay flat.
+          !disabled && v.glow ? v.glow : null,
+          disabled ? { opacity: 0.45 } : null,
         ]}
       >
         {loading ? (
           <ActivityIndicator color={v.fg} size="small" />
         ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
-            {icon && <Ionicons name={icon} size={size === 'sm' ? 15 : 17} color={v.fg} />}
-            <Text numberOfLines={1} style={{ color: v.fg, fontWeight: '700', fontSize: size === 'sm' ? 13 : 15, flexShrink: 1 }}>{title}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+            {!iconRight ? glyph : null}
+            <Text
+              numberOfLines={1}
+              style={{ color: v.fg, fontFamily: font.bodyBold, fontSize, flexShrink: 1 }}
+            >
+              {title}
+            </Text>
+            {iconRight ? glyph : null}
           </View>
         )}
       </MotiView>
@@ -129,12 +191,14 @@ export function Button({
   );
 }
 
-const btnVariants: Record<BtnVariant, { bg: string; fg: string; border?: string }> = {
-  primary: { bg: C.green, fg: C.white },
+const btnVariants: Record<BtnVariant, { bg: string; fg: string; border?: string; glow?: object }> = {
+  primary: { bg: C.green, fg: C.white, glow: elevation.cta },
   outline: { bg: C.white, fg: C.ink, border: C.border },
   ghost: { bg: 'transparent', fg: C.inkSoft },
-  accent: { bg: C.mango, fg: C.evergreen },
-  danger: { bg: C.error, fg: C.white },
+  accent: { bg: C.mango, fg: C.white, glow: { ...elevation.cta, shadowColor: C.mango } },
+  danger: { bg: C.error, fg: C.white, glow: { ...elevation.cta, shadowColor: C.error } },
+  // The secondary half of a split sticky bar — brand-weighted, but not the commit action.
+  primaryOutline: { bg: C.white, fg: C.green, border: C.green },
 };
 
 /* ── Badge ────────────────────────────────────────────────────────── */
@@ -151,19 +215,32 @@ export function Badge({ label, tone = 'green' }: { label: string; tone?: Tone })
   const t = toneStyles[tone];
   return (
     <View style={[s.badge, { backgroundColor: t.bg }]}>
-      <Text style={{ color: t.fg, fontSize: 11, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: t.fg, ...type.micro, fontSize: 10 }}>{label}</Text>
     </View>
   );
 }
 
 /* ── Chip (selectable) ────────────────────────────────────────────── */
-export function Chip({ label, active, onPress }: { label: string; active?: boolean; onPress?: () => void }) {
+export function Chip({ label, active, onPress, count, onClear }: {
+  label: string; active?: boolean; onPress?: () => void;
+  /** Selection count shown after the label, e.g. "Grade · 2". */
+  count?: number;
+  /** Renders a dismiss affordance — used by the applied-filter row. */
+  onClear?: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
-      style={[s.chip, { backgroundColor: active ? C.green : C.white, borderColor: active ? C.green : C.border }]}
+      style={[s.chip, { backgroundColor: active ? C.surface : C.white, borderColor: active ? C.green : C.border }]}
     >
-      <Text style={{ color: active ? C.white : C.ink, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: active ? C.dark : C.ink, ...type.title, fontSize: 12.5 }}>
+        {label}{count ? ` · ${count}` : ''}
+      </Text>
+      {onClear ? (
+        <Pressable onPress={onClear} hitSlop={8}>
+          <Ionicons name="close" size={13} color={active ? C.dark : C.inkSoft} />
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -189,7 +266,7 @@ export function ChipSelect({
   );
 }
 
-/* ── Stat (KPI card) ──────────────────────────────────────────────── */
+/* ── Stat (KPI) ───────────────────────────────────────────────────── */
 export function Stat({
   icon, value, label, delta, deltaUp = true, animateTo, prefix, suffix, decimals,
 }: {
@@ -197,12 +274,12 @@ export function Stat({
   /** when provided, the value counts up to this number on mount */
   animateTo?: number; prefix?: string; suffix?: string; decimals?: number;
 }) {
-  const valueStyle = { fontSize: 22, fontWeight: '800' as const, color: C.ink, marginTop: 8 };
+  const valueStyle = { ...type.h2, color: C.ink, marginTop: 8 };
   return (
     <View style={[s.card, s.stat]}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View style={s.statIcon}><Ionicons name={icon} size={17} color={C.dark} /></View>
-        {delta ? <Text style={{ fontSize: 11, fontWeight: '800', color: deltaUp ? C.success : C.error }}>{delta}</Text> : null}
+        <View style={s.statIcon}><Ionicons name={icon} size={16} color={C.dark} /></View>
+        {delta ? <Text style={{ ...type.micro, color: deltaUp ? C.success : C.error }}>{delta}</Text> : null}
       </View>
       {typeof animateTo === 'number' ? (
         <AnimatedNumber
@@ -215,22 +292,107 @@ export function Stat({
       ) : (
         <Text style={valueStyle}>{value}</Text>
       )}
-      <Text numberOfLines={2} style={{ fontSize: 12, color: C.inkSoft, marginTop: 2 }}>{label}</Text>
+      <Text numberOfLines={2} style={{ ...type.caption, color: C.inkMuted, marginTop: 2 }}>{label}</Text>
+    </View>
+  );
+}
+
+/* ── StatStrip (dense KPI row) ────────────────────────────────────── */
+export function StatStrip({ items }: {
+  items: { value: string; label: string; tone?: string; animateTo?: number }[];
+}) {
+  return (
+    <View style={s.statStrip}>
+      {items.map((it, i) => (
+        <View key={it.label} style={{ flex: 1, flexDirection: 'row' }}>
+          {i > 0 ? <View style={s.statStripRule} /> : null}
+          <View style={{ flex: 1, paddingHorizontal: space.sm, gap: 3 }}>
+            {typeof it.animateTo === 'number' ? (
+              <AnimatedNumber
+                value={it.animateTo}
+                render={(v) => <Text style={{ ...type.h2, color: it.tone ?? C.ink }}>{v}</Text>}
+              />
+            ) : (
+              <Text numberOfLines={1} style={{ ...type.h2, color: it.tone ?? C.ink }}>{it.value}</Text>
+            )}
+            <Text numberOfLines={2} style={[{ ...type.micro, color: C.inkMuted }, microLabel()]}>{it.label}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/* ── KeyValue (spec row) ──────────────────────────────────────────── */
+export function KeyValue({ label, value, strong }: { label: string; value: ReactNode; strong?: boolean }) {
+  return (
+    <View style={s.kv}>
+      <Text style={{ ...type.body, color: C.inkMuted, flexShrink: 1 }}>{label}</Text>
+      {typeof value === 'string' || typeof value === 'number' ? (
+        <Text style={{ ...(strong ? type.numeric : type.title), color: C.ink, flexShrink: 1, textAlign: 'right' }}>
+          {value}
+        </Text>
+      ) : (
+        value
+      )}
+    </View>
+  );
+}
+
+/* ── Accordion ────────────────────────────────────────────────────── */
+export function Accordion({ title, children, defaultOpen = false, count }: {
+  title: string; children: ReactNode; defaultOpen?: boolean; count?: number;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <View>
+      <Pressable onPress={() => setOpen((o) => !o)} style={s.accordionHead}>
+        <Text style={[{ ...type.micro, color: C.ink }, microLabel()]}>
+          {title}{count ? ` (${count})` : ''}
+        </Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color={C.inkSoft} />
+      </Pressable>
+      {open ? <View style={{ paddingBottom: space.lg, gap: space.sm }}>{children}</View> : null}
+      <Divider />
     </View>
   );
 }
 
 /* ── Input ────────────────────────────────────────────────────────── */
-export function Input({ label, error, style, ...rest }: TextInputProps & { label?: string; error?: string }) {
+export function Input({
+  label, error, style, icon, trailing, ...rest
+}: TextInputProps & {
+  label?: string;
+  error?: string;
+  /** Leading glyph inside the field — the prototype's phone/lock/mail marks. */
+  icon?: keyof typeof Ionicons.glyphMap;
+  /** Trailing adornment (e.g. a password eye toggle). */
+  trailing?: ReactNode;
+}) {
+  // With an icon or trailing node the field becomes a flex row wrapping the bare
+  // TextInput; without either it stays a plain padded input.
+  const framed = icon || trailing;
   return (
     <View style={{ gap: 6 }}>
       {label ? <Text style={txt.label}>{label}</Text> : null}
-      <TextInput
-        placeholderTextColor={C.inkSoft}
-        style={[s.input, error ? { borderColor: C.error } : null, style]}
-        {...rest}
-      />
-      {error ? <Text style={{ color: C.error, fontSize: 12 }}>{error}</Text> : null}
+      {framed ? (
+        <View style={[s.inputRow, error ? { borderColor: C.error } : null]}>
+          {icon ? <Ionicons name={icon} size={19} color={C.inkMuted} /> : null}
+          <TextInput
+            placeholderTextColor={C.inkMuted}
+            style={[{ flex: 1, ...type.body, fontSize: 15, color: C.ink, paddingVertical: 0 }, style]}
+            {...rest}
+          />
+          {trailing}
+        </View>
+      ) : (
+        <TextInput
+          placeholderTextColor={C.inkMuted}
+          style={[s.input, error ? { borderColor: C.error } : null, style]}
+          {...rest}
+        />
+      )}
+      {error ? <Text style={{ color: C.error, ...type.caption }}>{error}</Text> : null}
     </View>
   );
 }
@@ -248,10 +410,15 @@ export function SearchBar({ value, onChangeText, placeholder, onSubmit }: {
         onChangeText={onChangeText}
         onSubmitEditing={onSubmit}
         placeholder={placeholder ?? t('common:search')}
-        placeholderTextColor={C.inkSoft}
-        style={{ flex: 1, fontSize: 14, color: C.ink, paddingVertical: 0 }}
+        placeholderTextColor={C.inkMuted}
+        style={{ flex: 1, ...type.body, color: C.ink, paddingVertical: 0 }}
         returnKeyType="search"
       />
+      {value ? (
+        <Pressable onPress={() => onChangeText?.('')} hitSlop={8}>
+          <Ionicons name="close-circle" size={17} color={C.inkSoft} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -261,14 +428,14 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   return (
     <View style={[s.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
-      <Text style={{ color: C.dark, fontWeight: '800', fontSize: size * 0.36 }}>{initials}</Text>
+      <Text style={{ color: C.dark, fontFamily: type.h3.fontFamily, fontSize: size * 0.36 }}>{initials}</Text>
     </View>
   );
 }
 
 /* ── ProgressBar ──────────────────────────────────────────────────── */
 export function ProgressBar({ pct, color = C.green, height = 6 }: { pct: number; color?: string; height?: number }) {
-  return <AnimatedProgress pct={pct} color={color} trackColor={C.border} height={height} />;
+  return <AnimatedProgress pct={pct} color={color} trackColor={C.hairline} height={height} />;
 }
 
 /* ── RatingStars ──────────────────────────────────────────────────── */
@@ -279,7 +446,7 @@ export function RatingStars({ n, size = 13, onChange }: { n: number; size?: numb
       <View style={{ flexDirection: 'row', gap: 4 }}>
         {[0, 1, 2, 3, 4].map((i) => (
           <Pressable key={i} onPress={() => onChange(i + 1)} hitSlop={6}>
-            <Ionicons name="star" size={size} color={i < n ? C.mangoDeep : C.border} />
+            <Ionicons name="star" size={size} color={i < n ? C.mangoDeep : C.hairline} />
           </Pressable>
         ))}
       </View>
@@ -288,21 +455,42 @@ export function RatingStars({ n, size = 13, onChange }: { n: number; size?: numb
   return (
     <View style={{ flexDirection: 'row' }}>
       {[0, 1, 2, 3, 4].map((i) => (
-        <Ionicons key={i} name="star" size={size} color={i < n ? C.mangoDeep : C.border} />
+        <Ionicons key={i} name="star" size={size} color={i < n ? C.mangoDeep : C.hairline} />
       ))}
     </View>
   );
 }
 
-/* ── SegmentedControl ─────────────────────────────────────────────── */
+/* ── RatingPill (compact "4.6 ★ (23)") ────────────────────────────── */
+export function RatingPill({ avg, count }: { avg: number; count: number }) {
+  return (
+    <View style={s.ratingPill}>
+      <Text style={{ ...type.micro, color: C.ink, fontSize: 10.5 }}>{avg.toFixed(1)}</Text>
+      <Ionicons name="star" size={9} color={C.mangoDeep} />
+      <Text style={{ ...type.caption, fontSize: 10, color: C.inkMuted }}>| {count}</Text>
+    </View>
+  );
+}
+
+/* ── SegmentedControl (underline tabs) ────────────────────────────── */
 export function Segmented({ options, value, onChange }: { options: { id: string; label: string }[]; value: string; onChange: (id: string) => void }) {
   return (
     <View style={s.segment}>
       {options.map((o) => {
         const active = o.id === value;
         return (
-          <Pressable key={o.id} onPress={() => onChange(o.id)} style={[s.segItem, active && { backgroundColor: C.evergreen }]}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{ color: active ? C.white : C.inkSoft, fontWeight: '700', fontSize: 13, textAlign: 'center' }}>{o.label}</Text>
+          <Pressable key={o.id} onPress={() => onChange(o.id)} style={[s.segItem, active && s.segItemActive]}>
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+              style={[
+                { ...type.micro, color: active ? C.green : C.inkMuted, textAlign: 'center' },
+                microLabel(),
+              ]}
+            >
+              {o.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -315,26 +503,42 @@ export function SectionHeader({ title, action, onAction }: { title: string; acti
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
       <Text style={txt.h3}>{title}</Text>
-      {action ? <Pressable onPress={onAction}><Text style={{ color: C.green, fontWeight: '700', fontSize: 13 }}>{action}</Text></Pressable> : null}
+      {action ? (
+        <Pressable onPress={onAction} hitSlop={8}>
+          <Text style={[{ ...type.micro, color: C.green }, microLabel()]}>{action}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
 /* ── ListRow ──────────────────────────────────────────────────────── */
-export function ListRow({ children, onPress, last }: { children: ReactNode; onPress?: () => void; last?: boolean }) {
-  const body = <View style={[s.row, !last && { borderBottomWidth: 1, borderBottomColor: C.border }]}>{children}</View>;
-  if (onPress) return <Pressable onPress={onPress} style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}>{body}</Pressable>;
+export function ListRow({ children, onPress, last, chevron }: {
+  children: ReactNode; onPress?: () => void; last?: boolean;
+  /** Adds the trailing disclosure chevron (direction-aware). */
+  chevron?: boolean;
+}) {
+  const body = (
+    <View style={[s.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.hairline }]}>
+      {children}
+      {chevron ? <Ionicons name={forwardChevron()} size={17} color={C.inkSoft} /> : null}
+    </View>
+  );
+  if (onPress) return <Pressable onPress={onPress} style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}>{body}</Pressable>;
   return body;
 }
 
 /* ── EmptyState ───────────────────────────────────────────────────── */
-export function EmptyState({ icon = 'cube-outline', title, body }: { icon?: keyof typeof Ionicons.glyphMap; title: string; body?: string }) {
+export function EmptyState({ icon = 'cube-outline', title, body, action, onAction }: {
+  icon?: keyof typeof Ionicons.glyphMap; title: string; body?: string; action?: string; onAction?: () => void;
+}) {
   return (
     <Reveal>
-      <View style={[s.card, { alignItems: 'center', paddingVertical: 40 }]}>
+      <View style={{ alignItems: 'center', paddingVertical: 48, gap: 4 }}>
         <View style={s.emptyIcon}><Ionicons name={icon} size={26} color={C.dark} /></View>
         <Text style={[txt.h3, { marginTop: 12 }]}>{title}</Text>
-        {body ? <Text style={[txt.muted, { marginTop: 4, textAlign: 'center', maxWidth: 280 }]}>{body}</Text> : null}
+        {body ? <Text style={[txt.muted, { marginTop: 2, textAlign: 'center', maxWidth: 280 }]}>{body}</Text> : null}
+        {action ? <View style={{ marginTop: 14 }}><Button title={action} variant="outline" size="sm" onPress={onAction} /></View> : null}
       </View>
     </Reveal>
   );
@@ -356,19 +560,44 @@ export function Row({ children, gap = 8, style }: { children: ReactNode; gap?: n
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
-  card: { backgroundColor: C.white, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, padding: space.lg, ...cardShadow },
+  screen: { flex: 1, backgroundColor: C.page },
+  // The prototype's cards are white with a soft 16px corner, a hairline `--bd`
+  // outline and a faint drop shadow that lifts them off the green-tinted page.
+  // `raised` deepens that shadow; `inset` drops it for nested wells.
+  card: { backgroundColor: C.white, borderRadius: radius.card, padding: space.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, ...elevation.card },
+  cardRaised: { ...elevation.card, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 } },
+  cardInset: { backgroundColor: C.page, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, shadowOpacity: 0, elevation: 0 },
+  footer: {
+    backgroundColor: C.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.hairline,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    ...elevation.low,
+  },
   stat: { flex: 1, minWidth: 150 },
-  statIcon: { width: 36, height: 36, borderRadius: radius.md, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
-  btn: { borderRadius: radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
-  badge: { borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
-  chip: { borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-  input: { height: 46, borderRadius: radius.md, borderWidth: 1, borderColor: C.border, backgroundColor: C.white, paddingHorizontal: 14, fontSize: 14, color: C.ink },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.white, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, height: 44 },
+  statIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
+  statStrip: { flexDirection: 'row', backgroundColor: C.white, paddingVertical: space.lg, paddingHorizontal: space.sm },
+  statStripRule: { width: StyleSheet.hairlineWidth, backgroundColor: C.hairline, marginVertical: 2 },
+  kv: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.lg, paddingVertical: 7 },
+  accordionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: space.lg },
+  // Pills: the radius is set per-size on the button itself (half-height); the
+  // stylesheet only carries the shared box. Generous padding keeps labels off
+  // the rounded ends.
+  btn: { borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
+  badge: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, alignSelf: 'flex-start' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: radius.chip, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+  input: { height: 50, borderRadius: radius.input, borderWidth: 1, borderColor: C.border, backgroundColor: C.white, paddingHorizontal: 14, ...type.body, fontSize: 15, color: C.ink },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 50, borderRadius: radius.input, borderWidth: 1, borderColor: C.border, backgroundColor: C.white, paddingHorizontal: 14 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: C.white, borderRadius: radius.input, borderWidth: 1, borderColor: C.border, paddingHorizontal: 14, height: 46 },
   avatar: { backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
-  track: { width: '100%', backgroundColor: C.border, overflow: 'hidden' },
-  segment: { flexDirection: 'row', backgroundColor: C.bg, borderRadius: radius.md, padding: 3, gap: 3 },
-  segItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: radius.sm },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, gap: 10 },
-  emptyIcon: { width: 56, height: 56, borderRadius: 18, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
+  ratingPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: C.white, borderRadius: 7, paddingHorizontal: 6, paddingVertical: 3 },
+  segment: { flexDirection: 'row', backgroundColor: C.white, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.hairline },
+  segItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  segItemActive: { borderBottomColor: C.green },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingVertical: 12, gap: 10 },
+  emptyIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
 });
+
+/** Shared text styles for screens that need to compose rather than use `<Txt>`. */
+export const textStyles: Record<TxtVariant, TextStyle> = txt;

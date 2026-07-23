@@ -95,7 +95,7 @@ function SellerSubmitPanel({ buyerBid }: { buyerBid: ApiBuyerBidDetail }) {
       ) : (
         <div className="mt-4 space-y-3">
           <Input label={t('console.seller.yourPricePerUnit', { unit: buyerBid.qtyUnit })} type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label={t('console.seller.qtySupply', { unit: buyerBid.qtyUnit })} type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
             <Input label={t('console.seller.etaDays')} type="number" value={eta} onChange={(e) => setEta(e.target.value)} />
           </div>
@@ -237,7 +237,7 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
       </section>
 
       {/* ===== MAIN GRID ===== */}
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
         {/* LEFT: photos + requirement */}
         <div>
           <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border border-surface-border" style={{ background: 'linear-gradient(140deg,#0e4632,#146B3A)' }}>
@@ -259,7 +259,7 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
 
           <Card className="mt-5">
             <h3 className="font-display text-lg font-bold text-ink">{t('console.buyerBidRoom.requirementDetails')}</h3>
-            <dl className="mt-3 grid gap-x-8 sm:grid-cols-2">
+            <dl className="mt-3 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
               {specs.map(([k, v]) => (
                 <div key={k} className="flex justify-between border-b border-surface-border py-2.5 text-sm">
                   <dt className="text-ink-soft">{k}</dt><dd className="text-end font-semibold text-ink">{v}</dd>

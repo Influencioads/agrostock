@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
 import type { ReviewKind, ReviewRole } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage } from '../../lib/format';
-import { Button, Input, RatingStars, Row, Txt } from '../../ui';
+import { Button, Input, RatingStars, Row, Sheet, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
@@ -73,37 +72,38 @@ export function ReviewSheet({
   const heading = title ?? t(existingReview ? 'reviews.editRole' : 'reviews.rateRole', { role: roleLabel });
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={onClose} />
-      <View style={{ backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '88%' }}>
-        <ScrollView contentContainerStyle={{ padding: space.lg, gap: 14 }} keyboardShouldPersistTaps="handled">
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Txt variant="h3" style={{ flexShrink: 1 }}>{heading}</Txt>
-            <Pressable onPress={onClose} hitSlop={10}><Ionicons name="close" size={22} color={C.inkSoft} /></Pressable>
-          </Row>
-          {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
-          <View style={{ gap: 6 }}>
-            <Txt variant="label">{t('reviews.yourRating')}</Txt>
-            <RatingStars n={stars} size={34} onChange={setStars} />
-          </View>
-          <Input
-            label={t('reviews.comment')}
-            value={text}
-            onChangeText={setText}
-            placeholder={t('reviews.commentPlaceholder')}
-            multiline
-            numberOfLines={4}
-            style={{ height: 110, textAlignVertical: 'top', paddingTop: 12 }}
-          />
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title={heading}
+      footer={
+        <View style={{ flex: 1 }}>
           <Button
             title={save.isPending ? t('reviews.submitting') : t(existingReview ? 'reviews.update' : 'reviews.submit')}
             disabled={stars < 1 || save.isPending}
             onPress={() => save.mutate()}
             full
           />
-        </ScrollView>
+        </View>
+      }
+    >
+      <View style={{ padding: space.lg, gap: 14 }}>
+        {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
+        <View style={{ gap: 6 }}>
+          <Txt variant="label">{t('reviews.yourRating')}</Txt>
+          <RatingStars n={stars} size={34} onChange={setStars} />
+        </View>
+        <Input
+          label={t('reviews.comment')}
+          value={text}
+          onChangeText={setText}
+          placeholder={t('reviews.commentPlaceholder')}
+          multiline
+          numberOfLines={4}
+          style={{ height: 110, textAlignVertical: 'top', paddingTop: 12 }}
+        />
       </View>
-    </Modal>
+    </Sheet>
   );
 }
 

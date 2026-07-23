@@ -523,8 +523,9 @@
     "product": {
       "auction": "مزاد",
       "safeDeal": "صفقة آمنة",
-      "social": "{{watching}}+ مشاهدة · {{ordered}} طلب",
-      "verified": "تم التحقق"
+      "verified": "تم التحقق",
+      "moq": "الحد الأدنى {{value}}",
+      "available": "{{value}} متاح"
     },
     "profile": {
       "about": "عن",
@@ -683,7 +684,9 @@
     "notifications": "إشعارات",
     "restartNotice": "سيتم إعادة تشغيل التطبيق لتطبيق اتجاه النص الجديد.",
     "rolesAccess": "الأدوار والصلاحيات",
-    "support": "الدعم المباشر"
+    "support": "الدعم المباشر",
+    "marketplace": "السوق",
+    "account": "الحساب"
   },
   "loaderX": {
     "attendance": {
@@ -1091,7 +1094,12 @@
         "offices": "المكاتب",
         "safeDeal": "صفقة آمنة",
         "transport": "ينقل"
-      }
+      },
+      "categories": "تسوق حسب الفئة",
+      "promoted": "مميّز",
+      "services": "الخدمات",
+      "requirements": "مشترون يبحثون عن مورّد",
+      "viewAll": "عرض الكل"
     },
     "kyc": {
       "doc": {
@@ -1174,7 +1182,12 @@
       "transportBody": "احجز خدمة النقل من لوحة تحكم المشتري الخاصة بك.",
       "transportTitle": "ينقل",
       "verified": "تم التحقق",
-      "watching": "{{count}}+ يشاهد الآن"
+      "watching": "{{count}}+ يشاهد الآن",
+      "addToRfq": "إضافة للطلب",
+      "supplier": "المورّد",
+      "tradeTerms": "شروط التعامل",
+      "origin": "المنشأ",
+      "delivery": "التسليم"
     },
     "ph": {
       "cargoBasmati": "أرز بسمتي",
@@ -1250,7 +1263,50 @@
       "emptyTitle": "بحث AgroTraders",
       "noMatchBody": "لم يتم العثور على شيء لـ \"{{q}}\".",
       "noMatchTitle": "لا توجد نتائج",
-      "placeholder": "ابحث عن الحبوب والبقوليات والزيوت..."
+      "placeholder": "ابحث عن الحبوب والبقوليات والزيوت...",
+      "recent": "عمليات البحث الأخيرة"
+    },
+    "filter": {
+      "title": "عوامل التصفية",
+      "clear": "مسح",
+      "clearAll": "مسح الكل",
+      "apply": "تطبيق",
+      "applyN": "تطبيق ({{count}})",
+      "sortBy": "ترتيب حسب",
+      "searchOptions": "بحث",
+      "categoryHint": "اختر فئة لإظهار عوامل التصفية الخاصة بمواصفاتها.",
+      "groups": {
+        "category": "الفئة",
+        "dealType": "نوع الصفقة",
+        "price": "السعر",
+        "country": "الدولة",
+        "city": "المدينة",
+        "grade": "الدرجة",
+        "market": "السوق"
+      }
+    },
+    "plp": {
+      "results": "{{count}} نتيجة",
+      "filters": "تصفية",
+      "sort": "ترتيب",
+      "clearFilters": "مسح عوامل التصفية",
+      "noResults": "لا توجد نتائج"
+    },
+    "rfq": {
+      "title": "سلة طلبات التسعير",
+      "emptyTitle": "سلة طلبات التسعير فارغة",
+      "emptyBody": "أضف عروضًا من أي مورّد، ثم أرسل طلب تسعير واحدًا لكل مورّد.",
+      "addedTitle": "تمت الإضافة إلى سلة التسعير",
+      "addedBody": "{{name}} في سلتك. أرسل الطلب بعد إضافة كل ما تحتاجه.",
+      "requestQuotes": "طلب عروض أسعار",
+      "sentLabel": "تم إرسال الطلب",
+      "sentTitle": "تم إرسال الطلب",
+      "sentBody": "سيرد المورّد بعرض سعر. تابعه ضمن العروض.",
+      "failTitle": "تعذّر إرسال الطلب",
+      "failBody": "يرجى المحاولة مرة أخرى.",
+      "lineCount": "{{count}} عنصر",
+      "noteFromBasket": "أُرسل من سلة التسعير إلى {{supplier}}.",
+      "footNote": "يتلقى كل مورّد طلبًا خاصًا به. تبقى العروض خاصة بك."
     }
   },
   "reviews": {

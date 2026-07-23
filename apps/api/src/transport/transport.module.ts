@@ -27,6 +27,7 @@ import { AuditService } from '../common/audit.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { WalletService } from '../wallet/wallet.service';
 import { TextTranslationService } from '../translation/text-translation.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Locale } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
 
@@ -90,6 +91,7 @@ export class TransportService {
     private prisma: PrismaService,
     private wallets: WalletService,
     private text: TextTranslationService,
+    private notifications: NotificationsService,
   ) {}
 
   // requests
@@ -121,6 +123,15 @@ export class TransportService {
     if (!req) throw new NotFoundException('Request not found');
     const q = await this.prisma.transportQuote.create({ data: { requestId, transporterId, priceCents, etaDays } });
     if (req.status === 'open') await this.prisma.transportRequest.update({ where: { id: requestId }, data: { status: 'quoted' } });
+    // Tell the request owner a new quote landed (transactional → also emails).
+    await this.notifications.create({
+      userId: req.createdById,
+      system: 'transport',
+      type: 'transport.quote_new',
+      params: { amount: `$${(priceCents / 100).toFixed(2)}` },
+      data: { requestId, quoteId: q.id },
+      linkUrl: '/console/transport',
+    });
     return q;
   }
   myQuotes(transporterId: string) {
@@ -143,7 +154,7 @@ export class TransportService {
     if (quote.request.createdById !== userId) throw new ForbiddenException('Not your request');
     await this.prisma.transportQuote.update({ where: { id: quoteId }, data: { status: 'accepted' } });
     await this.prisma.transportRequest.update({ where: { id: quote.requestId }, data: { status: 'assigned' } });
-    return this.prisma.trip.create({
+    const trip = await this.prisma.trip.create({
       data: {
         reference: ref('TR'),
         fromCity: quote.request.fromCity,
@@ -155,6 +166,16 @@ export class TransportService {
         status: 'pending',
       },
     });
+    // The transporter's quote was accepted — this is their "job assigned" moment.
+    await this.notifications.create({
+      userId: quote.transporterId,
+      system: 'transport',
+      type: 'transport.assigned',
+      params: { reference: trip.reference, fromCity: trip.fromCity, toCity: trip.toCity },
+      data: { tripId: trip.id, requestId: quote.requestId },
+      linkUrl: '/console/transport',
+    });
+    return trip;
   }
 
   // trips
@@ -168,8 +189,9 @@ export class TransportService {
   async setTripStatus(id: string, transporterId: string, status: TripStatus) {
     const trip = await this.prisma.trip.findUnique({ where: { id } });
     if (!trip || trip.transporterId !== transporterId) throw new ForbiddenException('Not your trip');
-    return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.trip.update({ where: { id }, data: { status } });
+    const { updated, released } = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.trip.update({ where: { id }, data: { status } });
+      let rel: { userId: string; cents: number } | null = null;
       // Delivery completes a hired trip — release the held budget to the transporter.
       if (status === 'delivered' && trip.requestId) {
         const hire = await tx.hireRequest.findFirst({
@@ -178,10 +200,42 @@ export class TransportService {
         if (hire?.budgetCents) {
           await this.wallets.credit(hire.targetUserId, hire.budgetCents, 'escrow_release', 'Delivery completed — payout', tx);
           await tx.hireRequest.update({ where: { id: hire.id }, data: { escrowState: 'released' } });
+          rel = { userId: hire.targetUserId, cents: hire.budgetCents };
         }
       }
-      return updated;
+      return { updated: row, released: rel };
     });
+    if (status === 'delivered') {
+      // Notify the request owner the trip was delivered.
+      if (trip.requestId) {
+        const req = await this.prisma.transportRequest.findUnique({
+          where: { id: trip.requestId },
+          select: { createdById: true },
+        });
+        if (req) {
+          await this.notifications.create({
+            userId: req.createdById,
+            system: 'transport',
+            type: 'transport.delivered',
+            params: { reference: trip.reference },
+            data: { tripId: trip.id },
+            linkUrl: '/console/transport',
+          });
+        }
+      }
+      // The escrow credit ran inside the tx (silent) — notify the transporter now.
+      if (released) {
+        await this.notifications.create({
+          userId: released.userId,
+          system: 'wallet',
+          type: 'wallet.escrow_release',
+          params: { amount: `$${(released.cents / 100).toFixed(2)}` },
+          data: { tripId: trip.id },
+          linkUrl: '/console/wallet',
+        });
+      }
+    }
+    return updated;
   }
 
   // vehicles

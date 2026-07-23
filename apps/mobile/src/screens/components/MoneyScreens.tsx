@@ -1,14 +1,38 @@
 import { useState } from 'react';
-import { Linking, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiEarnings, ApiWallet } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { usd, errMessage } from '../../lib/format';
+import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { Button, Card, EmptyState, Input, Row, Screen, Txt } from '../../ui';
 import { BarChart } from '../../ui/charts';
-import { C } from '../../theme/tokens';
+import { C, radius, space, type } from '../../theme/tokens';
+import { microLabel } from '../../theme/casing';
 import { useI18n } from '../../i18n';
+
+/** Full-bleed gradient balance card — the prototype's evergreen hero panel. */
+function BalanceCard({ label, amount, children }: { label: string; amount: string; children?: React.ReactNode }) {
+  return (
+    <LinearGradient colors={['#0B3D2E', '#146B3A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={m.balance}>
+      <Text style={[m.balanceLabel, microLabel()]}>{label}</Text>
+      <Text style={m.balanceAmount}>{amount}</Text>
+      {children}
+    </LinearGradient>
+  );
+}
+
+/** Icon medallion for a transaction, tinted by credit vs debit. */
+function TxnIcon({ credit }: { credit: boolean }) {
+  return (
+    <View style={[m.txnIcon, { backgroundColor: credit ? C.surface : C.page }]}>
+      <Ionicons name={credit ? 'arrow-down' : 'arrow-up'} size={17} color={credit ? C.green : C.inkSoft} />
+    </View>
+  );
+}
 
 /**
  * Download the wallet statement as a PDF or CSV. The API mints a short-lived
@@ -35,20 +59,27 @@ function StatementButtons() {
 
 function TxnList({ txns, emptyBody }: { txns: ApiWallet['txns']; emptyBody: string }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   if (txns.length === 0) return <EmptyState icon="wallet-outline" title={t('compX.txn.empty')} body={emptyBody} />;
   return (
     <>
-      {txns.map((tx) => (
-        <Card key={tx.id}>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <View style={{ flex: 1 }}>
-              <Txt variant="title">{tx.note ?? tx.type}</Txt>
-              <Txt variant="muted">{new Date(tx.createdAt).toLocaleDateString()}</Txt>
-            </View>
-            <Txt variant="title" color={tx.amountCents < 0 ? C.ink : C.green}>{usd(tx.amountCents)}</Txt>
-          </Row>
-        </Card>
-      ))}
+      {txns.map((tx) => {
+        const credit = tx.amountCents >= 0;
+        return (
+          <Card key={tx.id}>
+            <Row gap={12} style={{ alignItems: 'center' }}>
+              <TxnIcon credit={credit} />
+              <View style={{ flex: 1 }}>
+                <Txt variant="title">{tx.note ?? tx.type}</Txt>
+                <Txt variant="muted">{new Date(tx.createdAt).toLocaleDateString()}</Txt>
+              </View>
+              <Text style={{ ...type.numeric, fontSize: 15, color: credit ? C.green : C.ink }}>
+                {credit ? '+ ' : '− '}{fmtCents(Math.abs(tx.amountCents))}
+              </Text>
+            </Row>
+          </Card>
+        );
+      })}
     </>
   );
 }
@@ -56,10 +87,14 @@ function TxnList({ txns, emptyBody }: { txns: ApiWallet['txns']; emptyBody: stri
 /**
  * Add-money wallet — balance, top-up and full transaction history. Every role
  * uses this to fund orders and to hire transporters, loaders or workers.
+ *
+ * Every route that hosts this screen shows a navigator header titled "Wallet",
+ * so the screen deliberately renders no heading of its own — only the subtitle.
  */
-export function WalletScreen({ title }: { title?: string } = {}) {
+export function WalletScreen() {
   const qc = useQueryClient();
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const [amount, setAmount] = useState('');
   const [err, setErr] = useState('');
@@ -73,12 +108,8 @@ export function WalletScreen({ title }: { title?: string } = {}) {
 
   return (
     <Screen>
-      <Txt variant="h2">{title ?? t('compX.wallet.title')}</Txt>
       <Txt variant="muted">{t('compX.wallet.subtitle')}</Txt>
-      <Card style={{ backgroundColor: C.evergreen }}>
-        <Txt variant="muted" color={C.mint}>{t('compX.wallet.availableBalance')}</Txt>
-        <Txt color={C.white} style={{ fontSize: 30, fontWeight: '800', marginTop: 4 }}>{usd(wallet?.balanceCents)}</Txt>
-      </Card>
+      <BalanceCard label={t('compX.wallet.availableBalance')} amount={fmtCents(wallet?.balanceCents)} />
 
       <Card style={{ gap: 10 }}>
         <Txt variant="title">{t('compX.wallet.addFunds')}</Txt>
@@ -103,10 +134,15 @@ export function WalletScreen({ title }: { title?: string } = {}) {
 /**
  * Read-only earnings — money earned from completed work (payouts), with a
  * this-week / this-month breakdown and a withdraw action. Never shows top-ups.
+ *
+ * `showTitle` exists because hosting differs: the worker Earnings tab has no
+ * navigator header (needs the internal heading), while Section-routed uses
+ * already show one (a second heading would double up).
  */
-export function EarningsScreen({ title, edges }: { title?: string; edges?: ('top' | 'bottom')[] } = {}) {
+export function EarningsScreen({ title, edges, showTitle = true }: { title?: string; edges?: ('top' | 'bottom')[]; showTitle?: boolean } = {}) {
   const qc = useQueryClient();
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const [amount, setAmount] = useState('');
   const [err, setErr] = useState('');
@@ -125,21 +161,19 @@ export function EarningsScreen({ title, edges }: { title?: string; edges?: ('top
 
   return (
     <Screen edges={edges}>
-      <Txt variant="h2">{title ?? t('compX.earnings.title')}</Txt>
-      <Card style={{ backgroundColor: C.evergreen }}>
-        <Txt variant="muted" color={C.mint}>{t('compX.earnings.totalEarned')}</Txt>
-        <Txt color={C.white} style={{ fontSize: 30, fontWeight: '800', marginTop: 4 }}>{usd(earnings?.earnedCents)}</Txt>
-        <Row gap={10} style={{ marginTop: 12 }}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 10 }}>
-            <Txt variant="muted" color={C.mint}>{t('compX.earnings.thisWeek')}</Txt>
-            <Txt color={C.white} variant="title">{usd(earnings?.weekCents)}</Txt>
+      {showTitle ? <Txt variant="h2">{title ?? t('compX.earnings.title')}</Txt> : null}
+      <BalanceCard label={t('compX.earnings.totalEarned')} amount={fmtCents(earnings?.earnedCents)}>
+        <Row gap={10} style={{ marginTop: 14 }}>
+          <View style={m.subCell}>
+            <Text style={[m.balanceLabel, microLabel()]}>{t('compX.earnings.thisWeek')}</Text>
+            <Text style={m.subValue}>{fmtCents(earnings?.weekCents)}</Text>
           </View>
-          <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 10 }}>
-            <Txt variant="muted" color={C.mint}>{t('compX.earnings.thisMonth')}</Txt>
-            <Txt color={C.white} variant="title">{usd(earnings?.monthCents)}</Txt>
+          <View style={m.subCell}>
+            <Text style={[m.balanceLabel, microLabel()]}>{t('compX.earnings.thisMonth')}</Text>
+            <Text style={m.subValue}>{fmtCents(earnings?.monthCents)}</Text>
           </View>
         </Row>
-      </Card>
+      </BalanceCard>
 
       <Card style={{ gap: 10 }}>
         <Txt variant="title">{t('compX.earnings.withdraw')}</Txt>
@@ -161,3 +195,13 @@ export function EarningsScreen({ title, edges }: { title?: string; edges?: ('top
     </Screen>
   );
 }
+
+const m = StyleSheet.create({
+  balance: { borderRadius: radius.card, padding: space.xl, shadowColor: '#0B3D2E', shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  balanceLabel: { ...type.micro, fontSize: 11, color: '#9ED8B0' },
+  // lineHeight must scale with the enlarged size — type.numeric's 19 would clip.
+  balanceAmount: { ...type.numeric, fontSize: 34, lineHeight: 42, color: C.white, marginTop: 6, letterSpacing: -0.5 },
+  subCell: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: radius.input, padding: 12 },
+  subValue: { ...type.numeric, fontSize: 16, color: C.white, marginTop: 3 },
+  txnIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+});

@@ -2,7 +2,17 @@ import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto, RegisterDto, ResendVerificationDto, VerifyEmailDto } from './dto';
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshDto,
+  RegisterDto,
+  RequestOtpDto,
+  ResendVerificationDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+  VerifyOtpDto,
+} from './dto';
 import { JwtAuthGuard } from './guards';
 
 @ApiTags('auth')
@@ -38,6 +48,32 @@ export class AuthController {
   @Post('resend-verification')
   resendVerification(@Body() dto: ResendVerificationDto) {
     return this.auth.resendVerification(dto.email);
+  }
+
+  // Sends mail → tight limit to prevent using us as a spam relay.
+  @Throttle({ default: { ttl: 60_000, limit: 3 } })
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.auth.forgotPassword(dto.email);
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.auth.resetPassword(dto.token, dto.password);
+  }
+
+  // Sends mail → tight limit.
+  @Throttle({ default: { ttl: 60_000, limit: 3 } })
+  @Post('request-otp')
+  requestOtp(@Body() dto: RequestOtpDto) {
+    return this.auth.requestLoginOtp(dto.email);
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Post('verify-otp')
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.auth.verifyLoginOtp(dto.email, dto.code);
   }
 
   @Throttle({ default: { ttl: 60_000, limit: 30 } })

@@ -4,10 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiBuyerBid } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { usd } from '../../lib/format';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Loading, Row, Screen, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -34,6 +34,7 @@ function countdown(end: string | null, t: TFn) {
 /** Live seller auctions to join, plus the buyer's own reverse auctions. */
 export function BuyerAuctions() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const nav = useNavigation<Nav>();
   const { user } = useAuth();
 
@@ -59,7 +60,7 @@ export function BuyerAuctions() {
 
       <Txt variant="title" style={{ marginTop: 8 }}>{t('buyerX.auctions.liveHeading')}</Txt>
       {isLoading ? (
-        <Loading />
+        <SkeletonRows />
       ) : auctions.length === 0 ? (
         <EmptyState icon="hammer-outline" title={t('buyerX.auctions.emptyLiveTitle')} body={t('buyerX.auctions.emptyLiveBody')} />
       ) : (
@@ -75,7 +76,7 @@ export function BuyerAuctions() {
                 </View>
                 <Badge label={countdown(a.auctionEndsAt, t)} tone={ended ? 'slate' : 'mango'} />
               </Row>
-              {!!mine && <Txt variant="small" style={{ fontWeight: '600' }}>{t('buyerX.auctions.yourBid', { price: usd(mine.amountCents) })}</Txt>}
+              {!!mine && <Txt variant="small" style={{ fontWeight: '600' }}>{t('buyerX.auctions.yourBid', { price: fmtCents(mine.amountCents) })}</Txt>}
               <Button
                 title={ended ? t('buyerX.auctions.closed') : mine ? t('buyerX.auctions.raiseBid') : t('buyerX.auctions.placeBid')}
                 size="sm"
@@ -102,7 +103,7 @@ export function BuyerAuctions() {
                 </Txt>
               </View>
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <Txt variant="title">{r.bestPriceCents != null ? `${usd(r.bestPriceCents)}/${r.qtyUnit}` : '—'}</Txt>
+                <Txt variant="title">{r.bestPriceCents != null ? `${fmtCents(r.bestPriceCents)}/${r.qtyUnit}` : '—'}</Txt>
                 <Badge label={r.status} tone={r.status === 'awarded' ? 'green' : r.status === 'open' ? 'mango' : 'slate'} />
               </View>
             </Row>

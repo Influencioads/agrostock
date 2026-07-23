@@ -70,7 +70,7 @@ export function PublicProfilePage() {
             {p.profile?.market && <Badge tone="mango">{p.profile.market.flag} {p.profile.market.name}</Badge>}
           </div>
           {p.profile?.bio && <p className="mt-2 text-sm text-ink-soft">{p.profile.bio}</p>}
-          <div className="mt-3 grid gap-x-8 gap-y-1.5 text-sm text-ink-soft sm:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 gap-x-8 gap-y-1.5 text-sm text-ink-soft sm:grid-cols-2">
             {(p.profile?.location || p.country) && (
               <span className="flex items-center gap-1.5"><Icon name="mapPin" size={14} /> {p.profile?.location ?? p.country}</span>
             )}
@@ -139,7 +139,7 @@ export function PublicProfilePage() {
       {(p.products?.length ?? 0) > 0 && (
         <div className="mt-8">
           <h2 className="mb-4 font-display text-xl font-extrabold text-ink">{t('page.profile.listings')}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {p.products!.map((prod) => (
               <Link key={prod.id} to={`/product/${prod.slug}`} className="flex items-center gap-3 rounded-lg border border-surface-border bg-white p-3 shadow-card transition hover:-translate-y-0.5 hover:border-brand-leaf">
                 <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-brand-surface text-2xl">
@@ -160,7 +160,7 @@ export function PublicProfilePage() {
       {(p.routes?.length ?? 0) > 0 && (
         <div className="mt-8">
           <h2 className="mb-4 font-display text-xl font-extrabold text-ink">{t('page.profile.activeRoutes')}</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {p.routes!.map((r) => (
               <Card key={r.name} className="flex items-center gap-3 py-3">
                 <Icon name="truck" size={18} className="text-brand" />

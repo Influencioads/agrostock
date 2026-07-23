@@ -255,7 +255,7 @@ export function DispatchModal({ order, open, onClose }: { order: ApiOrderDetail;
             </select>
           </label>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label={t('console.order.transporterName')} value={form.transporterName} onChange={(e) => setForm({ ...form, transporterName: e.target.value })} />
             <Input label={t('console.order.phone')} value={form.transporterPhone} onChange={(e) => setForm({ ...form, transporterPhone: e.target.value })} />
             <Input label={t('console.order.vehicleNumber')} value={form.vehiclePlate} onChange={(e) => setForm({ ...form, vehiclePlate: e.target.value })} />
@@ -287,7 +287,7 @@ export function ShipmentFacts({ order }: { order: ApiOrderDetail }) {
   const shown = rows.filter(([, v]) => !!v);
   if (shown.length === 0) return <p className="text-sm text-ink-soft">{t('console.order.notDispatched')}</p>;
   return (
-    <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
       {shown.map(([k, v]) => (
         <div key={k} className="flex justify-between gap-3 border-b border-surface-border/60 py-1 text-sm">
           <dt className="text-ink-soft">{k}</dt>
