@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { AnimatePresence, Card, Icon, motion, usePageMotion } from '@agrotraders/ui';
 import { useI18n } from '../i18n';
 import { useAuth } from '../auth/AuthContext';
@@ -108,6 +109,17 @@ const NAV: Record<string, ConsoleNavItem[]> = {
 /** Roles with a dedicated dashboard title; others fall back to `console.title.fallback`. */
 const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'worker']);
 
+/**
+ * F05: map the section slug in a notification deep link (/console/<slug>) to the
+ * internal section id when they differ. Unmapped slugs that don't match a nav id
+ * fall back to the dashboard rather than a dead screen.
+ */
+const SECTION_ALIAS: Record<string, string> = {
+  products: 'inventory', // seller listings notification
+  settings: 'verify', // /console/settings/verification
+  loaders: 'transport', // buyer loader/transport bookings
+};
+
 function ComingSoon({ labelKey }: { labelKey: string }) {
   const { t } = useI18n();
   return (
@@ -132,7 +144,23 @@ export function ConsolePage() {
   // role gets Hires (direct hiring) + the extended Profile.
   const extras = [hiresNav, verifyNav, profileNav, accessNav];
   const nav = [...(NAV[role] ?? NAV.buyer), ...extras];
-  const [active, setActive] = useState('dashboard');
+
+  // F05: resolve the deep-linked section (/console/:section) to a real nav id
+  // for this role; unknown targets degrade to the dashboard.
+  const { section } = useParams();
+  const resolveSection = (slug: string | undefined): string => {
+    if (!slug) return 'dashboard';
+    const target = SECTION_ALIAS[slug] ?? slug;
+    return nav.some((n) => n.id === target) ? target : 'dashboard';
+  };
+  const [active, setActive] = useState(() => resolveSection(section));
+
+  // Follow later deep links (e.g. tapping another notification while already in
+  // the console) without clobbering in-app section changes.
+  useEffect(() => {
+    if (section) setActive(resolveSection(section));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section, role]);
 
   const render = () => {
     if (active === 'access') return <RolesAccessSection />;

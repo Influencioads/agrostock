@@ -74,6 +74,9 @@ export function Notifications() {
 
   const open = (n: AnyRec) => {
     if (!n.readAt) api.notifications.read(n.id).then(() => qc.invalidateQueries({ queryKey: ['notifications'] }));
+    // F05: honor an explicit product link before the coarse system fallback.
+    const product = typeof n.linkUrl === 'string' ? n.linkUrl.match(/^\/product\/([^/?#]+)/) : null;
+    if (product) { nav.navigate('ProductDetail', { slug: product[1] }); return; }
     if (n.system === 'community') nav.navigate('Community');
     else if (n.system === 'support') nav.navigate('Support');
   };

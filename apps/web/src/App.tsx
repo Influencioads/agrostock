@@ -75,7 +75,9 @@ export function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/otp-login" element={<OtpLoginPage />} />
 
-          {/* protected console */}
+          {/* protected console. The `:section/*` form lets notification deep
+              links (F05) such as /console/wallet or /console/settings/verification
+              open the right section instead of falling through to the catch-all. */}
           <Route
             path="/console"
             element={
@@ -84,7 +86,18 @@ export function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/console/:section/*"
+            element={
+              <ProtectedRoute>
+                <ConsolePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/dashboard" element={<Navigate to="/console" replace />} />
+          {/* F05: buyer order notifications link to /orders/:id — route it to the
+              console orders section with the order pre-opened. */}
+          <Route path="/orders/:id" element={<Navigate to="/console/orders" replace />} />
 
           {/* internal design-system reference (not linked publicly) */}
           <Route path="/system" element={<SystemPage />} />
