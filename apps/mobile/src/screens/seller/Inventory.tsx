@@ -6,7 +6,7 @@ import type { ApiProduct } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt, QueryError } from '../../ui';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { unitSuffix } from '@agrotraders/types';
@@ -19,7 +19,7 @@ export function SellerInventory() {
   const nav = useNavigation<Nav>();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { data: products = [], isLoading } = useQuery<SellerProduct[]>({ queryKey: ['products', 'mine'], queryFn: () => api.products.mine() as Promise<SellerProduct[]>, enabled: !!user });
+  const { data: products = [], isLoading, isError, refetch } = useQuery<SellerProduct[]>({ queryKey: ['products', 'mine'], queryFn: () => api.products.mine() as Promise<SellerProduct[]>, enabled: !!user });
   const remove = useMutation({ mutationFn: (id: string) => api.products.remove(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['products', 'mine'] }) });
 
   return (
@@ -30,6 +30,8 @@ export function SellerInventory() {
       </Row>
       {isLoading ? (
         <SkeletonRows />
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} />
       ) : products.length === 0 ? (
         <EmptyState icon="storefront-outline" title={t('sellerX.inventory.emptyTitle')} body={t('sellerX.inventory.emptyBody')} />
       ) : (

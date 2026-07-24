@@ -33,7 +33,13 @@ export const api = createApiClient({
   onAuthError: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    if (!location.pathname.startsWith('/login')) location.assign('/login');
+    // WEB-09: carry where the user was so re-login returns them there. The bare
+    // redirect discarded it, so an expired session mid-checkout dumped the user
+    // on /console afterwards with their context lost. LoginPage reads ?from=.
+    if (!location.pathname.startsWith('/login')) {
+      const from = location.pathname + location.search;
+      location.assign(`/login?from=${encodeURIComponent(from)}`);
+    }
   },
 });
 
@@ -56,6 +62,9 @@ function nullableText(value: unknown): string | null {
 export function toCardProduct(p: ApiProduct): Product {
   return {
     id: textValue(p.slug, textValue(p.id)),
+    // F02: the real product id is needed for wishlist add/remove (the routing
+    // `id` above is the slug). Kept separate so the link and the save both work.
+    productId: textValue(p.id) || undefined,
     name: textValue(p.name, 'Product'),
     emoji: p.emoji ?? '🌾',
     imageUrl: assetUrl(textValue(p.imageUrl)),

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card } from '@agrotraders/ui';
 import { nextStatusFor, canCancel, canDispute, type ApiOrder } from '@agrotraders/api-client';
@@ -8,15 +8,20 @@ import { useI18n } from '../../i18n';
 import { orderLabel, orderTone } from '../lib';
 import { OrderDrawer, OrderStepper, errMessage, useOrderInvalidation } from './order-parts';
 import { OrderReviewButtons } from '../components/OrderReviewButtons';
+import { ErrorState } from '../../components/ErrorState';
 
 export function BuyerOrders() {
   const { t } = useI18n();
   const orderText = (s: ApiOrder['status']) => t(`enums:order_status.${s}`, { defaultValue: orderLabel[s] ?? s });
-  const [openId, setOpenId] = useState<string | null>(null);
+  // FLOW-01: a notification deep link (/orders/:id) forwards the id as ?open=,
+  // so arriving from an order alert expands that order instead of dumping the
+  // user on an undifferentiated list.
+  const [searchParams] = useSearchParams();
+  const [openId, setOpenId] = useState<string | null>(() => searchParams.get('open'));
   const [error, setError] = useState('');
   const invalidate = useOrderInvalidation();
 
-  const { data: orders = [], isLoading } = useQuery<ApiOrder[]>({
+  const { data: orders = [], isLoading, isError, refetch } = useQuery<ApiOrder[]>({
     queryKey: ['my-orders'],
     queryFn: () => api.orders.mine(),
   });
@@ -34,6 +39,8 @@ export function BuyerOrders() {
       {error && <p className="mb-3 text-sm font-semibold text-red-600">{error}</p>}
       {isLoading ? (
         <p className="text-ink-soft">{t('common:loading')}</p>
+      ) : isError ? (
+        <ErrorState onRetry={() => refetch()} />
       ) : orders.length === 0 ? (
         <Card className="py-12 text-center text-ink-soft">
           {t('console.dash.noOrders')}{' '}
@@ -42,9 +49,13 @@ export function BuyerOrders() {
       ) : (
         <div className="space-y-4">
           {orders.map((o) => {
-            // Buyers accept a quote and release escrow; everything past `packed`
-            // is the seller's or the transporter's move.
-            const next = nextStatusFor(o.status, 'buyer');
+            // Buyers accept a quote; everything past that is the seller's or the
+            // transporter's move.
+            // D4/BL-03: `paid` is deliberately excluded — no transition in the
+            // API's state machine reaches it, so a "Pay escrow" button could never
+            // fire and only advertised a payment step that does not exist yet.
+            const nextRaw = nextStatusFor(o.status, 'buyer');
+            const next = nextRaw === 'paid' ? null : nextRaw;
             // F03: the exit paths the API allows a buyer but the UI never showed.
             const cancellable = canCancel(o.status, 'buyer');
             const disputable = canDispute(o.status, 'buyer');
@@ -99,7 +110,7 @@ export function BuyerOrders() {
                   )}
                   {next && (
                     <Button size="sm" disabled={advance.isPending} onClick={() => advance.mutate({ id: o.id, status: next })}>
-                      {next === 'processing' ? t('console.order.acceptQuote') : next === 'paid' ? t('console.order.payEscrow') : t('console.order.markStatus', { status: orderText(next) })}
+                      {next === 'processing' ? t('console.order.acceptQuote') : t('console.order.markStatus', { status: orderText(next) })}
                     </Button>
                   )}
                 </div>

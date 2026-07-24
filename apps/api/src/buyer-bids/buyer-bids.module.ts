@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Prisma, BuyerBidMode } from '@prisma/client';
 import {
@@ -26,9 +27,17 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
+
+// API-16: images must be an uploaded root-relative path or an http(s) URL — never
+// a `javascript:` / `data:` / `vbscript:` value that could execute when a client
+// renders the src. Blocks stored-XSS via the goods-wanted photos.
+const SAFE_IMAGE_REF = /^(?:https?:\/\/|\/)[^\s]*$/i;
+import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { flagFor, maskName } from '../common/masking';
@@ -47,7 +56,9 @@ import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 export const MAX_BUYER_BID_IMAGES = 6;
 
 const ref = () => secureReference('BID');
-const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`;
+// BL-13: 2 decimals so cents aren't truncated in the display string.
+const usd = (cents: number) =>
+  `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const isAdmin = (u: AuthUser) => (u.roles ?? [u.role]).includes('admin');
 
 /**
@@ -68,11 +79,11 @@ export class CreateBuyerBidDto {
 
   @ApiProperty() @IsString() @MaxLength(160) title!: string;
   @ApiProperty() @IsString() @MaxLength(160) productName!: string;
-  @ApiProperty({ minimum: 0.01 }) @IsNumber() @Min(0.01) qtyValue!: number;
+  @ApiProperty({ minimum: 0.01, maximum: MAX_QTY }) @IsNumber() @Min(0.01) @Max(MAX_QTY) qtyValue!: number;
   @ApiProperty({ required: false, enum: PRODUCT_UNITS, default: 'MT' }) @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) qtyUnit?: string;
 
   @ApiProperty({ required: false, description: 'Target / ceiling price per unit, USD cents' })
-  @IsOptional() @IsInt() @Min(0) targetPriceCents?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) targetPriceCents?: number;
 
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(160) deliveryPlace?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(80) destinationCountry?: string;
@@ -83,12 +94,14 @@ export class CreateBuyerBidDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() productId?: string;
 
   @ApiProperty({ required: false, type: [String], description: 'Photos of the goods wanted; first is the cover.' })
-  @IsOptional() @IsArray() @ArrayMaxSize(MAX_BUYER_BID_IMAGES) @IsString({ each: true }) images?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_BUYER_BID_IMAGES) @IsString({ each: true })
+  @Matches(SAFE_IMAGE_REF, { each: true, message: 'images must be uploaded paths or http(s) URLs' })
+  images?: string[];
 }
 
 export class SubmitSellerBidDto {
-  @ApiProperty({ description: 'Offered price per unit, USD cents' }) @IsInt() @Min(1) priceCents!: number;
-  @ApiProperty({ minimum: 0.01 }) @IsNumber() @Min(0.01) qtyValue!: number;
+  @ApiProperty({ description: 'Offered price per unit, USD cents' }) @IsInt() @Min(1) @Max(MAX_MONEY_CENTS) priceCents!: number;
+  @ApiProperty({ minimum: 0.01, maximum: MAX_QTY }) @IsNumber() @Min(0.01) @Max(MAX_QTY) qtyValue!: number;
   @ApiProperty({ required: false }) @IsOptional() @IsInt() @Min(0) etaDays?: number;
   @ApiProperty({ required: false, maxLength: 600 }) @IsOptional() @IsString() @MaxLength(600) message?: string;
 }
@@ -268,6 +281,23 @@ export class BuyerBidsService {
         data: { status: 'awarded' },
       });
       if (claimedSeller.count === 0) throw new BadRequestException('That bid is no longer available.');
+
+      // BL-08: reserve stock for the awarded order on a managed listing, inside
+      // this transaction — an oversold award rolls back the whole win. Rounds to
+      // match settleReservation (delivery capture / cancel release use the same).
+      const reserveQty = Math.max(0, Math.round(sellerBid.qtyValue));
+      if (buyerBid.productId && reserveQty > 0) {
+        const product = await tx.product.findUnique({ where: { id: buyerBid.productId }, select: { stockQty: true } });
+        if (product && product.stockQty !== null) {
+          const reserved = await tx.$executeRaw`
+            UPDATE "Product"
+            SET "reservedQty" = "reservedQty" + ${reserveQty}
+            WHERE "id" = ${buyerBid.productId}
+              AND "stockQty" IS NOT NULL
+              AND "stockQty" - "reservedQty" >= ${reserveQty}`;
+          if (reserved === 0) throw new BadRequestException('Not enough stock available to award this quantity.');
+        }
+      }
 
       const order = await tx.order.create({
         data: {
@@ -567,7 +597,7 @@ export class BuyerBidsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('buyer')
   @Post('upload-images')
-  @UseInterceptors(FilesInterceptor('files', MAX_BUYER_BID_IMAGES))
+  @UseInterceptors(FilesInterceptor('files', MAX_BUYER_BID_IMAGES, uploadLimits(MAX_BUYER_BID_IMAGES)))
   async uploadImages(@UploadedFiles() files?: Express.Multer.File[]) {
     if (!files?.length) throw new BadRequestException('No images were uploaded.');
     // Sequential: sharp is CPU-bound, so parallelising the encodes just thrashes.

@@ -17,11 +17,16 @@ import { Locale } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
 import { CommunityService } from './community.service';
 import {
+  AdminCreateGroupDto,
+  AdminUpdateGroupDto,
+  BlockUserDto,
   CreateGroupDto,
   CreatePostDto,
   CreateRequirementDto,
   InviteDto,
+  PinPostDto,
   ReportDto,
+  ResolveReportDto,
   RespondRequirementDto,
   SendMessageDto,
 } from './dto';
@@ -74,9 +79,10 @@ export class CommunityController {
     return this.community.listRequirements({ category, country, search, cursor }, locale);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('requirements/:id')
-  requirement(@Param('id') id: string, @Locale() locale: Lang) {
-    return this.community.getRequirement(id, locale);
+  requirement(@CurrentUser() user: AuthUser | undefined, @Param('id') id: string, @Locale() locale: Lang) {
+    return this.community.getRequirement(user, id, locale);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
@@ -187,8 +193,8 @@ export class CommunityController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('messages/:id/translation')
-  messageTranslation(@Param('id') id: string, @Locale() locale: Lang) {
-    return this.community.translateMessage(id, locale);
+  messageTranslation(@CurrentUser() user: AuthUser, @Param('id') id: string, @Locale() locale: Lang) {
+    return this.community.translateMessage(user, id, locale);
   }
 
   @ApiBearerAuth()
@@ -241,14 +247,14 @@ export class CommunityController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('block')
-  block(@CurrentUser() user: AuthUser, @Body() body: { blockedId: string }) {
+  block(@CurrentUser() user: AuthUser, @Body() body: BlockUserDto) {
     return this.community.block(user, body.blockedId);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('unblock')
-  unblock(@CurrentUser() user: AuthUser, @Body() body: { blockedId: string }) {
+  unblock(@CurrentUser() user: AuthUser, @Body() body: BlockUserDto) {
     return this.community.unblock(user, body.blockedId);
   }
 
@@ -270,7 +276,7 @@ export class CommunityController {
   resolveReport(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Body() body: { action: 'actioned' | 'dismissed'; note?: string },
+    @Body() body: ResolveReportDto,
   ) {
     return this.community.resolveReport(user, id, body.action, body.note);
   }
@@ -308,7 +314,7 @@ export class CommunityController {
   @Roles('admin')
   @RequirePermissions('community_moderate')
   @Post('admin/groups')
-  adminCreateGroup(@CurrentUser() user: AuthUser, @Body() body: { name: string; description?: string; emoji?: string; isDefault?: boolean }) {
+  adminCreateGroup(@CurrentUser() user: AuthUser, @Body() body: AdminCreateGroupDto) {
     return this.community.adminCreateGroup(user, body);
   }
 
@@ -317,7 +323,7 @@ export class CommunityController {
   @Roles('admin')
   @RequirePermissions('community_moderate')
   @Post('admin/groups/:id')
-  adminUpdateGroup(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: { name?: string; description?: string; emoji?: string; isDefault?: boolean }) {
+  adminUpdateGroup(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: AdminUpdateGroupDto) {
     return this.community.adminUpdateGroup(user, id, body);
   }
 
@@ -353,7 +359,7 @@ export class CommunityController {
   @Roles('admin')
   @RequirePermissions('community_moderate')
   @Post('admin/posts/:id/pin')
-  adminPinPost(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: { pinned: boolean }) {
+  adminPinPost(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: PinPostDto) {
     return this.community.adminPinPost(user, id, !!body.pinned);
   }
 

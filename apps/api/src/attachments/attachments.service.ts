@@ -114,9 +114,13 @@ export class AttachmentsService implements OnModuleInit {
         originalName: dto.originalName,
       },
     });
+    // API-06: bind the exact declared size into the signature. The client must PUT
+    // with a matching Content-Length or S3 rejects it, so a signed URL can't be
+    // reused to upload an arbitrarily large object and fill storage. Size was
+    // otherwise only DTO-validated and unenforced at the storage layer.
     const uploadUrl = await getSignedUrl(
       this.s3,
-      new PutObjectCommand({ Bucket: this.bucket, Key: s3Key, ContentType: dto.mime }),
+      new PutObjectCommand({ Bucket: this.bucket, Key: s3Key, ContentType: dto.mime, ContentLength: dto.sizeBytes }),
       { expiresIn: 600 },
     );
     return { attachmentId: attachment.id, uploadUrl, s3Key, kind };

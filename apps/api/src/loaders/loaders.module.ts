@@ -35,16 +35,34 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { AuditService } from '../common/audit.service';
-import { WalletService } from '../wallet/wallet.service';
 import { Prisma } from '@prisma/client';
 import { ReviewsModule, ReviewsService } from '../reviews/reviews.module';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Locale } from '../common/locale';
+import { secureOtp, secureReference } from '../common/secure-random';
+import { MAX_MONEY_CENTS } from '../common/limits';
 import type { Lang } from '@agrotraders/i18n';
 
-const ref = () => 'LD-' + Math.floor(100 + Math.random() * 900);
-const otp = () => String(Math.floor(1000 + Math.random() * 9000));
+// API-04/BL-15: CSPRNG reference (the old 'LD-'+3-digit space of 900 values
+// collided against the @unique column from ~35 jobs on) and CSPRNG OTP.
+const ref = () => secureReference('LD');
+const otp = () => secureOtp();
+
+/**
+ * API-08: validated bodies for the two admin routes that took inline object
+ * types. Those erase at runtime, so the pipe skipped them — a string `rateCents`
+ * reached Prisma and 500'd instead of returning a 400.
+ */
+export class SetListingDto {
+  @IsBoolean() approved!: boolean;
+}
+
+export class AdminUpdateRateDto {
+  @IsOptional() @IsString() @MaxLength(120) service?: string;
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) rateCents?: number;
+  @IsOptional() @IsString() @MaxLength(40) unit?: string;
+}
 /** A worker who logs in by phone still needs a unique User.email; synthesise one. */
 const syntheticEmail = (phone: string) => `w_${phone.replace(/[^0-9]/g, '')}@workers.agrotraders.local`;
 
@@ -136,44 +154,10 @@ class WorkerAvailabilityDto {
 export class LoadersService {
   constructor(
     private prisma: PrismaService,
-    private wallets: WalletService,
     private reviewsSvc: ReviewsService,
     private text: TextTranslationService,
     private notifications: NotificationsService,
   ) {}
-
-  /** Notify a provider that a completed job's escrow was released to them. */
-  private async notifyEscrowReleased(userId: string, cents: number, jobId: string) {
-    await this.notifications.create({
-      userId,
-      system: 'wallet',
-      type: 'wallet.escrow_release',
-      params: { amount: `$${(cents / 100).toFixed(2)}` },
-      data: { jobId },
-      linkUrl: '/console/wallet',
-    });
-  }
-
-  /**
-   * Release a held hire budget to the provider (worker / loader company) once
-   * the linked job completes — this is how a provider actually earns money.
-   * No-op for jobs that never came from a hire, or already settled.
-   */
-  private async releaseJobEscrow(
-    jobId: string,
-    tx: Prisma.TransactionClient,
-    onlyTargetType?: 'worker' | 'loaderco',
-  ): Promise<{ userId: string; cents: number } | null> {
-    const hire = await tx.hireRequest.findFirst({
-      where: { loaderJobId: jobId, escrowState: 'held', ...(onlyTargetType ? { targetType: onlyTargetType } : {}) },
-    });
-    if (!hire || !hire.budgetCents) return null;
-    await this.wallets.credit(hire.targetUserId, hire.budgetCents, 'escrow_release', 'Job completed — payout', tx);
-    await tx.hireRequest.update({ where: { id: hire.id }, data: { escrowState: 'released' } });
-    // The credit runs inside this tx so WalletService stays silent; the caller
-    // notifies the provider after commit.
-    return { userId: hire.targetUserId, cents: hire.budgetCents };
-  }
 
   // ── teams & workers (loaderco) ──
   async teams(loadercoId: string, locale: Lang = 'en') {
@@ -300,7 +284,16 @@ export class LoadersService {
   }
 
   // ── jobs ──
-  createJob(userId: string, b: CreateJobDto) {
+  async createJob(userId: string, b: CreateJobDto) {
+    // API-04: an order-linked job may only be posted by that order's own party.
+    // Previously any authenticated user could reference someone else's order id,
+    // exposing its reference/qty/product/amount and party names to loader
+    // companies via the open-jobs board.
+    if (b.orderId) {
+      const order = await this.prisma.order.findUnique({ where: { id: b.orderId }, select: { buyerId: true, sellerId: true } });
+      if (!order) throw new NotFoundException('Order not found');
+      if (order.sellerId !== userId && order.buyerId !== userId) throw new ForbiddenException('Not your order');
+    }
     return this.prisma.loaderJob.create({
       data: {
         reference: ref(),
@@ -375,7 +368,15 @@ export class LoadersService {
     const job = await this.prisma.loaderJob.findUnique({ where: { id: jobId } });
     if (!job) throw new NotFoundException('Job not found');
     if (job.loadercoId) throw new ForbiddenException('Already claimed');
-    const updated = await this.prisma.loaderJob.update({ where: { id: jobId }, data: { loadercoId, status: 'assigned' } });
+    // API-09: conditional claim — the `loadercoId IS NULL` guard is the concurrency
+    // gate, so two loadercos racing to claim can't both "win" and overwrite each
+    // other. The read above is just for the friendly 404/early message.
+    const claimed = await this.prisma.loaderJob.updateMany({
+      where: { id: jobId, loadercoId: null },
+      data: { loadercoId, status: 'assigned' },
+    });
+    if (claimed.count === 0) throw new ForbiddenException('Already claimed');
+    const updated = await this.prisma.loaderJob.findUniqueOrThrow({ where: { id: jobId } });
     const loaderco = await this.prisma.user.findUnique({ where: { id: loadercoId }, select: { name: true } });
     await this.notifications.create({
       userId: job.createdById,
@@ -447,19 +448,20 @@ export class LoadersService {
   async setJobStatus(jobId: string, loadercoId: string, status: JobStatusDto['status']) {
     const job = await this.prisma.loaderJob.findUnique({ where: { id: jobId } });
     if (!job || job.loadercoId !== loadercoId) throw new ForbiddenException('Not your job');
-    const released = await this.prisma.$transaction(async (tx) => {
-      let rel: { userId: string; cents: number } | null = null;
+    // BL-04: completing the job is an OPERATIONAL status change only — it no longer
+    // releases the held budget. The loaderco marking their own job done must not
+    // pay themselves; the requester confirms completion via HiresService.
+    await this.prisma.$transaction(async (tx) => {
       if (status === 'completed') {
         const asgs = await tx.jobAssignment.findMany({ where: { jobId }, select: { workerId: true } });
         await tx.jobAssignment.updateMany({ where: { jobId }, data: { status: 'completed' } });
         await tx.worker.updateMany({ where: { id: { in: asgs.map((a) => a.workerId) } }, data: { status: 'available' } });
         await tx.attendance.updateMany({ where: { jobId, checkOutAt: null }, data: { checkOutAt: new Date() } });
-        rel = await this.releaseJobEscrow(jobId, tx);
       }
       await tx.loaderJob.update({ where: { id: jobId }, data: { status: status as JobStatus } });
-      return rel;
     });
     if (status === 'completed') {
+      // Prompt the requester to confirm and release payment.
       await this.notifications.create({
         userId: job.createdById,
         system: 'loader',
@@ -468,7 +470,6 @@ export class LoadersService {
         data: { jobId },
         linkUrl: '/console/loaders',
       });
-      if (released) await this.notifyEscrowReleased(released.userId, released.cents, jobId);
     }
     return this.myJobOne(jobId, loadercoId);
   }
@@ -516,17 +517,17 @@ export class LoadersService {
     const w = await this.workerFor(userId);
     const a = await this.prisma.jobAssignment.findUnique({ where: { id: assignmentId } });
     if (!a || a.workerId !== w.id) throw new ForbiddenException('Not your assignment');
-    const released = await this.prisma.$transaction(async (tx) => {
+    // BL-04: check-out is an OPERATIONAL status change only. A worker can no longer
+    // release their own hire budget by checking themselves out — the requester
+    // confirms completion via HiresService, the sole escrow-release authority.
+    await this.prisma.$transaction(async (tx) => {
       await tx.attendance.updateMany({
         where: { jobId: a.jobId, workerId: w.id, checkOutAt: null },
         data: { checkOutAt: new Date() },
       });
       await tx.jobAssignment.update({ where: { id: assignmentId }, data: { status: 'completed' } });
       await tx.worker.update({ where: { id: w.id }, data: { status: 'available' } });
-      // A direct worker hire completes on the worker's own check-out — pay them.
-      return this.releaseJobEscrow(a.jobId, tx, 'worker');
     });
-    if (released) await this.notifyEscrowReleased(released.userId, released.cents, a.jobId);
     return { ok: true };
   }
 
@@ -841,7 +842,7 @@ export class AdminLoadersController {
   }
 
   @Patch('companies/:id/listing')
-  async setListing(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: { approved: boolean }) {
+  async setListing(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: SetListingDto) {
     const user = await this.prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!user) throw new NotFoundException('Loader company not found');
     await this.prisma.profile.upsert({
@@ -854,7 +855,7 @@ export class AdminLoadersController {
   }
 
   @Patch('rates/:id')
-  async updateRate(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: { service?: string; rateCents?: number; unit?: string }) {
+  async updateRate(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: AdminUpdateRateDto) {
     const existing = await this.prisma.loaderRate.findUnique({ where: { id }, select: { id: true } });
     if (!existing) throw new NotFoundException('Rate not found');
     const updated = await this.prisma.loaderRate.update({

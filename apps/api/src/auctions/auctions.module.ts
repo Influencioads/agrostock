@@ -5,15 +5,18 @@ import {
   Delete,
   Get,
   Injectable,
+  Logger,
   Module,
   Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { Query } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Prisma, type Product } from '@prisma/client';
-import { IsNumber, Min } from 'class-validator';
+import { IsNumber, Max, Min } from 'class-validator';
+import { MAX_MONEY_CENTS } from '../common/limits';
 import { AppException } from '../common/app-exception';
 import { flagFor, maskName } from '../common/masking';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,11 +30,15 @@ import type { Lang } from '@agrotraders/i18n';
 /** Product fields carrying a per-locale translation (mirrors products.module). */
 const PRODUCT_TR_FIELDS = ['name', 'grade', 'origin', 'qty', 'moq', 'delivery'] as const;
 
+// API-13: these are DOLLARS, converted to int4 `amountCents` on write — cap at
+// the dollar equivalent of MAX_MONEY_CENTS so the conversion can't overflow.
+const MAX_BID_DOLLARS = MAX_MONEY_CENTS / 100;
+
 export class PlaceBidDto {
-  @IsNumber() @Min(1) amount!: number; // dollars
+  @IsNumber() @Min(1) @Max(MAX_BID_DOLLARS) amount!: number; // dollars
 }
 export class AutoBidDto {
-  @IsNumber() @Min(1) max!: number; // dollars — proxy-bid ceiling
+  @IsNumber() @Min(1) @Max(MAX_BID_DOLLARS) max!: number; // dollars — proxy-bid ceiling
 }
 
 const isAdmin = (u?: AuthUser) => !!u && (u.roles ?? [u.role]).includes('admin');
@@ -58,6 +65,7 @@ function effectiveIncrement(product: Pick<Product, 'bidIncrementCents' | 'startB
 
 @Injectable()
 export class AuctionsService {
+  private readonly logger = new Logger(AuctionsService.name);
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
@@ -85,7 +93,11 @@ export class AuctionsService {
       bidCount: count,
       highestCents,
       highBidderMasked: top ? maskName(top.bidder.name) : null,
-      highBidderId: top?.bidder.id ?? null,
+      // API-05: the real bidder id must NOT ship in the public payload — it was
+      // resolvable to a full name via the public /directory/profile/:id endpoint,
+      // defeating the name masking. Only the seller/admin see the identity; a
+      // buyer's own "am I winning" state comes from `standing()` (rank), not this.
+      highBidderId: ownerView ? top?.bidder.id ?? null : null,
       // Real identity only for the seller/admin — never in the public payload.
       highBidder: ownerView ? top?.bidder.name ?? null : null,
       startBidCents: product.startBidCents ?? null,
@@ -150,6 +162,10 @@ export class AuctionsService {
       where: { isAuction: true, approved: true, ...liveOnly() },
       include: { seller: { select: { name: true } }, translations: { where: { locale } } },
       orderBy: { auctionEndsAt: 'asc' },
+      // API-15: cap this public list — it was unbounded and runs a per-lot top-bid
+      // query (N+1), so an unbounded result set was a linear-cost DoS lever. The
+      // soonest-ending 100 live lots are what the board shows.
+      take: 100,
     });
     const admin = isAdmin(viewer);
     return Promise.all(
@@ -359,15 +375,36 @@ export class AuctionsService {
     const product = await this.prisma.product.findUnique({ where: { slug } });
     if (!product || !product.isAuction) throw AppException.notFound('auctions.not_found', 'Auction not found');
     if (product.sellerId !== user.id && !isAdmin(user)) throw AppException.forbidden('auctions.not_owner', 'Not your auction');
-    if (product.auctionEndsAt && product.auctionEndsAt.getTime() <= Date.now()) {
+    if (product.auctionSettledAt) {
       throw AppException.badRequest('auctions.already_ended', 'This auction has already ended.');
     }
     await this.prisma.product.update({ where: { id: product.id }, data: { auctionEndsAt: new Date() } });
-    const winner = await this.prisma.auctionBid.findFirst({
+    const winner = await this.settleAuction(product);
+    return { ok: true, winner };
+  }
+
+  /**
+   * BL-09: settle one auction exactly once — find the winner, send the
+   * won/sold/no-bid notifications, and stamp `auctionSettledAt`. The stamp is
+   * claimed conditionally so a manual `close()` racing the scheduled closer can't
+   * double-notify. Called by both paths. (Minting the winner's order/escrow is
+   * Phase J territory — this only closes and notifies.)
+   */
+  private async settleAuction(product: { id: string; name: string; slug: string; sellerId: string | null; reserveCents: number | null }) {
+    const claimed = await this.prisma.product.updateMany({
+      where: { id: product.id, auctionSettledAt: null },
+      data: { auctionSettledAt: new Date() },
+    });
+    if (claimed.count === 0) return null; // already settled by the other path
+
+    const top = await this.prisma.auctionBid.findFirst({
       where: { productId: product.id },
       orderBy: { amountCents: 'desc' },
       include: { bidder: { select: { id: true, name: true } } },
     });
+    // BL-09: a reserve that wasn't met means the lot did NOT sell — treat as no winner.
+    const winner = top && (product.reserveCents == null || top.amountCents >= product.reserveCents) ? top : null;
+
     if (winner) {
       const priceLabel = `$${(winner.amountCents / 100).toLocaleString()}`;
       await this.notifications.create({
@@ -399,7 +436,29 @@ export class AuctionsService {
         email: false,
       });
     }
-    return { ok: true, winner };
+    return winner;
+  }
+
+  /**
+   * BL-09: close lapsed auctions. Runs every 5 minutes; picks up lots whose
+   * countdown ran out but that were never manually closed — previously these
+   * stranded both parties (no winner, no notification). Idempotent via the
+   * `auctionSettledAt` claim in settleAuction.
+   */
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async closeLapsedAuctions() {
+    const lapsed = await this.prisma.product.findMany({
+      where: { isAuction: true, auctionSettledAt: null, auctionEndsAt: { not: null, lte: new Date() } },
+      select: { id: true, name: true, slug: true, sellerId: true, reserveCents: true },
+      take: 200,
+    });
+    for (const p of lapsed) {
+      try {
+        await this.settleAuction(p);
+      } catch (err) {
+        this.logger.error(`Failed to auto-close auction ${p.slug}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
   }
 
   async adminList(status?: string) {

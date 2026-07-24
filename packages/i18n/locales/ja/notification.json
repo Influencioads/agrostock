@@ -135,6 +135,10 @@
     "status_changed": {
       "body": "注文番号は{{status}}です。",
       "title": "注文番号 {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "注文完了",
+      "body": "{{product}} のご注文 {{reference}} を受け付けました。"
     }
   },
   "product": {

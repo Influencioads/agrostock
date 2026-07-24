@@ -133,6 +133,10 @@
     "status_changed": {
       "body": "سفارش اکنون {{status}} است.",
       "title": "سفارش {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "سفارش ثبت شد",
+      "body": "سفارش شما {{reference}} برای {{product}} ثبت شد."
     }
   },
   "product": {

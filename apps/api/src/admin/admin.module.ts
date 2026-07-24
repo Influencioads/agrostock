@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Body,
   Controller,
   Delete,
@@ -15,7 +16,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiProperty, ApiTags, PartialType } from '@nestjs/swagger';
 import { AdminPermission, OrderStatus, Prisma, ProductStatus, Role, RoleRequestStatus, type InvoiceKind, type InvoiceStatus, type KycStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { IsArray, IsBoolean, IsEmail, IsEnum, IsIn, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
@@ -26,7 +27,7 @@ import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { AuditService } from '../common/audit.service';
 import { WalletService, EscrowService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { monthlySeries, EARNED_STATUSES } from '../me/me.module';
+import { monthlySeries, EARNED_STATUSES, orderDollars } from '../me/me.module';
 import { StatementsModule, StatementsService } from '../statements/statements.module';
 import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
@@ -213,6 +214,12 @@ export class ResetUserPasswordDto {
 }
 
 export class UpdateOwnPasswordDto {
+  // API-16: changing a password must prove knowledge of the current one — else an
+  // XSS/session-hijack can silently take over the admin account.
+  @ApiProperty()
+  @IsString()
+  currentPassword!: string;
+
   @ApiProperty({ minLength: 8 })
   @IsString()
   @MinLength(8)
@@ -238,6 +245,16 @@ export class UpsertMarketDto {
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() active?: boolean;
 }
 
+/**
+ * API-08: `Partial<UpsertMarketDto>` is a TYPE, erased at runtime — the global
+ * ValidationPipe saw `Object`, so it neither validated nor whitelisted, and the raw
+ * body flowed straight into `prisma.market.update({ data: dto })`. An admin holding
+ * only `markets_manage` could therefore set `status`, `slug`, `sort` or
+ * `createdById` directly. PartialType keeps the validators and lets whitelist strip
+ * everything not declared here.
+ */
+export class UpdateMarketDto extends PartialType(UpsertMarketDto) {}
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -249,18 +266,26 @@ export class AdminService {
   ) {}
 
   users(role?: string, search?: string) {
-    const where: Prisma.UserWhereInput = {
-      role: role && role !== 'all' ? { equals: role as Role, not: Role.admin } : { not: Role.admin },
-    };
+    // Staff accounts never appear here — they are managed on the Team page.
+    const where: Prisma.UserWhereInput = { role: { not: Role.admin } };
+    const and: Prisma.UserWhereInput[] = [];
+    // A user's effective roles are {role} ∪ roles, so the per-role tabs must
+    // match secondary roles too or multi-role users vanish from those tabs.
+    const known = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'];
+    if (role && known.includes(role))
+      and.push({ OR: [{ role: role as Role }, { roles: { has: role as Role } }] });
     if (search)
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-      ];
+      and.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    if (and.length) where.AND = and;
     return this.prisma.user.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, email: true, role: true, country: true, kycStatus: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, roles: true, active: true, country: true, kycStatus: true, createdAt: true },
     });
   }
 
@@ -274,13 +299,22 @@ export class AdminService {
   }
 
   async updateOwnPassword(adminId: string, dto: UpdateOwnPasswordDto) {
-    const admin = await this.prisma.user.findUnique({ where: { id: adminId }, select: { id: true, role: true } });
+    const admin = await this.prisma.user.findUnique({ where: { id: adminId }, select: { id: true, role: true, passwordHash: true } });
     if (!admin || admin.role !== Role.admin) throw new NotFoundException('Admin profile not found');
+    // API-16: verify the current password before allowing the change.
+    const ok = admin.passwordHash ? await bcrypt.compare(dto.currentPassword, admin.passwordHash) : false;
+    if (!ok) throw new BadRequestException('Current password is incorrect.');
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const updated = await this.prisma.user.update({
       where: { id: adminId },
       data: { passwordHash },
       select: { id: true, name: true, email: true, role: true, roles: true, adminPermissions: true, active: true, country: true, kycStatus: true, createdAt: true },
+    });
+    // API-16: a password change revokes every other session (mirrors the password
+    // reset path's logoutAll) so a stolen refresh token can't outlive the change.
+    await this.prisma.refreshSession.updateMany({
+      where: { userId: adminId, revokedAt: null },
+      data: { revokedAt: new Date(), revokedReason: 'password_change' },
     });
     await this.audit.log({ actorId: adminId, action: 'admin.profile.password_update', entityType: 'User', entityId: adminId });
     return updated;
@@ -436,9 +470,85 @@ export class AdminService {
 
   async deleteUser(id: string, adminId: string) {
     if (id === adminId) throw new BadRequestException('You cannot delete your own account.');
-    await this.requireUser(id);
-    // Soft-delete: deactivate rather than hard-delete (preserves FK/audit integrity).
-    await this.prisma.user.update({ where: { id }, data: { active: false } });
+    const target = await this.requireUser(id);
+    if (target.role === Role.admin || target.roles?.includes(Role.admin))
+      throw new BadRequestException('Staff accounts are managed from the Team page.');
+
+    // A hard delete must NEVER silently destroy or orphan trade history. Several
+    // user relations are nullable FKs (e.g. Product.sellerId) that Postgres would
+    // SET NULL on delete — orphaning products instead of failing — so we cannot
+    // rely on FK errors alone. Instead we explicitly refuse to delete any account
+    // that carries a business/financial/support footprint, and only ever hard-delete
+    // clean accounts (fresh signups, spam, abandoned test users). Everything with
+    // weight is deactivated instead.
+    const footprint = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        _count: {
+          select: {
+            products: true,
+            buyerOrders: true,
+            sellerOrders: true,
+            auctionBids: true,
+            buyerBids: true,
+            sellerBids: true,
+            transportRequests: true,
+            transportQuotes: true,
+            trips: true,
+            vehicles: true,
+            routes: true,
+            drivers: true,
+            workers: true,
+            teams: true,
+            loaderJobsCreated: true,
+            loaderJobsManaged: true,
+            payoutRequests: true,
+            hireRequestsMade: true,
+            hireRequestsReceived: true,
+            invoicesIssued: true,
+            invoicesReceived: true,
+            reviewsAuthored: true,
+            reviewsReceived: true,
+            adCampaigns: true,
+            supportTickets: true,
+          },
+        },
+        wallet: { select: { balanceCents: true, _count: { select: { txns: true } } } },
+      },
+    });
+    const counts: Record<string, number> = footprint?._count ?? {};
+    const hasFootprint =
+      Object.values(counts).some((n) => (n ?? 0) > 0) ||
+      (footprint?.wallet ? footprint.wallet._count.txns > 0 || footprint.wallet.balanceCents !== 0 : false);
+    if (hasFootprint)
+      throw new ConflictException(
+        'This user has trade, financial or support records and cannot be permanently deleted. Deactivate the account instead.',
+      );
+
+    try {
+      // Clean account: remove the personal satellite rows the FK graph won't cascade
+      // (profile, empty wallet, notifications, community membership, role/session
+      // tokens), then the user — atomically. The P2003 catch is a backstop for any
+      // relation not covered by the footprint check above.
+      await this.prisma.$transaction([
+        this.prisma.roleRequest.deleteMany({ where: { userId: id } }),
+        this.prisma.communityMessageReaction.deleteMany({ where: { userId: id } }),
+        this.prisma.communitySavedPost.deleteMany({ where: { userId: id } }),
+        this.prisma.communityGroupMember.deleteMany({ where: { userId: id } }),
+        this.prisma.notification.deleteMany({ where: { userId: id } }),
+        this.prisma.deviceToken.deleteMany({ where: { userId: id } }),
+        this.prisma.refreshSession.deleteMany({ where: { userId: id } }),
+        this.prisma.wallet.deleteMany({ where: { userId: id } }),
+        this.prisma.profile.deleteMany({ where: { userId: id } }),
+        this.prisma.user.delete({ where: { id } }),
+      ]);
+    } catch (e) {
+      if ((e as { code?: string }).code === 'P2003')
+        throw new ConflictException(
+          'This user has records that prevent deletion. Deactivate the account instead.',
+        );
+      throw e;
+    }
     await this.audit.log({ actorId: adminId, action: 'user.delete', entityType: 'User', entityId: id });
     return { ok: true };
   }
@@ -501,7 +611,7 @@ export class AdminService {
     return updated;
   }
 
-  async updateMarket(id: string, dto: Partial<UpsertMarketDto>) {
+  async updateMarket(id: string, dto: UpdateMarketDto) {
     const existing = await this.prisma.market.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Market not found');
     return this.prisma.market.update({ where: { id }, data: dto });
@@ -561,11 +671,61 @@ export class AdminService {
     return order;
   }
 
-  /** Admin status override (bypasses the state machine), recording an event. */
+  /**
+   * BL-07: settle the stock a placed order reserved. Mirrors
+   * OrdersService.settleReservation — `capture` consumes the units (delivered),
+   * otherwise the reservation is released (cancelled). Clamped so a double call
+   * can't drive a counter negative; no-op for unmanaged listings.
+   */
+  private async settleReservation(order: { productId: string | null; qtyValue: number | null }, capture: boolean) {
+    if (!order.productId) return;
+    const qty = Math.max(0, Math.round(order.qtyValue ?? 0));
+    if (qty <= 0) return;
+    if (capture) {
+      await this.prisma.$executeRaw`
+        UPDATE "Product"
+        SET "reservedQty" = GREATEST(0, "reservedQty" - ${qty}),
+            "stockQty" = GREATEST(0, "stockQty" - ${qty})
+        WHERE "id" = ${order.productId} AND "stockQty" IS NOT NULL`;
+    } else {
+      await this.prisma.$executeRaw`
+        UPDATE "Product"
+        SET "reservedQty" = GREATEST(0, "reservedQty" - ${qty})
+        WHERE "id" = ${order.productId} AND "stockQty" IS NOT NULL`;
+    }
+  }
+
+  /**
+   * Admin status override (bypasses the state machine), recording an event.
+   * BL-07: unlike before, this now carries the same money/stock/notification
+   * side effects the normal transitions do — `paid` holds escrow, `cancelled`
+   * releases the reservation and refunds any hold, `delivered` captures stock and
+   * releases the hold to the seller — so an admin override can no longer strand
+   * funds or leave a phantom reservation. escrow.settle is idempotent, so this is
+   * safe alongside the buyer/seller and dispute paths.
+   */
   async setOrderStatus(id: string, status: OrderStatus, adminId: string, note?: string) {
     if (status === 'paid') assertLegacyFinancialWritesEnabled('Administrative order payment status');
-    const order = await this.prisma.order.findUnique({ where: { id }, select: { id: true, status: true } });
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      select: {
+        id: true, status: true, reference: true, productId: true, qtyValue: true,
+        buyerId: true, sellerId: true, amountCents: true, currency: true,
+      },
+    });
     if (!order) throw new NotFoundException('Order not found');
+
+    // Hold escrow before flipping to paid, matching OrdersService.setStatus.
+    if (status === 'paid' && order.buyerId && (order.amountCents ?? 0) > 0) {
+      await this.escrow.hold({
+        orderId: id,
+        buyerId: order.buyerId,
+        sellerId: order.sellerId,
+        amountCents: order.amountCents ?? 0,
+        currency: order.currency,
+      });
+    }
+
     const updated = await this.prisma.$transaction(async (tx) => {
       const o = await tx.order.update({ where: { id }, data: { status } });
       await tx.orderEvent.create({
@@ -573,8 +733,36 @@ export class AdminService {
       });
       return o;
     });
+
+    if (status === 'cancelled') {
+      await this.settleReservation(order, false);
+      await this.settleHold(id, 'refund', `Order ${order.reference} cancelled by admin`);
+    } else if (status === 'delivered') {
+      await this.settleReservation(order, true);
+      await this.settleHold(id, 'release', `Order ${order.reference} delivered (admin)`);
+    }
+
+    // Keep both parties informed, matching the normal transition notifications.
+    for (const userId of [order.buyerId, order.sellerId]) {
+      if (!userId) continue;
+      await this.notifications.create({
+        userId, system: 'orders', type: 'order.status_changed',
+        params: { reference: order.reference, status: { enum: 'order_status', value: status } },
+        data: { orderId: id }, linkUrl: `/orders/${id}`,
+      });
+    }
+
     await this.audit.log({ actorId: adminId, action: 'order.status', entityType: 'Order', entityId: id, meta: { from: order.status, to: status, note } });
     return updated;
+  }
+
+  /** Settle a still-held escrow hold on an order close (release to seller / refund buyer). No-op when no hold. */
+  private async settleHold(orderId: string, kind: 'release' | 'refund', note?: string) {
+    const hold = await this.prisma.escrowHold.findUnique({ where: { orderId } });
+    if (!hold || hold.status !== 'held') return;
+    await this.escrow.settle(
+      kind === 'release' ? { orderId, releaseCents: hold.amountCents, note } : { orderId, refundCents: hold.amountCents, note },
+    );
   }
 
   disputes() {
@@ -620,22 +808,38 @@ export class AdminService {
       release = order.sellerId ? total - refund : 0;
     }
 
-    // F08: claim the dispute exactly once. The status transition is the guard —
-    // a second concurrent resolve matches zero rows and bails before any money
-    // moves, so a dispute can never settle (and credit) twice.
-    const claimed = await this.prisma.order.updateMany({ where: { id, status: 'dispute' }, data: { status: toStatus } });
-    if (claimed.count === 0) throw new BadRequestException('Order is not in dispute');
+    // BL-10: claim the order, settle escrow (or credit the legacy path), and write
+    // the event in ONE transaction. Previously the order left `dispute` before a
+    // separate escrow.settle ran, so a settle failure (or crash) stranded the hold
+    // with no way back in. Now any failure rolls the order back into `dispute` and
+    // the admin can retry. The order-status claim is the single-winner guard; the
+    // hold's held→settled claim guards the escrow leg; keyed credits guard replays.
+    const result = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.order.updateMany({ where: { id, status: 'dispute' }, data: { status: toStatus } });
+      if (claimed.count === 0) throw new BadRequestException('Order is not in dispute');
 
-    // F06: if the order was paid into escrow, settle FROM the hold (balanced —
-    // the funds were debited from the buyer at pay time). Legacy orders with no
-    // hold fall back to the keyed direct-credit path.
-    const hold = await this.prisma.escrowHold.findUnique({ where: { orderId: id } });
-    if (hold && hold.status === 'held') {
-      await this.escrow.settle({ orderId: id, refundCents: refund, releaseCents: release, note: dto.note ?? 'Dispute settlement' });
-      if (refund > 0) credits.push({ userId: order.buyerId, cents: refund, type: 'refund' });
-      if (release > 0 && order.sellerId) credits.push({ userId: order.sellerId, cents: release, type: 'escrow_release' });
-    } else {
-      await this.prisma.$transaction(async (tx) => {
+      // F06: if the order was paid into escrow, settle FROM the hold (balanced —
+      // the funds were debited from the buyer at pay time). Legacy orders with no
+      // hold fall back to the keyed direct-credit path.
+      const hold = await tx.escrowHold.findUnique({ where: { orderId: id } });
+      if (hold && hold.status === 'held') {
+        const refundC = Math.max(0, Math.min(refund, hold.amountCents));
+        const releaseC = Math.max(0, Math.min(release, hold.amountCents - refundC));
+        const settleStatus = refundC > 0 && releaseC > 0 ? 'split' : refundC > 0 ? 'refunded' : 'released';
+        const holdClaimed = await tx.escrowHold.updateMany({
+          where: { orderId: id, status: 'held' },
+          data: { status: settleStatus, releasedCents: releaseC, refundedCents: refundC, settledAt: new Date() },
+        });
+        if (holdClaimed.count === 0) throw new BadRequestException('This escrow hold was already settled.');
+        if (refundC > 0) {
+          await this.walletSvc.credit(hold.buyerId, refundC, 'refund', dto.note ?? 'Dispute settlement', tx, `escrow:refund:${id}`);
+          credits.push({ userId: hold.buyerId, cents: refundC, type: 'refund' });
+        }
+        if (releaseC > 0 && hold.sellerId) {
+          await this.walletSvc.credit(hold.sellerId, releaseC, 'escrow_release', dto.note ?? 'Dispute settlement', tx, `escrow:release:${id}`);
+          credits.push({ userId: hold.sellerId, cents: releaseC, type: 'escrow_release' });
+        }
+      } else {
         // Idempotency keys are derived from the order so the credits can never be
         // applied twice even under retry.
         if (refund > 0) {
@@ -646,12 +850,12 @@ export class AdminService {
           await this.walletSvc.credit(order.sellerId, release, 'escrow_release', dto.note ?? 'Dispute release', tx, `dispute:${id}:release`);
           credits.push({ userId: order.sellerId, cents: release, type: 'escrow_release' });
         }
+      }
+      await tx.orderEvent.create({
+        data: { orderId: id, type: 'note', actorId: adminId, fromStatus: 'dispute', toStatus, note: `Dispute resolved: ${dto.resolution}${dto.note ? ` — ${dto.note}` : ''}` },
       });
-    }
-    await this.prisma.orderEvent.create({
-      data: { orderId: id, type: 'note', actorId: adminId, fromStatus: 'dispute', toStatus, note: `Dispute resolved: ${dto.resolution}${dto.note ? ` — ${dto.note}` : ''}` },
+      return tx.order.findUniqueOrThrow({ where: { id } });
     });
-    const result = await this.prisma.order.findUniqueOrThrow({ where: { id } });
     // Fan out the money-moved notifications (transactional → also emails).
     for (const c of credits) {
       await this.notifications.create({
@@ -847,9 +1051,12 @@ export class AdminService {
   async volumeSeries() {
     const orders = await this.prisma.order.findMany({
       where: { status: { in: [...EARNED_STATUSES] } },
-      select: { amount: true, createdAt: true },
+      // BL-13: aggregate from the canonical `amountCents`, not the whole-dollar
+      // display string — parsing `amount` truncated cents (150¢ → "$2") and could
+      // diverge from `reports()`, which already uses cents.
+      select: { amount: true, amountCents: true, createdAt: true },
     });
-    const rows = orders.map((o) => ({ createdAt: o.createdAt, value: parseAmount(o.amount) }));
+    const rows = orders.map((o) => ({ createdAt: o.createdAt, value: orderDollars(o) }));
     return { data8: monthlySeries(rows, 8), data12: monthlySeries(rows, 12) };
   }
 
@@ -872,7 +1079,9 @@ export class AdminService {
     ]);
 
     const gmvCents = paidOrders.reduce((s, o) => s + (o.amountCents ?? Math.round(parseAmount(o.amount) * 100)), 0);
-    const volumeRows = paidOrders.map((o) => ({ createdAt: o.createdAt, value: parseAmount(o.amount) }));
+    // BL-13: cents-first (mirrors gmvCents) so the volume chart and the GMV KPI on
+    // the same page can't disagree.
+    const volumeRows = paidOrders.map((o) => ({ createdAt: o.createdAt, value: orderDollars(o) }));
     const growthRows = (await this.prisma.user.findMany({ where: dateWhere, select: { createdAt: true } })).map((u) => ({ createdAt: u.createdAt, value: 1 }));
 
     return {
@@ -902,7 +1111,7 @@ export class AdminService {
       if (opts.from) txWhere.createdAt.gte = rangeStart(opts.from);
       if (opts.to) txWhere.createdAt.lte = rangeEnd(opts.to);
     }
-    const [agg, txns, wallets, escrowOrders] = await Promise.all([
+    const [agg, txns, byRoleRows, escrowAgg] = await Promise.all([
       this.prisma.wallet.aggregate({ _sum: { balanceCents: true }, _count: true }),
       this.prisma.walletTx.findMany({
         where: txWhere,
@@ -910,18 +1119,23 @@ export class AdminService {
         take: 200,
         include: { wallet: { include: { user: { select: { id: true, name: true, role: true } } } } },
       }),
-      this.prisma.wallet.findMany({ include: { user: { select: { role: true } } } }),
-      // Money held in escrow = paid orders not yet released/delivered. Computed
-      // server-side (finance-gated) so the SafeDeal page never needs orders_manage,
-      // over ALL such orders rather than the first page. `amountCents` is nullable,
-      // so fall back to parsing the string amount, matching reports().
-      this.prisma.order.findMany({ where: { status: 'paid' }, select: { amountCents: true, amount: true } }),
+      // PERF-02: per-role balance totals via a grouped query instead of loading
+      // EVERY wallet (with its user joined) into JS on every dashboard hit.
+      this.prisma.$queryRaw<Array<{ role: string; sum: bigint | number }>>`
+        SELECT u."role"::text AS role, COALESCE(SUM(w."balanceCents"), 0) AS sum
+        FROM "Wallet" w JOIN "User" u ON u."id" = w."userId"
+        GROUP BY u."role"`,
+      // PERF-02 / escrow KPI fix: money in escrow is the sum of still-HELD holds,
+      // read straight from the EscrowHold ledger with one aggregate — not by
+      // loading every paid order. This is also more accurate: the old query keyed
+      // on order status, so it understated once an order advanced past `paid`.
+      this.prisma.escrowHold.aggregate({ _sum: { amountCents: true }, where: { status: 'held' } }),
     ]);
     const byType: Record<string, number> = {};
     for (const t of txns) byType[t.type] = (byType[t.type] ?? 0) + t.amountCents;
     const byRole: Record<string, number> = {};
-    for (const w of wallets) byRole[w.user.role] = (byRole[w.user.role] ?? 0) + w.balanceCents;
-    const escrowHeldCents = escrowOrders.reduce((s, o) => s + (o.amountCents ?? Math.round(parseAmount(o.amount) * 100)), 0);
+    for (const r of byRoleRows) byRole[r.role] = Number(r.sum);
+    const escrowHeldCents = escrowAgg._sum.amountCents ?? 0;
     return {
       totalBalanceCents: agg._sum.balanceCents ?? 0,
       walletCount: agg._count,
@@ -1101,7 +1315,7 @@ export class AdminService {
     });
   }
 
-  async createStaff(dto: CreateStaffDto) {
+  async createStaff(dto: CreateStaffDto, adminId: string) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new BadRequestException('Email already registered');
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -1119,6 +1333,12 @@ export class AdminService {
       },
       select: { id: true, name: true, email: true, role: true, active: true, adminPermissions: true, createdAt: true },
     });
+    // API-16: granting staff access and permissions is one of the most sensitive
+    // admin actions and was the only user-lifecycle write with no audit trail.
+    await this.audit.log({
+      actorId: adminId, action: 'staff.create', entityType: 'User', entityId: user.id,
+      meta: { email: dto.email, permissions: dto.permissions ?? [] },
+    });
     return user;
   }
 
@@ -1128,9 +1348,9 @@ export class AdminService {
     return u;
   }
 
-  async updateStaff(id: string, dto: UpdateStaffDto) {
+  async updateStaff(id: string, dto: UpdateStaffDto, adminId: string) {
     await this.staffMember(id);
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: {
         name: dto.name,
@@ -1139,6 +1359,12 @@ export class AdminService {
       },
       select: { id: true, name: true, email: true, role: true, active: true, adminPermissions: true },
     });
+    // API-16: permission changes are audited like every other user-lifecycle write.
+    await this.audit.log({
+      actorId: adminId, action: 'staff.update', entityType: 'User', entityId: id,
+      meta: { name: dto.name, active: dto.active, permissions: dto.permissions },
+    });
+    return updated;
   }
 
   async deleteStaff(id: string, adminId: string) {
@@ -1293,7 +1519,7 @@ export class AdminController {
 
   @Patch('markets/:id')
   @RequirePermissions('markets_manage')
-  updateMarket(@Param('id') id: string, @Body() dto: Partial<UpsertMarketDto>) {
+  updateMarket(@Param('id') id: string, @Body() dto: UpdateMarketDto) {
     return this.admin.updateMarket(id, dto);
   }
 
@@ -1470,14 +1696,14 @@ export class AdminController {
 
   @Post('staff')
   @RequirePermissions('staff_manage')
-  createStaff(@Body() body: CreateStaffDto) {
-    return this.admin.createStaff(body);
+  createStaff(@CurrentUser() admin: AuthUser, @Body() body: CreateStaffDto) {
+    return this.admin.createStaff(body, admin.id);
   }
 
   @Patch('staff/:id')
   @RequirePermissions('staff_manage')
-  updateStaff(@Param('id') id: string, @Body() body: UpdateStaffDto) {
-    return this.admin.updateStaff(id, body);
+  updateStaff(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: UpdateStaffDto) {
+    return this.admin.updateStaff(id, body, admin.id);
   }
 
   @Delete('staff/:id')

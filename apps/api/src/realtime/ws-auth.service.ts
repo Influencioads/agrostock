@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from '../auth/current-user.decorator';
+import { jwtAccessSecret } from '../config/secrets';
 
 interface AccessPayload {
   sub: string;
@@ -39,7 +40,7 @@ export class WsAuthService {
     let payload: AccessPayload;
     try {
       payload = await this.jwt.verifyAsync<AccessPayload>(raw, {
-        secret: this.config.get<string>('JWT_SECRET') || 'change-me-access-secret',
+        secret: jwtAccessSecret(),
       });
     } catch {
       throw new UnauthorizedException('Invalid token');

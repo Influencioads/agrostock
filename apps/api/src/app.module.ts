@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
@@ -39,12 +40,17 @@ import { UploadsModule } from './uploads/uploads.module';
 import { CommunityModule } from './community/community.module';
 import { SupportModule } from './support/support.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 import { TranslationModule } from './translation/translation.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../../.env', '.env'] }),
     EventEmitterModule.forRoot(),
+    // BL-09: cron infrastructure for the auction auto-closer (and any future
+    // scheduled job). Single-instance today; a multi-replica deployment would
+    // need a leader lock so a job fires once across the fleet.
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
     WalletModule,
@@ -83,6 +89,7 @@ import { TranslationModule } from './translation/translation.module';
     CommunityModule,
     SupportModule,
     ReviewsModule,
+    WishlistModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

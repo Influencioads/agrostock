@@ -28,7 +28,9 @@ describe('ProductsService filters', () => {
     expect(prisma.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          approved: true,
+          // API-11: browse now uses the canonical sellable predicate (status),
+          // matching the detail read and order placement, not `approved`.
+          status: 'live',
           categoryId: 'cat1',
           subcategoryId: { in: ['sub3', 'sub4'] },
         }),

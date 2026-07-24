@@ -1,13 +1,40 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, type ApiProduct } from '@agrotraders/api-client';
 import { unitSuffix } from '@agrotraders/types';
 import { C, radius, space, type } from '../theme/tokens';
 import { microLabel } from '../theme/casing';
 import { assetUrl } from '../lib/api';
 import { useCurrency } from '../currency/CurrencyContext';
+import { useWishlist } from '../lib/useWishlist';
 import { RatingPill } from '../ui';
 import { useI18n } from '../i18n';
+
+/**
+ * F02: the wishlist heart overlaid on a card image. A real add/remove control
+ * (not decorative). Only rendered for signed-in users, so guests aren't shown a
+ * save affordance that can't persist. Its own Pressable swallows the tap so it
+ * never triggers the card's navigation.
+ */
+function SaveHeart({ productId }: { productId: string }) {
+  const { t } = useI18n();
+  const { canSave, isSaved, toggle } = useWishlist();
+  if (!canSave) return null;
+  const saved = isSaved(productId);
+  return (
+    <Pressable
+      onPress={() => toggle(productId)}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityState={{ selected: saved }}
+      accessibilityLabel={saved ? t('compX.product.removeFromSaved') : t('compX.product.addToSaved')}
+      style={s.heart}
+    >
+      <Ionicons name={saved ? 'heart' : 'heart-outline'} size={16} color={saved ? C.mangoDeep : C.dark} />
+    </Pressable>
+  );
+}
 
 /**
  * Product cards, B2B edition.
@@ -107,6 +134,7 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
       <View>
         <Cover product={product} height={width ? width * 1.25 : undefined} />
         <ImageBadges product={product} t={t} sponsored={sponsored} />
+        <SaveHeart productId={product.id} />
         {rated ? (
           <View style={s.ratingSlot}>
             <RatingPill avg={product.ratingAvg ?? 0} count={product.ratingCount ?? 0} />
@@ -177,6 +205,10 @@ const s = StyleSheet.create({
   badgeStrip: { position: 'absolute', bottom: 6, start: 6, flexDirection: 'row', gap: 4, maxWidth: '90%' },
   imgBadge: { borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2.5 },
   ratingSlot: { position: 'absolute', bottom: 6, end: 6 },
+  heart: {
+    position: 'absolute', top: 6, end: 6, width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center',
+  },
   body: { padding: space.md, gap: 2 },
   supplier: { ...type.micro, fontSize: 10.5, color: C.ink },
   name: { ...type.body, color: C.inkMuted },

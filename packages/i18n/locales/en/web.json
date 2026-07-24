@@ -56,10 +56,22 @@
     "offices": "Global Offices"
   },
   "serviceCards": {
-    "transport": { "title": "Book Transport", "desc": "Compare verified carriers, reefer & bulk, live tracking." },
-    "loaders": { "title": "Hire Loaders", "desc": "On-demand port & warehouse crews with attendance proof." },
-    "safeDeal": { "title": "Safe Deal Escrow", "desc": "Funds held in escrow until your goods are delivered & confirmed." },
-    "offices": { "title": "Global Offices", "desc": "Local teams across 6 regional hubs — visit an office near you." }
+    "transport": {
+      "title": "Book Transport",
+      "desc": "Compare verified carriers, reefer & bulk, live tracking."
+    },
+    "loaders": {
+      "title": "Hire Loaders",
+      "desc": "On-demand port & warehouse crews with attendance proof."
+    },
+    "safeDeal": {
+      "title": "Safe Deal Escrow",
+      "desc": "Funds held in escrow until your goods are delivered & confirmed."
+    },
+    "offices": {
+      "title": "Global Offices",
+      "desc": "Local teams across 6 regional hubs — visit an office near you."
+    }
   },
   "cta": "List Your Product",
   "currency": {
@@ -288,7 +300,7 @@
       "productViews": "Product Views",
       "liveListings": "Live Listings",
       "buyerInquiries": "Buyer Inquiries",
-      "revenue": "Revenue",
+      "revenue": "Order volume",
       "topProducts": "Top Products",
       "noProducts": "No products yet.",
       "ordersCount_one": "{{count}} order",
@@ -619,11 +631,11 @@
       "pause": "Pause",
       "resume": "Resume",
       "analyticsSub": "Performance across your catalogue.",
-      "grossRevenue": "Gross revenue",
+      "grossRevenue": "Gross order volume",
       "listings": "Listings",
       "orders": "Orders",
       "totalBids": "Total bids",
-      "revenueTrend": "Revenue trend",
+      "revenueTrend": "Order volume trend",
       "ordersByStatus": "Orders by status"
     },
     "loaderco": {
@@ -739,7 +751,12 @@
       "quote": "Quote",
       "noTrips": "No trips yet — quote on a load to start one.",
       "addVehicle": "Add vehicle",
-      "vehicleStatus": { "available": "available", "on_trip": "on trip", "maintenance": "maintenance", "inactive": "inactive" },
+      "vehicleStatus": {
+        "available": "available",
+        "on_trip": "on trip",
+        "maintenance": "maintenance",
+        "inactive": "inactive"
+      },
       "insuranceTo": "Insurance to {{date}}",
       "noVehicles": "No vehicles yet.",
       "saveVehicleError": "Could not save this vehicle.",
@@ -773,7 +790,11 @@
       "noQuotesBody": "Quote on a load from Requests to see it here.",
       "loadFallback": "Load",
       "etaDaysShort": "ETA {{days}}d",
-      "quoteStatus": { "pending": "pending", "accepted": "accepted", "rejected": "rejected" },
+      "quoteStatus": {
+        "pending": "pending",
+        "accepted": "accepted",
+        "rejected": "rejected"
+      },
       "withdraw": "Withdraw",
       "myRequestsSub": "Loads you have posted for other transporters to quote on.",
       "from": "From",
@@ -785,12 +806,21 @@
       "noReqTitle": "No requests yet",
       "noReqBody": "Post a load above to collect quotes from other carriers.",
       "tripRef": "Trip {{ref}}",
-      "reqStatus": { "open": "open", "quoted": "quoted", "assigned": "assigned", "completed": "completed", "cancelled": "cancelled" },
+      "reqStatus": {
+        "open": "open",
+        "quoted": "quoted",
+        "assigned": "assigned",
+        "completed": "completed",
+        "cancelled": "cancelled"
+      },
       "driversSub": "Manage your drivers — photo, licence, experience and hourly rate.",
       "addDriver": "Add driver",
       "noDriversTitle": "No drivers yet",
       "noDriversBody": "Add your first driver to track fleet reliability.",
-      "driverStatus": { "active": "active", "off": "off" },
+      "driverStatus": {
+        "active": "active",
+        "off": "off"
+      },
       "licence": "Licence {{num}}",
       "exp": "exp {{date}}",
       "yrsExp": "{{years}} yrs exp",
@@ -843,7 +873,12 @@
       "taxLabel": "Tax",
       "detailTitle": "Invoice {{number}}",
       "invoiceFallback": "Invoice",
-      "status": { "paid": "paid", "void": "void", "issued": "issued", "draft": "draft" },
+      "status": {
+        "paid": "paid",
+        "void": "void",
+        "issued": "issued",
+        "draft": "draft"
+      },
       "from": "From",
       "to": "To",
       "issued": "Issued",
@@ -856,7 +891,12 @@
       "downloadPdf": "Download PDF",
       "tabIssued": "issued",
       "tabReceived": "received",
-      "filter": { "all": "all", "issued": "issued", "paid": "paid", "void": "void" },
+      "filter": {
+        "all": "all",
+        "issued": "issued",
+        "paid": "paid",
+        "void": "void"
+      },
       "noInvoices": "No {{tab}} invoices yet.",
       "noInvoicesFiltered": "No {{tab}} invoices ({{status}}) yet.",
       "toName": "to {{name}}",
@@ -898,7 +938,13 @@
       "reverseAuction": "Reverse auction",
       "bids": "Bids",
       "auction": "Auction",
-      "status": { "open": "open", "awarded": "awarded", "closed": "closed", "cancelled": "cancelled", "expired": "expired" },
+      "status": {
+        "open": "open",
+        "awarded": "awarded",
+        "closed": "closed",
+        "cancelled": "cancelled",
+        "expired": "expired"
+      },
       "closesAt": "closes {{date}}",
       "sellerBidsCount": "Seller bids ({{count}})",
       "bestPrice": "best {{price}}/{{unit}}",
@@ -937,7 +983,12 @@
       "deliveryOtpHint": "Give this to the driver only once the goods have physically arrived. It closes the order.",
       "fullDetails": "Full details",
       "invoicesSub": "Every invoice raised against you — sellers, transporters, loader companies and workers.",
-      "kind": { "order": "Goods", "trip": "Freight", "loaderjob": "Loading crew", "assignment": "Worker shift" },
+      "kind": {
+        "order": "Goods",
+        "trip": "Freight",
+        "loaderjob": "Loading crew",
+        "assignment": "Worker shift"
+      },
       "noInvoicesTitle": "No invoices yet",
       "noInvoicesBody": "Invoices appear here as soon as a counterparty raises one.",
       "messagesSub": "Chat with the sellers and carriers behind your orders.",
@@ -1068,7 +1119,11 @@
       "history": "Request history",
       "noRequests": "No requests yet.",
       "phNote": "e.g. We also export directly and want a seller account",
-      "status": { "pending": "pending", "approved": "approved", "rejected": "rejected" }
+      "status": {
+        "pending": "pending",
+        "approved": "approved",
+        "rejected": "rejected"
+      }
     },
     "productForm": {
       "attrSectionTitle": "{{name}} details",
@@ -1146,7 +1201,9 @@
       "phMarketName": "Kandla Port",
       "phQty": "500 MT",
       "phMoq": "25 MT",
-      "phOrigin": "🇮🇳 India"
+      "phOrigin": "🇮🇳 India",
+      "stock": "Stock (optional)",
+      "phStock": "e.g. 500 — blank = unlimited"
     },
     "ph": {
       "skill": "Forklift / Bagging",
@@ -1196,6 +1253,9 @@
     "availableLine": "{{qty}} available · MOQ {{moq}} · {{delivery}}",
     "proofLine": "{{watching}}+ watching · {{ordered}} ordered last month",
     "buy": "Buy",
+    "buyNamed": "Buy {{name}}",
+    "addToSaved": "Save to wishlist",
+    "removeFromSaved": "Remove from wishlist",
     "ended": "Ended",
     "liveAuction": "LIVE AUCTION",
     "sealedBids_one": "{{count}} sealed bid",
@@ -1301,10 +1361,22 @@
       "pageOf": "Page {{page}} of {{total}}"
     },
     "directory": {
-      "sellers": { "title": "Verified Sellers", "sub": "Browse exporters and producers — filter by market, country and rating." },
-      "transporters": { "title": "Transporters", "sub": "Fleets and freight partners ready to move your cargo." },
-      "loaders": { "title": "Loading Companies", "sub": "Port and warehouse crews with attendance-proof workflows." },
-      "workers": { "title": "Workers", "sub": "Independent and company loaders available for hire." },
+      "sellers": {
+        "title": "Verified Sellers",
+        "sub": "Browse exporters and producers — filter by market, country and rating."
+      },
+      "transporters": {
+        "title": "Transporters",
+        "sub": "Fleets and freight partners ready to move your cargo."
+      },
+      "loaders": {
+        "title": "Loading Companies",
+        "sub": "Port and warehouse crews with attendance-proof workflows."
+      },
+      "workers": {
+        "title": "Workers",
+        "sub": "Independent and company loaders available for hire."
+      },
       "listed": "{{count}} listed",
       "searchName": "Search by name…",
       "allCountries": "All countries",
@@ -1348,7 +1420,7 @@
       "demoAccounts": "Demo accounts · one click",
       "demoHint": "password: password123",
       "resendVerification": "Resend confirmation link",
-      "verificationSent": "Link sent \u2014 check your inbox",
+      "verificationSent": "Link sent — check your inbox",
       "forgotPassword": "Forgot password?",
       "otpSignIn": "Sign in with an email code"
     },
@@ -1357,7 +1429,7 @@
       "subtitle": "Enter your email and we'll send a reset link.",
       "email": "Email",
       "send": "Send reset link",
-      "sending": "Sending\u2026",
+      "sending": "Sending…",
       "sent": "If that email is registered, a reset link is on its way. Check your inbox.",
       "backToSignIn": "Back to sign in"
     },
@@ -1367,7 +1439,7 @@
       "newPassword": "New password",
       "confirmPassword": "Confirm password",
       "submit": "Set new password",
-      "submitting": "Saving\u2026",
+      "submitting": "Saving…",
       "mismatch": "Passwords don't match.",
       "tooShort": "Password must be at least 8 characters.",
       "invalidLink": "This reset link is invalid or has expired.",
@@ -1375,14 +1447,14 @@
     },
     "otpLogin": {
       "title": "Sign in with a code",
-      "subtitle": "We'll email you a 6-digit code to sign in \u2014 no password needed.",
+      "subtitle": "We'll email you a 6-digit code to sign in — no password needed.",
       "email": "Email",
       "sendCode": "Email me a code",
-      "sending": "Sending\u2026",
+      "sending": "Sending…",
       "codeSent": "If that email is registered, a code is on its way.",
       "code": "6-digit code",
       "verify": "Sign in",
-      "verifying": "Signing in\u2026",
+      "verifying": "Signing in…",
       "usePassword": "Sign in with a password instead",
       "resend": "Send a new code"
     },
@@ -1427,18 +1499,18 @@
       "phPorts": "Mumbai, Dubai",
       "phCountry": "🇮🇳 India",
       "phCity": "Amritsar",
-      "pickCountry": "\u2014 select your country \u2014",
+      "pickCountry": "— select your country —",
       "pickCountryFirst": "Select a country first",
-      "noCities": "No matching city \u2014 type your own",
+      "noCities": "No matching city — type your own",
       "cityHint": "Pick from the list, or type it if yours is missing",
       "tagHintPick": "Pick from the list, or type and press Enter",
       "checkInboxTitle": "Confirm your email",
-      "checkInboxBody": "We sent a confirmation link to {{email}}. Click it to activate your account \u2014 you can sign in once it is confirmed.",
+      "checkInboxBody": "We sent a confirmation link to {{email}}. Click it to activate your account — you can sign in once it is confirmed.",
       "resend": "Resend the link",
-      "resent": "Link sent \u2014 check your inbox"
+      "resent": "Link sent — check your inbox"
     },
     "verifyEmail": {
-      "checking": "Confirming your email\u2026",
+      "checking": "Confirming your email…",
       "failedTitle": "We could not confirm this link",
       "backToSignIn": "Back to sign in"
     },
@@ -1468,14 +1540,38 @@
         "support": "Support Office"
       },
       "list": {
-        "hq": { "name": "AgroTraders HQ", "city": "Dubai, UAE" },
-        "cis": { "name": "AgroTraders CIS", "city": "Moscow, Russia" },
-        "centralAsia": { "name": "Central Asia", "city": "Almaty, Kazakhstan" },
-        "southAsia": { "name": "South Asia", "city": "Mumbai, India" },
-        "turkiye": { "name": "Türkiye & Levant", "city": "Istanbul, Türkiye" },
-        "blackSea": { "name": "Black Sea Hub", "city": "Odesa, Ukraine" },
-        "latam": { "name": "LATAM", "city": "São Paulo, Brazil" },
-        "eu": { "name": "EU Office", "city": "Hamburg, Germany" }
+        "hq": {
+          "name": "AgroTraders HQ",
+          "city": "Dubai, UAE"
+        },
+        "cis": {
+          "name": "AgroTraders CIS",
+          "city": "Moscow, Russia"
+        },
+        "centralAsia": {
+          "name": "Central Asia",
+          "city": "Almaty, Kazakhstan"
+        },
+        "southAsia": {
+          "name": "South Asia",
+          "city": "Mumbai, India"
+        },
+        "turkiye": {
+          "name": "Türkiye & Levant",
+          "city": "Istanbul, Türkiye"
+        },
+        "blackSea": {
+          "name": "Black Sea Hub",
+          "city": "Odesa, Ukraine"
+        },
+        "latam": {
+          "name": "LATAM",
+          "city": "São Paulo, Brazil"
+        },
+        "eu": {
+          "name": "EU Office",
+          "city": "Hamburg, Germany"
+        }
       }
     },
     "cms": {
@@ -1517,7 +1613,8 @@
       "loaders": "Loaders",
       "safeDealProtected": "Safe Deal Protected",
       "escrowNote": "Funds held in escrow until you confirm delivery.",
-      "related": "You may also like"
+      "related": "You may also like",
+      "quoteRequested": "Quote requested — {{ref}}. The seller will respond with a price."
     },
     "safeDeal": {
       "badge": "SafeDeal Escrow Protection",
@@ -1561,7 +1658,14 @@
     "profile": {
       "loading": "Loading profile…",
       "notFound": "Profile not found.",
-      "role": { "buyer": "Buyer", "seller": "Seller", "transporter": "Transporter", "loaderco": "Loading Company", "worker": "Worker", "admin": "AgroTraders Staff" },
+      "role": {
+        "buyer": "Buyer",
+        "seller": "Seller",
+        "transporter": "Transporter",
+        "loaderco": "Loading Company",
+        "worker": "Worker",
+        "admin": "AgroTraders Staff"
+      },
       "kycVerified": "KYC Verified",
       "available": "Available {{from}}–{{to}} {{tz}}",
       "privacyNote": "Phone numbers and emails are private on AgroTraders — connect via chat, or trade with SafeDeal escrow.",
@@ -1688,7 +1792,7 @@
       "availableFrom": "Available from",
       "until": "Until",
       "timezone": "Timezone",
-      "pickTimezone": "\u2014 select your timezone \u2014",
+      "pickTimezone": "— select your timezone —",
       "languages": "Languages",
       "yourMarket": "Your market",
       "privateContact": "Private contact details",
@@ -1701,7 +1805,18 @@
       "saved": "Saved",
       "completeTitle": "Complete your profile",
       "completeSub": "Buyers and partners find you through this — takes two minutes.",
-      "phLocation": "Amritsar, India"
+      "phLocation": "Amritsar, India",
+      "dangerZone": "Danger zone",
+      "deleteBody": "Deleting your account signs you out everywhere and disables sign-in. Withdraw any wallet balance first.",
+      "confirmDelete": "Delete this account? This cannot be undone from the app.",
+      "deleteAccount": "Delete account",
+      "deleteError": "Could not delete your account. Please try again."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "body": "The page you are looking for does not exist or has moved.",
+      "home": "Go home",
+      "browse": "Browse the market"
     }
   },
   "chat": {

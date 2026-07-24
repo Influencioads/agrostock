@@ -169,7 +169,14 @@ export function ProductsPage() {
                             {t('prodMod.edit')}
                           </Button>
                           {p.status !== 'hidden' && (
-                            <Button size="sm" variant="ghost" disabled={takedown.isPending} onClick={() => takedown.mutate(p.id)}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={takedown.isPending}
+                              // ADM-02: confirm before hiding a live listing (matches
+                              // the pattern Categories/Reviews already use).
+                              onClick={() => { if (window.confirm(t('prodMod.confirmTakedown'))) takedown.mutate(p.id); }}
+                            >
                               {t('prodMod.takedown')}
                             </Button>
                           )}

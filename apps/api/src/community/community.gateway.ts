@@ -152,8 +152,15 @@ export class CommunityGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage('typing')
-  onTyping(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: { groupId?: string; threadId?: string; typing: boolean }) {
+  async onTyping(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: { groupId?: string; threadId?: string; typing: boolean }) {
     const user = this.user(socket);
+    // API-12: verify the caller may actually see this conversation before
+    // broadcasting into it — previously any socket could name an arbitrary room.
+    if (body.groupId) {
+      await this.community.assertCanJoinGroup(user, body.groupId);
+    } else if (body.threadId) {
+      await this.community.assertThreadParticipant(user, body.threadId);
+    }
     const room = body.groupId ? groupRoom(body.groupId) : body.threadId ? threadRoom(body.threadId) : null;
     if (room) socket.to(room).emit('typing', { userId: user.id, typing: body.typing, groupId: body.groupId, threadId: body.threadId });
     return { ok: true };

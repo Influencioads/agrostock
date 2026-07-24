@@ -1,0 +1,14 @@
+# WEB-13/E10: allow crawling of public pages; keep the authenticated console and
+# auth flows out of the index.
+User-agent: *
+Allow: /
+Disallow: /console
+Disallow: /login
+Disallow: /register
+Disallow: /verify-email
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /otp-login
+Disallow: /onboarding
+
+Sitemap: https://agrotraders.org/sitemap.xml

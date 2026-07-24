@@ -55,19 +55,28 @@ describe('token purpose separation (F16)', () => {
   });
 
   it('rejects a download token on the WebSocket handshake', async () => {
-    const jwt = new JwtService({});
-    const config = { get: (key: string) => (key === 'JWT_SECRET' ? BASE_SECRET : undefined) };
-    const ws = new WsAuthService(jwt, config as never, prismaWith(activeUser) as never);
+    // SEC-02: the access secret now comes from process.env (via jwtAccessSecret),
+    // not a per-service ConfigService read, so sign+verify against the same value.
+    const prevSecret = process.env.JWT_SECRET;
+    process.env.JWT_SECRET = BASE_SECRET;
+    try {
+      const jwt = new JwtService({});
+      const config = { get: (key: string) => (key === 'JWT_SECRET' ? BASE_SECRET : undefined) };
+      const ws = new WsAuthService(jwt, config as never, prismaWith(activeUser) as never);
 
-    const access = await jwt.signAsync({ sub: 'u1', email: activeUser.email, role: 'buyer', typ: 'access' }, {
-      secret: BASE_SECRET,
-      expiresIn: '5m',
-    });
-    await expect(ws.verify(`Bearer ${access}`)).resolves.toMatchObject({ id: 'u1' });
+      const access = await jwt.signAsync({ sub: 'u1', email: activeUser.email, role: 'buyer', typ: 'access' }, {
+        secret: BASE_SECRET,
+        expiresIn: '5m',
+      });
+      await expect(ws.verify(`Bearer ${access}`)).resolves.toMatchObject({ id: 'u1' });
 
-    // A download token signed with the OLD shared secret must no longer work.
-    const oldDownload = await jwt.signAsync({ inv: 'i1', sub: 'u1' }, { secret: BASE_SECRET, expiresIn: '5m' });
-    await expect(ws.verify(`Bearer ${oldDownload}`)).rejects.toThrow(UnauthorizedException);
+      // A download token signed with the OLD shared secret must no longer work.
+      const oldDownload = await jwt.signAsync({ inv: 'i1', sub: 'u1' }, { secret: BASE_SECRET, expiresIn: '5m' });
+      await expect(ws.verify(`Bearer ${oldDownload}`)).rejects.toThrow(UnauthorizedException);
+    } finally {
+      if (prevSecret === undefined) delete process.env.JWT_SECRET;
+      else process.env.JWT_SECRET = prevSecret;
+    }
   });
 
   it('rejects a purpose-keyed download token against the access secret entirely', async () => {

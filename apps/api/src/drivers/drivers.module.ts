@@ -15,6 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { DriverStatus } from '@prisma/client';
 import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
@@ -118,7 +119,7 @@ export class DriversController {
   }
   @ApiConsumes('multipart/form-data')
   @Post(':id/photo')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', uploadLimits()))
   async uploadPhoto(@CurrentUser() u: AuthUser, @Param('id') id: string, @UploadedFile() file?: Express.Multer.File) {
     const photoUrl = await this.uploads.saveImage(file, 'drivers');
     return this.drivers.setPhoto(id, u.id, photoUrl);

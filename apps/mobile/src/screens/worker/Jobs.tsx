@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
-import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt, QueryError } from '../../ui';
 import { View } from 'react-native';
 import { useI18n } from '../../i18n';
 
@@ -12,7 +12,7 @@ export function WorkerJobs() {
   const { t } = useI18n();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { data: jobs = [], isLoading } = useQuery<Assignment[]>({ queryKey: ['worker-jobs'], queryFn: () => api.loaders.workerJobs() as Promise<Assignment[]>, enabled: !!user });
+  const { data: jobs = [], isLoading, isError, refetch } = useQuery<Assignment[]>({ queryKey: ['worker-jobs'], queryFn: () => api.loaders.workerJobs() as Promise<Assignment[]>, enabled: !!user });
   const refresh = () => qc.invalidateQueries({ queryKey: ['worker-jobs'] });
   const accept = useMutation({ mutationFn: (id: string) => api.loaders.accept(id), onSuccess: refresh });
   const checkin = useMutation({ mutationFn: (id: string) => api.loaders.checkin(id), onSuccess: refresh });
@@ -32,6 +32,8 @@ export function WorkerJobs() {
       <Txt variant="h2">{t('compX.jobs.title')}</Txt>
       {isLoading ? (
         <SkeletonRows />
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} />
       ) : jobs.length === 0 ? (
         <EmptyState icon="briefcase-outline" title={t('compX.jobs.emptyTitle')} body={t('compX.jobs.emptyBody')} />
       ) : (

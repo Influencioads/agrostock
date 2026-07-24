@@ -51,5 +51,8 @@
     "user": "用户"
   },
   "viewAll": "查看全部",
-  "yes": "是的"
+  "yes": "是的",
+  "errorTitle": "出错了",
+  "errorBody": "无法加载。请检查网络连接后重试。",
+  "retry": "重试"
 }

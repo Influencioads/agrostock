@@ -379,7 +379,7 @@
       "liveListings": "Aktive Angebote",
       "readyToWithdraw": "bereit zum Rückzug",
       "recentOrders": "Aktuelle Bestellungen",
-      "revenue": "Einnahmen",
+      "revenue": "Auftragsvolumen",
       "safeDealBalance": "Sicheres Deal-Balance",
       "sellerSub": "So schneidet Ihr Shop ab.",
       "shipmentFallback": "Lieferung",
@@ -901,7 +901,9 @@
       "supplyCountriesHint": "— Wählen Sie alle Länder aus, in die Sie versenden können.",
       "unit": "Einheit",
       "uploadFailed": "Der Bild-Upload ist fehlgeschlagen. Bitte versuchen Sie es mit kleineren JPG- oder PNG-Dateien.",
-      "uploading": "Wird hochgeladen…"
+      "uploading": "Wird hochgeladen…",
+      "stock": "Bestand (optional)",
+      "phStock": "z. B. 500 — leer = unbegrenzt"
     },
     "requestAccess": "Zugriff anfordern",
     "reviewQueue": "Warteschlange für Überprüfungen",
@@ -974,7 +976,7 @@
       "directEnquiries": "Direkte Anfragen",
       "ended": "Beendet",
       "etaDays": "ETA (Tage)",
-      "grossRevenue": "Bruttoeinnahmen",
+      "grossRevenue": "Bruttoauftragsvolumen",
       "highest": "Höchste",
       "highestBid": "Höchstgebot",
       "launchError": "Diese Kampagne konnte nicht gestartet werden.",
@@ -1014,7 +1016,7 @@
       "requestFallback": "Anfrage",
       "respondFromOrders": "Antworten Sie über die Registerkarte „Bestellungen“.",
       "resume": "Wieder aufnehmen",
-      "revenueTrend": "Umsatzentwicklung",
+      "revenueTrend": "Auftragsvolumen-Trend",
       "reverseAuction": "Umgekehrte Auktion",
       "sealedBid": "Versiegeltes Gebot",
       "sealedNote": "Verdecktes Bieten: Nur Sie sehen die Gebote. Der Höchstbietende gewinnt nach Auktionsende.",
@@ -1453,7 +1455,8 @@
       "suppliesTo": "Lieferungen an",
       "transport": "Transport",
       "verifiedSeller": "Verifizierter Verkäufer",
-      "watchingNow": "{{count}}+ Personen schauen gerade zu"
+      "watchingNow": "{{count}}+ Personen schauen gerade zu",
+      "quoteRequested": "Angebot angefragt — {{ref}}. Der Verkäufer meldet sich mit einem Preis."
     },
     "profile": {
       "activeRoutes": "Aktive Routen",
@@ -1515,7 +1518,12 @@
       "whatsapp": "WhatsApp",
       "whereFrom": "Woher du kommst",
       "youFallback": "Du",
-      "yourMarket": "Ihr Markt"
+      "yourMarket": "Ihr Markt",
+      "dangerZone": "Gefahrenzone",
+      "deleteBody": "Das Löschen Ihres Kontos meldet Sie überall ab und deaktiviert die Anmeldung. Heben Sie zuerst Ihr Guthaben ab.",
+      "confirmDelete": "Dieses Konto löschen? Dies kann in der App nicht rückgängig gemacht werden.",
+      "deleteAccount": "Konto löschen",
+      "deleteError": "Konto konnte nicht gelöscht werden. Bitte erneut versuchen."
     },
     "register": {
       "checkInboxBody": "Wir haben einen Bestätigungslink an {{email}} gesendet. Klicken Sie darauf, um Ihr Konto zu aktivieren – Sie können sich anmelden, sobald es bestätigt ist.",
@@ -1701,6 +1709,12 @@
       "backToSignIn": "Zurück zur Anmeldeseite",
       "checking": "E-Mail-Adresse wird bestätigt…",
       "failedTitle": "Wir konnten diesen Link nicht bestätigen."
+    },
+    "notFound": {
+      "title": "Seite nicht gefunden",
+      "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+      "home": "Zur Startseite",
+      "browse": "Markt durchsuchen"
     }
   },
   "product": {
@@ -1819,6 +1833,8 @@
     "workersNeeded": "Arbeiter benötigt",
     "you": "Du",
     "yourBidPlaceholder": "Ihr Gebot (USD)",
-    "yourBids": "Ihre Gebote"
+    "yourBids": "Ihre Gebote",
+    "addToSaved": "Auf die Merkliste",
+    "removeFromSaved": "Von der Merkliste entfernen"
   }
 }

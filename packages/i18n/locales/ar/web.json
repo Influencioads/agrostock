@@ -414,7 +414,7 @@
       "liveListings": "القوائم النشطة",
       "readyToWithdraw": "مستعد للانسحاب",
       "recentOrders": "الطلبات الأخيرة",
-      "revenue": "ربح",
+      "revenue": "حجم الطلبات",
       "safeDealBalance": "توازن الصفقة الآمنة",
       "sellerSub": "إليك كيفية أداء متجرك.",
       "shipmentFallback": "شحنة",
@@ -956,7 +956,9 @@
       "supplyCountriesHint": "— حدد كل دولة يمكنك الشحن إليها",
       "unit": "وحدة",
       "uploadFailed": "فشل تحميل الصورة. حاول استخدام ملفات JPG أو PNG أصغر حجماً.",
-      "uploading": "جارٍ التحميل…"
+      "uploading": "جارٍ التحميل…",
+      "stock": "المخزون (اختياري)",
+      "phStock": "مثال: 500 — فارغ = غير محدود"
     },
     "requestAccess": "طلب الوصول",
     "reviewQueue": "قائمة المراجعة",
@@ -1039,7 +1041,7 @@
       "directEnquiries": "الاستفسارات المباشرة",
       "ended": "انتهى",
       "etaDays": "ETA (أيام)",
-      "grossRevenue": "إجمالي الإيرادات",
+      "grossRevenue": "إجمالي حجم الطلبات",
       "highest": "أعلى مستوى",
       "highestBid": "أعلى عرض سعر",
       "launchError": "تعذر إطلاق هذه الحملة.",
@@ -1079,7 +1081,7 @@
       "requestFallback": "طلب",
       "respondFromOrders": "يمكنك الرد من علامة تبويب الطلبات.",
       "resume": "سيرة ذاتية",
-      "revenueTrend": "اتجاه الإيرادات",
+      "revenueTrend": "اتجاه حجم الطلبات",
       "reverseAuction": "مزاد عكسي",
       "sealedBid": "عرض مغلق",
       "sealedNote": "المزايدة المغلقة: أنت وحدك من يرى العروض. يفوز صاحب أعلى عرض عند انتهاء المزاد.",
@@ -1528,7 +1530,8 @@
       "specifications": "تحديد",
       "suppliesTo": "الإمدادات إلى",
       "transport": "ينقل",
-      "verifiedSeller": "بائع موثق"
+      "verifiedSeller": "بائع موثق",
+      "quoteRequested": "تم طلب عرض السعر — {{ref}}. سيرد البائع بالسعر."
     },
     "profile": {
       "activeRoutes": "المسارات النشطة",
@@ -1590,7 +1593,12 @@
       "whatsapp": "واتساب",
       "whereFrom": "من أين أنت",
       "youFallback": "أنت",
-      "yourMarket": "سوقك"
+      "yourMarket": "سوقك",
+      "dangerZone": "منطقة الخطر",
+      "deleteBody": "حذف حسابك يسجّل خروجك من كل مكان ويعطّل تسجيل الدخول. اسحب رصيد المحفظة أولاً.",
+      "confirmDelete": "حذف هذا الحساب؟ لا يمكن التراجع عن ذلك من التطبيق.",
+      "deleteAccount": "حذف الحساب",
+      "deleteError": "تعذّر حذف حسابك. حاول مرة أخرى."
     },
     "register": {
       "checkInboxBody": "لقد أرسلنا رابط تأكيد إلى {{email}}. انقر عليه لتفعيل حسابك — يمكنك تسجيل الدخول بمجرد تأكيده.",
@@ -1780,6 +1788,12 @@
       "backToSignIn": "العودة إلى تسجيل الدخول",
       "checking": "جارٍ تأكيد بريدك الإلكتروني…",
       "failedTitle": "لم نتمكن من تأكيد هذا الرابط"
+    },
+    "notFound": {
+      "title": "الصفحة غير موجودة",
+      "body": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+      "home": "الصفحة الرئيسية",
+      "browse": "تصفح السوق"
     }
   },
   "product": {
@@ -1903,6 +1917,8 @@
     "workersNeeded": "مطلوب عمال",
     "you": "أنت",
     "yourBidPlaceholder": "عرضك (USD)",
-    "yourBids": "عروضكم"
+    "yourBids": "عروضكم",
+    "addToSaved": "حفظ في المفضلة",
+    "removeFromSaved": "إزالة من المفضلة"
   }
 }

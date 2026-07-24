@@ -174,8 +174,11 @@ export class SupportGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage('typing')
-  onTyping(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: { ticketId: string; typing: boolean }) {
+  async onTyping(@ConnectedSocket() socket: ChatSocket, @MessageBody() body: { ticketId: string; typing: boolean }) {
     const user = this.user(socket);
+    // API-12: every other ticket event is access-checked; this one wasn't, so any
+    // authenticated user could spoof a typing indicator into any ticket room.
+    await this.support.assertCanView(user, body.ticketId);
     socket.to(convRoom(body.ticketId)).emit('typing', { userId: user.id, ticketId: body.ticketId, typing: body.typing });
     return { ok: true };
   }

@@ -81,7 +81,7 @@ function AvatarUpload({ name, avatarUrl, onUploaded }: { name: string; avatarUrl
  */
 export function ProfileForm() {
   const { t } = useI18n();
-  const { roles, user } = useAuth();
+  const { roles, user, logout } = useAuth();
   const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -318,6 +318,27 @@ export function ProfileForm() {
         <Button onClick={save} leftIcon={<Icon name="check" size={16} />}>{t('page.profileForm.saveProfile')}</Button>
         {saved && <span className="text-sm font-semibold text-status-success">✓ {t('page.profileForm.saved')}</span>}
       </div>
+
+      {/* Phase I: self-service account deletion (soft delete + session revocation). */}
+      <Card className="border border-status-error/30">
+        <h3 className="font-display font-bold text-status-error">{t('page.profileForm.dangerZone')}</h3>
+        <p className="mt-1 text-xs text-ink-soft">{t('page.profileForm.deleteBody')}</p>
+        <Button
+          variant="danger"
+          className="mt-3"
+          onClick={async () => {
+            if (!window.confirm(t('page.profileForm.confirmDelete'))) return;
+            try {
+              await api.me.deleteAccount();
+              logout();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : t('page.profileForm.deleteError'));
+            }
+          }}
+        >
+          {t('page.profileForm.deleteAccount')}
+        </Button>
+      </Card>
     </div>
   );
 }

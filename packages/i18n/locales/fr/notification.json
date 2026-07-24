@@ -134,6 +134,10 @@
     "status_changed": {
       "body": "La commande est maintenant de {{status}}.",
       "title": "Commande {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "Commande passée",
+      "body": "Votre commande {{reference}} pour {{product}} a été passée."
     }
   },
   "product": {

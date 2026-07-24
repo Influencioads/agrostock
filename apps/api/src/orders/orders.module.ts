@@ -14,11 +14,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { DispatchMode, OrderEventType, OrderStatus, Prisma } from '@prisma/client';
-import { IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
-import { secureOtp, secureReference } from '../common/secure-random';
+import { secureEquals, secureOtp, secureReference } from '../common/secure-random';
 import { assertProductSellable, resolveUnitPriceCents } from '../products/sellable';
 import { NotificationsService, type NotificationParams } from '../notifications/notifications.service';
 import { EscrowService } from '../wallet/wallet.service';
@@ -31,29 +32,31 @@ const ref = () => secureReference('AG');
 const otp = () => secureOtp();
 /** F36: wrong dispatch-OTP guesses allowed before the code locks. */
 const DISPATCH_OTP_MAX_ATTEMPTS = 5;
-/** The display string every money-mutating path must keep in sync with `amountCents`. */
-const usd = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`;
+/** The display string every money-mutating path must keep in sync with `amountCents`.
+ * BL-13: render to 2 decimals so cents aren't dropped (150¢ → "$1.50", not "$2"). */
+const usd = (cents: number) =>
+  `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // ── DTOs ─────────────────────────────────────────────────────────
 
 export class PlaceOrderDto {
   @ApiProperty() @IsString() productSlug!: string;
-  @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) qty!: number;
+  @ApiProperty({ minimum: 1, maximum: MAX_QTY }) @IsInt() @Min(1) @Max(MAX_QTY) qty!: number;
   /** F11: optional client idempotency key — a retry with the same key returns the original order. */
   @ApiProperty({ required: false, maxLength: 100 }) @IsOptional() @IsString() @MaxLength(100) idempotencyKey?: string;
 }
 
 export class EnquiryDto {
   @ApiProperty() @IsString() productSlug!: string;
-  @ApiProperty({ minimum: 1 }) @IsInt() @Min(1) qty!: number;
+  @ApiProperty({ minimum: 1, maximum: MAX_QTY }) @IsInt() @Min(1) @Max(MAX_QTY) qty!: number;
   @ApiProperty({ required: false, maxLength: 600 }) @IsOptional() @IsString() @MaxLength(600) note?: string;
 }
 
 export class RespondDto {
   @ApiProperty({ required: false, description: 'Offered price per unit, USD cents' })
-  @IsOptional() @IsInt() @Min(0) unitPriceCents?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) unitPriceCents?: number;
   @ApiProperty({ required: false, description: 'Total order value, USD cents' })
-  @IsOptional() @IsInt() @Min(0) amountCents?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) amountCents?: number;
   @ApiProperty({ required: false, maxLength: 600 }) @IsOptional() @IsString() @MaxLength(600) note?: string;
 }
 
@@ -197,7 +200,20 @@ export class OrdersService {
   private async notify(userId: string, type: string, params?: NotificationParams, data?: Record<string, unknown>) {
     // Persist + fan-out (realtime/push/email) is all handled by create(); title/body
     // are rendered from the `notification:<type>` catalog in the recipient's locale.
-    await this.notifications.create({ userId, system: 'orders', type, params, data });
+    //
+    // FLOW-01: every order notification carries a deep link. Without `linkUrl` the
+    // web bell click only marked the item read, web push landed on /console, and
+    // the mobile tap fell through to the generic Notifications list — so an
+    // "order shipped" alert could never actually open the order.
+    const orderId = typeof data?.orderId === 'string' ? data.orderId : undefined;
+    await this.notifications.create({
+      userId,
+      system: 'orders',
+      type,
+      params,
+      data,
+      ...(orderId ? { linkUrl: `/orders/${orderId}` } : {}),
+    });
   }
 
   /**
@@ -262,6 +278,9 @@ export class OrdersService {
     // F04/F12: enquiries are a purchase-intent path too — the listing must be
     // live and validly priced.
     assertProductSellable(product);
+    // BL-15: a seller can hold a buyer role too; block self-trade (mirrors the
+    // own-listing guards in auctions.place / buyer-bids.submitBid).
+    if (product.sellerId === buyer.id) throw new BadRequestException('You cannot order your own listing.');
     const unitPriceCents = resolveUnitPriceCents(product);
     const amountCents = unitPriceCents * dto.qty;
 
@@ -341,27 +360,30 @@ export class OrdersService {
     // slug even though it can't be browsed. F12: reject listings with no valid
     // canonical price rather than coercing an unparseable string to 0.
     assertProductSellable(product);
+    // BL-15: block self-trade (a seller may also hold a buyer role).
+    if (product.sellerId === buyerId) throw new BadRequestException('You cannot order your own listing.');
     const unitPriceCents = resolveUnitPriceCents(product);
     const amountCents = unitPriceCents * dto.qty;
-
-    // F10: reserve stock atomically before creating the order. The guard
-    // `stockQty - reservedQty >= qty` is evaluated inside a single UPDATE (row
-    // lock), so two buyers racing for the last unit can't both succeed — a
-    // read-then-write check in application code could. Column-to-column
-    // comparison isn't expressible in Prisma's typed API, hence raw SQL.
-    if (product.stockQty !== null) {
-      const reserved = await this.prisma.$executeRaw`
-        UPDATE "Product"
-        SET "reservedQty" = "reservedQty" + ${dto.qty}
-        WHERE "id" = ${product.id}
-          AND "stockQty" IS NOT NULL
-          AND "stockQty" - "reservedQty" >= ${dto.qty}`;
-      if (reserved === 0) throw new BadRequestException('Not enough stock available for this quantity.');
-    }
 
     let order;
     try {
       order = await this.prisma.$transaction(async (tx) => {
+        // F10/BL-11: reserve stock atomically INSIDE the create transaction. The
+        // guard `stockQty - reservedQty >= qty` is a single UPDATE (row lock), so
+        // two buyers racing for the last unit can't both succeed. Keeping it in the
+        // same transaction as `order.create` means any failure — including a lost
+        // idempotency-key race — rolls the reservation back automatically, instead
+        // of the old two-step version that could strand `reservedQty` on a crash.
+        // Column-to-column comparison isn't expressible in Prisma's typed API.
+        if (product.stockQty !== null) {
+          const reserved = await tx.$executeRaw`
+            UPDATE "Product"
+            SET "reservedQty" = "reservedQty" + ${dto.qty}
+            WHERE "id" = ${product.id}
+              AND "stockQty" IS NOT NULL
+              AND "stockQty" - "reservedQty" >= ${dto.qty}`;
+          if (reserved === 0) throw new BadRequestException('Not enough stock available for this quantity.');
+        }
         const created = await tx.order.create({
           data: {
             reference: ref(),
@@ -383,10 +405,14 @@ export class OrdersService {
         return created;
       });
     } catch (e) {
-      // Release the reservation if the order couldn't be created, so stock isn't
-      // stranded.
-      if (product.stockQty !== null) {
-        await this.prisma.product.update({ where: { id: product.id }, data: { reservedQty: { decrement: dto.qty } } }).catch(() => {});
+      // BL-11: the pre-check above is check-then-act; two concurrent retries with
+      // the same idempotency key can both pass it and race on the unique index.
+      // The loser gets P2002 — return the winner's order (whose reservation stands)
+      // rather than surfacing an error the retry was meant to absorb. The loser's
+      // own reservation already rolled back with its transaction.
+      if (dto.idempotencyKey && (e as { code?: string }).code === 'P2002') {
+        const prior = await this.prisma.order.findUnique({ where: { idempotencyKey: dto.idempotencyKey }, include: ORDER_INCLUDE });
+        if (prior) return prior;
       }
       throw e;
     }
@@ -396,6 +422,15 @@ export class OrdersService {
       order.sellerId,
       'order.new_order',
       { reference: order.reference, buyer: order.buyer.name, product: product.name },
+      { orderId: order.id },
+    );
+    // FLOW-02: and confirm to the BUYER. Previously placing an order produced a
+    // client-side toast and nothing else — no notification, no email — so the
+    // buyer had no durable record of their own purchase.
+    await this.notify(
+      buyerId,
+      'order.placed',
+      { reference: order.reference, product: product.name },
       { orderId: order.id },
     );
     return order;
@@ -484,6 +519,24 @@ export class OrdersService {
     }
   }
 
+  /**
+   * BL-01/BL-02: settle a still-held escrow hold when an order closes.
+   * `release` credits the seller (successful delivery); `refund` returns the
+   * buyer's money (cancellation). Only paid orders carry a hold, so this is a
+   * no-op for the common unpaid case. `escrow.settle` claims `held → settled`
+   * conditionally and keys its credits, so calling it here is safe even if a
+   * dispute/admin path also fires — the money can only ever move once.
+   */
+  private async settleHoldOnClose(orderId: string, kind: 'release' | 'refund', note?: string) {
+    const hold = await this.prisma.escrowHold.findUnique({ where: { orderId } });
+    if (!hold || hold.status !== 'held') return;
+    await this.escrow.settle(
+      kind === 'release'
+        ? { orderId, releaseCents: hold.amountCents, note }
+        : { orderId, refundCents: hold.amountCents, note },
+    );
+  }
+
   // ── generic transitions ────────────────────────────────────────
 
   async setStatus(id: string, user: AuthUser, status: OrderStatus) {
@@ -510,6 +563,24 @@ export class OrdersService {
       }
     }
 
+    // BL-08: accepting a quote (quote → processing) reserves stock atomically,
+    // just like Buy-now's place(). Guarded to the `quote` origin so a dispute
+    // re-open (dispute → processing) can't double-reserve. Runs before the flip so
+    // an oversold listing keeps the order in `quote`. Later cancel releases the
+    // reservation (settleReservation false); delivery captures it (true).
+    if (status === 'processing' && order.status === 'quote' && order.productId && (order.qtyValue ?? 0) > 0) {
+      const product = await this.prisma.product.findUnique({ where: { id: order.productId }, select: { stockQty: true } });
+      if (product && product.stockQty !== null) {
+        const reserved = await this.prisma.$executeRaw`
+          UPDATE "Product"
+          SET "reservedQty" = "reservedQty" + ${order.qtyValue}
+          WHERE "id" = ${order.productId}
+            AND "stockQty" IS NOT NULL
+            AND "stockQty" - "reservedQty" >= ${order.qtyValue}`;
+        if (reserved === 0) throw new BadRequestException('Not enough stock available for this quantity.');
+      }
+    }
+
     // F06: paying an order holds the funds in ledger-backed escrow — the buyer's
     // wallet is debited into a per-order hold (overdraft-safe, idempotent). This
     // runs before the status flip so an unfunded buyer can't reach `paid`. The
@@ -531,7 +602,12 @@ export class OrdersService {
     });
 
     // F10: a cancelled order frees the stock it reserved.
-    if (status === 'cancelled') await this.settleReservation(order, false);
+    // BL-02: and refunds the buyer's escrow hold if the order was paid — including
+    // the party-driven `dispute → cancelled` edge, which previously stranded funds.
+    if (status === 'cancelled') {
+      await this.settleReservation(order, false);
+      await this.settleHoldOnClose(id, 'refund', `Order ${updated.reference} cancelled`);
+    }
 
     const counterparty = order.buyerId === user.id ? order.sellerId : order.buyerId;
     await this.notify(counterparty, 'order.status_changed', { reference: updated.reference, status: { enum: 'order_status', value: status } }, { orderId: id });
@@ -661,7 +737,7 @@ export class OrdersService {
     if (order.pickupOtpAttempts >= DISPATCH_OTP_MAX_ATTEMPTS) {
       throw new BadRequestException('Too many incorrect attempts. Ask the seller to re-dispatch this order.');
     }
-    if (!order.pickupOtp || order.pickupOtp !== code.trim()) {
+    if (!secureEquals(order.pickupOtp, code.trim())) {
       await this.prisma.order.update({ where: { id }, data: { pickupOtpAttempts: { increment: 1 } } });
       throw new BadRequestException('Incorrect pickup OTP.');
     }
@@ -697,7 +773,7 @@ export class OrdersService {
     if (order.deliveryOtpAttempts >= DISPATCH_OTP_MAX_ATTEMPTS) {
       throw new BadRequestException('Too many incorrect attempts. Ask the seller to re-dispatch this order.');
     }
-    if (!order.deliveryOtp || order.deliveryOtp !== code.trim()) {
+    if (!secureEquals(order.deliveryOtp, code.trim())) {
       await this.prisma.order.update({ where: { id }, data: { deliveryOtpAttempts: { increment: 1 } } });
       throw new BadRequestException('Incorrect delivery OTP.');
     }
@@ -710,6 +786,10 @@ export class OrdersService {
 
     // F10: delivery consumes the reserved units from on-hand stock.
     await this.settleReservation(order, true);
+    // BL-01: a confirmed delivery releases the escrow hold to the seller. This was
+    // the missing leg — previously only a dispute could ever settle a hold, so the
+    // seller's money was stranded on every successful order.
+    await this.settleHoldOnClose(id, 'release', `Delivery confirmed for order ${order.reference}`);
 
     await this.notify(order.buyerId, 'order.delivered_buyer', { reference: order.reference }, { orderId: id });
     await this.notify(order.sellerId, 'order.delivered_seller', { reference: order.reference }, { orderId: id });

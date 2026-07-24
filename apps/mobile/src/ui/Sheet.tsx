@@ -37,6 +37,10 @@ export function Sheet({
           s.panel,
           fullScreen ? s.panelFull : s.panelPartial,
           fullScreen ? { paddingTop: insets.top } : null,
+          // A non-scroll body flexes (FlatList owns its own scroll); flex needs a
+          // definite parent height, so give the partial panel one — otherwise the
+          // list collapses to 0 and the sheet opens empty.
+          !fullScreen && !scroll ? s.panelFlexBody : null,
         ]}
       >
         {!fullScreen ? <View style={s.handle} /> : null}
@@ -73,6 +77,7 @@ const s = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: C.overlay },
   panel: { backgroundColor: C.white, ...elevation.sheet },
   panelPartial: { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, maxHeight: '86%' },
+  panelFlexBody: { height: '82%' },
   panelFull: { flex: 1 },
   handle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: C.hairline, marginTop: 8 },
   header: {

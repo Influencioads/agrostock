@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -50,8 +51,20 @@ function haversineKm(a: GeoPoint, b: GeoPoint): number {
 @Injectable()
 export class GeoService {
   private readonly cache = new Map<string, GeoPoint | null>();
+  // API-16: bound the in-memory cache so an attacker probing many distinct queries
+  // can't grow it without limit (memory DoS). Map preserves insertion order, so
+  // evicting the first key drops the oldest entry (approx-LRU is fine here).
+  private static readonly MAX_CACHE = 5_000;
 
   constructor(private readonly config: ConfigService) {}
+
+  private cacheSet(key: string, value: GeoPoint | null): void {
+    if (this.cache.size >= GeoService.MAX_CACHE) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest !== undefined) this.cache.delete(oldest);
+    }
+    this.cache.set(key, value);
+  }
 
   private apiKey(): string {
     const key = this.config.get<string>('GOOGLE_MAPS_API_KEY');
@@ -86,7 +99,7 @@ export class GeoService {
     }
 
     if (data.status === 'ZERO_RESULTS' || !data.results?.length) {
-      this.cache.set(cacheKey, null);
+      this.cacheSet(cacheKey, null);
       throw new NotFoundException(`Could not locate "${query}"`);
     }
     if (data.status !== 'OK') {
@@ -101,7 +114,7 @@ export class GeoService {
       lng: top.geometry.location.lng,
       label: top.formatted_address,
     };
-    this.cache.set(cacheKey, point);
+    this.cacheSet(cacheKey, point);
     return point;
   }
 
@@ -173,9 +186,14 @@ export class GeoRefController {
   }
 }
 
+// API-16: geocode/route proxy Google Maps under the server's paid key. Even
+// behind auth, an authenticated user could burn the quota in a loop — a tight
+// per-user throttle caps the spend (cache hits don't count, this only bites the
+// distinct-query flood that reaches Google).
 @ApiTags('geo')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Throttle({ default: { ttl: 60_000, limit: 30 } })
 @Controller('geo')
 export class GeoController {
   constructor(private readonly svc: GeoService) {}

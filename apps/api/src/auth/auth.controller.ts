@@ -24,9 +24,11 @@ export class AuthController {
 
   /** Coarse device/network context recorded on the refresh session (F39). */
   private meta(req: Request): SessionMeta {
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim() || req.ip;
-    return { device: req.headers['user-agent'], ip: ip ?? undefined };
+    // SEC-01: trust Express's own `req.ip`, which resolves the client from
+    // X-Forwarded-For only for the configured trusted proxy hop (see main.ts
+    // `trust proxy`). Reading the raw header directly trusted a spoofable,
+    // client-controlled value.
+    return { device: req.headers['user-agent'], ip: req.ip ?? undefined };
   }
 
   /**

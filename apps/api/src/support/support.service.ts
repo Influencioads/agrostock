@@ -8,6 +8,7 @@ import { Prisma, SupportPriority, SupportStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../common/audit.service';
 import { sanitizeMessage } from '../common/sanitize';
+import { secureReference } from '../common/secure-random';
 import { isSuperAdmin } from '../auth/permissions.guard';
 import type { AuthUser } from '../auth/current-user.decorator';
 import type {
@@ -48,7 +49,10 @@ export class SupportService {
   ) {}
 
   private reference() {
-    return 'TK-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    // API-16: CSPRNG with a far larger space. The old Math.random 6-char code had
+    // no collision retry, so a collision hit the @unique column and 500'd the
+    // ticket create.
+    return secureReference('TK');
   }
 
   /** Distinct set of staff user ids to notify about new/updated tickets. */

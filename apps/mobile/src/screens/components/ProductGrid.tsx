@@ -1,7 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 import type { ApiProduct } from '@agrotraders/api-client';
 import { space } from '../../theme/tokens';
-import { EmptyState, SkeletonGrid } from '../../ui';
+import { EmptyState, ErrorState, SkeletonGrid } from '../../ui';
+import { useI18n } from '../../i18n';
 import { ProductCard } from '../components';
 
 /**
@@ -9,18 +10,33 @@ import { ProductCard } from '../components';
  * Offers, the boards). Bleeds to the screen edges with a hairline-width gutter
  * so the cards, not the page padding, define the rhythm.
  */
-export function ProductGrid({ products, loading, onOpen, empty }: {
+export function ProductGrid({ products, loading, error, onRetry, onOpen, empty }: {
   products: ApiProduct[];
   loading?: boolean;
+  /** F28: true when the query failed — shown as a retryable error, not "empty". */
+  error?: boolean;
+  onRetry?: () => void;
   onOpen: (p: ApiProduct) => void;
   /** Shown when the query succeeded but matched nothing. */
   empty?: { title: string; body?: string; action?: string; onAction?: () => void };
 }) {
+  const { t } = useI18n();
   if (loading) {
     return (
       <View style={s.pad}>
         <SkeletonGrid count={6} />
       </View>
+    );
+  }
+  // F28: a failed fetch with no data is an error (retryable), never "no results".
+  if (error && products.length === 0) {
+    return (
+      <ErrorState
+        title={t('common:errorTitle')}
+        body={t('common:errorBody')}
+        onRetry={onRetry}
+        retryLabel={t('common:retry')}
+      />
     );
   }
   if (products.length === 0 && empty) {

@@ -7,7 +7,7 @@ import { api } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, QueryError, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 
 type TFn = (key: string, options?: Record<string, unknown>) => string;
@@ -26,8 +26,12 @@ export function LoaderJobs() {
   const { fmtCents } = useCurrency();
   const [tab, setTab] = useState('requests');
   const [manageId, setManageId] = useState<string | null>(null);
-  const { data: open = [], isLoading: l1 } = useQuery<ApiLoaderJob[]>({ queryKey: ['jobs', 'open'], queryFn: () => api.loaders.openJobs(), enabled: !!user });
-  const { data: mine = [], isLoading: l2 } = useQuery<ApiLoaderJob[]>({ queryKey: ['jobs', 'mine'], queryFn: () => api.loaders.myJobs(), enabled: !!user });
+  const openQ = useQuery<ApiLoaderJob[]>({ queryKey: ['jobs', 'open'], queryFn: () => api.loaders.openJobs(), enabled: !!user });
+  const mineQ = useQuery<ApiLoaderJob[]>({ queryKey: ['jobs', 'mine'], queryFn: () => api.loaders.myJobs(), enabled: !!user });
+  const open = openQ.data ?? [];
+  const mine = mineQ.data ?? [];
+  const l1 = openQ.isLoading;
+  const l2 = mineQ.isLoading;
 
   const refresh = () => { qc.invalidateQueries({ queryKey: ['jobs', 'open'] }); qc.invalidateQueries({ queryKey: ['jobs', 'mine'] }); };
   const claim = useMutation({ mutationFn: (id: string) => api.loaders.claimJob(id), onSuccess: refresh });
@@ -38,7 +42,9 @@ export function LoaderJobs() {
       <Segmented options={[{ id: 'requests', label: t('loaderX.jobs.tabRequests') }, { id: 'active', label: t('loaderX.jobs.tabActive') }]} value={tab} onChange={setTab} />
 
       {tab === 'requests' ? (
-        l1 ? <SkeletonRows /> : open.length === 0 ? (
+        l1 ? <SkeletonRows /> : openQ.isError ? (
+          <QueryError onRetry={() => openQ.refetch()} />
+        ) : open.length === 0 ? (
           <EmptyState icon="cube-outline" title={t('loaderX.jobs.emptyRequestsTitle')} body={t('loaderX.jobs.emptyRequestsBody')} />
         ) : open.map((j) => (
           <Card key={j.id}>
@@ -55,7 +61,9 @@ export function LoaderJobs() {
             </Row>
           </Card>
         ))
-      ) : l2 ? <SkeletonRows /> : mine.length === 0 ? (
+      ) : l2 ? <SkeletonRows /> : mineQ.isError ? (
+        <QueryError onRetry={() => mineQ.refetch()} />
+      ) : mine.length === 0 ? (
         <EmptyState icon="people-outline" title={t('loaderX.jobs.emptyActiveTitle')} body={t('loaderX.jobs.emptyActiveBody')} />
       ) : mine.map((j) => (
         <Card key={j.id}>

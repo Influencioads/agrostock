@@ -49,19 +49,22 @@ export interface UserRow {
   name: string;
   email: string;
   role: string;
+  /** All effective roles (primary ∪ secondary) so multi-role users read clearly. */
+  roles: string[];
+  active: boolean;
   country: string;
   kyc: 'verified' | 'pending' | 'rejected';
   joined: string;
 }
 export const users: UserRow[] = [
-  { id: 'U-1042', name: 'Karim Trading', email: 'ops@karim.ae', role: 'buyer', country: '🇦🇪 UAE', kyc: 'verified', joined: 'Jan 2025' },
-  { id: 'U-1043', name: 'Punjab Agro Exports', email: 'sales@punjabagro.in', role: 'seller', country: '🇮🇳 India', kyc: 'verified', joined: 'Feb 2025' },
-  { id: 'U-1051', name: 'SwiftHaul Logistics', email: 'fleet@swifthaul.ae', role: 'transporter', country: '🇦🇪 UAE', kyc: 'pending', joined: 'Mar 2025' },
-  { id: 'U-1067', name: 'Black Sea Oils', email: 'export@blackseaoils.ua', role: 'seller', country: '🇺🇦 Ukraine', kyc: 'pending', joined: 'Apr 2025' },
-  { id: 'U-1074', name: 'PortForce Crews', email: 'jobs@portforce.in', role: 'loaderco', country: '🇮🇳 India', kyc: 'verified', joined: 'Apr 2025' },
-  { id: 'U-1090', name: 'Berlin Grain GmbH', email: 'buy@berlingrain.de', role: 'buyer', country: '🇩🇪 Germany', kyc: 'verified', joined: 'May 2025' },
-  { id: 'U-1101', name: 'Pampas Trading', email: 'grain@pampas.ar', role: 'seller', country: '🇦🇷 Argentina', kyc: 'rejected', joined: 'May 2025' },
-  { id: 'U-1118', name: 'Astana Co', email: 'trade@astana.kz', role: 'buyer', country: '🇰🇿 Kazakhstan', kyc: 'pending', joined: 'Jun 2025' },
+  { id: 'U-1042', name: 'Karim Trading', email: 'ops@karim.ae', role: 'buyer', roles: ['buyer'], active: true, country: '🇦🇪 UAE', kyc: 'verified', joined: 'Jan 2025' },
+  { id: 'U-1043', name: 'Punjab Agro Exports', email: 'sales@punjabagro.in', role: 'seller', roles: ['seller'], active: true, country: '🇮🇳 India', kyc: 'verified', joined: 'Feb 2025' },
+  { id: 'U-1051', name: 'SwiftHaul Logistics', email: 'fleet@swifthaul.ae', role: 'transporter', roles: ['transporter'], active: true, country: '🇦🇪 UAE', kyc: 'pending', joined: 'Mar 2025' },
+  { id: 'U-1067', name: 'Black Sea Oils', email: 'export@blackseaoils.ua', role: 'seller', roles: ['seller'], active: true, country: '🇺🇦 Ukraine', kyc: 'pending', joined: 'Apr 2025' },
+  { id: 'U-1074', name: 'PortForce Crews', email: 'jobs@portforce.in', role: 'loaderco', roles: ['loaderco'], active: true, country: '🇮🇳 India', kyc: 'verified', joined: 'Apr 2025' },
+  { id: 'U-1090', name: 'Berlin Grain GmbH', email: 'buy@berlingrain.de', role: 'buyer', roles: ['buyer'], active: true, country: '🇩🇪 Germany', kyc: 'verified', joined: 'May 2025' },
+  { id: 'U-1101', name: 'Pampas Trading', email: 'grain@pampas.ar', role: 'seller', roles: ['seller'], active: true, country: '🇦🇷 Argentina', kyc: 'rejected', joined: 'May 2025' },
+  { id: 'U-1118', name: 'Astana Co', email: 'trade@astana.kz', role: 'buyer', roles: ['buyer'], active: true, country: '🇰🇿 Kazakhstan', kyc: 'pending', joined: 'Jun 2025' },
 ];
 
 export interface KycItem {

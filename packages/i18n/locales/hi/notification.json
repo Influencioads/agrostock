@@ -135,6 +135,10 @@
     "status_changed": {
       "body": "अब आदेश {{status}} है।",
       "title": "क्रम {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "ऑर्डर दिया गया",
+      "body": "{{product}} के लिए आपका ऑर्डर {{reference}} दे दिया गया है।"
     }
   },
   "product": {

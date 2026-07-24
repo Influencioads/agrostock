@@ -531,7 +531,8 @@
       "payouts": "Pagamentos",
       "totalBalance": "Saldo total da carteira",
       "wallets": "Carteiras"
-    }
+    },
+    "rejectReason": "Motivo para rejeitar este pagamento (mostrado ao utilizador):"
   },
   "perm": {
     "ads_moderate": "Anúncios",
@@ -595,11 +596,13 @@
       "auction": "leilão",
       "offer": "oferecer",
       "safedeal": "negócio seguro"
-    }
+    },
+    "confirmTakedown": "Ocultar este anúncio do mercado?"
   },
   "profile": {
     "active": "ativo",
     "inactive": "inativo",
+    "currentPassword": "Senha atual",
     "newPassword": "Nova Senha",
     "noPermissions": "Nenhuma permissão de módulo atribuída.",
     "passwordError": "Não foi possível alterar a senha.",
@@ -792,7 +795,7 @@
     "adminOnly": "somente para administradores",
     "contactEmail": "E-mail de contato",
     "country": "País",
-    "dangerBody": "Desativa a conta (exclusão lógica). O usuário não poderá mais fazer login.",
+    "dangerBody": "Desativar encerra a sessão do utilizador e bloqueia o login, mas mantém os seus dados e é reversível. Excluir permanentemente remove a conta e não pode ser desfeito.",
     "dangerZone": "Zona de perigo",
     "deactivate": "Desativar conta",
     "deleting": "Excluindo…",
@@ -813,7 +816,12 @@
     "saving": "Salvando…",
     "title": "Gerenciar usuário",
     "wallet": "Carteira",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "confirmDeactivate": "Desativar esta conta? O utilizador terá sessão terminada e não poderá entrar.",
+    "reactivate": "Reativar conta",
+    "deletePermanently": "Excluir permanentemente",
+    "confirmDelete": "Excluir permanentemente esta conta? Isto não pode ser desfeito. Utilizadores com pedidos, produtos ou histórico financeiro não podem ser excluídos — desative-os em vez disso.",
+    "deleteBlocked": "Este utilizador tem registos comerciais, financeiros ou de suporte e não pode ser excluído permanentemente. Desative a conta em vez disso."
   },
   "users": {
     "createActive": "Ativo",
@@ -831,5 +839,9 @@
     "subtitle": "{{shown}} de {{total}} contas",
     "title": "Usuários",
     "view": "Visualizar"
+  },
+  "rbac": {
+    "deniedTitle": "Sem acesso",
+    "deniedBody": "Não tem permissão para ver esta secção. Peça a um super-admin se precisar."
   }
 }

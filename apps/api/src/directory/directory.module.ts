@@ -56,6 +56,20 @@ export interface DirectoryQuery {
   minWorkHours?: string;
   minDistanceKm?: string;
   minLoaders?: string;
+  // PERF-01: pagination for the public directory lists.
+  page?: string;
+  pageSize?: string;
+}
+
+/** Default and hard-cap page sizes for the public directory lists (PERF-01). */
+const DIR_PAGE_SIZE = 24;
+const DIR_MAX_PAGE_SIZE = 60;
+
+/** Resolve `{ take, skip }` from the query — these lists were unbounded full-table scans. */
+function pageArgs(q: DirectoryQuery): { take: number; skip: number } {
+  const size = Math.min(Math.max(1, num(q.pageSize) ?? DIR_PAGE_SIZE), DIR_MAX_PAGE_SIZE);
+  const page = Math.max(1, Math.floor(num(q.page) ?? 1));
+  return { take: size, skip: (page - 1) * size };
 }
 
 /** Parse a numeric query param; returns undefined for missing/invalid values. */
@@ -148,6 +162,7 @@ export class DirectoryService {
     const users = await this.prisma.user.findMany({
       where: this.roleWhere('seller', q),
       orderBy: q.sort === 'name' ? { name: 'asc' } : { createdAt: 'desc' },
+      ...pageArgs(q),
       select: {
         id: true,
         name: true,
@@ -166,6 +181,7 @@ export class DirectoryService {
     const users = await this.prisma.user.findMany({
       where: this.roleWhere('transporter', q),
       orderBy: q.sort === 'name' ? { name: 'asc' } : { createdAt: 'desc' },
+      ...pageArgs(q),
       select: {
         id: true,
         name: true,
@@ -185,6 +201,7 @@ export class DirectoryService {
     const users = await this.prisma.user.findMany({
       where: this.roleWhere('loaderco', q),
       orderBy: q.sort === 'name' ? { name: 'asc' } : { createdAt: 'desc' },
+      ...pageArgs(q),
       select: {
         id: true,
         name: true,
@@ -220,6 +237,7 @@ export class DirectoryService {
     const workers = await this.prisma.worker.findMany({
       where,
       orderBy: { rating: 'desc' },
+      ...pageArgs(q),
       select: {
         id: true,
         name: true,

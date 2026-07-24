@@ -366,7 +366,7 @@
       "liveListings": "在售商品",
       "readyToWithdraw": "准备提款",
       "recentOrders": "近期订单",
-      "revenue": "收入",
+      "revenue": "订单量",
       "safeDealBalance": "安全交易平衡",
       "sellerSub": "以下是您店铺的业绩情况。",
       "shipmentFallback": "运输",
@@ -879,7 +879,9 @@
       "supplyCountriesHint": "— 选择所有您可以发货的国家/地区",
       "unit": "单元",
       "uploadFailed": "图片上传失败。请尝试上传较小的 JPG 或 PNG 文件。",
-      "uploading": "正在上传…"
+      "uploading": "正在上传…",
+      "stock": "库存（可选）",
+      "phStock": "如 500 — 留空 = 不限"
     },
     "requestAccess": "请求访问",
     "reviewQueue": "审核队列",
@@ -952,7 +954,7 @@
       "directEnquiries": "直接查询",
       "ended": "结束",
       "etaDays": "ETA（天）",
-      "grossRevenue": "总收入",
+      "grossRevenue": "订单总量",
       "highest": "最高",
       "highestBid": "最高出价",
       "launchError": "无法发起此活动。",
@@ -992,7 +994,7 @@
       "requestFallback": "要求",
       "respondFromOrders": "请从“订单”选项卡进行回复。",
       "resume": "恢复",
-      "revenueTrend": "收入趋势",
+      "revenueTrend": "订单量趋势",
       "reverseAuction": "反向拍卖",
       "sealedBid": "密封投标",
       "sealedNote": "密封投标：只有您能看到出价。拍卖结束时，出价最高者中标。",
@@ -1433,7 +1435,8 @@
       "suppliesTo": "供应",
       "transport": "运输",
       "verifiedSeller": "已验证卖家",
-      "watchingNow": "{{count}}+ 人正在观看"
+      "watchingNow": "{{count}}+ 人正在观看",
+      "quoteRequested": "已请求报价 — {{ref}}。卖家将回复价格。"
     },
     "profile": {
       "activeRoutes": "活动路线",
@@ -1495,7 +1498,12 @@
       "whatsapp": "WhatsApp",
       "whereFrom": "你来自哪里",
       "youFallback": "你",
-      "yourMarket": "您的市场"
+      "yourMarket": "您的市场",
+      "dangerZone": "危险区",
+      "deleteBody": "删除账户会在所有设备上退出登录并禁用登录。请先提取钱包余额。",
+      "confirmDelete": "删除此账户？此操作无法在应用内撤销。",
+      "deleteAccount": "删除账户",
+      "deleteError": "无法删除您的账户，请重试。"
     },
     "register": {
       "checkInboxBody": "我们已向{{email}}发送了确认链接。点击链接激活您的账户——确认后即可登录。",
@@ -1679,6 +1687,12 @@
       "backToSignIn": "返回登录页面",
       "checking": "正在确认您的电子邮件……",
       "failedTitle": "我们无法确认此链接"
+    },
+    "notFound": {
+      "title": "页面未找到",
+      "body": "您访问的页面不存在或已被移动。",
+      "home": "返回首页",
+      "browse": "浏览市场"
     }
   },
   "product": {
@@ -1797,6 +1811,8 @@
     "workersNeeded": "需要工人",
     "you": "你",
     "yourBidPlaceholder": "您的出价（USD）",
-    "yourBids": "您的出价"
+    "yourBids": "您的出价",
+    "addToSaved": "加入收藏",
+    "removeFromSaved": "从收藏移除"
   }
 }

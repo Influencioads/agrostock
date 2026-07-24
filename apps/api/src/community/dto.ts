@@ -8,6 +8,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -89,4 +90,37 @@ export class InviteDto {
 export class PageQuery {
   @IsOptional() @IsString() cursor?: string;
   @IsOptional() @IsInt() @Min(1) take?: number;
+}
+
+/**
+ * API-08: these bodies were declared as inline TypeScript object types on the
+ * controller. Those erase at runtime, so the global ValidationPipe skipped them
+ * entirely — a missing `blockedId` reached Prisma as `undefined` (500 instead of
+ * 400), and an unknown `action`/`pinned` value hit a Prisma enum error.
+ */
+export class BlockUserDto {
+  @IsString() @MinLength(1) blockedId!: string;
+}
+
+export class ResolveReportDto {
+  @IsIn(['actioned', 'dismissed']) action!: 'actioned' | 'dismissed';
+  @IsOptional() @IsString() @MaxLength(500) note?: string;
+}
+
+export class AdminCreateGroupDto {
+  @IsString() @MinLength(2) @MaxLength(120) name!: string;
+  @IsOptional() @IsString() @MaxLength(500) description?: string;
+  @IsOptional() @IsString() @MaxLength(16) emoji?: string;
+  @IsOptional() @IsBoolean() isDefault?: boolean;
+}
+
+export class AdminUpdateGroupDto {
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(120) name?: string;
+  @IsOptional() @IsString() @MaxLength(500) description?: string;
+  @IsOptional() @IsString() @MaxLength(16) emoji?: string;
+  @IsOptional() @IsBoolean() isDefault?: boolean;
+}
+
+export class PinPostDto {
+  @IsBoolean() pinned!: boolean;
 }

@@ -1,4 +1,18 @@
-import { randomBytes, randomInt } from 'node:crypto';
+import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+
+/**
+ * API-16: constant-time comparison for short secrets (OTPs). A plain `!==` leaks
+ * how many leading characters matched through its timing. With a metered attempt
+ * budget that is marginal, but the correct primitive costs nothing.
+ */
+export function secureEquals(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  // timingSafeEqual requires equal lengths; an OTP's length is not secret.
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 /**
  * Phase 2 containment (F36): dispatch/delivery OTPs come from a CSPRNG with a

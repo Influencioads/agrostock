@@ -527,7 +527,8 @@
       "payouts": "支払い",
       "totalBalance": "ウォレットの合計残高",
       "wallets": "財布"
-    }
+    },
+    "rejectReason": "この支払いを却下する理由（ユーザーに表示されます）："
   },
   "perm": {
     "ads_moderate": "広告",
@@ -591,11 +592,13 @@
       "auction": "オークション",
       "offer": "オファー",
       "safedeal": "セーフディール"
-    }
+    },
+    "confirmTakedown": "この出品をマーケットプレイスから非表示にしますか？"
   },
   "profile": {
     "active": "アクティブ",
     "inactive": "非アクティブ",
+    "currentPassword": "現在のパスワード",
     "newPassword": "新しいパスワード",
     "noPermissions": "モジュール権限は割り当てられていません。",
     "passwordError": "パスワードを変更できませんでした。",
@@ -788,7 +791,7 @@
     "adminOnly": "管理者専用",
     "contactEmail": "お問い合わせメール",
     "country": "国",
-    "dangerBody": "アカウントを無効化します（ソフト削除）。ユーザーはログインできなくなります。",
+    "dangerBody": "無効化するとユーザーはサインアウトされログインが禁止されますが、データは保持され元に戻せます。完全削除はアカウントを削除し、元に戻せません。",
     "dangerZone": "危険区域",
     "deactivate": "アカウントを無効にする",
     "deleting": "削除中…",
@@ -809,7 +812,12 @@
     "saving": "保存中…",
     "title": "ユーザーを管理する",
     "wallet": "財布",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "confirmDeactivate": "このアカウントを無効化しますか？ユーザーはサインアウトされ、ログインできなくなります。",
+    "reactivate": "アカウントを再有効化",
+    "deletePermanently": "完全に削除",
+    "confirmDelete": "このアカウントを完全に削除しますか？元に戻せません。注文・商品・財務履歴のあるユーザーは削除できません。代わりに無効化してください。",
+    "deleteBlocked": "このユーザーには取引・財務・サポートの記録があり、完全に削除できません。代わりにアカウントを無効化してください。"
   },
   "users": {
     "createActive": "アクティブ",
@@ -827,5 +835,9 @@
     "subtitle": "{{shown}} / {{total}} アカウント",
     "title": "ユーザー",
     "view": "ビュー"
+  },
+  "rbac": {
+    "deniedTitle": "アクセス権限がありません",
+    "deniedBody": "このセクションを表示する権限がありません。必要な場合はスーパー管理者に依頼してください。"
   }
 }

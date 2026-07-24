@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Badge, Button, Icon } from '@agrotraders/ui';
 import type { Product } from '../../mock/data';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
+import { useWishlist } from '../../lib/useWishlist';
 import { unitSuffix } from '@agrotraders/types';
 
 const cardText = (value: unknown, fallback = ''): string => {
@@ -17,7 +18,21 @@ const cardText = (value: unknown, fallback = ''): string => {
 
 export function ProductCard({ p }: { p: Product }) {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { fmtPrice } = useCurrency();
+  // F02: the heart is a real wishlist toggle; the Buy button navigates to the
+  // product page. Both are separated from the card's image/title links so we
+  // never nest interactive controls inside an anchor.
+  const { canSave, isSaved, toggle } = useWishlist();
+  const saved = p.productId ? isSaved(p.productId) : false;
+  const onToggleSave = () => {
+    if (!p.productId) return;
+    if (!canSave) {
+      navigate('/login');
+      return;
+    }
+    toggle(p.productId);
+  };
   const name = cardText(p.name, 'Product');
   const flag = cardText(p.flag);
   const seller = cardText(p.seller);
@@ -34,7 +49,7 @@ export function ProductCard({ p }: { p: Product }) {
   const delivery = cardText(p.delivery);
   const priceProduct = { ...p, name, price: cardText(p.price), unit };
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-lg border border-surface-border bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(11,61,46,0.12)]">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-surface-border bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(11,61,46,0.12)]">
       <Link to={`/product/${p.id}`} className="relative flex h-36 items-center justify-center overflow-hidden bg-brand-surface text-5xl">
         {p.imageUrl ? (
           <img
@@ -56,10 +71,23 @@ export function ProductCard({ p }: { p: Product }) {
           {p.offer && <Badge tone="mango">{t('site.offer')}</Badge>}
           {p.auction && <Badge tone="info">{t('site.auction')}</Badge>}
         </div>
-        <button className="absolute end-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-ink-soft hover:text-status-error">
-          <Icon name="heart" size={15} />
-        </button>
       </Link>
+      {/* F02: real save control, a sibling of the link (never nested in it). */}
+      {p.productId && (
+        <button
+          type="button"
+          onClick={onToggleSave}
+          aria-pressed={saved}
+          aria-label={saved ? t('site.removeFromSaved') : t('site.addToSaved')}
+          title={saved ? t('site.removeFromSaved') : t('site.addToSaved')}
+          className={
+            'absolute end-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 transition hover:text-status-error ' +
+            (saved ? 'text-status-error' : 'text-ink-soft')
+          }
+        >
+          <Icon name="heart" size={15} className={saved ? 'fill-current' : ''} />
+        </button>
+      )}
 
       <div className="flex flex-1 flex-col p-3.5">
         <div className="flex items-center gap-1.5 text-xs text-ink-soft">
@@ -96,7 +124,13 @@ export function ProductCard({ p }: { p: Product }) {
             <span className="font-display text-lg font-extrabold text-ink">{fmtPrice(priceProduct)}</span>
             <span className="text-xs text-ink-soft">{unit}</span>
           </div>
-          <Button size="sm" className="shrink-0" leftIcon={<Icon name="bag" size={15} />}>
+          <Button
+            size="sm"
+            className="shrink-0"
+            leftIcon={<Icon name="bag" size={15} />}
+            aria-label={t('site.buyNamed', { name })}
+            onClick={() => navigate(`/product/${p.id}`)}
+          >
             {t('site.buy')}
           </Button>
         </div>

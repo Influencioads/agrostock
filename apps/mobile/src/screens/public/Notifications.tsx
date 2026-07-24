@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
-import { Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
+import { Button, Card, EmptyState, QueryError, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { useI18n } from '../../i18n';
@@ -107,6 +107,9 @@ export function Notifications() {
       </Row>
       {q.isLoading ? (
         <SkeletonRows />
+      ) : q.isError ? (
+        // MOB-01: a fetch failure is "we couldn't load", not "you're all caught up".
+        <QueryError onRetry={() => q.refetch()} />
       ) : items.length === 0 ? (
         <EmptyState icon="notifications-outline" title={t('pubX.notif.caughtUp')} />
       ) : (

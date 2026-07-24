@@ -21,12 +21,14 @@ import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { InvoiceKind, Prisma } from '@prisma/client';
 import type { Response } from 'express';
 import PDFDocument from 'pdfkit';
-import { IsArray, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { Type } from 'class-transformer';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { purposeSecret } from '../auth/token-purpose';
+import { jwtAccessSecret } from '../config/secrets';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { Locale } from '../common/locale';
@@ -50,9 +52,9 @@ const PDF_TOKEN_TTL = '5m';
 
 export class InvoiceLineDto {
   @ApiProperty() @IsString() @MaxLength(200) description!: string;
-  @ApiProperty({ default: 1 }) @IsOptional() @IsNumber() @Min(0) qty?: number;
+  @ApiProperty({ default: 1 }) @IsOptional() @IsNumber() @Min(0) @Max(MAX_QTY) qty?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(16) unit?: string;
-  @ApiProperty() @IsInt() @Min(0) unitPriceCents!: number;
+  @ApiProperty() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) unitPriceCents!: number;
 }
 
 export class CreateInvoiceDto {
@@ -67,7 +69,7 @@ export class CreateInvoiceDto {
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => InvoiceLineDto)
   lines?: InvoiceLineDto[];
 
-  @ApiProperty({ required: false, default: 0 }) @IsOptional() @IsInt() @Min(0) taxCents?: number;
+  @ApiProperty({ required: false, default: 0 }) @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) taxCents?: number;
   @ApiProperty({ required: false }) @IsOptional() @IsDateString() dueAt?: string;
   @ApiProperty({ required: false, maxLength: 600 }) @IsOptional() @IsString() @MaxLength(600) notes?: string;
 }
@@ -138,7 +140,7 @@ export class InvoicesService {
 
   /** Purpose-derived key (F16): invoice tokens can never pass the access strategy. */
   private secret() {
-    return purposeSecret(this.config.get<string>('JWT_SECRET') || 'change-me-access-secret', 'invoice_download');
+    return purposeSecret(jwtAccessSecret(), 'invoice_download');
   }
 
   /**
@@ -279,13 +281,15 @@ export class InvoicesService {
     });
     const subtotalCents = lines.reduce((sum, l) => sum + l.amountCents, 0);
     if (subtotalCents <= 0) throw new BadRequestException('An invoice needs at least one priced line.');
-    // F14: when the subject carries a server-authoritative amount (order total,
-    // accepted freight quote, job pay), the issuer cannot bill MORE than it —
-    // custom lines can itemize/reduce but never fabricate an inflated total.
-    if (subject.authoritativeCents != null && subtotalCents > subject.authoritativeCents) {
+    const taxCents = dto.taxCents ?? 0;
+    const totalCents = subtotalCents + taxCents;
+    // F14 / BL-06: when the subject carries a server-authoritative amount (order
+    // total, accepted freight quote, job pay), the issuer cannot bill MORE than it.
+    // The cap must apply to the GRAND TOTAL, not just the subtotal — otherwise an
+    // unbounded `taxCents` reintroduces the inflated-total bug F14 closed.
+    if (subject.authoritativeCents != null && totalCents > subject.authoritativeCents) {
       throw new BadRequestException('Invoice total cannot exceed the agreed amount for this order.');
     }
-    const taxCents = dto.taxCents ?? 0;
 
     const invoice = await this.prisma.$transaction(async (tx) => {
       const number = await this.nextNumber(tx);
@@ -297,7 +301,7 @@ export class InvoicesService {
           currency: subject.currency,
           subtotalCents,
           taxCents,
-          totalCents: subtotalCents + taxCents,
+          totalCents,
           notes: dto.notes,
           dueAt: dto.dueAt ? new Date(dto.dueAt) : null,
           issuerId: issuer.id,

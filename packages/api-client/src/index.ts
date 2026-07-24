@@ -131,6 +131,8 @@ export interface ApiProduct {
   approved?: boolean;
   startBidCents?: number | null;
   auctionEndsAt?: string | null;
+  /** FLOW-04: managed on-hand stock; null = unmanaged (unlimited). */
+  stockQty?: number | null;
   delivery: string | null;
   /** Category/subcategory-specific attribute values, keyed by field key. */
   attributes?: Record<string, unknown> | null;
@@ -1392,6 +1394,17 @@ export interface ApiClientOptions {
   authMode?: 'body' | 'cookie';
 }
 
+/**
+ * FLOW-03: a unique key per order attempt. `crypto.randomUUID` exists on modern
+ * browsers and React Native's Hermes runtime; the fallback keeps older WebViews
+ * working without pulling in a uuid dependency.
+ */
+function newIdempotencyKey(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return `ord-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 export function createApiClient(opts: ApiClientOptions) {
   const root = opts.baseURL.replace(/\/$/, '') + '/api';
   const cookieMode = opts.authMode === 'cookie';
@@ -1613,7 +1626,15 @@ export function createApiClient(opts: ApiClientOptions) {
     },
     orders: {
       /** Direct purchase — skips the enquiry stage. */
-      place: (body: { productSlug: string; qty: number }) => post<ApiOrder>('/orders', body),
+      /**
+       * FLOW-03: always send an idempotency key. The API has supported one since
+       * F11 (unique column + replay returns the original order), but no client
+       * ever sent it — so a network-level retry of "Buy now" still created a
+       * duplicate order, the exact case the key exists to absorb. Callers may pass
+       * their own key to make a specific checkout attempt replay-safe.
+       */
+      place: (body: { productSlug: string; qty: number; idempotencyKey?: string }) =>
+        post<ApiOrder>('/orders', { ...body, idempotencyKey: body.idempotencyKey ?? newIdempotencyKey() }),
       /** Step 1 of the lifecycle: ask the seller for terms. */
       enquiry: (body: { productSlug: string; qty: number; note?: string }) => post<ApiOrder>('/orders/enquiry', body),
       /** Step 2: seller answers with a price. */
@@ -1864,6 +1885,20 @@ export function createApiClient(opts: ApiClientOptions) {
       update: (id: string, body: { stars?: number; text?: string }) =>
         patch<ApiReview>(`/reviews/${id}`, body),
     },
+    /**
+     * F02: the real per-user wishlist. Replaces the "Saved" surfaces that used
+     * to show a Safe Deal catalog filter with the buyer's own saved products.
+     */
+    wishlist: {
+      /** The saved products themselves (newest first), localized like the catalog. */
+      list: () => get<ApiProduct[]>('/wishlist'),
+      /** Just the saved product ids — cheap state for card heart toggles. */
+      ids: () => get<string[]>('/wishlist/ids'),
+      /** Save a product (idempotent). */
+      add: (productId: string) => post<{ saved: boolean }>(`/wishlist/${productId}`),
+      /** Remove a saved product (idempotent). */
+      remove: (productId: string) => del<{ saved: boolean }>(`/wishlist/${productId}`),
+    },
     ads: {
       mine: () => get<ApiAdCampaign[]>('/ads'),
       /** Creates a `pending` campaign — an admin must approve it before it runs. */
@@ -1917,6 +1952,8 @@ export function createApiClient(opts: ApiClientOptions) {
         post<ApiRoleRequest>('/me/role-requests', { role, note }),
       profile: () => get<ApiPrivateProfile | null>('/me/profile'),
       updateProfile: (body: Partial<ApiPrivateProfile>) => put<ApiPrivateProfile>('/me/profile', body),
+      /** Self-service account deletion — deactivates the account and revokes sessions. */
+      deleteAccount: () => del<{ ok: true }>('/me'),
       /** Persist the chosen UI locale so server-rendered notifications/push/email are localized. */
       setLocale: (locale: string) => put<{ id: string; locale: string }>('/me/locale', { locale }),
       /** Upload a profile photo; server converts to WebP and returns its public path. */
@@ -1991,7 +2028,8 @@ export function createApiClient(opts: ApiClientOptions) {
       clearBranding: (kind: BrandAssetKind) => patch<ApiBranding>('/admin/branding', { clear: kind }),
       users: (role?: string, search?: string) => get<ApiUser[]>('/admin/users', { role, search }),
       profile: () => get<ApiUser>('/admin/profile'),
-      updateOwnPassword: (password: string) => patch<ApiUser>('/admin/profile/password', { password }),
+      updateOwnPassword: (currentPassword: string, password: string) =>
+        patch<ApiUser>('/admin/profile/password', { currentPassword, password }),
       createUser: (body: { name: string; email: string; password: string; role?: string; country?: string; active?: boolean }) =>
         post<ApiUser>('/admin/users', body),
       user: (id: string) =>
@@ -2004,7 +2042,7 @@ export function createApiClient(opts: ApiClientOptions) {
       revokeUserRole: (id: string, role: string) => del<ApiUser>(`/admin/users/${id}/roles/${role}`),
       setUserKyc: (id: string, status: 'pending' | 'verified' | 'rejected') =>
         patch<ApiUser>(`/admin/users/${id}/kyc`, { status }),
-      deleteUser: (id: string) => del(`/admin/users/${id}`),
+      deleteUser: (id: string) => del<{ ok: true }>(`/admin/users/${id}`),
       hires: () => get<ApiHireRequest[]>('/admin/hires'),
       // ── transport oversight ──
       transportCompanies: (search?: string) => get<AdminTransportCompany[]>('/admin/transport/companies', { search }),

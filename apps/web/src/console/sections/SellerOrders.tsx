@@ -8,6 +8,7 @@ import { orderLabel, orderTone } from '../lib';
 import { DispatchModal, OrderDrawer, errMessage, useOrderInvalidation } from './order-parts';
 import { ArrangeLogisticsModal } from './ArrangeLogisticsModal';
 import { OrderReviewButtons } from '../components/OrderReviewButtons';
+import { ErrorState } from '../../components/ErrorState';
 
 /** Seller answers a buyer's enquiry with a firm per-unit price. */
 function RespondModal({ order, onClose }: { order: ApiOrder; onClose: () => void }) {
@@ -106,7 +107,7 @@ export function SellerOrders() {
   const [error, setError] = useState('');
   const invalidate = useOrderInvalidation();
 
-  const { data: orders = [], isLoading } = useQuery<ApiOrder[]>({
+  const { data: orders = [], isLoading, isError, refetch } = useQuery<ApiOrder[]>({
     queryKey: ['incoming-orders'],
     queryFn: () => api.orders.incoming(),
   });
@@ -129,6 +130,9 @@ export function SellerOrders() {
       {error && <p className="mb-3 text-sm font-semibold text-red-600">{error}</p>}
       {isLoading ? (
         <p className="text-ink-soft">{t('common:loading')}</p>
+      ) : isError ? (
+        /* WEB-06/F28: a failed fetch is an error with retry, not "no orders". */
+        <ErrorState onRetry={() => refetch()} />
       ) : orders.length === 0 ? (
         <Card className="py-12 text-center text-ink-soft">{t('console.dash.noOrders')}</Card>
       ) : (

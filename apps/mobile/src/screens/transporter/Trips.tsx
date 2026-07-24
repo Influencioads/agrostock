@@ -4,7 +4,7 @@ import { api } from '../../lib/api';
 import { tripNext, tripTone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt, QueryError } from '../../ui';
 
 interface Trip { id: string; reference: string; fromCity: string; toCity: string; cargo: string; status: string; otp: string | null }
 
@@ -12,7 +12,7 @@ export function TransporterTrips() {
   const { t } = useI18n();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { data: trips = [], isLoading } = useQuery<Trip[]>({ queryKey: ['trips', 'mine'], queryFn: () => api.transport.myTrips() as Promise<Trip[]>, enabled: !!user });
+  const { data: trips = [], isLoading, isError, refetch } = useQuery<Trip[]>({ queryKey: ['trips', 'mine'], queryFn: () => api.transport.myTrips() as Promise<Trip[]>, enabled: !!user });
   const adv = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => api.transport.setTripStatus(id, status),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['trips', 'mine'] }),
@@ -23,6 +23,8 @@ export function TransporterTrips() {
       <Txt variant="h2">{t('mobile2.trips.title')}</Txt>
       {isLoading ? (
         <SkeletonRows />
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} />
       ) : trips.length === 0 ? (
         <EmptyState icon="car-outline" title={t('mobile2.trips.empty')} body={t('mobile2.trips.emptyBody')} />
       ) : (

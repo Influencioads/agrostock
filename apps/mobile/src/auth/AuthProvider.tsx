@@ -84,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setActiveRoleState(null);
       void storage.del(USER_KEY);
       void storage.del(ACTIVE_KEY);
+      // MOB-03: also purge cached account data on a terminal auth failure.
+      queryClient.clear();
     });
     return () => setAuthFailureListener(null);
   }, []);
@@ -104,6 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const persist = useCallback(async (u: ApiUser, token: string, refresh: string) => {
+    // MOB-03: drop any cached queries from a PREVIOUS account before this one's
+    // data loads. Without this, signing in as user B on user A's device served
+    // A's cached orders/wallet/notifications (staleTime 30s) until refetch.
+    queryClient.clear();
     setApiToken(token);
     setApiRefreshToken(refresh);
     setApiActiveRole(u.role);
@@ -174,6 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       storage.del(USER_KEY),
       storage.del(ACTIVE_KEY),
     ]);
+    // MOB-03: wipe cached account data on the way out so the next user (or the
+    // signed-out state) never sees the previous account's orders/wallet/etc.
+    queryClient.clear();
   }, []);
 
   const value = useMemo<AuthValue>(

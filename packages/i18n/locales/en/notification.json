@@ -69,6 +69,10 @@
     "delivered_seller": {
       "title": "Delivered",
       "body": "Order {{reference}} was delivered. You can now raise an invoice."
+    },
+    "placed": {
+      "title": "Order placed",
+      "body": "Your order {{reference}} for {{product}} was placed."
     }
   },
   "wallet": {

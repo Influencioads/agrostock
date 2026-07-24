@@ -135,6 +135,10 @@
     "status_changed": {
       "body": "订单现在为{{status}}。",
       "title": "顺序 {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "订单已提交",
+      "body": "您购买 {{product}} 的订单 {{reference}} 已提交。"
     }
   },
   "product": {

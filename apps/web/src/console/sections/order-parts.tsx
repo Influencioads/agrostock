@@ -10,6 +10,7 @@ import {
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { orderLabel, orderTone } from '../lib';
+import { ErrorState } from '../../components/ErrorState';
 
 /** Refresh every list/detail that can show an order after it moves. */
 export function useOrderInvalidation() {
@@ -301,7 +302,7 @@ export function ShipmentFacts({ order }: { order: ApiOrderDetail }) {
 /** Full-detail drawer: stepper, party OTP, shipment facts, timeline, invoices. */
 export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const { t } = useI18n();
-  const { data: order, isLoading } = useQuery<ApiOrderDetail>({
+  const { data: order, isLoading, isError, refetch } = useQuery<ApiOrderDetail>({
     queryKey: ['order-detail', orderId],
     queryFn: () => api.orders.get(orderId),
     refetchInterval: 8000,
@@ -309,7 +310,10 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
 
   return (
     <Modal closeLabel={t('common:close')} open onClose={onClose} title={order ? t('console.order.orderTitle', { ref: order.reference }) : t('console.order.orderFallback')} className="max-w-2xl">
-      {isLoading || !order ? (
+      {/* F28: a failed load shows a retry instead of a spinner that never clears. */}
+      {isError && !order ? (
+        <ErrorState onRetry={() => refetch()} />
+      ) : isLoading || !order ? (
         <p className="py-8 text-center text-ink-soft">{t('common:loading')}</p>
       ) : (
         <div className="space-y-5">

@@ -114,7 +114,10 @@ export const officesPreview: OfficePreview[] = [
 ];
 
 export interface Product {
+  /** URL slug (used for `/product/:id` routing). */
   id: string;
+  /** F02: the real product id (cuid), needed for wishlist add/remove. Absent for mock data. */
+  productId?: string;
   name: string;
   emoji: string;
   imageUrl?: string;

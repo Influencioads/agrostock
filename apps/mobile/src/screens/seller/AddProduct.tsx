@@ -485,10 +485,11 @@ export function SellerAddProduct() {
         <Row gap={10}>
           <View style={{ flex: 1 }}><Input label={t('sellerX.add.price')} keyboardType="numeric" placeholder="840" value={form.price} onChangeText={set('price')} /></View>
           <View style={{ flex: 1 }}>
-            <ChipSelect
+            <PickerField
               label={t('sellerX.add.unit')}
               value={toUnit(form.unit)}
-              options={PRODUCT_UNITS.map((u) => ({ id: u, label: t(`enums:unit.${u}`) }))}
+              displayValue={t(`enums:unit.${toUnit(form.unit)}`)}
+              options={PRODUCT_UNITS.map((u) => ({ value: u, label: t(`enums:unit.${u}`) }))}
               onChange={set('unit')}
             />
           </View>

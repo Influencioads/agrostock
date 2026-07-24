@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C, elevation, type } from '../theme/tokens';
 import { MotiView, useReduceMotion } from '../ui';
@@ -101,6 +102,24 @@ const screenOptions = {
 };
 
 /**
+ * MOB-06: the hard `height: 64` / `paddingBottom: 8` above opts out of
+ * react-navigation's automatic safe-area handling, so on gesture-nav devices
+ * (iPhone X+, Android gesture mode) the tab bar sat under the home indicator.
+ * This hook adds the bottom inset to both the height and the bottom padding.
+ */
+function useTabScreenOptions() {
+  const insets = useSafeAreaInsets();
+  return {
+    ...screenOptions,
+    tabBarStyle: {
+      ...screenOptions.tabBarStyle,
+      height: 64 + insets.bottom,
+      paddingBottom: 8 + insets.bottom,
+    },
+  };
+}
+
+/**
  * Options for the hub tab (Account/More) that hosts the chat entry points:
  * shows the live unread chat badge on the bottom tab bar.
  */
@@ -131,7 +150,7 @@ export function ShopTabs() {
   const tab = useTabOptions();
   const hub = useHubTabOptions('person', 'Account');
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
+    <Tab.Navigator screenOptions={useTabScreenOptions()}>
       <Tab.Screen name="Home" component={Home} options={tab('home', 'Home')} />
       <Tab.Screen name="Offers" component={Offers} options={tab('pricetags', 'Offers')} />
       <Tab.Screen name="Browse" component={Browse} options={tab('grid', 'Browse')} />
@@ -145,7 +164,7 @@ export function SellerTabs() {
   const tab = useTabOptions();
   const hub = useHubTabOptions('ellipsis-horizontal', 'More');
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
+    <Tab.Navigator screenOptions={useTabScreenOptions()}>
       <Tab.Screen name="Home" component={Home} options={tab('home', 'Home')} />
       <Tab.Screen name="Dashboard" component={SellerDashboard} options={tab('speedometer', 'Dashboard')} />
       <Tab.Screen name="Inventory" component={SellerInventory} options={tab('storefront', 'Inventory')} />
@@ -159,7 +178,7 @@ export function TransporterTabs() {
   const tab = useTabOptions();
   const hub = useHubTabOptions('ellipsis-horizontal', 'More');
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
+    <Tab.Navigator screenOptions={useTabScreenOptions()}>
       <Tab.Screen name="Home" component={Home} options={tab('home', 'Home')} />
       <Tab.Screen name="Dashboard" component={TransporterDashboard} options={tab('speedometer', 'Dashboard')} />
       <Tab.Screen name="Requests" component={TransporterRequests} options={tab('cube', 'Requests')} />
@@ -173,7 +192,7 @@ export function LoaderTabs() {
   const tab = useTabOptions();
   const hub = useHubTabOptions('ellipsis-horizontal', 'More');
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
+    <Tab.Navigator screenOptions={useTabScreenOptions()}>
       <Tab.Screen name="Home" component={Home} options={tab('home', 'Home')} />
       <Tab.Screen name="Dashboard" component={LoaderDashboard} options={tab('speedometer', 'Dashboard')} />
       <Tab.Screen name="Jobs" component={LoaderJobs} options={tab('briefcase', 'Jobs')} />
@@ -187,7 +206,7 @@ export function WorkerTabs() {
   const tab = useTabOptions();
   const hub = useHubTabOptions('person', 'Account');
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
+    <Tab.Navigator screenOptions={useTabScreenOptions()}>
       <Tab.Screen name="Home" component={Home} options={tab('home', 'Home')} />
       <Tab.Screen name="Dashboard" component={WorkerDashboard} options={tab('speedometer', 'Dashboard')} />
       <Tab.Screen name="Jobs" component={WorkerJobs} options={tab('briefcase', 'Jobs')} />

@@ -59,13 +59,23 @@ export function PaymentsPage() {
   const txns = data?.txns ?? [];
 
   const decidePayout = useMutation({
-    mutationFn: (id: string) => api.admin.decidePayout(id, 'rejected'),
+    // ADM-02: rejecting a payout is a one-shot, irreversible financial decision.
+    // Confirm first and capture a reason (the API already accepts a note) so the
+    // user gets an explanation rather than a silent rejection from a stray click.
+    mutationFn: (id: string) => {
+      const note = window.prompt(t('payments.rejectReason')) ?? undefined;
+      if (note === undefined) return Promise.reject(new Error('cancelled'));
+      return api.admin.decidePayout(id, 'rejected', note || undefined);
+    },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['admin-payouts'] });
       void qc.invalidateQueries({ queryKey: ['admin-payments'] });
       void qc.invalidateQueries({ queryKey: ['admin-stats'] });
     },
-    onError: (e) => window.alert(errMessage(e, t('genericError'))),
+    onError: (e) => {
+      if (e instanceof Error && e.message === 'cancelled') return; // user dismissed the prompt
+      window.alert(errMessage(e, t('genericError')));
+    },
   });
   async function exportStatement(kind: 'csv' | 'pdf') {
     setDownloading(kind);

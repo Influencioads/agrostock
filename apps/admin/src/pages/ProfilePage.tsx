@@ -10,6 +10,7 @@ export function ProfilePage() {
   const { t } = useI18n();
   const { user, isSuperAdmin } = useAuth();
   const qc = useQueryClient();
+  const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -20,8 +21,9 @@ export function ProfilePage() {
   });
 
   const changePassword = useMutation({
-    mutationFn: () => api.admin.updateOwnPassword(password),
+    mutationFn: () => api.admin.updateOwnPassword(currentPassword, password),
     onSuccess: () => {
+      setCurrentPassword('');
       setPassword('');
       setError('');
       void qc.invalidateQueries({ queryKey: ['admin-profile'] });
@@ -80,20 +82,31 @@ export function ProfilePage() {
             <h3 className="font-display text-lg font-bold text-ink">{t('profile.passwordTitle')}</h3>
           </div>
           <Input
-            label={t('profile.newPassword')}
+            label={t('profile.currentPassword')}
             type="password"
-            value={password}
+            value={currentPassword}
             onChange={(e) => {
-              setPassword(e.target.value);
+              setCurrentPassword(e.target.value);
               setError('');
             }}
           />
+          <div className="mt-3">
+            <Input
+              label={t('profile.newPassword')}
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError('');
+              }}
+            />
+          </div>
           {error && <p className="mt-2 text-sm font-semibold text-status-error">{error}</p>}
           {changePassword.isSuccess && !password && <p className="mt-2 text-sm font-semibold text-status-success">{t('profile.passwordUpdated')}</p>}
           <Button
             className="mt-4"
             fullWidth
-            disabled={password.length < 8 || changePassword.isPending}
+            disabled={currentPassword.length < 1 || password.length < 8 || changePassword.isPending}
             onClick={() => changePassword.mutate()}
           >
             {changePassword.isPending ? t('profile.passwordSaving') : t('profile.passwordSave')}

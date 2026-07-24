@@ -23,7 +23,8 @@ import { CurrencyProvider } from './src/currency/CurrencyContext';
 import { ChatBadgeProvider } from './src/chat/ChatBadgeContext';
 import { BasketProvider } from './src/basket/BasketContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { navigationRef } from './src/navigation/navigationRef';
+import { flushPendingNotificationRoute, navigationRef } from './src/navigation/navigationRef';
+import { linking } from './src/navigation/linking';
 import { registerForPush, unregisterForPush } from './src/lib/push';
 import { C } from './src/theme/tokens';
 import { useAppFonts } from './src/theme/fonts';
@@ -70,7 +71,7 @@ export default function App() {
             <CurrencyProvider>
               <ChatBadgeProvider>
                 <BasketProvider>
-                  <NavigationContainer ref={navigationRef}>
+                  <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingNotificationRoute}>
                     <StatusBar style="dark" />
                     <Gate />
                   </NavigationContainer>

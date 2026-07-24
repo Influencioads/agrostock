@@ -17,7 +17,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function Offers() {
   const nav = useNavigation<Nav>();
   const { t } = useI18n();
-  const { data: offers = [], isLoading } = useQuery<ApiProduct[]>({
+  const { data: offers = [], isLoading, isError, refetch } = useQuery<ApiProduct[]>({
     queryKey: ['products', 'offer'],
     queryFn: () => api.products.list({ offer: true }),
   });
@@ -33,6 +33,8 @@ export function Offers() {
         <ProductGrid
           products={offers}
           loading={isLoading}
+          error={isError}
+          onRetry={() => refetch()}
           onOpen={(p) => nav.navigate('ProductDetail', { slug: p.slug })}
           empty={{ title: t('pubX.offers.emptyTitle'), body: t('pubX.offers.emptyBody') }}
         />

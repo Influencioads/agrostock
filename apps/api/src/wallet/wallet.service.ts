@@ -28,11 +28,24 @@ export class WalletService {
     private notifications: NotificationsService,
   ) {}
 
-  /** Ensure a wallet row exists for the user; safe inside a transaction. */
+  /**
+   * Ensure a wallet row exists for the user; safe inside a transaction.
+   * BL-14: find-then-create is a race — two concurrent first-ever wallet ops both
+   * miss and both create. Catch the unique violation and re-read instead of
+   * surfacing a spurious 500.
+   */
   async ensure(userId: string, db: Db = this.prisma) {
     const existing = await db.wallet.findUnique({ where: { userId } });
     if (existing) return existing;
-    return db.wallet.create({ data: { userId, balanceCents: 0 } });
+    try {
+      return await db.wallet.create({ data: { userId, balanceCents: 0 } });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        const raced = await db.wallet.findUnique({ where: { userId } });
+        if (raced) return raced;
+      }
+      throw e;
+    }
   }
 
   /**
@@ -61,17 +74,23 @@ export class WalletService {
     }
   }
 
-  /** Add money to a wallet: top-ups, earnings (payout / escrow_release), refunds. */
+  /**
+   * Add money to a wallet: top-ups, earnings (payout / escrow_release), refunds.
+   * BL-14: when called standalone (root client) the ledger write and the balance
+   * increment run in ONE transaction — otherwise a failure between them left a
+   * WalletTx row with no matching balance change. Composed callers pass a tx
+   * client and are already atomic within their own transaction.
+   */
   async credit(userId: string, cents: number, type: TxType, note?: string, db: Db = this.prisma, idempotencyKey?: string) {
     if (cents <= 0) return;
-    const wallet = await this.ensure(userId, db);
-    const fresh = await this.writeTx(wallet.id, cents, type, note, idempotencyKey, db);
-    if (!fresh) return; // idempotent replay — balance already reflects this credit
-    await db.wallet.update({ where: { id: wallet.id }, data: { balanceCents: { increment: cents } } });
+    const standalone = db === this.prisma;
+    const applied = standalone
+      ? await this.prisma.$transaction((tx) => this.creditIn(userId, cents, type, note, tx, idempotencyKey))
+      : await this.creditIn(userId, cents, type, note, db, idempotencyKey);
     // Only notify for standalone credits — when a caller composes this inside its
     // own `$transaction` (db is a tx client), skip: the row/emit would fire before
     // that transaction commits. Such callers notify explicitly post-commit.
-    if (NOTIFY_CREDIT[type] && db === this.prisma) {
+    if (applied && NOTIFY_CREDIT[type] && standalone) {
       await this.notifications.create({
         userId,
         system: 'wallet',
@@ -83,6 +102,15 @@ export class WalletService {
     }
   }
 
+  /** The credit body. Returns false on an idempotent replay (nothing moved). */
+  private async creditIn(userId: string, cents: number, type: TxType, note: string | undefined, db: Db, idempotencyKey?: string) {
+    const wallet = await this.ensure(userId, db);
+    const fresh = await this.writeTx(wallet.id, cents, type, note, idempotencyKey, db);
+    if (!fresh) return false; // idempotent replay — balance already reflects this credit
+    await db.wallet.update({ where: { id: wallet.id }, data: { balanceCents: { increment: cents } } });
+    return true;
+  }
+
   /**
    * Remove money from a wallet: escrow holds, withdrawals. Overdraft-safe (F09):
    * the balance is decremented with a single conditional UPDATE guarded by
@@ -92,6 +120,19 @@ export class WalletService {
    */
   async debit(userId: string, cents: number, type: TxType, note?: string, db: Db = this.prisma, idempotencyKey?: string) {
     if (cents <= 0) return;
+    // BL-14: standalone debits run the guarded decrement and the ledger write in
+    // ONE transaction. Previously, a non-P2002 failure in the ledger write (a
+    // dropped connection, say) left the balance already decremented with no
+    // WalletTx row and nothing to roll it back.
+    if (db === this.prisma) {
+      await this.prisma.$transaction((tx) => this.debitIn(userId, cents, type, note, tx, idempotencyKey));
+      return;
+    }
+    await this.debitIn(userId, cents, type, note, db, idempotencyKey);
+  }
+
+  /** The debit body — overdraft-safe conditional decrement plus the ledger row. */
+  private async debitIn(userId: string, cents: number, type: TxType, note: string | undefined, db: Db, idempotencyKey?: string) {
     const wallet = await this.ensure(userId, db);
     // Conditional atomic decrement — the DB enforces the non-negative invariant.
     const applied = await db.wallet.updateMany({

@@ -525,7 +525,8 @@
       "payouts": "Auszahlungen",
       "totalBalance": "Gesamtguthaben",
       "wallets": "Geldbörsen"
-    }
+    },
+    "rejectReason": "Grund für die Ablehnung dieser Auszahlung (wird dem Nutzer angezeigt):"
   },
   "perm": {
     "ads_moderate": "Anzeigen",
@@ -589,11 +590,13 @@
       "auction": "Auktion",
       "offer": "Angebot",
       "safedeal": "Safedeal"
-    }
+    },
+    "confirmTakedown": "Dieses Angebot aus dem Marktplatz ausblenden?"
   },
   "profile": {
     "active": "aktiv",
     "inactive": "inaktiv",
+    "currentPassword": "Aktuelles Passwort",
     "newPassword": "Neues Passwort",
     "noPermissions": "Es wurden keine Modulberechtigungen zugewiesen.",
     "passwordError": "Passwort konnte nicht geändert werden.",
@@ -786,7 +789,7 @@
     "adminOnly": "Nur für Administratoren",
     "contactEmail": "Kontakt-E-Mail",
     "country": "Land",
-    "dangerBody": "Das Konto wird deaktiviert (vorläufige Löschung). Der Benutzer kann sich nicht mehr anmelden.",
+    "dangerBody": "Deaktivieren meldet den Nutzer ab und sperrt die Anmeldung, behält aber die Daten und ist umkehrbar. Endgültiges Löschen entfernt das Konto und kann nicht rückgängig gemacht werden.",
     "dangerZone": "Gefahrenzone",
     "deactivate": "Konto deaktivieren",
     "deleting": "Löschen…",
@@ -807,7 +810,12 @@
     "saving": "Speichern…",
     "title": "Benutzer verwalten",
     "wallet": "Geldbörse",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "confirmDeactivate": "Dieses Konto deaktivieren? Der Nutzer wird abgemeldet und kann sich nicht mehr anmelden.",
+    "reactivate": "Konto reaktivieren",
+    "deletePermanently": "Endgültig löschen",
+    "confirmDelete": "Dieses Konto endgültig löschen? Dies kann nicht rückgängig gemacht werden. Nutzer mit Bestellungen, Produkten oder Finanzhistorie können nicht gelöscht werden — deaktivieren Sie sie stattdessen.",
+    "deleteBlocked": "Dieser Nutzer hat Handels-, Finanz- oder Support-Datensätze und kann nicht endgültig gelöscht werden. Deaktivieren Sie das Konto stattdessen."
   },
   "users": {
     "createActive": "Aktiv",
@@ -825,5 +833,9 @@
     "subtitle": "{{shown}} of {{total}} accounts",
     "title": "Benutzer",
     "view": "Sicht"
+  },
+  "rbac": {
+    "deniedTitle": "Kein Zugriff",
+    "deniedBody": "Sie haben keine Berechtigung für diesen Bereich. Fragen Sie bei Bedarf einen Super-Admin."
   }
 }

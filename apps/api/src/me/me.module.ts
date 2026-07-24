@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Injectable,
   Module,
@@ -12,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
@@ -50,6 +52,12 @@ export class TopupDto {
   @Min(1)
   @Max(1_000_000)
   amount!: number;
+
+  // BL-15: a client-supplied key makes a double-submitted top-up credit once.
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  idempotencyKey?: string;
 }
 
 /** Withdraw earned/available balance out to a (mock) external account. */
@@ -113,7 +121,7 @@ export const EARNED_STATUSES = ['paid', 'packed', 'dispatched', 'shipped', 'in_t
 const ACTIVE_STATUSES = ['processing', 'paid', 'packed', 'dispatched', 'shipped', 'in_transit'] as const;
 
 /** Prefer the numeric column; fall back to parsing the legacy display string. */
-const orderDollars = (o: { amountCents: number | null; amount: string }) =>
+export const orderDollars = (o: { amountCents: number | null; amount: string }) =>
   o.amountCents !== null ? o.amountCents / 100 : parseAmount(o.amount);
 
 /**
@@ -149,6 +157,29 @@ export class MeService {
     private wallets: WalletService,
     private notifications: NotificationsService,
   ) {}
+
+  /**
+   * Self-service account deletion (Phase I feature gap). Soft-deletes: the account
+   * is deactivated (which blocks login and, via the per-request DB re-read in
+   * jwt.strategy, invalidates any live access token), all refresh sessions are
+   * revoked, and push tokens are dropped so the device stops receiving
+   * notifications. A soft delete (not a hard row delete) preserves order/wallet/
+   * audit FK integrity and any legal retention obligations; a hard purge is a
+   * separate, policy-gated back-office job. Refuses if the wallet still holds a
+   * balance, so a user can't abandon funds.
+   */
+  async deleteAccount(userId: string) {
+    const wallet = await this.prisma.wallet.findUnique({ where: { userId }, select: { balanceCents: true } });
+    if ((wallet?.balanceCents ?? 0) > 0) {
+      throw new BadRequestException('Withdraw your remaining wallet balance before deleting your account.');
+    }
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: userId }, data: { active: false } }),
+      this.prisma.refreshSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date(), revokedReason: 'account_deleted' } }),
+      this.prisma.deviceToken.deleteMany({ where: { userId } }),
+    ]);
+    return { ok: true as const };
+  }
 
   /** Stores the photo as a local WebP and points the profile at it. */
   async setAvatar(userId: string, file?: Express.Multer.File) {
@@ -210,9 +241,19 @@ export class MeService {
     });
   }
 
-  async topup(userId: string, amountDollars: number) {
+  async topup(userId: string, amountDollars: number, idempotencyKey?: string) {
     assertLegacyFinancialWritesEnabled('Wallet top-up');
-    await this.wallets.credit(userId, Math.round(amountDollars * 100), 'topup', 'Top up');
+    // BL-15: key the credit when the client sends a key so a double-tap is a no-op
+    // on the second insert (P2002 on WalletTx.idempotencyKey) rather than a double
+    // credit. Namespaced so it can't collide with escrow/refund keys.
+    await this.wallets.credit(
+      userId,
+      Math.round(amountDollars * 100),
+      'topup',
+      'Top up',
+      undefined,
+      idempotencyKey ? `topup:${userId}:${idempotencyKey}` : undefined,
+    );
     return this.wallet(userId);
   }
 
@@ -419,7 +460,7 @@ export class MeController {
   }
   @Post('wallet/topup')
   topup(@CurrentUser() u: AuthUser, @Body() b: TopupDto) {
-    return this.svc.topup(u.id, b.amount);
+    return this.svc.topup(u.id, b.amount, b.idempotencyKey);
   }
   @Post('wallet/withdraw')
   withdraw(@CurrentUser() u: AuthUser, @Body() b: WithdrawDto) {
@@ -442,6 +483,12 @@ export class MeController {
     return this.svc.moneySeries(u);
   }
 
+  /** Self-service account deletion (Phase I). Soft-deletes + revokes sessions. */
+  @Delete()
+  deleteAccount(@CurrentUser() u: AuthUser) {
+    return this.svc.deleteAccount(u.id);
+  }
+
   @Get('profile')
   profile(@CurrentUser() u: AuthUser) {
     return this.svc.profile(u.id);
@@ -454,7 +501,7 @@ export class MeController {
 
   @ApiConsumes('multipart/form-data')
   @Post('profile/avatar')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', uploadLimits()))
   uploadAvatar(@CurrentUser() u: AuthUser, @UploadedFile() file?: Express.Multer.File) {
     return this.svc.setAvatar(u.id, file);
   }

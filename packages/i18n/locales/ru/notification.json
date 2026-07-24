@@ -134,6 +134,10 @@
     "status_changed": {
       "body": "Заказ теперь равен {{status}}.",
       "title": "Заказ {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "Заказ размещён",
+      "body": "Ваш заказ {{reference}} на {{product}} размещён."
     }
   },
   "product": {

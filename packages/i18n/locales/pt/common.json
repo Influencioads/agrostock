@@ -51,5 +51,8 @@
     "user": "Usuário"
   },
   "viewAll": "Ver tudo",
-  "yes": "Sim"
+  "yes": "Sim",
+  "errorTitle": "Algo deu errado",
+  "errorBody": "Não foi possível carregar. Verifique a sua ligação e tente novamente.",
+  "retry": "Tentar novamente"
 }

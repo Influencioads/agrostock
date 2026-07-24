@@ -51,5 +51,8 @@
     "user": "Usuario"
   },
   "viewAll": "Ver todo",
-  "yes": "Sí"
+  "yes": "Sí",
+  "errorTitle": "Algo salió mal",
+  "errorBody": "No pudimos cargar esto. Comprueba tu conexión e inténtalo de nuevo.",
+  "retry": "Reintentar"
 }

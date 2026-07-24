@@ -16,9 +16,11 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { uploadLimits } from '../uploads/upload-limits';
+import { ApiBearerAuth, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Prisma, TripStatus } from '@prisma/client';
-import { IsBoolean, IsDateString, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+import { MAX_MONEY_CENTS } from '../common/limits';
 import { Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
@@ -27,7 +29,6 @@ import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard'
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { AuditService } from '../common/audit.service';
 import { UploadsService } from '../uploads/uploads.service';
-import { WalletService } from '../wallet/wallet.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Locale } from '../common/locale';
@@ -35,6 +36,41 @@ import type { Lang } from '@agrotraders/i18n';
 
 const otp = () => secureOtp();
 const ref = (p: string) => secureReference(p);
+
+/**
+ * API-08: real DTOs for two bodies that were declared as inline TypeScript object
+ * types. Those erase at runtime, so the global ValidationPipe saw `Object`, skipped
+ * validation entirely, and let a negative/fractional/string price — or any random
+ * status string — through to Prisma (a 500, not a 400).
+ */
+export class CreateQuoteDto {
+  @ApiProperty({ description: 'Freight price, USD cents', minimum: 1, maximum: MAX_MONEY_CENTS })
+  @IsInt() @Min(1) @Max(MAX_MONEY_CENTS)
+  priceCents!: number;
+
+  @ApiProperty({ required: false, minimum: 0, maximum: 365 })
+  @IsOptional() @IsInt() @Min(0) @Max(365)
+  etaDays?: number;
+}
+
+export class TripStatusDto {
+  @ApiProperty({ enum: ['pending', 'loading', 'in_transit', 'delivered', 'delayed'] })
+  @IsIn(['pending', 'loading', 'in_transit', 'delayed', 'delivered'])
+  status!: TripStatus;
+}
+
+/**
+ * API-08: a trip had no state machine at all — `delivered → pending → delivered`
+ * was legal, and repeated `delivered` re-ran the completion side effects. Terminal
+ * states stay terminal; everything else may only move forward or to `delayed`.
+ */
+const TRIP_TRANSITIONS: Record<TripStatus, TripStatus[]> = {
+  pending: ['loading', 'in_transit', 'delayed'],
+  loading: ['in_transit', 'delayed'],
+  in_transit: ['delivered', 'delayed'],
+  delayed: ['loading', 'in_transit', 'delivered'],
+  delivered: [],
+};
 
 export class CreateVehicleDto {
   @IsString() @MinLength(1) type!: string;
@@ -54,7 +90,8 @@ export class UpdateVehicleDto {
   @IsOptional() @IsInt() @Min(1900) year?: number;
   @IsOptional() @IsDateString() insuranceExpiry?: string;
   @IsOptional() @IsString() notes?: string;
-  @IsOptional() @IsString() status?: string;
+  @ApiProperty({ required: false, enum: ['available', 'on_trip', 'maintenance'] })
+  @IsOptional() @IsIn(['available', 'on_trip', 'maintenance']) status?: string;
 }
 
 export class CreateRouteDto {
@@ -91,7 +128,6 @@ export class CreateTransportRequestDto {
 export class TransportService {
   constructor(
     private prisma: PrismaService,
-    private wallets: WalletService,
     private text: TextTranslationService,
     private notifications: NotificationsService,
   ) {}
@@ -211,49 +247,30 @@ export class TransportService {
   async setTripStatus(id: string, transporterId: string, status: TripStatus) {
     const trip = await this.prisma.trip.findUnique({ where: { id } });
     if (!trip || trip.transporterId !== transporterId) throw new ForbiddenException('Not your trip');
-    const { updated, released } = await this.prisma.$transaction(async (tx) => {
-      const row = await tx.trip.update({ where: { id }, data: { status } });
-      let rel: { userId: string; cents: number } | null = null;
-      // Delivery completes a hired trip — release the held budget to the transporter.
-      if (status === 'delivered' && trip.requestId) {
-        const hire = await tx.hireRequest.findFirst({
-          where: { transportRequestId: trip.requestId, escrowState: 'held', targetType: 'transporter' },
-        });
-        if (hire?.budgetCents) {
-          await this.wallets.credit(hire.targetUserId, hire.budgetCents, 'escrow_release', 'Delivery completed — payout', tx);
-          await tx.hireRequest.update({ where: { id: hire.id }, data: { escrowState: 'released' } });
-          rel = { userId: hire.targetUserId, cents: hire.budgetCents };
-        }
-      }
-      return { updated: row, released: rel };
-    });
-    if (status === 'delivered') {
-      // Notify the request owner the trip was delivered.
-      if (trip.requestId) {
-        const req = await this.prisma.transportRequest.findUnique({
-          where: { id: trip.requestId },
-          select: { createdById: true },
-        });
-        if (req) {
-          await this.notifications.create({
-            userId: req.createdById,
-            system: 'transport',
-            type: 'transport.delivered',
-            params: { reference: trip.reference },
-            data: { tripId: trip.id },
-            linkUrl: '/console/transport',
-          });
-        }
-      }
-      // The escrow credit ran inside the tx (silent) — notify the transporter now.
-      if (released) {
+    // API-08: enforce the trip state machine — no backwards moves, and `delivered`
+    // is terminal so the completion side effects can't be re-run.
+    if (trip.status !== status && !TRIP_TRANSITIONS[trip.status].includes(status)) {
+      throw new BadRequestException(`Cannot move a trip from "${trip.status}" to "${status}".`);
+    }
+    // BL-04: marking the trip delivered is an OPERATIONAL status change only. It no
+    // longer releases the held budget — the payee (transporter) must not be able to
+    // pay themselves. The requester confirms completion via HiresService, which is
+    // the sole authority that moves escrow to the provider.
+    const updated = await this.prisma.trip.update({ where: { id }, data: { status } });
+    if (status === 'delivered' && trip.requestId) {
+      const req = await this.prisma.transportRequest.findUnique({
+        where: { id: trip.requestId },
+        select: { createdById: true },
+      });
+      if (req) {
+        // Prompt the requester to confirm and release payment.
         await this.notifications.create({
-          userId: released.userId,
-          system: 'wallet',
-          type: 'wallet.escrow_release',
-          params: { amount: `$${(released.cents / 100).toFixed(2)}` },
+          userId: req.createdById,
+          system: 'transport',
+          type: 'transport.delivered',
+          params: { reference: trip.reference },
           data: { tripId: trip.id },
-          linkUrl: '/console/wallet',
+          linkUrl: '/console/transport',
         });
       }
     }
@@ -359,7 +376,7 @@ export class TransportController {
   }
   @Roles('transporter')
   @Post('requests/:id/quotes')
-  quote(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: { priceCents: number; etaDays?: number }) {
+  quote(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: CreateQuoteDto) {
     return this.svc.quote(id, u.id, b.priceCents, b.etaDays);
   }
   @Roles('transporter')
@@ -383,7 +400,7 @@ export class TransportController {
   }
   @Roles('transporter')
   @Patch('trips/:id/status')
-  setTripStatus(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: { status: TripStatus }) {
+  setTripStatus(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: TripStatusDto) {
     return this.svc.setTripStatus(id, u.id, b.status);
   }
   @Roles('transporter')
@@ -404,7 +421,7 @@ export class TransportController {
   @Roles('transporter')
   @ApiConsumes('multipart/form-data')
   @Post('vehicles/:id/photo')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', uploadLimits()))
   async uploadVehiclePhoto(@CurrentUser() u: AuthUser, @Param('id') id: string, @UploadedFile() file?: Express.Multer.File) {
     const photoUrl = await this.uploads.saveImage(file, 'vehicles');
     return this.svc.setVehiclePhoto(id, u.id, photoUrl);

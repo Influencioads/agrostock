@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { IsIn, IsOptional } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
@@ -117,7 +118,7 @@ export class AdminBrandingController {
 
   @ApiConsumes('multipart/form-data')
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', uploadLimits()))
   upload(@Query('kind') kind: string, @UploadedFile() file?: Express.Multer.File) {
     if (!isBrandAssetKind(kind)) {
       throw new BadRequestException(`kind must be one of: ${BRAND_ASSET_KINDS.join(', ')}`);

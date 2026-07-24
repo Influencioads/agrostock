@@ -376,6 +376,9 @@ model User {
   reviewsAuthored  Review[]     @relation("ReviewsAuthored")
   reviewsReceived  Review[]     @relation("ReviewsReceived")
   reviewsEdited    Review[]     @relation("ReviewAdminEditor")
+
+  // ── F02: real per-user wishlist (saved products) ──
+  wishlist         WishlistItem[]
 }
 
 // ── Markets & profiles ──────────────────────────────────────────
@@ -547,6 +550,9 @@ model HireRequest {
   /// The requester's wallet is debited on send; released to the provider on
   /// completion, or refunded if the hire is declined/cancelled.
   escrowState   String?
+  /// BL-15: optional client key — a unique index makes a double-submitted hire
+  /// collide on insert (P2002) instead of creating a second hire + escrow hold.
+  idempotencyKey String? @unique
   createdAt     DateTime       @default(now())
   decidedAt     DateTime?
 
@@ -661,6 +667,11 @@ model Product {
   bidIncrementCents Int?
   reserveCents      Int?
   auctionEndsAt DateTime?
+  /// BL-09: set once the lot has been closed and its winner/no-bid notifications
+  /// sent — by the seller/admin manual `close()` OR the scheduled auto-closer.
+  /// The cron only processes lapsed auctions where this is still null, so a lot is
+  /// settled exactly once no matter which path fires.
+  auctionSettledAt DateTime?
   approved      Boolean   @default(true)
   // Moderation lifecycle (source of truth). Kept in sync with `approved`.
   status          ProductStatus @default(live)
@@ -692,6 +703,7 @@ model Product {
   adCampaigns   AdCampaign[]
   buyerBids     BuyerBid[]
   reviews       Review[]     @relation("ProductReviews")
+  wishlistedBy  WishlistItem[]
   translations  ProductTranslation[]
   /// Per-field SHA-1 of the source (English) text at last translation, so the
   /// translation worker skips fields whose source is unchanged. Keyed by field name.
@@ -705,6 +717,23 @@ model Product {
   @@index([sellerId])
   @@index([marketId])
   @@index([isAuction, auctionEndsAt])
+}
+
+/// F02: a real per-user wishlist. The old "Saved" screens showed a Safe Deal
+/// filter, not the buyer's own picks. One row per (user, product); re-adding is
+/// idempotent and removing deletes the row. Cascades so purging a user or a
+/// delisted product cleans up its saves.
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+  @@index([productId])
 }
 
 model Order {

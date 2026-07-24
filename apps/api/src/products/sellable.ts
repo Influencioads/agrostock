@@ -29,9 +29,16 @@ export interface SellableProduct {
 }
 
 /**
- * Throw unless the listing is live, owned by a seller, and (for auctions) still
- * open. Callers that resolve a listing to a purchase must run this before taking
- * payment or reserving stock.
+ * Throw unless the listing is live, owned by a seller, and NOT an auction.
+ * Callers that resolve a listing to a *direct* purchase (buy-now / enquiry) must
+ * run this before taking payment or reserving stock.
+ *
+ * BL-09: an auction lot is sold through the bidding flow, never bought outright.
+ * Previously only an *ended* auction was rejected here, so a still-live auction
+ * lot that also carried a `priceCents` could be bought directly via `POST
+ * /orders`, sidestepping the auction entirely. We now reject any auction on the
+ * direct-buy path — ended ones with an explicit "ended" message, live ones by
+ * directing the buyer to bid.
  */
 export function assertProductSellable(product: SellableProduct, now: Date = new Date()): void {
   if (product.status !== 'live' || product.approved === false) {
@@ -40,8 +47,11 @@ export function assertProductSellable(product: SellableProduct, now: Date = new 
   if (!product.sellerId) {
     throw new BadRequestException('This listing has no seller and cannot be ordered.');
   }
-  if (product.isAuction && product.auctionEndsAt && product.auctionEndsAt.getTime() <= now.getTime()) {
-    throw new BadRequestException('This auction has ended and can no longer be purchased.');
+  if (product.isAuction) {
+    if (product.auctionEndsAt && product.auctionEndsAt.getTime() <= now.getTime()) {
+      throw new BadRequestException('This auction has ended and can no longer be purchased.');
+    }
+    throw new BadRequestException('This is an auction lot — place a bid instead of buying directly.');
   }
 }
 

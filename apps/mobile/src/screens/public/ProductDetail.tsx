@@ -10,11 +10,12 @@ import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
-import { Accordion, Avatar, Badge, Button, Divider, KeyValue, Loading, ProgressBar, RatingStars, Row, SectionHeader, SkeletonRows, Txt } from '../../ui';
+import { Accordion, Avatar, Badge, Button, Divider, ErrorState, KeyValue, Loading, ProgressBar, RatingStars, Row, SectionHeader, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { AuctionRoom } from './AuctionRoom';
 import { ProductCard } from '../components';
+import { useOrderInvalidation } from '../components/order-parts';
 import { useBasket } from '../../basket/BasketContext';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -77,7 +78,7 @@ export function ProductDetail() {
   const { t } = useI18n();
   const basket = useBasket();
   const [qty, setQty] = useState(1);
-  const { data: p, isLoading } = useQuery<ApiProduct>({ queryKey: ['product', params.slug], queryFn: () => api.products.get(params.slug) });
+  const { data: p, isLoading, isError, refetch } = useQuery<ApiProduct>({ queryKey: ['product', params.slug], queryFn: () => api.products.get(params.slug) });
   const categoryName = p?.category && 'name' in p.category ? p.category.name : undefined;
   const { data: related = [] } = useQuery<ApiProduct[]>({
     queryKey: ['related', categoryName, params.slug],
@@ -89,12 +90,28 @@ export function ProductDetail() {
     queryFn: () => api.reviews.forProduct(p!.id),
     enabled: !!p?.id,
   });
+  const invalidateOrders = useOrderInvalidation();
   const buy = useMutation({
     mutationFn: () => api.orders.place({ productSlug: params.slug, qty }),
-    onSuccess: () => Alert.alert(t('pubX.pd.orderPlacedTitle'), t('pubX.pd.orderPlacedBody')),
+    onSuccess: () => {
+      // MOB-02: refresh the Orders tab so the new order actually appears —
+      // previously nothing invalidated it and (with refetchOnWindowFocus off and
+      // no pull-to-refresh) a placed order never showed until an app restart.
+      invalidateOrders();
+      Alert.alert(t('pubX.pd.orderPlacedTitle'), t('pubX.pd.orderPlacedBody'));
+    },
     onError: () => Alert.alert(t('pubX.pd.orderFailTitle'), t('pubX.pd.orderFailBody')),
   });
 
+  // F28: a failed load shows a retryable error instead of a spinner that never
+  // clears (isLoading is false once the request settles, error or not).
+  if (isError && !p) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.page }}>
+        <ErrorState title={t('common:errorTitle')} body={t('common:errorBody')} onRetry={() => refetch()} retryLabel={t('common:retry')} />
+      </View>
+    );
+  }
   if (isLoading || !p) return <View style={{ flex: 1, backgroundColor: C.page }}><Loading label={t('pubX.pd.loading')} /></View>;
 
   // Live auctions get the bespoke bidding room (countdown, open bid history).
@@ -186,13 +203,28 @@ export function ProductDetail() {
                 </View>
               ))}
             </View>
-            <View style={s.qtyRow}>
+            <View style={s.qtyRow} accessibilityRole="adjustable" accessibilityLabel={t('pubX.pd.quantity')} accessibilityValue={{ now: qty }}>
               <View style={s.stepper}>
-                <Pressable onPress={() => setQty((q) => Math.max(1, q - 1))} hitSlop={6} style={s.stepBtn}>
+                {/* F34: icon-only steppers need explicit labels for screen readers. */}
+                <Pressable
+                  onPress={() => setQty((q) => Math.max(1, q - 1))}
+                  hitSlop={12}
+                  style={s.stepBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('pubX.pd.decreaseQty')}
+                  disabled={qty <= 1}
+                  accessibilityState={{ disabled: qty <= 1 }}
+                >
                   <Ionicons name="remove" size={18} color={C.ink} />
                 </Pressable>
                 <Text style={s.stepValue}>{qty}</Text>
-                <Pressable onPress={() => setQty((q) => q + 1)} hitSlop={6} style={s.stepBtn}>
+                <Pressable
+                  onPress={() => setQty((q) => q + 1)}
+                  hitSlop={12}
+                  style={s.stepBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('pubX.pd.increaseQty')}
+                >
                   <Ionicons name="add" size={18} color={C.ink} />
                 </Pressable>
               </View>
@@ -374,7 +406,7 @@ const s = StyleSheet.create({
 
   priceCard: { backgroundColor: C.white, borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, padding: space.lg, gap: space.md, shadowColor: '#0F2819', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   priceHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
-  bigPrice: { ...type.numeric, fontSize: 32, color: C.ink, letterSpacing: -0.5 },
+  bigPrice: { ...type.numeric, fontSize: 32, lineHeight: 38, color: C.ink, letterSpacing: -0.5 },
   priceUnit: { ...type.body, color: C.inkMuted },
   priceTerms: { flexDirection: 'row', paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.hairline },
   termRule: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: C.hairline },

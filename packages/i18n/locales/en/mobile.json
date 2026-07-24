@@ -1030,6 +1030,9 @@
       "orderFailTitle": "Could not place order",
       "orderFailBody": "Please try again.",
       "loading": "Loading product…",
+      "quantity": "Quantity",
+      "decreaseQty": "Decrease quantity",
+      "increaseQty": "Increase quantity",
       "verified": "Verified",
       "safeDeal": "Safe Deal",
       "offer": "Offer",
@@ -1575,7 +1578,9 @@
       "auction": "Auction",
       "sponsored": "Sponsored",
       "moq": "MOQ {{value}}",
-      "available": "{{value}} available"
+      "available": "{{value}} available",
+      "addToSaved": "Save to wishlist",
+      "removeFromSaved": "Remove from wishlist"
     },
     "community": {
       "dmSubtitle": "Direct message · contacts stay private",

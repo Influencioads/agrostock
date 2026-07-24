@@ -19,6 +19,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { purposeSecret } from '../auth/token-purpose';
+import { jwtAccessSecret } from '../config/secrets';
 
 const STATEMENT_TOKEN_TTL = '5m';
 const usd = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
@@ -53,7 +54,12 @@ function toRange(from?: string, to?: string): Prisma.DateTimeFilter | undefined 
 }
 
 function csvCell(v: string | number): string {
-  const s = String(v);
+  let s = String(v);
+  // API-16: neutralize CSV formula injection. Cells carry user-controlled text
+  // (counterparty names, transaction notes), so a value starting with =, +, -, @
+  // or a control prefix would execute as a formula when the export is opened in
+  // Excel/Sheets. Prefix with a single quote so it is read as literal text.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -67,7 +73,7 @@ export class StatementsService {
 
   /** Purpose-derived key (F16): statement tokens can never pass the access strategy. */
   private secret() {
-    return purposeSecret(this.config.get<string>('JWT_SECRET') || 'change-me-access-secret', 'statement_download');
+    return purposeSecret(jwtAccessSecret(), 'statement_download');
   }
 
   async mintToken(user: AuthUser) {

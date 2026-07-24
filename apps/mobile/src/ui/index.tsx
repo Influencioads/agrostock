@@ -152,12 +152,22 @@ export function Button({
   const reduce = useReduceMotion();
   const [pressed, setPressed] = useState(false);
   const glyph = icon ? <Ionicons name={icon} size={size === 'sm' ? 16 : 18} color={v.fg} /> : null;
+  // F34: the compact 38px pill is below the 44px minimum touch target. Keep the
+  // visual height but expand the pressable area with hitSlop so it meets the
+  // guideline for motor-impaired users without disturbing the layout.
+  const slop = size === 'sm' ? { top: 3, bottom: 3, left: 0, right: 0 } : undefined;
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
+      hitSlop={slop}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
+      // F34: expose role + state so screen readers announce the button and its
+      // disabled/busy status; label it by its title.
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
       style={full ? { alignSelf: 'stretch' } : undefined}
     >
       <MotiView
@@ -556,6 +566,46 @@ export function EmptyState({ icon = 'cube-outline', title, body, action, onActio
         {action ? <View style={{ marginTop: 14 }}><Button title={action} variant="outline" size="sm" onPress={onAction} /></View> : null}
       </View>
     </Reveal>
+  );
+}
+
+/* ── ErrorState ───────────────────────────────────────────────────── */
+/**
+ * F28: a request failure is visually distinct from an empty result, and always
+ * offers a retry. Screens must render this on `isError` rather than falling
+ * through to a spinner or an empty message.
+ */
+export function ErrorState({ title, body, onRetry, retryLabel }: {
+  title: string; body?: string; onRetry?: () => void; retryLabel?: string;
+}) {
+  return (
+    <Reveal>
+      <View style={{ alignItems: 'center', paddingVertical: 48, gap: 4 }}>
+        <View style={s.emptyIcon}><Ionicons name="cloud-offline-outline" size={26} color={C.dark} /></View>
+        <Text style={[txt.h3, { marginTop: 12 }]}>{title}</Text>
+        {body ? <Text style={[txt.muted, { marginTop: 2, textAlign: 'center', maxWidth: 280 }]}>{body}</Text> : null}
+        {onRetry ? <View style={{ marginTop: 14 }}><Button title={retryLabel ?? 'Retry'} variant="outline" size="sm" onPress={onRetry} /></View> : null}
+      </View>
+    </Reveal>
+  );
+}
+
+/**
+ * MOB-01: one-line query error state. The generic `title`/`body`/`retry` copy is
+ * already translated in the shared `common` catalog, so screens only need to
+ * pass their `refetch`. This exists so the sweep across the ~62 fetching screens
+ * that used to render a false "empty" on failure is a single import + one line,
+ * not a repeated four-prop `<ErrorState>` block.
+ */
+export function QueryError({ onRetry }: { onRetry?: () => void }) {
+  const { t } = useI18n();
+  return (
+    <ErrorState
+      title={t('common:errorTitle')}
+      body={t('common:errorBody')}
+      onRetry={onRetry}
+      retryLabel={t('common:retry')}
+    />
   );
 }
 

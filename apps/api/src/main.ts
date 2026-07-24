@@ -21,6 +21,13 @@ async function bootstrap() {
   await assertProductionHasNoDemoAccounts(app.get(PrismaService));
   app.setGlobalPrefix('api');
 
+  // SEC-01: in production every service is loopback-bound behind a single host
+  // reverse proxy, so without this `req.ip` is the proxy's address for ALL
+  // clients — collapsing every per-IP rate-limit bucket (login / OTP / forgot-
+  // password) into one shared bucket and losing per-attacker attribution. Trust
+  // the first proxy hop so `req.ip` (and the Throttler key) is the real client.
+  app.set('trust proxy', 1);
+
   // ── public uploads (product images etc.) served as static files ──
   // Stored on the local filesystem (no S3); path configurable for prod hosts.
   const uploadDir = join(process.cwd(), process.env.UPLOAD_DIR || 'uploads');

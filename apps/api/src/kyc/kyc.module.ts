@@ -18,6 +18,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { uploadLimits } from '../uploads/upload-limits';
+import { contentDisposition } from '../common/http';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ApiBearerAuth, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { KycDocType } from '@prisma/client';
@@ -29,6 +31,7 @@ import { UploadsService } from '../uploads/uploads.service';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { purposeSecret } from '../auth/token-purpose';
+import { jwtAccessSecret } from '../config/secrets';
 
 const DOC_TYPES: KycDocType[] = ['trade_license', 'government_id', 'bank_proof', 'tax_certificate', 'other'];
 
@@ -65,7 +68,7 @@ export class KycService {
 
   /** Purpose-derived key (F16): KYC file tokens can never pass the access strategy. */
   private secret() {
-    return purposeSecret(this.config.get<string>('JWT_SECRET') || 'change-me-access-secret', 'kyc_download');
+    return purposeSecret(jwtAccessSecret(), 'kyc_download');
   }
 
   /** The caller's own KYC record + documents, created lazily on first read. */
@@ -150,7 +153,7 @@ export class KycService {
       throw new NotFoundException('File is no longer available');
     }
     res.setHeader('Content-Type', doc.mime);
-    res.setHeader('Content-Disposition', `inline; filename="${doc.originalName ?? doc.id}"`);
+    res.setHeader('Content-Disposition', contentDisposition(doc.originalName ?? doc.id));
     createReadStream(this.uploads.privatePath(doc.storageKey)).pipe(res);
   }
 
@@ -206,7 +209,7 @@ export class KycController {
   @ApiConsumes('multipart/form-data')
   @UseGuards(JwtAuthGuard)
   @Post('me/kyc/documents')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', uploadLimits()))
   upload(@CurrentUser() u: AuthUser, @Body() dto: UploadKycDocDto, @UploadedFile() file?: Express.Multer.File) {
     return this.kyc.addDocument(u, dto.type, file);
   }

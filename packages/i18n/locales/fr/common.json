@@ -51,5 +51,8 @@
     "user": "Utilisateur"
   },
   "viewAll": "Afficher tout",
-  "yes": "Oui"
+  "yes": "Oui",
+  "errorTitle": "Une erreur est survenue",
+  "errorBody": "Impossible de charger ceci. Vérifiez votre connexion et réessayez.",
+  "retry": "Réessayer"
 }

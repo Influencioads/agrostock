@@ -118,6 +118,7 @@
     "permissions": "Permissions",
     "noPermissions": "No module permissions assigned.",
     "passwordTitle": "Password",
+    "currentPassword": "Current password",
     "newPassword": "New password",
     "passwordSaving": "Updating...",
     "passwordSave": "Change password",
@@ -210,14 +211,24 @@
     "actHiresSent": "Hires sent",
     "actHiresReceived": "Hires received",
     "dangerZone": "Danger zone",
-    "dangerBody": "Deactivates the account (soft delete). The user can no longer sign in.",
+    "dangerBody": "Deactivate signs the user out and blocks login, but keeps their data and is reversible. Delete permanently removes the account and cannot be undone.",
     "deleting": "Deleting…",
-    "deactivate": "Deactivate account"
+    "deactivate": "Deactivate account",
+    "reactivate": "Reactivate account",
+    "confirmDeactivate": "Deactivate this account? The user will be signed out and unable to log in.",
+    "deletePermanently": "Delete permanently",
+    "confirmDelete": "Permanently delete this account? This cannot be undone. Users with orders, products or financial history cannot be deleted — deactivate them instead.",
+    "deleteBlocked": "This user has trade, financial or support records and cannot be permanently deleted. Deactivate the account instead."
   },
   "roleReq": {
     "sub": "Users requesting an additional dashboard. Approving grants the role.",
     "liveApi": "live API",
-    "filter": { "pending": "pending", "approved": "approved", "rejected": "rejected", "all": "all" },
+    "filter": {
+      "pending": "pending",
+      "approved": "approved",
+      "rejected": "rejected",
+      "all": "all"
+    },
     "none": "No role requests.",
     "colUser": "User",
     "colRole": "Requested role",
@@ -242,9 +253,19 @@
   },
   "prodMod": {
     "sub": "Moderate the catalogue — approve, reject, edit or take down listings.",
-    "status": { "pending": "pending", "live": "live", "rejected": "rejected", "hidden": "hidden", "all": "all" },
+    "status": {
+      "pending": "pending",
+      "live": "live",
+      "rejected": "rejected",
+      "hidden": "hidden",
+      "all": "all"
+    },
     "allTypes": "All types",
-    "type": { "offer": "offer", "auction": "auction", "safedeal": "safedeal" },
+    "type": {
+      "offer": "offer",
+      "auction": "auction",
+      "safedeal": "safedeal"
+    },
     "searchPlaceholder": "Search products…",
     "none": "No products match.",
     "colProduct": "Product",
@@ -264,11 +285,19 @@
     "approve": "Approve",
     "reject": "Reject",
     "edit": "Edit",
-    "takedown": "Takedown"
+    "takedown": "Takedown",
+    "confirmTakedown": "Hide this listing from the marketplace?"
   },
   "bidsAdmin": {
     "sub": "Reverse auctions — buyers post a requirement, sellers bid to win it.",
-    "status": { "open": "open", "awarded": "awarded", "closed": "closed", "cancelled": "cancelled", "all": "all", "submitted": "submitted" },
+    "status": {
+      "open": "open",
+      "awarded": "awarded",
+      "closed": "closed",
+      "cancelled": "cancelled",
+      "all": "all",
+      "submitted": "submitted"
+    },
     "none": "No buyer bids match.",
     "colReq": "Requirement",
     "colBuyer": "Buyer",
@@ -300,14 +329,25 @@
     "colLedger": "Ledger",
     "ledgerTitle": "Wallet ledger",
     "txnsCount": "Transactions ({{count}})",
-    "txType": { "topup": "top-up", "escrow_release": "escrow release", "payout": "payout", "escrow_hold": "escrow hold", "refund": "refund" }
+    "txType": {
+      "topup": "top-up",
+      "escrow_release": "escrow release",
+      "payout": "payout",
+      "escrow_hold": "escrow hold",
+      "refund": "refund"
+    }
   },
   "adsAdmin": {
     "sub": "Sponsored listings. An approved, unpaused campaign runs on the marketplace.",
     "liveNow": "Live now",
     "awaiting": "Awaiting approval",
     "impressions": "Impressions (shown set)",
-    "filter": { "pending": "Pending", "approved": "Approved", "rejected": "Rejected", "all": "All" },
+    "filter": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "all": "All"
+    },
     "queueCleared": "Queue cleared",
     "nothingHere": "Nothing here",
     "noneAwaiting": "No campaigns awaiting review.",
@@ -407,7 +447,9 @@
     "noBids": "No bids yet.",
     "bidderFallback": "Bidder"
   },
-  "kycDocs": { "title": "KYC documents" },
+  "kycDocs": {
+    "title": "KYC documents"
+  },
   "kycAdmin": {
     "all": "all",
     "justNow": "just now",
@@ -426,7 +468,13 @@
     "noDocs": "No documents uploaded yet.",
     "view": "View"
   },
-  "cmsAdmin": { "sub": "Manage public site content and landing pages.", "published": "Published", "draft": "Draft", "unpublish": "Unpublish", "publish": "Publish" },
+  "cmsAdmin": {
+    "sub": "Manage public site content and landing pages.",
+    "published": "Published",
+    "draft": "Draft",
+    "unpublish": "Unpublish",
+    "publish": "Publish"
+  },
   "emailTpl": {
     "sub": "Edit the copy of every automated email. Changes apply immediately.",
     "smtpOff": "SMTP is not configured — templates are editable but emails won't be delivered until SMTP is set.",
@@ -486,7 +534,11 @@
     "exporting": "Exporting…",
     "exportCsv": "Export CSV",
     "exportPdf": "Export PDF",
-    "preset": { "today": "Today", "week": "Week", "month": "Month" },
+    "preset": {
+      "today": "Today",
+      "week": "Week",
+      "month": "Month"
+    },
     "stats": {
       "totalBalance": "Total Wallet Balance",
       "wallets": "Wallets",
@@ -511,10 +563,15 @@
     "apply": "Apply",
     "recentTxns": "Recent Transactions",
     "shownCount": "{{count}} shown",
-    "noTxns": "No transactions in this range."
+    "noTxns": "No transactions in this range.",
+    "rejectReason": "Reason for rejecting this payout (shown to the user):"
   },
   "reports": {
-    "preset": { "month": "Last month", "quarter": "Last quarter", "year": "Last year" },
+    "preset": {
+      "month": "Last month",
+      "quarter": "Last quarter",
+      "year": "Last year"
+    },
     "exportCsv": "Export CSV",
     "stats": {
       "newUsers": "New users (range)",
@@ -588,8 +645,20 @@
     "emojiHint": "A single emoji shown next to the name."
   },
   "reviewsMod": {
-    "status": { "all": "all", "visible": "visible", "hidden": "hidden", "removed": "removed" },
-    "kind": { "all": "all", "order": "order", "trip": "trip", "loaderjob": "loader job", "assignment": "assignment", "hire": "hire" },
+    "status": {
+      "all": "all",
+      "visible": "visible",
+      "hidden": "hidden",
+      "removed": "removed"
+    },
+    "kind": {
+      "all": "all",
+      "order": "order",
+      "trip": "trip",
+      "loaderjob": "loader job",
+      "assignment": "assignment",
+      "hire": "hire"
+    },
     "searchPh": "Search text, rater or reviewee…",
     "title": "Reviews",
     "totalCount": "{{count}} total",
@@ -650,7 +719,7 @@
     "fCity": "City",
     "fManager": "Manager",
     "fTimezone": "Timezone",
-    "pickTimezone": "\u2014 select a timezone \u2014",
+    "pickTimezone": "— select a timezone —",
     "fLanguages": "Languages",
     "fStaff": "Staff",
     "saving": "Saving…",
@@ -659,7 +728,13 @@
     "delete": "Delete"
   },
   "invoicesAdmin": {
-    "status": { "all": "all", "issued": "issued", "paid": "paid", "void": "void", "draft": "draft" },
+    "status": {
+      "all": "all",
+      "issued": "issued",
+      "paid": "paid",
+      "void": "void",
+      "draft": "draft"
+    },
     "searchPh": "Number, issuer or recipient…",
     "empty": "No invoices match.",
     "colNumber": "Number",
@@ -693,7 +768,12 @@
     "app": "App"
   },
   "communityMod": {
-    "tab": { "reports": "reports", "feed": "feed", "groups": "groups", "analytics": "analytics" },
+    "tab": {
+      "reports": "reports",
+      "feed": "feed",
+      "groups": "groups",
+      "analytics": "analytics"
+    },
     "metric": {
       "groups": "Groups",
       "posts": "Posts",
@@ -788,5 +868,9 @@
     "loaderWorkforce": {
       "title": "Loader Workforce"
     }
+  },
+  "rbac": {
+    "deniedTitle": "No access",
+    "deniedBody": "You don't have permission to view this section. Ask a super-admin if you need it."
   }
 }

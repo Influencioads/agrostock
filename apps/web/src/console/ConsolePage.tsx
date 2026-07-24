@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, Card, Icon, motion, usePageMotion } from '@agrotraders/ui';
 import { useI18n } from '../i18n';
 import { useAuth } from '../auth/AuthContext';
@@ -148,6 +148,7 @@ export function ConsolePage() {
   // F05: resolve the deep-linked section (/console/:section) to a real nav id
   // for this role; unknown targets degrade to the dashboard.
   const { section } = useParams();
+  const navigate = useNavigate();
   const resolveSection = (slug: string | undefined): string => {
     if (!slug) return 'dashboard';
     const target = SECTION_ALIAS[slug] ?? slug;
@@ -238,7 +239,14 @@ export function ConsolePage() {
       sub={user?.name ?? ''}
       nav={nav}
       active={active}
-      onSelect={setActive}
+      // WEB-07: push the section into the URL so the browser Back button moves
+      // between console sections instead of leaving the console entirely, and a
+      // refresh keeps the user where they were. The effect above syncs state
+      // back from the param, so this stays the single source of truth.
+      onSelect={(id: string) => {
+        setActive(id);
+        navigate(`/console/${id}`);
+      }}
     >
       <SectionSwap sectionKey={`${role}:${active}`}>{render()}</SectionSwap>
     </ConsoleLayout>

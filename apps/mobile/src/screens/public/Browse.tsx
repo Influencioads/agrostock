@@ -51,7 +51,7 @@ export function Browse() {
   // combination is served from cache; `keepPreviousData` stops the grid
   // flashing empty between refetches. F31: paginate the full catalog with an
   // infinite query rather than showing only the first page of results.
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['products', 'browse', query],
     queryFn: ({ pageParam }) => api.products.listPaged({ ...query, page: pageParam }),
     initialPageParam: 1,
@@ -152,6 +152,8 @@ export function Browse() {
         <ProductGrid
           products={products}
           loading={isLoading}
+          error={isError}
+          onRetry={() => refetch()}
           onOpen={(p) => nav.navigate('ProductDetail', { slug: p.slug })}
           empty={{
             title: t('pubX.browse.emptyTitle'),

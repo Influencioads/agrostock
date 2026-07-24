@@ -23,7 +23,7 @@ export function UsersPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'buyer', country: '', active: true });
   const [createError, setCreateError] = useState('');
 
-  const { data: users = [] } = useQuery<UserRow[]>({
+  const { data: users = [], isError } = useQuery<UserRow[]>({
     queryKey: ['admin-users', lang],
     queryFn: async (): Promise<UserRow[]> =>
       (await api.admin.users()).map((u) => ({
@@ -31,6 +31,9 @@ export function UsersPage() {
         name: u.name,
         email: u.email,
         role: u.role,
+        // Effective roles: primary first, then approved extras, de-duplicated.
+        roles: Array.from(new Set([u.role, ...(u.roles ?? [])])),
+        active: u.active !== false,
         country: u.country ?? '—',
         kyc: u.kycStatus as UserRow['kyc'],
         joined: fmt.monthYear(u.createdAt),
@@ -61,17 +64,21 @@ export function UsersPage() {
 
   const filtered = users.filter(
     (u) =>
-      (role === 'all' || u.role === role) &&
+      // Match the role tab against ALL of a user's roles, not just the primary,
+      // so a buyer+seller shows under both tabs (parity with the API filter).
+      (role === 'all' || u.roles.includes(role)) &&
       (q === '' || u.name.toLowerCase().includes(q.toLowerCase()) || u.email.includes(q.toLowerCase())),
   );
   const canCreate = Boolean(form.name.trim() && form.email.trim() && form.password.length >= 8);
 
   return (
     <div>
+      {/* ADM-03/G3: the badge reflects the real query state instead of a
+          hardcoded green "live" that stayed green even when the fetch failed. */}
       <PageHeader
         title={t('users.title')}
         subtitle={t('users.subtitle', { shown: filtered.length, total: users.length })}
-        action={<Badge tone="green">{t('apiBadge.live')}</Badge>}
+        action={<Badge tone={isError ? 'error' : 'green'}>{isError ? t('apiBadge.offline') : t('apiBadge.live')}</Badge>}
       />
 
       <Card className="mb-5">
@@ -169,13 +176,24 @@ export function UsersPage() {
                     <div className="flex items-center gap-3">
                       <Avatar name={u.name} size={34} />
                       <div>
-                        <div className="font-semibold text-ink">{u.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-ink">{u.name}</span>
+                          {!u.active && <Badge tone="slate">{t('userDrawer.inactive')}</Badge>}
+                        </div>
                         <div className="text-xs text-ink-soft">{u.email}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-3">
-                    <Badge tone="slate">{t(`enums:role.${u.role}`)}</Badge>
+                    {/* One badge per effective role; the primary is tinted so a
+                        multi-role account never reads as a single miscategorised type. */}
+                    <div className="flex flex-wrap gap-1">
+                      {u.roles.map((r) => (
+                        <Badge key={r} tone={r === u.role ? 'green' : 'slate'}>
+                          {t(`enums:role.${r}`)}
+                        </Badge>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-5 py-3 text-ink-soft">{u.country}</td>
                   <td className="px-5 py-3">

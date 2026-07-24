@@ -37,30 +37,41 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     setCurrencyState(c);
   }, []);
 
-  const rate = fx?.rates?.[currency] ?? 1;
+  /**
+   * WEB-05: amounts are stored in USD. If the FX feed fails (or simply has no
+   * rate for the selected currency) we must NOT format a USD number with the
+   * foreign symbol — that displayed $840 as "₹840", understating the real price
+   * by ~80x. Fall back to displaying USD instead, which is always truthful.
+   */
+  const liveRate = fx?.rates?.[currency];
+  const hasRate = currency === 'USD' || (typeof liveRate === 'number' && liveRate > 0);
+  const displayCurrency = hasRate ? currency : 'USD';
+  const rate = hasRate ? liveRate ?? 1 : 1;
 
   const fmtCents = useCallback(
     (usdCents: number | null | undefined) => {
       if (usdCents == null) return '—';
-      return formatMoney(usdCents, currency, fx?.rates?.[currency] ?? 1, lang);
+      return formatMoney(usdCents, displayCurrency, rate, lang);
     },
-    [currency, fx, lang],
+    [displayCurrency, rate, lang],
   );
 
   const fmtPrice = useCallback(
     (p: { price: string; priceCents?: number | null }) => {
-      if (currency === 'USD') return p.price;
+      if (displayCurrency === 'USD') return p.price;
       const cents = p.priceCents ?? parsePriceCents(p.price);
       // Unparseable price strings ("POA", ranges) always fall back to the raw string.
       if (cents == null) return p.price;
-      return formatMoney(cents, currency, fx?.rates?.[currency] ?? 1, lang);
+      return formatMoney(cents, displayCurrency, rate, lang);
     },
-    [currency, fx, lang],
+    [displayCurrency, rate, lang],
   );
 
   const value = useMemo<CurrencyContextValue>(
-    () => ({ currency, setCurrency, rate, fmtCents, fmtPrice, stale: fx?.stale ?? true }),
-    [currency, setCurrency, rate, fmtCents, fmtPrice, fx?.stale],
+    // `stale` is true when rates are unavailable/outdated — including the
+    // no-rate fallback above, so consumers can surface it.
+    () => ({ currency: displayCurrency, setCurrency, rate, fmtCents, fmtPrice, stale: !hasRate || (fx?.stale ?? true) }),
+    [displayCurrency, setCurrency, rate, fmtCents, fmtPrice, hasRate, fx?.stale],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

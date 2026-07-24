@@ -529,7 +529,8 @@
       "payouts": "Pagos",
       "totalBalance": "Saldo total de la cartera",
       "wallets": "Carteras"
-    }
+    },
+    "rejectReason": "Motivo del rechazo de este pago (se muestra al usuario):"
   },
   "perm": {
     "ads_moderate": "Anuncios",
@@ -593,11 +594,13 @@
       "auction": "subasta",
       "offer": "oferta",
       "safedeal": "trato seguro"
-    }
+    },
+    "confirmTakedown": "¿Ocultar este anuncio del mercado?"
   },
   "profile": {
     "active": "activo",
     "inactive": "inactivo",
+    "currentPassword": "Contraseña actual",
     "newPassword": "Nueva contraseña",
     "noPermissions": "No se han asignado permisos de módulo.",
     "passwordError": "No se pudo cambiar la contraseña.",
@@ -790,7 +793,7 @@
     "adminOnly": "Solo para administradores",
     "contactEmail": "Correo electrónico de contacto",
     "country": "País",
-    "dangerBody": "Desactiva la cuenta (eliminación lógica). El usuario ya no podrá iniciar sesión.",
+    "dangerBody": "Desactivar cierra la sesión del usuario y bloquea el inicio de sesión, pero conserva sus datos y es reversible. Eliminar permanentemente borra la cuenta y no se puede deshacer.",
     "dangerZone": "Zona de peligro",
     "deactivate": "Desactivar cuenta",
     "deleting": "Eliminando…",
@@ -811,7 +814,12 @@
     "saving": "Ahorro…",
     "title": "Gestionar usuario",
     "wallet": "Billetera",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "confirmDeactivate": "¿Desactivar esta cuenta? El usuario cerrará sesión y no podrá iniciar sesión.",
+    "reactivate": "Reactivar cuenta",
+    "deletePermanently": "Eliminar permanentemente",
+    "confirmDelete": "¿Eliminar permanentemente esta cuenta? Esto no se puede deshacer. Los usuarios con pedidos, productos o historial financiero no se pueden eliminar; desactívalos en su lugar.",
+    "deleteBlocked": "Este usuario tiene registros comerciales, financieros o de soporte y no se puede eliminar permanentemente. Desactiva la cuenta en su lugar."
   },
   "users": {
     "createActive": "Activo",
@@ -829,5 +837,9 @@
     "subtitle": "{{shown}} de {{total}} cuentas",
     "title": "Usuarios",
     "view": "Vista"
+  },
+  "rbac": {
+    "deniedTitle": "Sin acceso",
+    "deniedBody": "No tienes permiso para ver esta sección. Pide a un superadministrador si lo necesitas."
   }
 }

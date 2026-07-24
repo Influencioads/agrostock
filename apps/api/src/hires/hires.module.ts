@@ -23,6 +23,7 @@ import { Locale } from '../common/locale';
 import { NotificationsService, type NotificationParams } from '../notifications/notifications.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { WalletService } from '../wallet/wallet.service';
+import { secureOtp, secureReference } from '../common/secure-random';
 
 export class CreateHireDto {
   @ApiProperty({ enum: ['transporter', 'loaderco', 'worker'] })
@@ -54,6 +55,11 @@ export class CreateHireDto {
 
   @ApiProperty({ required: false, description: 'Source logistics for one of your orders (seller only)' })
   @IsOptional() @IsString() orderId?: string;
+
+  // BL-15: a client-supplied key makes a double-submitted hire create (and hold)
+  // a no-op on retry instead of a second hire with a second escrow debit.
+  @ApiProperty({ required: false })
+  @IsOptional() @IsString() idempotencyKey?: string;
 }
 
 // Both parties in a hire negotiation need enough to vet and contact each other
@@ -76,7 +82,9 @@ const HIRE_INCLUDE = {
   order: { select: { id: true, reference: true, status: true, amount: true, product: { select: { name: true } } } },
 } as const;
 
-const ref = (p: string) => `${p}-${Math.floor(1000 + Math.random() * 9000)}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+// SEC-06/BL-15: CSPRNG references and OTPs — the old `Math.random` 4-digit codes
+// were guessable and collided against the unique columns.
+const ref = (p: string) => secureReference(p);
 
 /**
  * Direct hiring: anyone can send a HireRequest to a transporter, loader
@@ -115,6 +123,28 @@ export class HiresService {
     return out;
   }
 
+  /**
+   * API-02: private contact details (email, phone, whatsapp, contactEmail) are
+   * revealed only once a hire is ACCEPTED. While pending/declined/cancelled they
+   * are masked on both parties — otherwise anyone could POST /hires (no budget
+   * required) at any provider from the public directory and scrape their private
+   * contact straight out of the response, bypassing the directory's own rule that
+   * contact is never public.
+   */
+  private maskHireContact<T extends Record<string, unknown>>(hire: T): T {
+    if ((hire as { status?: string }).status === 'accepted') return hire;
+    const strip = (p: unknown) => {
+      if (!p || typeof p !== 'object') return p;
+      const party = p as { profile?: Record<string, unknown> | null } & Record<string, unknown>;
+      return {
+        ...party,
+        email: null,
+        profile: party.profile ? { ...party.profile, phone: null, whatsapp: null, contactEmail: null } : party.profile,
+      };
+    };
+    return { ...hire, requester: strip((hire as Record<string, unknown>).requester), targetUser: strip((hire as Record<string, unknown>).targetUser) };
+  }
+
   /** JWT payload carries no display name — read it for notification copy. */
   private async nameOf(userId: string) {
     const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
@@ -135,6 +165,13 @@ export class HiresService {
 
   async create(requester: AuthUser, dto: CreateHireDto) {
     if (dto.targetUserId === requester.id) throw new BadRequestException('You cannot hire yourself.');
+    // BL-15: a retry carrying the same key returns the original hire instead of
+    // creating a second one (and a second escrow hold). Scoped to the requester.
+    const idemKey = dto.idempotencyKey ? `${requester.id}:${dto.idempotencyKey}` : null;
+    if (idemKey) {
+      const prior = await this.prisma.hireRequest.findUnique({ where: { idempotencyKey: idemKey }, include: HIRE_INCLUDE });
+      if (prior) return this.maskHireContact(prior);
+    }
     const target = await this.prisma.user.findFirst({ where: { id: dto.targetUserId, active: true } });
     if (!target) throw new NotFoundException('User not found');
     const targetRoles = new Set([target.role, ...target.roles]);
@@ -170,38 +207,53 @@ export class HiresService {
     // (they must add funds first). It's released to the provider on completion,
     // or refunded if the hire is declined/cancelled.
     const budget = dto.budgetCents ?? 0;
-    const hire = await this.prisma.$transaction(async (tx) => {
-      if (budget > 0) {
-        await this.wallets.debit(requester.id, budget, 'escrow_hold', 'Hire budget held in escrow', tx);
-      }
-      return tx.hireRequest.create({
-        data: {
-          reference: ref('HR'),
-          targetType: dto.targetType,
-          message: dto.message,
-          fromCity: dto.fromCity,
-          toCity: dto.toCity,
-          cargo: dto.cargo ?? (order ? [order.product?.name, order.qty].filter(Boolean).join(' · ') || null : null),
-          location: dto.location,
-          workersNeeded: dto.workersNeeded,
-          neededDate: dto.neededDate ? new Date(dto.neededDate) : null,
-          budgetCents: dto.budgetCents,
-          escrowState: budget > 0 ? 'held' : null,
-          requesterId: requester.id,
-          targetUserId: dto.targetUserId,
-          workerId,
-          orderId: order?.id ?? null,
-        },
-        include: HIRE_INCLUDE,
+    let hire;
+    try {
+      hire = await this.prisma.$transaction(async (tx) => {
+        // Create first so the escrow debit can be keyed on the hire id (a failed
+        // debit rolls the create back — same transaction — so ordering is safe).
+        const created = await tx.hireRequest.create({
+          data: {
+            reference: ref('HR'),
+            idempotencyKey: idemKey,
+            targetType: dto.targetType,
+            message: dto.message,
+            fromCity: dto.fromCity,
+            toCity: dto.toCity,
+            cargo: dto.cargo ?? (order ? [order.product?.name, order.qty].filter(Boolean).join(' · ') || null : null),
+            location: dto.location,
+            workersNeeded: dto.workersNeeded,
+            neededDate: dto.neededDate ? new Date(dto.neededDate) : null,
+            budgetCents: dto.budgetCents,
+            escrowState: budget > 0 ? 'held' : null,
+            requesterId: requester.id,
+            targetUserId: dto.targetUserId,
+            workerId,
+            orderId: order?.id ?? null,
+          },
+          include: HIRE_INCLUDE,
+        });
+        if (budget > 0) {
+          await this.wallets.debit(requester.id, budget, 'escrow_hold', 'Hire budget held in escrow', tx, `escrow:hold:hire:${created.id}`);
+        }
+        return created;
       });
-    });
+    } catch (e) {
+      // BL-15: a concurrent double-tap loses the unique-key race — return the
+      // winner's hire (its hold stands) instead of surfacing the P2002.
+      if (idemKey && (e as { code?: string }).code === 'P2002') {
+        const prior = await this.prisma.hireRequest.findUnique({ where: { idempotencyKey: idemKey }, include: HIRE_INCLUDE });
+        if (prior) return this.maskHireContact(prior);
+      }
+      throw e;
+    }
     await this.notify(
       dto.targetUserId,
       'hire.request',
       { requester: hire.requester.name, detail: dto.cargo ? ` — ${dto.cargo}` : dto.location ? ` — ${dto.location}` : '' },
       { hireId: hire.id, reference: hire.reference },
     );
-    return hire;
+    return this.maskHireContact(hire);
   }
 
   /** Hires this user SENT, optionally narrowed to a target type or one order. */
@@ -215,7 +267,7 @@ export class HiresService {
       orderBy: { createdAt: 'desc' },
       include: HIRE_INCLUDE,
     });
-    return this.localizeHires(rows, locale);
+    return (await this.localizeHires(rows, locale)).map((h) => this.maskHireContact(h));
   }
 
   async incoming(userId: string, locale: Lang = 'en') {
@@ -224,7 +276,7 @@ export class HiresService {
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
       include: HIRE_INCLUDE,
     });
-    return this.localizeHires(rows, locale);
+    return (await this.localizeHires(rows, locale)).map((h) => this.maskHireContact(h));
   }
 
   private async pendingOwned(id: string, targetUserId: string) {
@@ -256,7 +308,7 @@ export class HiresService {
             toCity: request.toCity,
             cargo: request.cargo,
             status: 'pending',
-            otp: String(Math.floor(1000 + Math.random() * 9000)),
+            otp: secureOtp(),
             transporterId: hire.targetUserId,
             requestId: request.id,
           },
@@ -285,7 +337,9 @@ export class HiresService {
           location: hire.location ?? hire.fromCity ?? 'TBD',
           workersNeeded: hire.workersNeeded ?? 1,
           status: 'assigned',
-          otp: String(Math.floor(1000 + Math.random() * 9000)),
+          // BL-15: CSPRNG OTP — the transporter branch above already uses
+          // secureOtp(); this loader-job branch was the last Math.random() holdout.
+          otp: secureOtp(),
           payCents: hire.budgetCents,
           // Carry the hire context so the loader sees what the job is for.
           cargo: hire.cargo,
@@ -352,13 +406,53 @@ export class HiresService {
     return updated;
   }
 
-  /** Return a still-held escrow budget to the requester (decline / cancel). */
+  /**
+   * Return a still-held escrow budget to the requester (decline / cancel).
+   * BL-05: race-safe. The `held → refunded` transition is a conditional
+   * `updateMany` claim done INSIDE the transaction — a concurrent decline+cancel
+   * (or decline racing a completion) can no longer both pass a stale
+   * `escrowState === 'held'` read and double-credit. The credit is keyed so even a
+   * retry of the winning path is idempotent.
+   */
   private async refundEscrow(hire: { id: string; requesterId: string; budgetCents: number | null; escrowState: string | null }) {
     if (hire.escrowState !== 'held' || !hire.budgetCents) return;
     await this.prisma.$transaction(async (tx) => {
-      await this.wallets.credit(hire.requesterId, hire.budgetCents!, 'refund', 'Hire budget refunded', tx);
-      await tx.hireRequest.update({ where: { id: hire.id }, data: { escrowState: 'refunded' } });
+      const claimed = await tx.hireRequest.updateMany({ where: { id: hire.id, escrowState: 'held' }, data: { escrowState: 'refunded' } });
+      if (claimed.count === 0) return; // lost the race — the other path already settled this hold
+      await this.wallets.credit(hire.requesterId, hire.budgetCents!, 'refund', 'Hire budget refunded', tx, `escrow:refund:hire:${hire.id}`);
     });
+  }
+
+  /**
+   * BL-04: the REQUESTER (payer) confirms the hired work is complete, releasing
+   * the held budget to the provider. This is now the SOLE escrow-release
+   * authority — a provider marking their own trip/job/checkout done can no longer
+   * pay themselves. Race-safe: the held→released transition is a conditional claim
+   * and the credit is keyed, so a double confirm can never pay twice.
+   */
+  async confirmCompletion(user: AuthUser, id: string) {
+    const hire = await this.prisma.hireRequest.findUnique({ where: { id } });
+    if (!hire) throw new NotFoundException('Hire request not found');
+    if (hire.requesterId !== user.id) throw new ForbiddenException('Only the requester can confirm completion.');
+    if (hire.status !== 'accepted') throw new BadRequestException('Only an accepted hire can be completed.');
+    if (hire.escrowState !== 'held' || !hire.budgetCents) {
+      throw new BadRequestException('This hire has no held budget to release.');
+    }
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.hireRequest.updateMany({ where: { id, escrowState: 'held' }, data: { escrowState: 'released' } });
+      if (claimed.count === 0) throw new BadRequestException('This hire budget was already settled.');
+      await this.wallets.credit(hire.targetUserId, hire.budgetCents!, 'escrow_release', 'Hire completed — payout', tx, `escrow:release:hire:${id}`);
+    });
+    // The credit ran inside the tx (silent) — notify the provider of the payout now.
+    await this.notifications.create({
+      userId: hire.targetUserId,
+      system: 'wallet',
+      type: 'wallet.escrow_release',
+      params: { amount: `$${(hire.budgetCents / 100).toFixed(2)}` },
+      data: { hireId: id },
+      linkUrl: '/console/wallet',
+    });
+    return this.prisma.hireRequest.findUniqueOrThrow({ where: { id }, include: HIRE_INCLUDE });
   }
 }
 
@@ -406,6 +500,12 @@ export class HiresController {
   @Post(':id/cancel')
   cancel(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.hires.cancel(user, id);
+  }
+
+  // BL-04: requester-only completion confirmation — the sole escrow-release path.
+  @Post(':id/complete')
+  complete(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.hires.confirmCompletion(user, id);
   }
 }
 

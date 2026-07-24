@@ -13,7 +13,12 @@ export function LoginPage() {
   const { logoSrc } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from || '/console';
+  // WEB-09: router state carries `from` for in-app redirects (ProtectedRoute);
+  // a hard reload after a session expiry can only pass it as ?from=, so accept
+  // both. Only same-site paths are honoured, so this can't become an open redirect.
+  const fromParam = new URLSearchParams(location.search).get('from');
+  const safeFrom = fromParam && fromParam.startsWith('/') && !fromParam.startsWith('//') ? fromParam : null;
+  const from = (location.state as { from?: string } | null)?.from || safeFrom || '/console';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

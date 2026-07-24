@@ -34,7 +34,8 @@
   "pnpm": {
     "overrides": {
       "@types/react": "18.3.31",
-      "@types/react-dom": "18.3.7"
+      "@types/react-dom": "18.3.7",
+      "lodash@<4.17.21": ">=4.17.21"
     }
   },
   "devDependencies": {

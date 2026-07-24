@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { cn } from './cn';
 import { Icon } from './Icon';
@@ -13,10 +13,70 @@ export interface ModalProps {
   className?: string;
   /** Accessible label for the ✕ button. Pass a translated string (e.g. t('common:close')); defaults to English. */
   closeLabel?: string;
+  /**
+   * Accessible name for the dialog when there is no visible `title` (e.g. a
+   * media/lightbox modal). Ignored when `title` is set — the heading labels it.
+   */
+  ariaLabel?: string;
 }
 
-export function Modal({ open, onClose, title, children, footer, className, closeLabel = 'Close' }: ModalProps) {
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+export function Modal({ open, onClose, title, children, footer, className, closeLabel = 'Close', ariaLabel }: ModalProps) {
   const reduce = useReducedMotion();
+  const panelRef = useRef<HTMLDivElement>(null);
+  // The element focused before the dialog opened, so focus can be restored to it
+  // on close (keyboard/screen-reader users are returned to where they were).
+  const restoreRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+
+  // F34: dialog semantics need real focus management — capture + move focus in
+  // on open, trap Tab within the panel, close on Escape, and restore focus out.
+  useEffect(() => {
+    if (!open) return;
+    restoreRef.current = (document.activeElement as HTMLElement) ?? null;
+
+    // Move focus into the dialog (first focusable, else the panel itself).
+    const panel = panelRef.current;
+    const first = panel?.querySelector<HTMLElement>(FOCUSABLE);
+    (first ?? panel)?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !panel) return;
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (el) => el.offsetParent !== null || el === document.activeElement,
+      );
+      if (focusable.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const firstEl = focusable[0];
+      const lastEl = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === firstEl || active === panel)) {
+        e.preventDefault();
+        lastEl.focus();
+      } else if (!e.shiftKey && active === lastEl) {
+        e.preventDefault();
+        firstEl.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      // Restore focus to the opener on close.
+      restoreRef.current?.focus?.();
+    };
+  }, [open, onClose]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -32,8 +92,14 @@ export function Modal({ open, onClose, title, children, footer, className, close
           transition={{ duration: 0.2 }}
         >
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? titleId : undefined}
+            aria-label={title ? undefined : ariaLabel ?? closeLabel}
+            tabIndex={-1}
             className={cn(
-              'flex max-h-[92vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-[0_24px_60px_rgba(11,61,46,0.25)] sm:rounded-xl',
+              'flex max-h-[92vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-[0_24px_60px_rgba(11,61,46,0.25)] outline-none sm:rounded-xl',
               className,
             )}
             onClick={(e) => e.stopPropagation()}
@@ -44,7 +110,7 @@ export function Modal({ open, onClose, title, children, footer, className, close
           >
             {title && (
               <div className="flex shrink-0 items-center justify-between gap-3 border-b border-surface-border px-4 py-3.5 sm:px-6 sm:py-4">
-                <h3 className="min-w-0 font-display text-base font-extrabold text-ink sm:text-lg">{title}</h3>
+                <h3 id={titleId} className="min-w-0 font-display text-base font-extrabold text-ink sm:text-lg">{title}</h3>
                 <button
                   onClick={onClose}
                   className="-me-1.5 shrink-0 rounded-md p-1.5 text-ink-soft hover:bg-brand-surface hover:text-ink"

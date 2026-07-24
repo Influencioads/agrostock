@@ -37,6 +37,8 @@ export interface ProductFormValues {
   isAuction: boolean;
   startBid: string;
   auctionEndsAt: string;
+  /** FLOW-04: on-hand stock. Empty = unmanaged (unlimited); a number = managed. */
+  stock: string;
   /** Category/subcategory-specific attribute values, keyed by field key. */
   attributes: Record<string, unknown>;
   /** Ordered gallery; `images[0]` becomes the cover. */
@@ -46,7 +48,7 @@ export interface ProductFormValues {
 export const blankProduct: ProductFormValues = {
   name: '', categoryId: '', subcategoryId: '', price: '', qty: '', unit: 'MT', moq: '', grade: '', flag: '🌾',
   origin: '', city: '', country: '', supplyCountries: [], delivery: '', marketId: '',
-  isOffer: false, isAuction: false, startBid: '', auctionEndsAt: '',
+  isOffer: false, isAuction: false, startBid: '', auctionEndsAt: '', stock: '',
   attributes: {},
   images: [],
 };
@@ -77,6 +79,7 @@ export function productToForm(p: ApiProduct): ProductFormValues {
     isAuction: !!p.isAuction,
     startBid: p.startBidCents != null ? String(p.startBidCents / 100) : '',
     auctionEndsAt: p.auctionEndsAt ? new Date(p.auctionEndsAt).toISOString().slice(0, 16) : '',
+    stock: p.stockQty != null ? String(p.stockQty) : '',
     attributes: (p.attributes as Record<string, unknown>) ?? {},
     images: p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [],
   };
@@ -105,6 +108,9 @@ export function formToPayload(f: ProductFormValues) {
     isOffer: f.isOffer,
     isAuction: f.isAuction,
     images: f.images,
+    // FLOW-04: send stockQty only when the seller entered a number; blank leaves
+    // the listing unmanaged (unlimited). `null` explicitly clears managed stock.
+    stockQty: f.stock.trim() === '' ? null : Math.max(0, Math.round(Number(f.stock))),
     ...(f.isAuction && f.startBid ? { startBidCents: Math.round(Number(f.startBid) * 100) } : {}),
     ...(f.isAuction && f.auctionEndsAt ? { auctionEndsAt: new Date(f.auctionEndsAt).toISOString() } : {}),
   };
@@ -580,6 +586,16 @@ export function ProductForm({
           </select>
         </label>
         <Input label={t('console.productForm.moq')} placeholder={t('console.productForm.phMoq')} value={value.moq} onChange={(e) => set('moq')(e.target.value)} />
+        {/* FLOW-04: managed stock. Blank = unlimited; a number caps orders and is
+            enforced by the reservation machinery at checkout. */}
+        <Input
+          label={t('console.productForm.stock')}
+          type="number"
+          min={0}
+          placeholder={t('console.productForm.phStock')}
+          value={value.stock}
+          onChange={(e) => set('stock')(e.target.value)}
+        />
         <Input label={t('console.productForm.origin')} placeholder={t('console.productForm.phOrigin')} value={value.origin} onChange={(e) => set('origin')(e.target.value)} />
         <Input label={t('console.productForm.delivery')} placeholder={t('console.productForm.phDelivery')} value={value.delivery} onChange={(e) => set('delivery')(e.target.value)} />
       </div>

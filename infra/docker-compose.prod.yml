@@ -34,6 +34,15 @@ services:
     mem_limit: 128m
     volumes:
       - redis_data:/data
+    # OPS-03: readiness gate so dependents wait for a responsive Redis.
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
 
   minio:
     image: minio/minio:latest
@@ -46,6 +55,15 @@ services:
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Set S3_SECRET_KEY}
     volumes:
       - minio_data:/data
+    # OPS-03: MinIO's own liveness endpoint.
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
 
   api:
     image: agrostock-prod-api
@@ -61,7 +79,7 @@ services:
       redis:
         condition: service_started
       minio:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ../.env
     environment:
@@ -85,6 +103,18 @@ services:
     volumes:
       - api_uploads:/repo/apps/api/uploads
       - api_private_uploads:/repo/apps/api/private-uploads
+    # OPS-03: the DB-gated readiness endpoint the API already exposes was never
+    # consumed — a wedged API (bad DB creds, pending migrations) stayed "up"
+    # forever. Now docker marks it unhealthy and dependents wait for it.
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health/ready']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
 
   migrate:
     image: agrostock-prod-api
@@ -113,9 +143,13 @@ services:
     cpus: '0.25'
     mem_limit: 128m
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - '127.0.0.1:${HOST_WEB_PORT:-8090}:80'
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
 
   admin:
     build:
@@ -127,9 +161,13 @@ services:
     cpus: '0.25'
     mem_limit: 128m
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - '127.0.0.1:${HOST_ADMIN_PORT:-8091}:80'
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
 
 volumes:
   postgres_data:

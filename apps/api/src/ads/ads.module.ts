@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { IsBoolean, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
@@ -203,6 +204,10 @@ export class AdsController {
   }
 
   /** Public click tracking beacon for a promoted campaign. */
+  // API-16: the beacon must stay unauthenticated (public storefront visitors), but
+  // a tight per-IP throttle stops a script from inflating a paid campaign's click
+  // count. Legitimate viewing can't plausibly exceed this.
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post(':id/click')
   click(@Param('id') id: string) {
     return this.ads.recordClick(id);

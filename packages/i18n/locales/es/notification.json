@@ -135,6 +135,10 @@
     "status_changed": {
       "body": "El orden ahora es {{status}}.",
       "title": "Orden {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "Pedido realizado",
+      "body": "Tu pedido {{reference}} de {{product}} se ha realizado."
     }
   },
   "product": {

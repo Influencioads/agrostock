@@ -82,3 +82,30 @@ describe('Community — private group message access', () => {
     await expect(s.getGroupMessages(undefined, 'g1', {})).resolves.toEqual([]);
   });
 });
+
+describe('Community — message translation access (API-01 IDOR)', () => {
+  function svc(opts: { message: unknown; group?: unknown; member?: unknown; thread?: unknown }) {
+    const prisma = {
+      communityMessage: { findUnique: vi.fn(async () => opts.message) },
+      communityGroup: { findFirst: vi.fn(async () => opts.group ?? null) },
+      communityGroupMember: { findUnique: vi.fn(async () => opts.member ?? null) },
+      communityDirectThread: { findUnique: vi.fn(async () => opts.thread ?? null) },
+    };
+    return new CommunityService(prisma as never, audit as never, {} as never, translation as never);
+  }
+
+  it('forbids a non-participant from translating a DM message', async () => {
+    const s = svc({ message: { id: 'm1', groupId: null, threadId: 'thr1' }, thread: { id: 'thr1', aId: 'alice', bId: 'bob' } });
+    await expect(s.translateMessage(user('mallory'), 'm1')).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('forbids a non-member from translating a private-group message', async () => {
+    const s = svc({ message: { id: 'm1', groupId: 'g1', threadId: null }, group: { id: 'g1', visibility: 'private' }, member: null });
+    await expect(s.translateMessage(user('outsider'), 'm1')).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('404s an unknown message', async () => {
+    const s = svc({ message: null });
+    await expect(s.translateMessage(user('u1'), 'm1')).rejects.toBeInstanceOf(NotFoundException);
+  });
+});

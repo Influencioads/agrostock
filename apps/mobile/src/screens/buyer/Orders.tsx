@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { canCancel, canDispute, nextStatusFor, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
-import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, ErrorState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
@@ -18,7 +18,7 @@ export function BuyerOrders() {
   const [error, setError] = useState('');
   const invalidate = useOrderInvalidation();
 
-  const { data: orders = [], isLoading } = useQuery<ApiOrder[]>({
+  const { data: orders = [], isLoading, isError, refetch } = useQuery<ApiOrder[]>({
     queryKey: ['orders', 'mine'],
     queryFn: () => api.orders.mine(),
     enabled: !!user,
@@ -48,13 +48,19 @@ export function BuyerOrders() {
         <EmptyState icon="lock-closed-outline" title={t('buyerX.orders.signInTitle')} body={t('buyerX.orders.signInBody')} />
       ) : isLoading ? (
         <SkeletonRows />
+      ) : isError ? (
+        <ErrorState title={t('common:errorTitle')} body={t('common:errorBody')} onRetry={() => refetch()} retryLabel={t('common:retry')} />
       ) : orders.length === 0 ? (
         <EmptyState icon="cube-outline" title={t('buyerX.orders.emptyTitle')} body={t('buyerX.orders.emptyBody')} />
       ) : (
         orders.map((o) => {
           // Buyers accept a quote and release escrow; the rest is the seller's or
           // the transporter's move (and dispatch/delivery need an OTP).
-          const next = nextStatusFor(o.status, 'buyer');
+          // D4/BL-03: `paid` is excluded — no API transition reaches it, so the
+          // "Pay escrow" button could never fire and only advertised a payment
+          // step that does not exist yet.
+          const nextRaw = nextStatusFor(o.status, 'buyer');
+          const next = nextRaw === 'paid' ? null : nextRaw;
           const cancellable = canCancel(o.status, 'buyer');
           const disputable = canDispute(o.status, 'buyer');
           return (
@@ -104,7 +110,7 @@ export function BuyerOrders() {
                 )}
                 {!!next && (
                   <Button
-                    title={next === 'processing' ? t('buyerX.orders.acceptQuote') : next === 'paid' ? t('buyerX.orders.payEscrow') : t('buyerX.orders.mark', { label: orderLabel[next] })}
+                    title={next === 'processing' ? t('buyerX.orders.acceptQuote') : t('buyerX.orders.mark', { label: orderLabel[next] })}
                     size="sm"
                     disabled={advance.isPending}
                     onPress={() => advance.mutate({ id: o.id, status: next })}

@@ -515,7 +515,7 @@ export class CommunityService {
     return rows.map(localizeRequirement);
   }
 
-  async getRequirement(id: string, locale: Lang = 'en') {
+  async getRequirement(user: AuthUser | undefined, id: string, locale: Lang = 'en') {
     const req = await this.prisma.communityTradeRequirement.findUnique({
       where: { id },
       include: {
@@ -528,6 +528,17 @@ export class CommunityService {
       },
     });
     if (!req) throw new NotFoundException('Requirement not found');
+    // API-07: the list endpoint only ever returns `visibility: 'public'` rows, but
+    // this by-id read exposed non-public requirements (and every responder's
+    // identity) to anyone. Restrict a non-public requirement to its author, a
+    // responder, or an admin. 404 (not 403) so the id's existence stays hidden.
+    if (req.visibility !== 'public') {
+      const uid = user?.id;
+      const isAuthor = !!uid && req.authorId === uid;
+      const isResponder = !!uid && req.responses.some((r) => r.responderId === uid);
+      const isAdmin = !!user?.roles?.includes('admin');
+      if (!isAuthor && !isResponder && !isAdmin) throw new NotFoundException('Requirement not found');
+    }
     return localizeRequirement(req);
   }
 
@@ -579,15 +590,42 @@ export class CommunityService {
   }
 
   /**
+   * API-01: verify the caller may read a message before returning its content.
+   * A message belongs either to a group (members-only unless the group is public)
+   * or to a DM thread (its two participants only). Admins bypass. Mirrors the
+   * checks getGroupMessages / getDmMessages already enforce on the list paths.
+   */
+  private async assertCanViewMessage(user: AuthUser, message: { groupId: string | null; threadId: string | null }) {
+    if (user.roles.includes('admin')) return;
+    if (message.groupId) {
+      const group = await this.prisma.communityGroup.findFirst({ where: { id: message.groupId, deletedAt: null } });
+      if (!group) throw new NotFoundException('Message not found');
+      if (group.visibility !== 'public') await this.assertMember(user, message.groupId);
+      return;
+    }
+    if (message.threadId) {
+      const thread = await this.prisma.communityDirectThread.findUnique({ where: { id: message.threadId } });
+      if (!thread || (thread.aId !== user.id && thread.bId !== user.id)) {
+        throw new ForbiddenException('You cannot view this message');
+      }
+      return;
+    }
+    throw new ForbiddenException('You cannot view this message');
+  }
+
+  /**
    * Translate a single message into the viewer's locale (cached). Used by clients
    * to localize a message that arrived over the socket in its original language.
+   * API-01: access-checked — previously ANY signed-in user could read ANY DM or
+   * private-group message by id via this endpoint.
    */
-  async translateMessage(messageId: string, locale: Lang) {
+  async translateMessage(user: AuthUser, messageId: string, locale: Lang) {
     const message = await this.prisma.communityMessage.findUnique({
       where: { id: messageId },
       include: { translations: { where: { locale }, select: { body: true } } },
     });
     if (!message) throw new NotFoundException('Message not found');
+    await this.assertCanViewMessage(user, message);
     const [localized] = await this.localizeMessages([message], locale);
     return { id: message.id, body: localized.body, originalBody: localized.originalBody, sourceLang: localized.sourceLang };
   }
@@ -745,7 +783,22 @@ export class CommunityService {
   }
 
   // ── reactions ─────────────────────────────────────────────────────
+  /**
+   * API-12: reacting requires the same read access as viewing. Previously any
+   * authenticated socket could react to ANY message id, which both wrote a row
+   * against a conversation the user can't see and probed message existence.
+   */
+  private async assertCanReact(user: AuthUser, messageId: string) {
+    const message = await this.prisma.communityMessage.findUnique({
+      where: { id: messageId },
+      select: { groupId: true, threadId: true },
+    });
+    if (!message) throw new NotFoundException('Message not found');
+    await this.assertCanViewMessage(user, message);
+  }
+
   async addReaction(user: AuthUser, messageId: string, emoji: string) {
+    await this.assertCanReact(user, messageId);
     await this.prisma.communityMessageReaction.upsert({
       where: { messageId_userId_emoji: { messageId, userId: user.id, emoji } },
       create: { messageId, userId: user.id, emoji },
@@ -755,8 +808,19 @@ export class CommunityService {
   }
 
   async removeReaction(user: AuthUser, messageId: string, emoji: string) {
+    await this.assertCanReact(user, messageId);
     await this.prisma.communityMessageReaction.deleteMany({ where: { messageId, userId: user.id, emoji } });
     return { messageId, emoji, userId: user.id };
+  }
+
+  /** API-12: the DM equivalent of assertCanJoinGroup — only the two participants. */
+  async assertThreadParticipant(user: AuthUser, threadId: string) {
+    const thread = await this.prisma.communityDirectThread.findUnique({ where: { id: threadId } });
+    if (!thread) throw new NotFoundException('Conversation not found');
+    if (thread.aId !== user.id && thread.bId !== user.id && !user.roles.includes('admin')) {
+      throw new ForbiddenException('You are not part of this conversation');
+    }
+    return thread;
   }
 
   // ── message room resolution (for the gateway access guard) ─────────

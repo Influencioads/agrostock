@@ -529,7 +529,8 @@
       "payouts": "Paiements",
       "totalBalance": "Solde total du portefeuille",
       "wallets": "Portefeuilles"
-    }
+    },
+    "rejectReason": "Motif du refus de ce paiement (affiché à l'utilisateur) :"
   },
   "perm": {
     "ads_moderate": "Publicités",
@@ -593,11 +594,13 @@
       "auction": "enchères",
       "offer": "offre",
       "safedeal": "safedeal"
-    }
+    },
+    "confirmTakedown": "Masquer cette annonce du marché ?"
   },
   "profile": {
     "active": "actif",
     "inactive": "inactif",
+    "currentPassword": "Mot de passe actuel",
     "newPassword": "Nouveau mot de passe",
     "noPermissions": "Aucune autorisation de module attribuée.",
     "passwordError": "Impossible de modifier le mot de passe.",
@@ -790,7 +793,7 @@
     "adminOnly": "Réservé aux administrateurs",
     "contactEmail": "Adresse e-mail",
     "country": "Pays",
-    "dangerBody": "Désactivation du compte (suppression réversible). L'utilisateur ne peut plus se connecter.",
+    "dangerBody": "La désactivation déconnecte l'utilisateur et bloque la connexion, mais conserve ses données et est réversible. La suppression définitive supprime le compte et est irréversible.",
     "dangerZone": "Zone dangereuse",
     "deactivate": "Désactiver le compte",
     "deleting": "Suppression…",
@@ -811,7 +814,12 @@
     "saving": "Économie…",
     "title": "Gérer les utilisateurs",
     "wallet": "Portefeuille",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "confirmDeactivate": "Désactiver ce compte ? L'utilisateur sera déconnecté et ne pourra plus se connecter.",
+    "reactivate": "Réactiver le compte",
+    "deletePermanently": "Supprimer définitivement",
+    "confirmDelete": "Supprimer définitivement ce compte ? Cette action est irréversible. Les utilisateurs ayant des commandes, des produits ou un historique financier ne peuvent pas être supprimés — désactivez-les à la place.",
+    "deleteBlocked": "Cet utilisateur a des enregistrements commerciaux, financiers ou d'assistance et ne peut pas être supprimé définitivement. Désactivez le compte à la place."
   },
   "users": {
     "createActive": "Actif",
@@ -829,5 +837,9 @@
     "subtitle": "{{shown}} sur {{total}} comptes",
     "title": "Utilisateurs",
     "view": "Voir"
+  },
+  "rbac": {
+    "deniedTitle": "Accès refusé",
+    "deniedBody": "Vous n'avez pas la permission de voir cette section. Demandez à un super-admin si nécessaire."
   }
 }

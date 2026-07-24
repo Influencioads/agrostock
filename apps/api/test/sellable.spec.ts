@@ -22,9 +22,14 @@ describe('assertProductSellable (F04)', () => {
     expect(() => assertProductSellable(ended)).toThrow(BadRequestException);
   });
 
-  it('allows an auction still open', () => {
+  it('rejects direct purchase of a still-open auction — must bid (BL-09)', () => {
     const open = { ...live, isAuction: true, auctionEndsAt: new Date(Date.now() + 60_000) };
-    expect(() => assertProductSellable(open)).not.toThrow();
+    expect(() => assertProductSellable(open)).toThrow(BadRequestException);
+  });
+
+  it('rejects an open-ended auction lot from direct purchase (BL-09)', () => {
+    const openEnded = { ...live, isAuction: true, auctionEndsAt: null };
+    expect(() => assertProductSellable(openEnded)).toThrow(BadRequestException);
   });
 });
 

@@ -62,7 +62,7 @@ export function SafeDealPage() {
   const [viewing, setViewing] = useState<string | null>(null);
 
   const { data: payments } = useQuery<ApiAdminPayments>({ queryKey: ['admin-payments'], queryFn: () => api.admin.payments(), retry: 1 });
-  const { data: wallets = [] } = useQuery<ApiAdminWallet[]>({
+  const { data: wallets = [], isError } = useQuery<ApiAdminWallet[]>({
     queryKey: ['admin-wallets', role],
     queryFn: () => api.admin.wallets(undefined, role === 'all' ? undefined : role),
     retry: 1,
@@ -72,7 +72,8 @@ export function SafeDealPage() {
 
   return (
     <div>
-      <PageHeader title={t('nav.safedeal')} subtitle={t('sd.sub')} action={<Badge tone="green">{t('roleReq.liveApi')}</Badge>} />
+      {/* ADM-03/G3: badge reflects the real fetch state, not a hardcoded green. */}
+      <PageHeader title={t('nav.safedeal')} subtitle={t('sd.sub')} action={<Badge tone={isError ? 'error' : 'green'}>{isError ? t('apiBadge.offline') : t('roleReq.liveApi')}</Badge>} />
 
       <div className="mb-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card>

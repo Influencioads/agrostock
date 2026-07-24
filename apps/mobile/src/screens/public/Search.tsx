@@ -65,7 +65,7 @@ export function Search() {
 
   const active = debounced.trim().length > 1 || !!category;
 
-  const { data: results = [], isLoading } = useQuery<ApiProduct[]>({
+  const { data: results = [], isLoading, isError, refetch } = useQuery<ApiProduct[]>({
     queryKey: ['products', 'search', debounced, category],
     queryFn: async () => {
       const items = await api.products.list({ search: debounced, category });
@@ -126,6 +126,8 @@ export function Search() {
           <ProductGrid
             products={results}
             loading={isLoading}
+            error={isError}
+            onRetry={() => refetch()}
             onOpen={(p) => nav.navigate('ProductDetail', { slug: p.slug })}
             empty={{ title: t('pubX.search.noMatchTitle'), body: t('pubX.search.noMatchBody', { q: debounced }) }}
           />

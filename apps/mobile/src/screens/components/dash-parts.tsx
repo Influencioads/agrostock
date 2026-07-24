@@ -93,7 +93,7 @@ const s = StyleSheet.create({
 
   statRow: { flexDirection: 'row', gap: space.md, paddingHorizontal: space.lg },
   statCard: { flex: 1, backgroundColor: C.white, borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, padding: 14, gap: 6, minHeight: 96 },
-  statValue: { ...type.numeric, fontSize: 22, color: C.ink, marginTop: 6 },
+  statValue: { ...type.numeric, fontSize: 22, lineHeight: 28, color: C.ink, marginTop: 6 },
   statLabel: { ...type.caption, color: C.inkSoft },
 
   quickRow: { flexDirection: 'row', gap: space.md, paddingHorizontal: space.lg },

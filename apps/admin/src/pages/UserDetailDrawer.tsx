@@ -51,11 +51,20 @@ export function UserDetailDrawer({ userId, onClose }: { userId: string; onClose:
     mutationFn: (status: 'pending' | 'verified' | 'rejected') => api.admin.setUserKyc(userId, status),
     onSuccess: invalidate,
   });
+  const [deleteError, setDeleteError] = useState('');
+  const deactivate = useMutation({
+    mutationFn: (active: boolean) => api.admin.updateUser(userId, { active }),
+    onSuccess: invalidate,
+  });
   const remove = useMutation({
     mutationFn: () => api.admin.deleteUser(userId),
     onSuccess: () => {
       invalidate();
       onClose();
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setDeleteError(msg || t('userDrawer.deleteBlocked'));
     },
   });
 
@@ -223,9 +232,31 @@ export function UserDetailDrawer({ userId, onClose }: { userId: string; onClose:
             <Card className="border border-status-error/30">
               <h3 className="mb-1 font-display font-bold text-status-error">{t('userDrawer.dangerZone')}</h3>
               <p className="mb-3 text-xs text-ink-soft">{t('userDrawer.dangerBody')}</p>
-              <Button variant="danger" disabled={remove.isPending} onClick={() => remove.mutate()}>
-                {remove.isPending ? t('userDrawer.deleting') : t('userDrawer.deactivate')}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                {/* Reversible: toggle account.active. ADM-02: confirm before deactivating. */}
+                <Button
+                  variant="outline"
+                  disabled={deactivate.isPending}
+                  onClick={() => {
+                    const next = u.active === false;
+                    if (next || window.confirm(t('userDrawer.confirmDeactivate'))) deactivate.mutate(next);
+                  }}
+                >
+                  {u.active === false ? t('userDrawer.reactivate') : t('userDrawer.deactivate')}
+                </Button>
+                {/* Irreversible hard delete; the API blocks it (409) when trade/financial records exist. */}
+                <Button
+                  variant="danger"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    setDeleteError('');
+                    if (window.confirm(t('userDrawer.confirmDelete'))) remove.mutate();
+                  }}
+                >
+                  {remove.isPending ? t('userDrawer.deleting') : t('userDrawer.deletePermanently')}
+                </Button>
+              </div>
+              {deleteError && <p className="mt-2 text-sm font-semibold text-status-error">{deleteError}</p>}
             </Card>
           </div>
         )}

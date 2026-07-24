@@ -8,6 +8,9 @@ import { useI18n } from '../../i18n';
 import { chatBus } from '../../chat/chatBus';
 import { usd, orderLabel, orderTone } from '../lib';
 import { DownloadInvoiceButton, OrderDrawer, OrderStepper, OtpCard, ShipmentFacts } from './order-parts';
+import { ErrorState } from '../../components/ErrorState';
+import { useWishlist } from '../../lib/useWishlist';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { unitSuffix } from '@agrotraders/types';
 
 const orderTextKey = (s: string) => `enums:order_status.${s}`;
@@ -36,6 +39,7 @@ function EmptyHint({ icon, title, body }: { icon: IconName; title: string; body:
 /** Browse — quick funnel into the public marketplace. */
 export function BrowseSection() {
   const { t } = useI18n();
+  const { fmtPrice } = useCurrency();
   const { data: products = [] } = useQuery<ApiProduct[]>({
     queryKey: ['browse-products'],
     queryFn: () => api.products.list({}),
@@ -54,7 +58,9 @@ export function BrowseSection() {
             <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-surface text-2xl">{p.emoji ?? '🌾'}</span>
             <div className="min-w-0 flex-1">
               <div className="truncate font-display font-bold text-ink">{p.name}</div>
-              <div className="truncate text-xs text-ink-soft">{p.flag} {p.origin} · ${p.price}{unitSuffix(p.unit)}</div>
+              {/* WEB-10: `p.price` already carries its own "$", so the extra literal
+                  rendered "$$840" — and it bypassed the currency selector entirely. */}
+              <div className="truncate text-xs text-ink-soft">{p.flag} {p.origin} · {fmtPrice(p)}{unitSuffix(p.unit)}</div>
             </div>
             {p.verified && <Badge tone="green">{t('console.buyer.verified')}</Badge>}
           </Card>
@@ -64,28 +70,49 @@ export function BrowseSection() {
   );
 }
 
-/** Saved / wishlist — verified & safe-deal picks kept for later. */
+/**
+ * Saved / wishlist — the buyer's own saved products (F02). Reads the real
+ * per-user wishlist (not a Safe Deal filter) and each card's heart removes the
+ * item. Distinguishes loading / error / empty explicitly (F28).
+ */
 export function SavedSection() {
   const { t } = useI18n();
-  const { data: saved = [] } = useQuery<ApiProduct[]>({
-    queryKey: ['saved-products'],
-    queryFn: () => api.products.list({ safe: true }),
+  const { fmtPrice } = useCurrency();
+  const { isSaved, toggle } = useWishlist();
+  const { data: saved = [], isLoading, isError, refetch } = useQuery<ApiProduct[]>({
+    queryKey: ['wishlist-products'],
+    queryFn: () => api.wishlist.list(),
   });
   return (
     <div>
       <SectionHead title={t('console.nav.saved')} sub={t('console.buyer.savedSub')} />
-      {saved.length === 0 ? (
+      {isLoading ? (
+        <p className="text-ink-soft">{t('common:loading')}</p>
+      ) : isError ? (
+        <ErrorState onRetry={() => refetch()} />
+      ) : saved.length === 0 ? (
         <EmptyHint icon="heart" title={t('console.buyer.noSavedTitle')} body={t('console.buyer.noSavedBody')} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {saved.slice(0, 9).map((p) => (
+          {saved.map((p) => (
             <Card key={p.id} hoverable className="flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-mango-soft text-2xl">{p.emoji ?? '🌾'}</span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-display font-bold text-ink">{p.name}</div>
-                <div className="truncate text-xs text-ink-soft">{p.flag} ${p.price}{unitSuffix(p.unit)}</div>
-              </div>
-              <Icon name="heart" size={18} className="text-orange" />
+              <Link to={`/product/${p.slug}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-mango-soft text-2xl">{p.emoji ?? '🌾'}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-display font-bold text-ink">{p.name}</div>
+                  <div className="truncate text-xs text-ink-soft">{p.flag} {fmtPrice(p)}{unitSuffix(p.unit)}</div>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={() => toggle(p.id)}
+                aria-pressed={isSaved(p.id)}
+                aria-label={t('site.removeFromSaved')}
+                title={t('site.removeFromSaved')}
+                className="shrink-0 text-orange transition hover:text-status-error"
+              >
+                <Icon name="heart" size={18} className="fill-current" />
+              </button>
             </Card>
           ))}
         </div>

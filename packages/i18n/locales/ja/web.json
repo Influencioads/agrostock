@@ -366,7 +366,7 @@
       "liveListings": "出品中",
       "readyToWithdraw": "撤退準備完了",
       "recentOrders": "最近の注文",
-      "revenue": "収益",
+      "revenue": "注文量",
       "safeDealBalance": "セーフディールバランス",
       "sellerSub": "あなたの店舗の業績は以下のとおりです。",
       "shipmentFallback": "出荷",
@@ -881,7 +881,9 @@
       "supplyCountriesHint": "— 発送可能な国をすべて選択してください",
       "unit": "ユニット",
       "uploadFailed": "画像のアップロードに失敗しました。より小さいサイズのJPGまたはPNGファイルをお試しください。",
-      "uploading": "アップロード中…"
+      "uploading": "アップロード中…",
+      "stock": "在庫（任意）",
+      "phStock": "例: 500 — 空欄 = 無制限"
     },
     "requestAccess": "アクセスを要求する",
     "reviewQueue": "レビューキュー",
@@ -954,7 +956,7 @@
       "directEnquiries": "直接のお問い合わせ",
       "ended": "終了しました",
       "etaDays": "ETA（日）",
-      "grossRevenue": "総収入",
+      "grossRevenue": "総注文量",
       "highest": "最高",
       "highestBid": "最高入札額",
       "launchError": "このキャンペーンを開始できませんでした。",
@@ -994,7 +996,7 @@
       "requestFallback": "リクエスト",
       "respondFromOrders": "「注文」タブから返信してください。",
       "resume": "再開する",
-      "revenueTrend": "収益動向",
+      "revenueTrend": "注文量の推移",
       "reverseAuction": "リバースオークション",
       "sealedBid": "封印入札",
       "sealedNote": "非公開入札：入札内容はあなただけが見ることができます。オークション終了時に最高額入札者が落札者となります。",
@@ -1434,7 +1436,8 @@
       "suppliesTo": "供給",
       "transport": "輸送",
       "verifiedSeller": "認証済み販売者",
-      "watchingNow": "{{count}}+人が視聴中"
+      "watchingNow": "{{count}}+人が視聴中",
+      "quoteRequested": "見積もりを依頼しました — {{ref}}。販売者から価格が提示されます。"
     },
     "profile": {
       "activeRoutes": "アクティブルート",
@@ -1496,7 +1499,12 @@
       "whatsapp": "WhatsApp",
       "whereFrom": "あなたの出身地",
       "youFallback": "あなた",
-      "yourMarket": "あなたの市場"
+      "yourMarket": "あなたの市場",
+      "dangerZone": "危険な操作",
+      "deleteBody": "アカウントを削除するとすべての端末からサインアウトされ、ログインが無効になります。先にウォレット残高を出金してください。",
+      "confirmDelete": "このアカウントを削除しますか？アプリからは元に戻せません。",
+      "deleteAccount": "アカウントを削除",
+      "deleteError": "アカウントを削除できませんでした。もう一度お試しください。"
     },
     "register": {
       "checkInboxBody": "{{email}}宛に確認リンクを送信しました。リンクをクリックしてアカウントを有効化してください。確認が完了次第、ログインできるようになります。",
@@ -1680,6 +1688,12 @@
       "backToSignIn": "サインインに戻る",
       "checking": "メールアドレスを確認しています…",
       "failedTitle": "このリンクを確認できませんでした"
+    },
+    "notFound": {
+      "title": "ページが見つかりません",
+      "body": "お探しのページは存在しないか、移動されました。",
+      "home": "ホームへ",
+      "browse": "マーケットを見る"
     }
   },
   "product": {
@@ -1798,6 +1812,8 @@
     "workersNeeded": "労働者募集中",
     "you": "あなた",
     "yourBidPlaceholder": "あなたの入札額（USD）",
-    "yourBids": "あなたの入札"
+    "yourBids": "あなたの入札",
+    "addToSaved": "お気に入りに保存",
+    "removeFromSaved": "お気に入りから削除"
   }
 }

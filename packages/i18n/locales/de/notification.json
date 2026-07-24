@@ -135,6 +135,10 @@
     "status_changed": {
       "body": "Die Reihenfolge ist jetzt {{status}}.",
       "title": "Bestellung {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "Bestellung aufgegeben",
+      "body": "Ihre Bestellung {{reference}} für {{product}} wurde aufgegeben."
     }
   },
   "product": {

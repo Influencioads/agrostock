@@ -26,6 +26,41 @@ describe('order placement idempotency (F11)', () => {
     expect(prisma.product.findUnique).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
   });
+
+  // BL-11: a concurrent retry that LOSES the unique-index race (no prior found on
+  // the pre-check, then create throws P2002) must return the winner's order, not
+  // surface the constraint error the retry was meant to absorb.
+  it('a lost idempotency-key race returns the winner order on P2002', async () => {
+    const live = { id: 'p1', slug: 'x', status: 'live', approved: true, sellerId: 's1', isAuction: false, priceCents: 1000, stockQty: null };
+    const winner = { id: 'o-win', reference: 'AG-WIN', idempotencyKey: 'key-2' };
+    let priorExists = false; // pre-check sees nothing; the winning insert lands mid-flight
+    const prisma = {
+      order: {
+        findUnique: vi.fn(async () => (priorExists ? winner : null)),
+        create: vi.fn(async () => { throw Object.assign(new Error('unique'), { code: 'P2002' }); }),
+      },
+      product: { findUnique: vi.fn(async () => live) },
+      $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+        const tx = { order: { create: prisma.order.create }, $executeRaw: vi.fn() };
+        try { return await fn(tx); } finally { priorExists = true; }
+      }),
+    };
+    const svc = new OrdersService(prisma as never, {} as never, {} as never, {} as never);
+    const out = await svc.place('b1', { productSlug: 'x', qty: 1, idempotencyKey: 'key-2' });
+    expect(out).toBe(winner);
+  });
+
+  // BL-15: a seller who also holds a buyer role cannot order their own listing.
+  it('rejects a self-purchase', async () => {
+    const live = { id: 'p1', slug: 'x', status: 'live', approved: true, sellerId: 'b1', isAuction: false, priceCents: 1000, stockQty: null };
+    const prisma = {
+      order: { findUnique: vi.fn(async () => null), create: vi.fn() },
+      product: { findUnique: vi.fn(async () => live) },
+    };
+    const svc = new OrdersService(prisma as never, {} as never, {} as never, {} as never);
+    await expect(svc.place('b1', { productSlug: 'x', qty: 1 })).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.order.create).not.toHaveBeenCalled();
+  });
 });
 
 describe('transport quote acceptance is a single winner (F15)', () => {
@@ -57,7 +92,7 @@ describe('transport quote acceptance is a single winner (F15)', () => {
       $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
     };
     const notifications = { create: vi.fn(async () => {}) };
-    const svc = new TransportService(prisma as never, {} as never, {} as never, notifications as never);
+    const svc = new TransportService(prisma as never, {} as never, notifications as never);
     return { svc, prisma };
   }
 

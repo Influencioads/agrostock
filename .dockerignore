@@ -35,3 +35,7 @@ design
 .local-logs
 AUDIT_REPORT.md
 REMEDIATION_PLAN.md
+
+# OPS-05: stray repo-root working files that must never enter a build context.
+/tatus
+/tmp.mjs

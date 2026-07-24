@@ -14,6 +14,8 @@ import { AuctionRoom } from '../components/site/AuctionRoom';
 import { ProductCard } from '../components/site/ProductCard';
 import { ReviewList } from '../console/components/ReviewList';
 import { resolveProductLoad } from './productResolution';
+import { ErrorState } from '../components/ErrorState';
+import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const thumbs = ['🌾', '📦', '🚢', '📄', '🏭'];
 
@@ -27,7 +29,7 @@ export function ProductPage() {
   const [qty, setQty] = useState(50);
   const [notice, setNotice] = useState('');
 
-  const { data: apiProduct, isLoading, isError } = useQuery({
+  const { data: apiProduct, isLoading, isError, refetch } = useQuery({
     queryKey: ['product', id],
     queryFn: () => api.products.get(id!),
     enabled: !!id,
@@ -37,6 +39,8 @@ export function ProductPage() {
   // (offline resilience) — never silently show an unrelated product.
   const load = resolveProductLoad(apiProduct ? toCardProduct(apiProduct) : undefined, isLoading, isError);
   const product = load.product;
+  // E10: per-product <title> so crawlers/tabs/shares distinguish listings.
+  useDocumentTitle(product?.name);
 
   // Real category-specific attributes captured on this listing → labelled rows.
   const attrRows = (() => {
@@ -95,6 +99,24 @@ export function ProductPage() {
     onError: () => setNotice(t('page.product.orderError')),
   });
 
+  /**
+   * WEB-04: "Request Quote" now raises a real enquiry (the seller answers with a
+   * price, which the buyer then accepts) instead of being an inert button. Uses
+   * the same guards as Buy now.
+   */
+  const enquire = useMutation({
+    mutationFn: () => {
+      if (!user) {
+        navigate('/login', { state: { from: `/product/${id}` } });
+        throw new Error('Sign in required');
+      }
+      if (!product) throw new Error('Product is not available');
+      return api.orders.enquiry({ productSlug: product.id, qty });
+    },
+    onSuccess: (o) => setNotice(`✓ ${t('page.product.quoteRequested', { ref: (o as { reference: string }).reference })}`),
+    onError: (e) => setNotice(e instanceof Error && e.message === 'Sign in required' ? '' : t('page.product.orderError')),
+  });
+
   const onBuy = () => {
     setNotice('');
     if (!user) return navigate('/login', { state: { from: `/product/${id}` } });
@@ -105,6 +127,15 @@ export function ProductPage() {
 
   if (load.state === 'loading') {
     return <div className="mx-auto max-w-3xl px-4 py-24 text-center text-ink-soft">{t('common:loading')}</div>;
+  }
+
+  // F28: a failed fetch offers a retry instead of masquerading as a 404.
+  if (load.state === 'error') {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-24 lg:px-6">
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
   }
 
   if (load.state === 'not-found' || !product) {
@@ -287,14 +318,22 @@ export function ProductPage() {
               {notice && (
                 <p className={'text-xs ' + (notice.startsWith('✓') ? 'text-status-success' : 'text-status-error')}>{notice}</p>
               )}
-              <Button fullWidth variant="outline">
+              {/* WEB-04: these three CTAs had no onClick at all — prominent dead
+                  controls on the transactional panel. Quote raises a real enquiry;
+                  the logistics buttons go to the matching directories. */}
+              <Button
+                fullWidth
+                variant="outline"
+                disabled={enquire.isPending}
+                onClick={() => enquire.mutate()}
+              >
                 {t('page.product.requestQuote')}
               </Button>
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" size="sm" leftIcon={<Icon name="truck" size={14} />}>
+                <Button variant="outline" size="sm" leftIcon={<Icon name="truck" size={14} />} onClick={() => navigate('/transporters')}>
                   {t('page.product.transport')}
                 </Button>
-                <Button variant="outline" size="sm" leftIcon={<Icon name="worker" size={14} />}>
+                <Button variant="outline" size="sm" leftIcon={<Icon name="worker" size={14} />} onClick={() => navigate('/loaders')}>
                   {t('page.product.loaders')}
                 </Button>
               </div>

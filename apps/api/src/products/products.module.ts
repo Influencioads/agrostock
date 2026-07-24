@@ -18,9 +18,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiTags, PartialType } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
-import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { getAttributeField, getAttributeFields, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -29,6 +30,8 @@ import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
 import { PRODUCT_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
 import { Locale, localize } from '../common/locale';
+import { sellableWhere } from './sellable';
+import { MAX_QTY } from '../common/limits';
 import type { Lang } from '@agrotraders/i18n';
 
 /** Translatable Product columns folded from a ProductTranslation row. */
@@ -49,7 +52,7 @@ interface ProductTranslationRow {
  * merge translated attribute values on top of the base attributes JSON. English
  * (no translation row) passes through unchanged.
  */
-function localizeProduct<
+export function localizeProduct<
   T extends {
     name: string;
     grade: string | null;
@@ -108,6 +111,13 @@ export class CreateProductDto {
   @IsOptional() @IsBoolean() isOffer?: boolean;
   @IsOptional() @IsBoolean() isAuction?: boolean;
   @IsOptional() @IsString() marketId?: string;
+  /**
+   * FLOW-04: optional managed inventory. `null`/omitted = unmanaged (unlimited,
+   * legacy behaviour); a number is the on-hand whole-unit count the F10
+   * reservation machinery enforces. This is the write surface that was missing —
+   * the reservation logic existed but nothing could set the stock it guarded.
+   */
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_QTY) stockQty?: number;
   // Auction settings (used when isAuction=true)
   @IsOptional() @IsInt() @Min(0) startBidCents?: number;
   @IsOptional() @IsDateString() auctionEndsAt?: string;
@@ -202,18 +212,21 @@ export class ProductsService {
   }
 
   async findAll(q: Record<string, string | undefined>, locale: Lang = 'en') {
-    const where: Prisma.ProductWhereInput = { approved: true };
+    // API-11: use the ONE canonical sellable predicate rather than a hand-rolled
+    // `approved: true`. `status` is the source of truth the detail read (404s
+    // non-live) and order placement both use — filtering on `approved` here meant
+    // a hidden/moderated listing could still appear in browse yet 404 on tap (or
+    // the reverse), and it can't use the `@@index([status, categoryId])` either.
+    // sellableWhere() also subsumes the finished-auction exclusion below: a lot
+    // whose countdown ran out leaves the browse grid alongside the auction board
+    // (the seller still sees it under `/auctions/selling`).
+    const where: Prisma.ProductWhereInput = { ...sellableWhere() };
     if (q.categoryId) where.categoryId = q.categoryId;
     else if (q.category) where.category = { name: q.category };
     if (q.verified === 'true') where.verified = true;
     if (q.safe === 'true') where.safeDeal = true;
     if (q.offer === 'true') where.isOffer = true;
     if (q.auction === 'true') where.isAuction = true;
-    // A lot whose countdown has run out is finished: it can't be bid on or
-    // bought, so it leaves the browse grid alongside the auction board (see
-    // `AuctionsService.list`). Plain products and open-ended lots are untouched;
-    // the seller still sees it under `/auctions/selling`.
-    where.NOT = { isAuction: true, auctionEndsAt: { lte: new Date() } };
     // Both the id and the name form are branch-inclusive: selecting a parent has
     // to return everything listed under its descendants, or picking anything but
     // a leaf would look empty on a deep tree.
@@ -395,6 +408,8 @@ export class ProductsService {
         ...(dto.attributes ? { attributes: dto.attributes as Prisma.InputJsonValue } : {}),
         isOffer: dto.isOffer ?? false,
         isAuction: dto.isAuction ?? false,
+        // FLOW-04: managed inventory when the seller sets it; null = unlimited.
+        stockQty: dto.stockQty ?? null,
         startBidCents: dto.isAuction ? dto.startBidCents ?? parsePriceCents(price) : null,
         auctionEndsAt: dto.isAuction && dto.auctionEndsAt ? new Date(dto.auctionEndsAt) : null,
         verified: false,
@@ -480,7 +495,7 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller')
   @Post('upload-image')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', uploadLimits()))
   async uploadImage(@UploadedFile() file?: Express.Multer.File) {
     const imageUrl = await this.uploads.saveImage(file, 'products');
     return { imageUrl };
@@ -492,7 +507,7 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller')
   @Post('upload-images')
-  @UseInterceptors(FilesInterceptor('files', MAX_PRODUCT_IMAGES))
+  @UseInterceptors(FilesInterceptor('files', MAX_PRODUCT_IMAGES, uploadLimits(MAX_PRODUCT_IMAGES)))
   async uploadImages(@UploadedFiles() files?: Express.Multer.File[]) {
     if (!files?.length) throw new BadRequestException('No images were uploaded.');
     // Sequential: sharp is CPU-bound, so parallelising 6 encodes just thrashes.

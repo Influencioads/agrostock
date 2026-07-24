@@ -6,9 +6,11 @@ import type { ApiCategory, ApiMarket, ApiSubcategory, ProductQuery } from '@agro
 import { getFilterFields } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { ProductCard } from '../components/site/ProductCard';
+import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
 import { attributeSourceName, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
 import { useI18n } from '../i18n';
+import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 // The 5 grade chips map to the free-text `grade` values products actually carry.
 const gradeOptions: { key: string; value: string }[] = [
@@ -30,6 +32,7 @@ const PAGE_SIZE = 24;
 
 export function MarketPage() {
   const { t } = useI18n();
+  useDocumentTitle(t('page.market.title'));
   const [params, setParams] = useSearchParams();
   const [view, setView] = useState<'grid' | 'list'>('grid');
   // Below `lg` the filter panel is collapsed by default. Rendered inline it is
@@ -169,7 +172,7 @@ export function MarketPage() {
     pageSize: PAGE_SIZE,
   };
 
-  const { data, isError, isFetching } = useQuery({
+  const { data, isError, isFetching, isPending, refetch } = useQuery({
     queryKey: ['products', query],
     queryFn: () => api.products.listPaged(query),
     placeholderData: keepPreviousData,
@@ -636,7 +639,19 @@ export function MarketPage() {
             </div>
           </div>
 
-          {list.length === 0 ? (
+          {isError && list.length === 0 ? (
+            // F28: a failed fetch is an error with retry, not "no matches".
+            <ErrorState onRetry={() => refetch()} />
+          ) : isPending ? (
+            // WEB-03: on first load `data` is undefined, so the empty branch below
+            // used to flash "Nothing matches — clear filters" before any response
+            // arrived. Show skeleton cards while the first page is in flight.
+            <div className={view === 'grid' ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-64 animate-pulse rounded-lg border border-surface-border bg-surface-muted" />
+              ))}
+            </div>
+          ) : list.length === 0 ? (
             <div className="rounded-lg border border-dashed border-surface-border p-12 text-center text-ink-soft">
               {t('page.market.noMatch')}
               <div className="mt-3">

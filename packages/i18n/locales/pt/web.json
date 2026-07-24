@@ -390,7 +390,7 @@
       "liveListings": "Anúncios ativos",
       "readyToWithdraw": "pronto para desistir",
       "recentOrders": "Pedidos recentes",
-      "revenue": "Receita",
+      "revenue": "Volume de pedidos",
       "safeDealBalance": "Saldo de negociação segura",
       "sellerSub": "Veja como está o desempenho da sua loja.",
       "shipmentFallback": "Envio",
@@ -921,7 +921,9 @@
       "supplyCountriesHint": "— selecione todos os países para os quais você pode enviar.",
       "unit": "Unidade",
       "uploadFailed": "O envio da imagem falhou. Tente usar arquivos JPG ou PNG menores.",
-      "uploading": "Carregando…"
+      "uploading": "Carregando…",
+      "stock": "Stock (opcional)",
+      "phStock": "ex. 500 — vazio = ilimitado"
     },
     "requestAccess": "Solicitar acesso",
     "reviewQueue": "Fila de revisão",
@@ -998,7 +1000,7 @@
       "directEnquiries": "Consultas diretas",
       "ended": "Terminou",
       "etaDays": "ETA (dias)",
-      "grossRevenue": "Receita bruta",
+      "grossRevenue": "Volume bruto de pedidos",
       "highest": "Mais alto",
       "highestBid": "lance mais alto",
       "launchError": "Não foi possível iniciar esta campanha.",
@@ -1038,7 +1040,7 @@
       "requestFallback": "Solicitar",
       "respondFromOrders": "Responda através da aba \"Pedidos\".",
       "resume": "Retomar",
-      "revenueTrend": "Tendência de receita",
+      "revenueTrend": "Tendência do volume de pedidos",
       "reverseAuction": "Leilão reverso",
       "sealedBid": "Proposta lacrada",
       "sealedNote": "Leilão fechado: somente você vê os lances. O licitante com o lance mais alto vence quando o leilão for encerrado.",
@@ -1484,7 +1486,8 @@
       "suppliesTo": "Suprimentos para",
       "transport": "Transporte",
       "verifiedSeller": "Vendedor Verificado",
-      "watchingNow": "{{count}}+ pessoas assistindo agora"
+      "watchingNow": "{{count}}+ pessoas assistindo agora",
+      "quoteRequested": "Orçamento solicitado — {{ref}}. O vendedor responderá com um preço."
     },
     "profile": {
       "activeRoutes": "Rotas ativas",
@@ -1546,7 +1549,12 @@
       "whatsapp": "WhatsApp",
       "whereFrom": "De onde você é?",
       "youFallback": "Você",
-      "yourMarket": "Seu mercado"
+      "yourMarket": "Seu mercado",
+      "dangerZone": "Zona de perigo",
+      "deleteBody": "Eliminar a sua conta termina sessão em todo o lado e desativa o início de sessão. Levante primeiro o saldo da carteira.",
+      "confirmDelete": "Eliminar esta conta? Não é possível anular pela aplicação.",
+      "deleteAccount": "Eliminar conta",
+      "deleteError": "Não foi possível eliminar a sua conta. Tente novamente."
     },
     "register": {
       "checkInboxBody": "Enviamos um link de confirmação para {{email}}. Clique nele para ativar sua conta — você poderá fazer login assim que a confirmação for concluída.",
@@ -1733,6 +1741,12 @@
       "backToSignIn": "Voltar para a página de login",
       "checking": "Confirmando seu e-mail…",
       "failedTitle": "Não foi possível confirmar este link."
+    },
+    "notFound": {
+      "title": "Página não encontrada",
+      "body": "A página que procura não existe ou foi movida.",
+      "home": "Ir para o início",
+      "browse": "Explorar o mercado"
     }
   },
   "product": {
@@ -1853,6 +1867,8 @@
     "workersNeeded": "Precisa-se de trabalhadores",
     "you": "Você",
     "yourBidPlaceholder": "Sua oferta (USD)",
-    "yourBids": "Suas ofertas"
+    "yourBids": "Suas ofertas",
+    "addToSaved": "Guardar nos favoritos",
+    "removeFromSaved": "Remover dos favoritos"
   }
 }

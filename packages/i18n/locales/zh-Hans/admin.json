@@ -528,7 +528,8 @@
       "payouts": "派息",
       "totalBalance": "钱包总余额",
       "wallets": "钱包"
-    }
+    },
+    "rejectReason": "拒绝此付款的原因（将向用户显示）："
   },
   "perm": {
     "ads_moderate": "广告",
@@ -592,11 +593,13 @@
       "auction": "拍卖",
       "offer": "提供",
       "safedeal": "安全交易"
-    }
+    },
+    "confirmTakedown": "从市场隐藏此商品？"
   },
   "profile": {
     "active": "积极的",
     "inactive": "不活跃",
+    "currentPassword": "当前密码",
     "newPassword": "新密码",
     "noPermissions": "未分配任何模块权限。",
     "passwordError": "无法更改密码。",
@@ -789,7 +792,7 @@
     "adminOnly": "仅限管理员",
     "contactEmail": "联系邮箱",
     "country": "国家",
-    "dangerBody": "停用账户（软删除）。用户将无法再登录。",
+    "dangerBody": "停用会将用户登出并阻止登录，但保留其数据且可撤销。永久删除会移除账户且无法撤销。",
     "dangerZone": "危险区域",
     "deactivate": "停用帐户",
     "deleting": "正在删除…",
@@ -810,7 +813,12 @@
     "saving": "保存…",
     "title": "管理用户",
     "wallet": "钱包",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "confirmDeactivate": "停用此账户？用户将被登出且无法登录。",
+    "reactivate": "重新启用账户",
+    "deletePermanently": "永久删除",
+    "confirmDelete": "永久删除此账户？此操作无法撤销。有订单、商品或财务记录的用户无法删除——请改为停用。",
+    "deleteBlocked": "该用户有交易、财务或支持记录，无法永久删除。请改为停用该账户。"
   },
   "users": {
     "createActive": "积极的",
@@ -828,5 +836,9 @@
     "subtitle": "{{shown}} 共 {{total}} 个账户",
     "title": "用户",
     "view": "看法"
+  },
+  "rbac": {
+    "deniedTitle": "无访问权限",
+    "deniedBody": "您没有查看此部分的权限。如需访问，请联系超级管理员。"
   }
 }

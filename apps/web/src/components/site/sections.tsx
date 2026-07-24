@@ -7,14 +7,11 @@ import { Badge, Button, Card, Icon, Reveal, Stagger, StaggerItem } from '@agrotr
 import { getFilterFields } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { useI18n } from '../../i18n';
-import {
-  community,
-  insights,
-  intl,
-  officesPreview,
-  safeSteps,
-} from '../../mock/data';
-import { Sparkline } from './Sparkline';
+// WEB-01: `community`, `insights`, `intl` and `officesPreview` were fabricated
+// datasets rendered as real marketplace content; those sections are gone and
+// offices now come from the API. `safeSteps` is static explanatory copy, not
+// invented data, so it stays.
+import { safeSteps } from '../../mock/data';
 import { ProductCard } from './ProductCard';
 import { api, assetUrl, toCardProduct } from '../../lib/api';
 import { buildSubcategoryTree, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
@@ -458,6 +455,13 @@ export function Hero() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<'buy' | 'sell'>('buy');
   const [q, setQ] = useState('');
+  // WEB-02: carry the typed query into the market page. Previously every entry
+  // point here navigated to a bare /market, so the user's search term was
+  // silently discarded and they had to retype it.
+  const goSearch = (term: string) => {
+    const trimmed = term.trim();
+    navigate(trimmed ? `/market?search=${encodeURIComponent(trimmed)}` : '/market');
+  };
 
   const trust = [
     { icon: 'shield' as const, label: t('hero.trust.verifiedSellers') },
@@ -525,7 +529,7 @@ export function Hero() {
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && navigate('/market')}
+                  onKeyDown={(e) => e.key === 'Enter' && goSearch(q)}
                   placeholder={t('hero.searchPlaceholder')}
                   className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft"
                 />
@@ -535,14 +539,14 @@ export function Hero() {
                   children back to the parent grid on wider screens. */}
               <div className="grid min-w-0 grid-cols-1 gap-2 sm:contents">
                 <CategoryMegaMenu />
-                <Button className="w-full sm:w-auto" onClick={() => navigate('/market')}>{t('common:search')}</Button>
+                <Button className="w-full sm:w-auto" onClick={() => goSearch(q)}>{t('common:search')}</Button>
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {(t('hero.chips', { returnObjects: true }) as string[]).map((c) => (
                 <button
                   key={c}
-                  onClick={() => navigate('/market')}
+                  onClick={() => goSearch(c)}
                   className="rounded-pill bg-brand-surface px-3 py-1 text-xs font-semibold text-ink-soft transition hover:bg-brand-surface/70 hover:text-brand-dark"
                 >
                   {c}
@@ -589,22 +593,9 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Live trade card */}
-          <div className="agro-float absolute -start-2 bottom-8 w-60 rounded-xl bg-white p-4 text-ink shadow-card">
-            <div className="flex items-center gap-2 text-xs font-bold text-status-success">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-status-success" /> {t('hero.liveTrade')}
-            </div>
-            <div className="mt-2 flex items-center gap-2 font-numeric text-sm font-semibold text-ink-soft">
-              🇷🇺 RU <Icon name="arrowRight" size={14} /> 🇦🇪 AE · {t('hero.liveTradeCommodity')}
-            </div>
-            <div className="mt-1 flex items-end justify-between">
-              <div>
-                <span className="font-display text-2xl font-extrabold text-ink">$268</span>
-                <span className="text-sm text-ink-soft">{t('hero.perMt')}</span>
-              </div>
-              <span className="font-bold text-status-success">+2.4% ↑</span>
-            </div>
-          </div>
+          {/* WEB-01: a hardcoded "live trade" ticker ($268, +2.4%, RU→AE) used to
+              sit here with a pulsing "live" dot. It was never backed by data —
+              fabricated market activity presented as real — so it is gone. */}
         </div>
       </div>
 
@@ -695,7 +686,9 @@ export function Categories() {
         {categories.map((c) => (
           <StaggerItem key={c.name}>
             <button
-              onClick={() => navigate('/market')}
+              // WEB-02: actually filter by the tile that was clicked — these were
+              // decorative, every one of them landing on an unfiltered /market.
+              onClick={() => navigate(`/market?categoryId=${encodeURIComponent(c.id)}`)}
               className="flex w-full flex-col items-center gap-2 rounded-lg border border-surface-border bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:border-brand-leaf hover:shadow-[0_10px_30px_rgba(11,61,46,0.10)]"
             >
               <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand-surface text-2xl" style={c.tint ? { background: c.tint } : undefined}>
@@ -832,49 +825,8 @@ export function Auctions() {
 
 /* ── International products ─────────────────────────────────────── */
 
-export function International() {
-  const { t } = useI18n();
-  return (
-    <Section className="bg-white">
-      <SectionHeader title={t('section.international')} action={t('common:viewAll')} />
-      {/* The outer `overflow-hidden` (for the rounded corners) was silently
-          CLIPPING this 5-column table at ~360px — the last two columns were
-          simply unreachable. The inner scroller gives them back. */}
-      <div className="overflow-hidden rounded-lg border border-surface-border">
-        <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-sm">
-          <thead className="bg-brand-surface text-start text-xs font-bold uppercase text-ink-soft">
-            <tr>
-              <th className="px-4 py-3">{t('site.intl.product')}</th>
-              <th className="px-4 py-3">{t('site.intl.port')}</th>
-              <th className="px-4 py-3">{t('product.moq')}</th>
-              <th className="px-4 py-3">{t('site.intl.grade')}</th>
-              <th className="px-4 py-3 text-end">{t('site.intl.price')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {intl.map((p) => (
-              <tr key={p.name} className="border-t border-surface-border hover:bg-brand-surface/40">
-                <td className="px-4 py-3 font-semibold text-ink">
-                  {p.flag} {p.name}
-                </td>
-                <td className="px-4 py-3 text-ink-soft">{p.port}</td>
-                <td className="px-4 py-3 text-ink-soft">{p.moq}</td>
-                <td className="px-4 py-3">
-                  <Badge tone="slate">{p.grade}</Badge>
-                </td>
-                <td className="px-4 py-3 text-end font-numeric font-bold text-ink">{p.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-      </div>
-    </Section>
-  );
-}
 
-/* ── Transport & loader services ───────────────────────────────── */
+/* ── Services ──────────────────────────────────────────────────── */
 
 export function Services() {
   const { t } = useI18n();
@@ -913,63 +865,7 @@ export function Services() {
   );
 }
 
-/* ── Market insights ───────────────────────────────────────────── */
-
-export function Insights() {
-  const { t } = useI18n();
-  return (
-    <Section className="bg-white">
-      <SectionHeader title={t('section.insights')} action={t('common:viewAll')} />
-      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {insights.map((i) => (
-          <StaggerItem key={i.name}>
-            <Card interactive className="h-full">
-              <div className="flex items-center justify-between">
-                <span className="font-display font-bold text-ink">{i.name}</span>
-                <span className={'text-xs font-bold ' + (i.up ? 'text-status-success' : 'text-status-error')}>{i.chg}</span>
-              </div>
-              <div className="mt-1 font-display text-2xl font-extrabold text-ink">{i.price}</div>
-              <div className="mt-2">
-                <Sparkline data={i.data} color={i.up ? '#249653' : '#C94343'} width={200} animate />
-              </div>
-            </Card>
-          </StaggerItem>
-        ))}
-      </Stagger>
-    </Section>
-  );
-}
-
-/* ── Community ─────────────────────────────────────────────────── */
-
-export function Community() {
-  const { t } = useI18n();
-  return (
-    <Section id="community">
-      <SectionHeader title={t('section.community')} action={t('common:viewAll')} />
-      <Stagger className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {community.map((c) => (
-          <StaggerItem key={c.q}>
-            <Card interactive className="h-full">
-              <Badge tone="mango">{c.tag}</Badge>
-              <p className="mt-3 font-display text-base font-bold leading-snug text-ink">{c.q}</p>
-              <div className="mt-4 flex items-center justify-between text-xs text-ink-soft">
-                <span>
-                  {c.by} · <span className="text-brand">{c.badge}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <Icon name="chart" size={13} /> {c.replies}
-                </span>
-              </div>
-            </Card>
-          </StaggerItem>
-        ))}
-      </Stagger>
-    </Section>
-  );
-}
-
-/* ── Safe Deal flow ────────────────────────────────────────────── */
+/* ── Safe Deal ─────────────────────────────────────────────────── */
 
 export function SafeDeal() {
   const { t } = useI18n();
@@ -1006,24 +902,40 @@ export function SafeDeal() {
 
 /* ── Global offices preview ────────────────────────────────────── */
 
+/**
+ * WEB-01: real offices from the API. This previously rendered the hardcoded
+ * `officesPreview` array from mock/data.ts — invented cities with named
+ * managers — presented as real company locations. Renders nothing when there is
+ * no data rather than showing placeholders.
+ */
 export function OfficesPreview() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { data: offices = [] } = useQuery({
+    queryKey: ['offices', 'preview'],
+    queryFn: () => api.offices.list(),
+    staleTime: 3600e3,
+    retry: 1,
+  });
+  const preview = offices.slice(0, 4);
+  if (preview.length === 0) return null;
   return (
     <Section className="bg-white">
       <SectionHeader title={t('section.offices')} action={t('common:viewAll')} onAction={() => navigate('/offices')} />
       <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {officesPreview.map((o) => (
-          <StaggerItem key={o.city}>
+        {preview.map((o) => (
+          <StaggerItem key={o.id}>
             <Card interactive className="h-full">
               <div className="text-3xl">{o.flag}</div>
               <div className="mt-2 font-display text-lg font-bold text-ink">{o.city}</div>
               <Badge tone="green" className="mt-1">
                 {o.type}
               </Badge>
-              <div className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
-                <Icon name="user" size={14} /> {o.mgr}
-              </div>
+              {o.mgr && (
+                <div className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
+                  <Icon name="user" size={14} /> {o.mgr}
+                </div>
+              )}
             </Card>
           </StaggerItem>
         ))}

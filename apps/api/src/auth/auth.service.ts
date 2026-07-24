@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { jwtAccessSecret, jwtRefreshSecret } from '../config/secrets';
 import type { LoginDto, RegisterDto } from './dto';
 import { AppException } from '../common/app-exception';
 
@@ -43,10 +44,10 @@ export class AuthService {
   ) {}
 
   private accessSecret() {
-    return this.config.get<string>('JWT_SECRET') || 'change-me-access-secret';
+    return jwtAccessSecret();
   }
   private refreshSecret() {
-    return this.config.get<string>('JWT_REFRESH_SECRET') || 'change-me-refresh-secret';
+    return jwtRefreshSecret();
   }
 
   /** Sign an access + refresh pair for a given session and rotation id. */
@@ -528,16 +529,26 @@ export class AuthService {
     if (byEmail) return byEmail;
     const digits = identifier.replace(/[^0-9]/g, '');
     if (digits.length < 6) return null;
-    const profile = await this.prisma.profile.findFirst({
-      where: { phone: { contains: digits } },
-      include: { user: true },
-    });
-    if (profile?.user) return profile.user;
-    const worker = await this.prisma.worker.findFirst({
-      where: { phone: { contains: digits }, userId: { not: null } },
-      include: { user: true },
-    });
-    return worker?.user ?? null;
+    // SEC-06: match the FULL normalized number, not a substring. The old
+    // `phone: { contains: digits }` let "234" bind a login attempt to a stored
+    // "1234567" (wrong-account resolution). We strip non-digits from the stored
+    // value in SQL and compare exactly, and refuse to resolve when two accounts
+    // normalize to the same number (ambiguous → null, never a guess).
+    const userId = (await this.resolvePhoneUserId('Profile', digits)) ?? (await this.resolvePhoneUserId('Worker', digits));
+    return userId ? this.prisma.user.findUnique({ where: { id: userId } }) : null;
+  }
+
+  /** Exactly-one userId whose (digit-normalized) phone equals `digits`, else null. */
+  private async resolvePhoneUserId(table: 'Profile' | 'Worker', digits: string): Promise<string | null> {
+    // `table` is a fixed literal (never user input), so this interpolation is safe.
+    const rows = await this.prisma.$queryRawUnsafe<{ userId: string | null }[]>(
+      `SELECT "userId" FROM "${table}"
+         WHERE "userId" IS NOT NULL
+           AND regexp_replace(COALESCE("phone", ''), '[^0-9]', '', 'g') = $1
+         LIMIT 2`,
+      digits,
+    );
+    return rows.length === 1 && rows[0].userId ? rows[0].userId : null;
   }
 
   async login(dto: LoginDto, meta?: SessionMeta) {

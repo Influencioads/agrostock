@@ -6,8 +6,14 @@ describe('transactional product resolution', () => {
     expect(resolveProductLoad(undefined, true, false)).toEqual({ state: 'loading', product: null });
   });
 
-  it('fails closed when the live product request errors', () => {
-    expect(resolveProductLoad(undefined, false, true)).toEqual({ state: 'not-found', product: null });
+  it('fails closed with a retryable error state when the request errors (F28)', () => {
+    // Distinct from not-found so the page can offer a retry rather than a 404.
+    expect(resolveProductLoad(undefined, false, true)).toEqual({ state: 'error', product: null });
+    expect(resolveProductLoad(undefined, true, true)).toEqual({ state: 'error', product: null });
+  });
+
+  it('reports not-found only when the request finished cleanly with no product', () => {
+    expect(resolveProductLoad(undefined, false, false)).toEqual({ state: 'not-found', product: null });
   });
 
   it('renders only the exact live product supplied by the API', () => {

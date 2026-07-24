@@ -132,6 +132,10 @@
     "status_changed": {
       "body": "الأمر الآن هو {{status}}.",
       "title": "الطلب {{reference}} — {{status}}"
+    },
+    "placed": {
+      "title": "تم تقديم الطلب",
+      "body": "تم تقديم طلبك {{reference}} لـ {{product}}."
     }
   },
   "product": {

@@ -80,6 +80,9 @@ export function Home() {
   const promotedIds = useMemo(() => new Set(promoted.map((p) => p.id)), [promoted]);
 
   const open = (p: ApiProduct) => nav.navigate('ProductDetail', { slug: p.slug });
+  // Guests have no profile to load — send them to sign in instead of the
+  // profile form, which would otherwise hang on a /me call that never resolves.
+  const openProfile = () => (user ? nav.navigate('ProfileForm') : nav.navigate('SignIn', {}));
   const toSearch = (category?: string, title?: string) => nav.navigate('Search', category ? { category, title: title ?? category } : undefined);
   // The gradient hero leads with a live ad when there is one, else opens search.
   const heroOpen = () => (promoted[0] ? open(promoted[0]) : toSearch());
@@ -92,7 +95,7 @@ export function Home() {
           the underline category strip. Owns the status-bar inset. */}
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
         <View style={s.headerRow}>
-          <Pressable style={s.deliver} onPress={() => nav.navigate('ProfileForm')} hitSlop={6}>
+          <Pressable style={s.deliver} onPress={openProfile} hitSlop={6}>
             <View style={s.deliverIcon}><Ionicons name="location-outline" size={18} color={C.green} /></View>
             <View style={{ flex: 1 }}>
               <Text style={[s.deliverLabel, microLabel()]}>{t('pubX.home.deliverTo')}</Text>
@@ -103,7 +106,7 @@ export function Home() {
             </View>
           </Pressable>
           <CircleBtn icon="notifications-outline" dot onPress={() => nav.navigate('Notifications')} />
-          <Pressable onPress={() => nav.navigate('ProfileForm')} style={s.avatar} hitSlop={6}>
+          <Pressable onPress={openProfile} style={s.avatar} hitSlop={6}>
             <Text style={s.avatarText}>{(user?.name ?? 'AK').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</Text>
           </Pressable>
         </View>

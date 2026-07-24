@@ -13,7 +13,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, PartialType } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 import { FALLBACK_LNG, type Lang } from '@agrotraders/i18n';
 import { PrismaService } from '../prisma/prisma.service';
@@ -491,6 +491,9 @@ export class OfficeDto {
   @IsOptional() @IsInt() staff?: number;
 }
 
+/** API-08: validated partial — `Partial<OfficeDto>` erased at runtime and bypassed the pipe. */
+export class UpdateOfficeDto extends PartialType(OfficeDto) {}
+
 @Injectable()
 export class OfficesService {
   constructor(
@@ -509,7 +512,7 @@ export class OfficesService {
     await this.audit.log({ actorId: adminId, action: 'office.create', entityType: 'Office', entityId: office.id });
     return office;
   }
-  async update(id: string, dto: Partial<OfficeDto>, adminId: string) {
+  async update(id: string, dto: UpdateOfficeDto, adminId: string) {
     const existing = await this.prisma.office.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Office not found');
     const office = await this.prisma.office.update({ where: { id }, data: dto });
@@ -548,7 +551,7 @@ export class AdminOfficesController {
     return this.offices.create(dto, admin.id);
   }
   @Patch(':id')
-  update(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() dto: Partial<OfficeDto>) {
+  update(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() dto: UpdateOfficeDto) {
     return this.offices.update(id, dto, admin.id);
   }
   @Delete(':id')

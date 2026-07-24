@@ -389,7 +389,7 @@
       "liveListings": "Annonces actives",
       "readyToWithdraw": "prêt à se retirer",
       "recentOrders": "Commandes récentes",
-      "revenue": "Revenu",
+      "revenue": "Volume de commandes",
       "safeDealBalance": "Équilibre de l'accord sûr",
       "sellerSub": "Voici les performances de votre magasin.",
       "shipmentFallback": "Expédition",
@@ -919,7 +919,9 @@
       "supplyCountriesHint": "— Sélectionnez tous les pays vers lesquels vous pouvez expédier des commandes.",
       "unit": "Unité",
       "uploadFailed": "Le chargement de l'image a échoué. Veuillez essayer des fichiers JPG ou PNG plus petits.",
-      "uploading": "Chargement en cours…"
+      "uploading": "Chargement en cours…",
+      "stock": "Stock (facultatif)",
+      "phStock": "ex. 500 — vide = illimité"
     },
     "requestAccess": "Demande d'accès",
     "reviewQueue": "File d'attente pour les révisions",
@@ -996,7 +998,7 @@
       "directEnquiries": "Demandes directes",
       "ended": "Terminé",
       "etaDays": "ETA (jours)",
-      "grossRevenue": "Recettes brutes",
+      "grossRevenue": "Volume brut de commandes",
       "highest": "Le plus haut",
       "highestBid": "meilleure offre",
       "launchError": "Impossible de lancer cette campagne.",
@@ -1035,7 +1037,7 @@
       "requestFallback": "Demande",
       "respondFromOrders": "Répondez depuis l'onglet Commandes.",
       "resume": "CV",
-      "revenueTrend": "Tendances des revenus",
+      "revenueTrend": "Tendance du volume de commandes",
       "reverseAuction": "vente aux enchères inversée",
       "sealedBid": "Offre sous pli cacheté",
       "sealedNote": "Vente aux enchères sous pli cacheté : vous seul voyez les offres. Le plus offrant remporte l’enchère à la clôture.",
@@ -1478,7 +1480,8 @@
       "specifications": "Caractéristiques",
       "suppliesTo": "Fournitures à",
       "transport": "Transport",
-      "verifiedSeller": "Vendeur vérifié"
+      "verifiedSeller": "Vendeur vérifié",
+      "quoteRequested": "Devis demandé — {{ref}}. Le vendeur répondra avec un prix."
     },
     "profile": {
       "activeRoutes": "Itinéraires actifs",
@@ -1540,7 +1543,12 @@
       "whatsapp": "WhatsApp",
       "whereFrom": "D'où venez-vous ?",
       "youFallback": "Toi",
-      "yourMarket": "Votre marché"
+      "yourMarket": "Votre marché",
+      "dangerZone": "Zone de danger",
+      "deleteBody": "Supprimer votre compte vous déconnecte partout et désactive la connexion. Retirez d'abord le solde de votre portefeuille.",
+      "confirmDelete": "Supprimer ce compte ? Cette action est irréversible depuis l'application.",
+      "deleteAccount": "Supprimer le compte",
+      "deleteError": "Impossible de supprimer votre compte. Réessayez."
     },
     "register": {
       "checkInboxBody": "Nous avons envoyé un lien de confirmation à {{email}}. Cliquez dessus pour activer votre compte ; vous pourrez vous connecter une fois la confirmation effectuée.",
@@ -1727,6 +1735,12 @@
       "backToSignIn": "Retour à la page de connexion",
       "checking": "Confirmation de votre courriel…",
       "failedTitle": "Nous n'avons pas pu confirmer ce lien."
+    },
+    "notFound": {
+      "title": "Page introuvable",
+      "body": "La page que vous cherchez n'existe pas ou a été déplacée.",
+      "home": "Accueil",
+      "browse": "Parcourir le marché"
     }
   },
   "product": {
@@ -1845,6 +1859,8 @@
     "workersNeeded": "On recherche des travailleurs",
     "you": "Toi",
     "yourBidPlaceholder": "Votre enchère (USD)",
-    "yourBids": "Vos offres"
+    "yourBids": "Vos offres",
+    "addToSaved": "Ajouter aux favoris",
+    "removeFromSaved": "Retirer des favoris"
   }
 }

@@ -10,7 +10,7 @@ import { api } from '../lib/api';
 import { NotificationBell } from './NotificationBell';
 import { AdminMobileNav } from './AdminMobileNav';
 
-interface Mod {
+export interface Mod {
   to: string;
   /** Indexes `admin:nav`; the rendered label is translated per locale. */
   key: string;
@@ -21,7 +21,7 @@ interface Mod {
   perm?: AdminPermission;
 }
 
-const MODULES: Mod[] = [
+export const MODULES: Mod[] = [
   { to: '/', key: 'overview', icon: 'chart', group: 'Platform' },
   { to: '/users', key: 'users', icon: 'worker', group: 'Platform', perm: 'users_manage' },
   { to: '/role-requests', key: 'roleRequests', icon: 'check', group: 'Platform', perm: 'role_requests' },

@@ -51,5 +51,8 @@
     "user": "Benutzer"
   },
   "viewAll": "Alle anzeigen",
-  "yes": "Ja"
+  "yes": "Ja",
+  "errorTitle": "Etwas ist schiefgelaufen",
+  "errorBody": "Das konnte nicht geladen werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+  "retry": "Erneut versuchen"
 }
