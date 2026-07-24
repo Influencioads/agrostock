@@ -18,6 +18,7 @@ export const api = createApiClient({
   // F38: refresh token lives in an HttpOnly cookie, never in JS-readable storage.
   authMode: 'cookie',
   getToken: () => localStorage.getItem('token'),
+  getLocale: () => localStorage.getItem('lang'),
   onTokens: (r) => {
     localStorage.setItem('token', r.accessToken);
     localStorage.setItem('user', JSON.stringify(r.user));

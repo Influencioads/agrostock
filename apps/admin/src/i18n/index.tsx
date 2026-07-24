@@ -1,5 +1,6 @@
-import { useCallback, useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { createAdminI18n } from '@agrotraders/i18n/init-admin';
 import { isRtl, LOCALES, LOCALE_LABELS, type Lang } from '@agrotraders/i18n';
 
@@ -22,10 +23,28 @@ function DocumentLang() {
   return null;
 }
 
+function RefetchOnLocaleChange() {
+  const { i18n: instance } = useTranslation();
+  const queryClient = useQueryClient();
+  const mounted = useRef(false);
+  const lang = instance.language;
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    void queryClient.invalidateQueries();
+  }, [lang, queryClient]);
+
+  return null;
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   return (
     <I18nextProvider i18n={i18n}>
       <DocumentLang />
+      <RefetchOnLocaleChange />
       {children}
     </I18nextProvider>
   );

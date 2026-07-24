@@ -240,7 +240,17 @@ function CategoryMegaMenu() {
   });
   const menuCategories = liveCats;
   const activeCat = menuCategories.find((c) => c.id === catId) ?? null;
-  const subTree = useMemo(() => buildSubcategoryTree(activeCat?.subcategories ?? []), [activeCat?.subcategories]);
+  const { data: deepSubs } = useQuery({
+    queryKey: ['category-subtree', activeCat?.id],
+    queryFn: () => api.categories.subtree(activeCat!.id, { depth: 'all' }),
+    enabled: Boolean(open && activeCat?.id),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+  const subTree = useMemo(
+    () => buildSubcategoryTree(deepSubs ?? activeCat?.subcategories ?? []),
+    [activeCat?.subcategories, deepSubs],
+  );
   const flatSubs = useMemo(() => flattenSubcategoryTree(subTree), [subTree]);
   const selectedSub = flatSubs.find(({ node }) => node.id === subId)?.node ?? null;
   const selectedSubPath = useMemo(() => {
