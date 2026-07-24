@@ -268,9 +268,11 @@ function CategoryMegaMenu() {
   }, [selectedSub, subTree]);
   const visibleSubs = selectedSub ? selectedSub.children : subTree;
   const parentSub = selectedSubPath.length > 1 ? selectedSubPath[selectedSubPath.length - 2] : null;
-  // The options column still shows attribute facets for the currently selected
-  // subcategory; child category navigation remains in the middle column.
-  const leadField = activeCat && selectedSub ? getFilterFields(activeCat.name, selectedSub.name)[0] : undefined;
+  // Keep drilling through the taxonomy until a leaf is reached. Only then show
+  // attribute refinements, so the buyer can walk category -> sub -> sub-sub ->
+  // deeper children without the options column looking like the final stop early.
+  const selectedSubIsLeaf = Boolean(selectedSub && selectedSub.children.length === 0);
+  const leadField = activeCat && selectedSub && selectedSubIsLeaf ? getFilterFields(activeCat.name, selectedSub.name)[0] : undefined;
   const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
   const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
   const toggle = () => {
@@ -296,10 +298,13 @@ function CategoryMegaMenu() {
     setSubId(null);
   };
   const pickSub = (node: SubcategoryNode) => {
-    // Drill into the third column when the subcategory has attribute options;
-    // otherwise the subcategory itself is the leaf — jump straight to results.
-    if (node.children.length > 0 || (activeCat && getFilterFields(activeCat.name, node.name).length > 0)) setSubId(node.id);
-    else if (activeCat) go(activeCat, node);
+    // Parent nodes always drill deeper first. Leaf nodes either expose their
+    // attribute filters or, when there are no attributes, go straight to results.
+    if (node.children.length > 0 || (activeCat && getFilterFields(activeCat.name, node.name).length > 0)) {
+      setSubId(node.id);
+    } else if (activeCat) {
+      go(activeCat, node);
+    }
   };
   const goBackSub = () => setSubId(parentSub?.id ?? null);
 
@@ -418,7 +423,7 @@ function CategoryMegaMenu() {
               )}
             </div>
 
-            {/* Column 3 — sub-subcategory (lead attribute options) */}
+            {/* Column 3 — final leaf attribute options */}
             <div
               className={
                 'min-h-0 flex-col sm:flex ' + (activeCat && selectedSub && leadField ? 'flex' : 'hidden')
