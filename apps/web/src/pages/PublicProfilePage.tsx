@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
-import { api } from '../lib/api';
+import { api, assetUrl } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
 import { useI18n } from '../i18n';
@@ -143,7 +143,7 @@ export function PublicProfilePage() {
             {p.products!.map((prod) => (
               <Link key={prod.id} to={`/product/${prod.slug}`} className="flex items-center gap-3 rounded-lg border border-surface-border bg-white p-3 shadow-card transition hover:-translate-y-0.5 hover:border-brand-leaf">
                 <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-brand-surface text-2xl">
-                  {prod.imageUrl ? <img src={prod.imageUrl} alt="" className="h-full w-full object-cover" /> : prod.emoji}
+                  {prod.imageUrl ? <img src={assetUrl(prod.imageUrl)} alt="" className="h-full w-full object-cover" /> : prod.emoji}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-sm font-bold text-ink">{prod.name}</span>
