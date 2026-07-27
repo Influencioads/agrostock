@@ -28,6 +28,16 @@ export function ProductPage() {
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(50);
   const [notice, setNotice] = useState('');
+  const [brokenPhotos, setBrokenPhotos] = useState<Set<string>>(() => new Set());
+
+  const markBrokenPhoto = (src: string) => {
+    setBrokenPhotos((prev) => {
+      if (prev.has(src)) return prev;
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+  };
 
   const { data: apiProduct, isLoading, isError, refetch } = useQuery({
     queryKey: ['product', id],
@@ -164,7 +174,8 @@ export function ProductPage() {
         <div>
           {/* Real photos when the seller uploaded any; emoji placeholders otherwise. */}
           {(() => {
-            const photos = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
+            const storedPhotos = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
+            const photos = storedPhotos.filter((src) => !brokenPhotos.has(src));
             const hasPhotos = photos.length > 0;
             const tiles = hasPhotos ? photos : thumbs;
             const current = Math.min(active, tiles.length - 1);
@@ -181,7 +192,14 @@ export function ProductPage() {
                         (i === current ? 'border-brand bg-brand-surface' : 'border-surface-border bg-white')
                       }
                     >
-                      {hasPhotos ? <img src={tile} alt="" className="h-full w-full object-cover" /> : tile}
+                      {hasPhotos ? (
+                        <img
+                          src={tile}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          onError={() => markBrokenPhoto(tile)}
+                        />
+                      ) : tile}
                     </button>
                   ))}
                 </div>
@@ -195,6 +213,7 @@ export function ProductPage() {
                       width={1080}
                       height={1080}
                       className="h-full w-full object-contain"
+                      onError={() => markBrokenPhoto(tiles[current])}
                     />
                   ) : (
                     tiles[current]
