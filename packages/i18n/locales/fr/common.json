@@ -4,12 +4,15 @@
   "close": "Fermer",
   "create": "Créer",
   "dashboard": "Tableau de bord",
+  "errorBody": "Impossible de charger ceci. Vérifiez votre connexion et réessayez.",
+  "errorTitle": "Une erreur est survenue",
   "language": "Langue",
   "loading": "Chargement…",
   "logOut": "Déconnexion",
   "menu": "Menu",
   "no": "Non",
   "post": "Poste",
+  "retry": "Réessayer",
   "save": "Sauvegarder",
   "search": "Recherche",
   "send": "Envoyer",
@@ -51,8 +54,5 @@
     "user": "Utilisateur"
   },
   "viewAll": "Afficher tout",
-  "yes": "Oui",
-  "errorTitle": "Une erreur est survenue",
-  "errorBody": "Impossible de charger ceci. Vérifiez votre connexion et réessayez.",
-  "retry": "Réessayer"
+  "yes": "Oui"
 }

@@ -4,7 +4,10 @@ import type { Product } from '../../mock/data';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { useWishlist } from '../../lib/useWishlist';
-import { unitSuffix } from '@agrotraders/types';
+import { chatBus } from '../../chat/chatBus';
+import { countryFlag, countryLabel } from '@agrotraders/api-client';
+import { getAttributeFields, isDeliveryOption, unitSuffix } from '@agrotraders/types';
+import { attrKey } from '@agrotraders/i18n';
 
 const cardText = (value: unknown, fallback = ''): string => {
   if (typeof value === 'string') return value;
@@ -17,7 +20,7 @@ const cardText = (value: unknown, fallback = ''): string => {
 };
 
 export function ProductCard({ p }: { p: Product }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const { fmtPrice } = useCurrency();
   // F02: the heart is a real wishlist toggle; the Buy button navigates to the
@@ -46,8 +49,33 @@ export function ProductCard({ p }: { p: Product }) {
   const unit = unitSuffix(cardText(p.unit));
   const qty = cardText(p.qty);
   const moq = cardText(p.moq);
-  const delivery = cardText(p.delivery);
+  const rawDelivery = cardText(p.delivery);
+  // Structured listings carry a `DELIVERY_OPTIONS` id; legacy ones free text.
+  const delivery = isDeliveryOption(rawDelivery) ? t(`enums:delivery.${rawDelivery}`) : rawDelivery;
   const priceProduct = { ...p, name, price: cardText(p.price), unit };
+
+  const location = [p.city, countryLabel(p.country, lang)].filter(Boolean).join(', ');
+  // Managed inventory: a number is the real on-hand count, null/undefined means
+  // the seller does not track stock (so we say "in stock", never "0").
+  const stockLabel =
+    typeof p.stockQty === 'number'
+      ? p.stockQty > 0
+        ? t('site.stockCount', { count: p.stockQty, unit: cardText(p.unit) })
+        : t('site.outOfStock')
+      : t('site.inStock');
+
+  // "Product details": the first few category-specific specs the seller filled
+  // in, labelled from the shared schema. Values stay canonical English in
+  // storage, so only the display goes through the attrs catalog.
+  const details = getAttributeFields(p.category, p.subcategory)
+    .map((f) => {
+      const v = p.attributes?.[f.key];
+      if (v === undefined || v === null || v === '' || v === false || (Array.isArray(v) && !v.length)) return null;
+      const text = Array.isArray(v) ? String(v[0]) : String(v);
+      return t(`attrs:option.${attrKey(text)}`, { defaultValue: f.unit ? `${text}${f.unit}` : text });
+    })
+    .filter((s): s is string => !!s)
+    .slice(0, 3);
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-surface-border bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(11,61,46,0.12)]">
       <Link to={`/product/${p.id}`} className="relative flex h-36 items-center justify-center overflow-hidden bg-brand-surface text-5xl">
@@ -100,12 +128,15 @@ export function ProductCard({ p }: { p: Product }) {
         </Link>
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <Badge tone="slate">{grade}</Badge>
-          {p.safe && (
-            <Badge tone="green" icon={<Icon name="shield" size={11} />}>
-              {t('site.safeDeal')}
-            </Badge>
-          )}
+          {grade && <Badge tone="slate">{grade}</Badge>}
+          {/* Both sides of the deal/price choice are labelled — the absence of a
+              "Safe Deal" badge used to be the only signal a listing was direct. */}
+          <Badge tone={p.safe ? 'green' : 'slate'} icon={p.safe ? <Icon name="shield" size={11} /> : undefined}>
+            {p.safe ? t('site.safeDeal') : t('site.directDeal')}
+          </Badge>
+          <Badge tone={p.negotiable ? 'mango' : 'slate'}>
+            {p.negotiable ? t('site.negotiable') : t('site.fixedPrice')}
+          </Badge>
           {rated && (
             <Badge tone="mango" icon={<Icon name="star" size={11} />}>
               {rating}
@@ -113,8 +144,24 @@ export function ProductCard({ p }: { p: Product }) {
           )}
         </div>
 
-        <div className="mt-2 text-xs text-ink-soft">
-          {t('site.availableLine', { qty, moq, delivery })}
+        {details.length > 0 && (
+          <div className="mt-2 truncate text-xs text-ink-soft" title={details.join(' · ')}>
+            {details.join(' · ')}
+          </div>
+        )}
+
+        <div className="mt-2 space-y-0.5 text-xs text-ink-soft">
+          {location && (
+            <div className="flex items-center gap-1 truncate">
+              <Icon name="mapPin" size={12} className="shrink-0" />
+              <span className="truncate">{countryFlag(p.country)} {location}</span>
+            </div>
+          )}
+          {p.marketName && (
+            <div className="truncate" title={p.marketName}>🏪 {p.marketName}</div>
+          )}
+          <div>{stockLabel}</div>
+          <div className="truncate">{t('site.availableLine', { qty, moq, delivery })}</div>
         </div>
 
         {/* Wraps: in the homepage's 2-up mobile grid the card is ~171px wide,
@@ -124,15 +171,29 @@ export function ProductCard({ p }: { p: Product }) {
             <span className="font-display text-lg font-extrabold text-ink">{fmtPrice(priceProduct)}</span>
             <span className="text-xs text-ink-soft">{unit}</span>
           </div>
-          <Button
-            size="sm"
-            className="shrink-0"
-            leftIcon={<Icon name="bag" size={15} />}
-            aria-label={t('site.buyNamed', { name })}
-            onClick={() => navigate(`/product/${p.id}`)}
-          >
-            {t('site.buy')}
-          </Button>
+          <div className="flex shrink-0 gap-1.5">
+            {/* Two CTAs: buy the listing, or talk to the seller first. The chat
+                needs a real seller id, so mock/offline cards only get Buy. */}
+            {p.sellerId && (
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label={t('site.chatNamed', { name: seller })}
+                title={t('site.chatSeller')}
+                onClick={() => chatBus.openCommunityDm(p.sellerId!, seller)}
+              >
+                <Icon name="message" size={15} />
+              </Button>
+            )}
+            <Button
+              size="sm"
+              leftIcon={<Icon name="bag" size={15} />}
+              aria-label={t('site.buyNamed', { name })}
+              onClick={() => navigate(`/product/${p.id}`)}
+            >
+              {t('site.buy')}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

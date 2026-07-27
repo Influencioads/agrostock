@@ -356,6 +356,7 @@
         "workers": "Trabalhadores"
       },
       "live": "ao vivo",
+      "liveListings": "Anúncios ativos",
       "liveTracking": "Rastreamento ao vivo",
       "loaderSub": "Suas equipes e trabalhos em um relance.",
       "loadingMetrics": "Carregando métricas em tempo real…",
@@ -387,7 +388,6 @@
       "perMonth": "$/mês",
       "procurementSpend": "Gastos com Aquisições",
       "productViews": "Visualizações do produto",
-      "liveListings": "Anúncios ativos",
       "readyToWithdraw": "pronto para desistir",
       "recentOrders": "Pedidos recentes",
       "revenue": "Volume de pedidos",
@@ -536,6 +536,7 @@
       "docBank": "comprovante bancário",
       "docBankHint": "Extrato bancário ou cheque cancelado",
       "docId": "Governo ID",
+      "docIdHint": "Passport, national ID or driving licence",
       "docTax": "Certificado de imposto",
       "docTaxHint": "VAT / certificado de registro fiscal",
       "docTrade": "Licença comercial",
@@ -743,6 +744,7 @@
       "browseMarketplace": "Navegue pelo mercado →",
       "buyerNote": "Nota do comprador: “{{note}}”",
       "buyerOtpNote": "O comprador recebeu uma entrega separada OTP. O motorista recolhe essa entrega à chegada para concluir a encomenda. Pode consultar este código de recolha a qualquer momento no separador de detalhes da encomenda.",
+      "cancelOrder": "Cancelar pedido",
       "carrier": "Operadora",
       "checking": "Verificando…",
       "colAction": "Ação",
@@ -752,6 +754,8 @@
       "colProduct": "Produto",
       "colStatus": "Status",
       "confirm": "Confirmar",
+      "confirmCancel": "Cancelar este pedido? Esta ação não pode ser desfeita.",
+      "confirmDispute": "Deseja abrir uma disputa sobre este pedido? Nossa equipe irá analisá-la.",
       "copied": "Copiado",
       "copy": "Cópia",
       "delivered": "Entregue",
@@ -788,6 +792,7 @@
       "noteOptional": "Nota (opcional)",
       "notePlaceholder": "FOB Mundra, prazo de entrega de 14 dias.",
       "notesOptional": "Notas (opcional)",
+      "openDispute": "Disputa aberta",
       "orderFallback": "Ordem",
       "orderTitle": "Ordem {{ref}}",
       "otpSuffix": "· OTP",
@@ -859,6 +864,12 @@
       "createMarketError": "Não foi possível criar esse mercado.",
       "createNewMarket": "+ Criar um novo mercado…",
       "creating": "Criando…",
+      "currency": "Moeda",
+      "dealDirect": "Negociação direta (sem garantia)",
+      "dealDirectHint": "Comprador e vendedor acertam o pagamento entre si — a plataforma não retém nada.",
+      "dealSafe": "Negócio seguro (protegido por garantia)",
+      "dealSafeHint": "O pagamento fica retido em garantia e é liberado assim que o comprador confirma a entrega.",
+      "dealType": "Tipo de negócio",
       "delete": "Excluir",
       "deleteConfirm": "Apagar {{name}}? Esta ação não pode ser desfeita.",
       "deleteError": "Não foi possível excluir este produto.",
@@ -879,12 +890,14 @@
       "makeCover": "Faça uma capa",
       "markOffer": "Marcar como oferta",
       "market": "Mercado",
+      "marketAddress": "Endereço (opcional)",
       "marketName": "Nome do mercado",
       "marketPlaceholder": "— De onde isso é comercializado? —",
       "moq": "MOQ",
       "moveLeft": "Mova-se para a esquerda.",
       "moveRight": "Mova-se para a direita.",
       "myProducts": "Meus Produtos",
+      "nameAuto": "Sugestões dentre as suas opções: {{name}}",
       "newMarketNote": "Novos mercados são analisados por um administrador. Você pode usá-lo em seus anúncios imediatamente — outros vendedores o verão assim que for aprovado.",
       "noCountry": "Nenhum país correspondente.",
       "noProducts": "Ainda não há produtos. Adicione seu primeiro anúncio.",
@@ -898,16 +911,23 @@
       "phCountry": "Índia",
       "phDelivery": "Preparar",
       "phGrade": "Grau A",
+      "phMarketAddress": "Portão 3, Anel Viário",
       "phMarketName": "Porto de Kandla",
       "phMoq": "25 MT",
       "phName": "Arroz Basmati Premium 1121",
       "phOrigin": "🇮🇳 Índia",
       "phQty": "500 MT",
+      "phStock": "ex. 500 — vazio = ilimitado",
+      "photoSizeHint": "Armazenado como um quadrado de 1080×1080 pixels. Pelo menos 1080 pixels no lado mais longo — qualquer coisa menor que isso será formatada com barras pretas, não cortada.",
       "photos": "Fotos",
       "photosCount_many": "{{count}} fotos",
       "photosCount_one": "{{count}} fotos",
       "photosCount_other": "{{count}} fotos",
-      "price": "Preço (USD / MT)",
+      "pickup": "Coleção do comprador",
+      "price": "Preço (por unidade)",
+      "priceFixed": "Preço fixo",
+      "priceNegotiable": "Negociável",
+      "priceType": "Tipo de preço",
       "productName": "Nome do produto",
       "quantity": "Quantidade",
       "remove": "Remover",
@@ -916,14 +936,13 @@
       "saving": "Salvando…",
       "searchCountry": "Pesquisar países…",
       "select": "Selecione…",
+      "stock": "Stock (opcional)",
       "subcategory": "Subcategoria",
       "supplyCountries": "Suprimentos para",
       "supplyCountriesHint": "— selecione todos os países para os quais você pode enviar.",
       "unit": "Unidade",
       "uploadFailed": "O envio da imagem falhou. Tente usar arquivos JPG ou PNG menores.",
-      "uploading": "Carregando…",
-      "stock": "Stock (opcional)",
-      "phStock": "ex. 500 — vazio = ilimitado"
+      "uploading": "Carregando…"
     },
     "requestAccess": "Solicitar acesso",
     "reviewQueue": "Fila de revisão",
@@ -1342,13 +1361,24 @@
         "title": "Trabalhadores"
       }
     },
+    "forgotPassword": {
+      "backToSignIn": "Voltar para a página de login",
+      "email": "E-mail",
+      "send": "Enviar link de redefinição",
+      "sending": "Enviando…",
+      "sent": "Se esse e-mail estiver cadastrado, um link para redefinição de senha será enviado. Verifique sua caixa de entrada.",
+      "subtitle": "Insira seu e-mail e enviaremos um link para redefinir sua senha.",
+      "title": "Redefina sua senha"
+    },
     "login": {
       "createOne": "Crie um",
       "demoAccounts": "Contas de demonstração · um clique",
       "demoHint": "senha: senha123",
       "emailOrPhone": "E-mail ou telefone",
       "emailPlaceholder": "you@company.com ou telefone",
+      "forgotPassword": "Esqueceu sua senha?",
       "noAccount": "Não tem conta?",
+      "otpSignIn": "Faça login com um código de e-mail",
       "password": "Senha",
       "resendVerification": "Reenviar link de confirmação",
       "signIn": "Entrar",
@@ -1362,6 +1392,8 @@
       "allCountries": "Todos os países",
       "allMarkets": "Todos os mercados",
       "allSubcategories": "Todas as subcategorias",
+      "anyDeal": "Qualquer tipo de negócio",
+      "anyPrice": "Qualquer tipo de preço",
       "category": "Categoria",
       "chipAuctions": "Leilões",
       "chipOffers": "Ofertas",
@@ -1370,6 +1402,7 @@
       "city": "Cidade",
       "clearFilters": "Limpar filtros",
       "country": "País",
+      "dealType": "Tipo de negócio",
       "filters": "Filtros",
       "grade": "Nota",
       "grades": {
@@ -1391,6 +1424,7 @@
       "priceAsc": "Preço ↑",
       "priceDesc": "Preço ↓",
       "priceRange": "Faixa de preço (USD)",
+      "priceType": "Preço",
       "rating": "Avaliação",
       "searchPlaceholder": "Pesquisar produtos…",
       "sortRelevance": "Ordenar por: Relevância",
@@ -1404,6 +1438,12 @@
         "safe": "Negócio seguro",
         "verified": "Vendedor Verificado"
       }
+    },
+    "notFound": {
+      "body": "A página que procura não existe ou foi movida.",
+      "browse": "Explorar o mercado",
+      "home": "Ir para o início",
+      "title": "Página não encontrada"
     },
     "offices": {
       "list": {
@@ -1452,6 +1492,19 @@
         "warehouse": "Escritório do Armazém"
       }
     },
+    "otpLogin": {
+      "code": "Código de 6 dígitos",
+      "codeSent": "Se esse e-mail estiver cadastrado, um código será enviado.",
+      "email": "E-mail",
+      "resend": "Enviar um novo código",
+      "sendCode": "Envie-me um código por e-mail",
+      "sending": "Enviando…",
+      "subtitle": "Enviaremos um código de 6 dígitos por e-mail para você fazer login — não é necessária senha.",
+      "title": "Faça login com um código",
+      "usePassword": "Faça login com uma senha.",
+      "verify": "Entrar",
+      "verifying": "Entrando…"
+    },
     "product": {
       "availLine": "{{qty}} disponível · MOQ {{moq}}",
       "browseMarket": "Navegue pelo mercado",
@@ -1459,6 +1512,7 @@
       "buyerReviews": "Avaliações de compradores",
       "chatSeller": "Converse com o vendedor",
       "deliveryLine": "Entrega: {{delivery}}",
+      "directDealNote": "Esta transação será resolvida diretamente entre comprador e vendedor. AgroTraders não retém o pagamento.",
       "escrowNote": "Os fundos ficarão retidos em custódia até que você confirme a entrega.",
       "home": "Lar",
       "loaders": "Carregadeiras",
@@ -1479,6 +1533,7 @@
       },
       "qualityScore": "Pontuação de Qualidade",
       "quantityMt": "Quantidade (MT)",
+      "quoteRequested": "Orçamento solicitado — {{ref}}. O vendedor responderá com um preço.",
       "related": "Você também pode gostar",
       "requestQuote": "Solicite um orçamento",
       "safeDealProtected": "Negócio seguro e protegido",
@@ -1486,8 +1541,7 @@
       "suppliesTo": "Suprimentos para",
       "transport": "Transporte",
       "verifiedSeller": "Vendedor Verificado",
-      "watchingNow": "{{count}}+ pessoas assistindo agora",
-      "quoteRequested": "Orçamento solicitado — {{ref}}. O vendedor responderá com um preço."
+      "watchingNow": "{{count}}+ pessoas assistindo agora"
     },
     "profile": {
       "activeRoutes": "Rotas ativas",
@@ -1527,7 +1581,12 @@
       "changePhoto": "Alterar foto",
       "completeSub": "Compradores e parceiros encontram você por meio disso — leva dois minutos.",
       "completeTitle": "Complete seu perfil",
+      "confirmDelete": "Eliminar esta conta? Não é possível anular pela aplicação.",
       "contactEmail": "E-mail de contato",
+      "dangerZone": "Zona de perigo",
+      "deleteAccount": "Eliminar conta",
+      "deleteBody": "Eliminar a sua conta termina sessão em todo o lado e desativa o início de sessão. Levante primeiro o saldo da carteira.",
+      "deleteError": "Não foi possível eliminar a sua conta. Tente novamente.",
       "languages": "Línguas",
       "phLocation": "Amritsar, Índia",
       "phone": "Telefone",
@@ -1549,12 +1608,7 @@
       "whatsapp": "WhatsApp",
       "whereFrom": "De onde você é?",
       "youFallback": "Você",
-      "yourMarket": "Seu mercado",
-      "dangerZone": "Zona de perigo",
-      "deleteBody": "Eliminar a sua conta termina sessão em todo o lado e desativa o início de sessão. Levante primeiro o saldo da carteira.",
-      "confirmDelete": "Eliminar esta conta? Não é possível anular pela aplicação.",
-      "deleteAccount": "Eliminar conta",
-      "deleteError": "Não foi possível eliminar a sua conta. Tente novamente."
+      "yourMarket": "Seu mercado"
     },
     "register": {
       "checkInboxBody": "Enviamos um link de confirmação para {{email}}. Clique nele para ativar sua conta — você poderá fazer login assim que a confirmação for concluída.",
@@ -1641,6 +1695,18 @@
       "sub": "Publique o que você precisa — vendedores verificados respondem com o melhor preço.",
       "title": "Requisitos do comprador",
       "view": "Visualizar"
+    },
+    "resetPassword": {
+      "confirmPassword": "Confirme sua senha",
+      "invalidLink": "Este link de redefinição é inválido ou expirou.",
+      "mismatch": "As senhas não coincidem.",
+      "newPassword": "Nova Senha",
+      "requestNew": "Solicitar um novo link",
+      "submit": "Defina uma nova senha.",
+      "submitting": "Salvando…",
+      "subtitle": "Digite uma nova senha para sua conta.",
+      "title": "Escolha uma nova senha",
+      "tooShort": "A senha deve ter no mínimo 8 caracteres."
     },
     "safeDeal": {
       "badge": "Proteção de garantia SafeDeal",
@@ -1741,12 +1807,6 @@
       "backToSignIn": "Voltar para a página de login",
       "checking": "Confirmando seu e-mail…",
       "failedTitle": "Não foi possível confirmar este link."
-    },
-    "notFound": {
-      "title": "Página não encontrada",
-      "body": "A página que procura não existe ou foi movida.",
-      "home": "Ir para o início",
-      "browse": "Explorar o mercado"
     }
   },
   "product": {
@@ -1789,22 +1849,27 @@
     }
   },
   "site": {
+    "addToSaved": "Guardar nos favoritos",
     "allBidsOwner": "Todas as ofertas (visão do proprietário)",
     "auction": "Leilão",
-    "sponsored": "Patrocinado",
     "availableLine": "{{qty}} disponível · MOQ {{moq}} · {{delivery}}",
     "bid": "Oferta",
     "bidError": "Não foi possível efetuar a oferta.",
     "bidderFallback": "Licitante",
     "budget": "Orçamento (USD)",
     "buy": "Comprar",
+    "buyNamed": "Comprar {{name}}",
     "byBidder": "por {{name}}",
     "cargo": "Carga",
+    "chatNamed": "Bate-papo com {{name}}",
+    "chatSeller": "Converse com o vendedor",
     "cookies": "Cookies",
     "copyright": "© {{year}} AgroTraders. Todos os direitos reservados.",
     "describeJob": "Descreva a vaga…",
+    "directDeal": "Negociação direta",
     "done": "Feito",
     "ended": "Terminou",
+    "fixedPrice": "Preço fixo",
     "footerTagline": "A plataforma internacional de comércio e logística agrícola. Negócios seguros, vendedores verificados, entrega mundial.",
     "from": "De",
     "globe": {
@@ -1828,6 +1893,7 @@
     "hireLoader": "Contrate esta empresa de carregamento",
     "hireTransporter": "Contrate este transportador",
     "hireWorker": "Contrate este trabalhador",
+    "inStock": "Em estoque",
     "intl": {
       "grade": "Nota",
       "port": "Porta",
@@ -1838,10 +1904,12 @@
     "location": "Localização",
     "message": "Mensagem",
     "neededBy": "Necessário para",
+    "negotiable": "Negociável",
     "noBidsBidder": "Você ainda não fez um lance — seja o primeiro.",
     "noBidsOwner": "Ainda não há lances.",
     "offer": "Oferecer",
     "onlyBuyers": "Somente contas de comprador podem dar lances.",
+    "outOfStock": "Fora de estoque",
     "ph": {
       "cargoQty": "Arroz Basmati 50MT",
       "fromCity": "Mundra",
@@ -1850,6 +1918,7 @@
     },
     "privacy": "Privacidade",
     "proofLine": "{{watching}}+ assistindo · {{ordered}} encomendado no mês passado",
+    "removeFromSaved": "Remover dos favoritos",
     "requestSent": "Solicitação {{ref}} enviada",
     "safeDeal": "Negócio seguro",
     "sealedBids_many": "{{count}} propostas seladas",
@@ -1860,15 +1929,15 @@
     "sendRequest": "Enviar solicitação de contratação",
     "sending": "Enviando…",
     "signInHire": "Faça login para enviar uma solicitação de contratação.",
+    "sponsored": "Patrocinado",
     "startingBid": "Lance inicial",
+    "stockCount": "{{count}} {{unit}} em estoque",
     "terms": "Termos",
     "to": "Para",
     "trackHires": "Acompanhe o processo em \"Contratações\" no seu painel de controle — você será notificado quando o candidato responder.",
     "workersNeeded": "Precisa-se de trabalhadores",
     "you": "Você",
     "yourBidPlaceholder": "Sua oferta (USD)",
-    "yourBids": "Suas ofertas",
-    "addToSaved": "Guardar nos favoritos",
-    "removeFromSaved": "Remover dos favoritos"
+    "yourBids": "Suas ofertas"
   }
 }

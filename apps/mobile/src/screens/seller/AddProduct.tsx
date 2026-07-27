@@ -6,10 +6,23 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiCategory, ApiMarket, ApiProduct } from '@agrotraders/api-client';
-import { COUNTRIES } from '@agrotraders/api-client';
-import { getAttributeFields, PRODUCT_UNITS, toUnit, type AttrField } from '@agrotraders/types';
+import { countryFlag, schemaName } from '@agrotraders/api-client';
+import {
+  CURRENCIES,
+  CURRENCY_SYMBOLS,
+  DELIVERY_OPTIONS,
+  getAttributeFields,
+  isDeliveryOption,
+  isPercentField,
+  PERCENT_OPTIONS,
+  PRODUCT_UNITS,
+  suggestProductName,
+  toUnit,
+  type AttrField,
+} from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
+import { countryOptions } from '../../lib/countries';
 import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
@@ -24,9 +37,15 @@ type R = RouteProp<RootStackParamList, 'Section'>;
 
 export const MAX_IMAGES = 6;
 
+/** Strip a stored "500 MT" back to the bare number the numeric inputs hold. */
+const bareNumber = (s?: string | null) => (s ?? '').replace(/[^\d.]/g, '');
+/** Recompose "500" + "MT" → "500 MT" for storage/display. */
+const withUnit = (amount: string, unit: string) => (amount.trim() ? `${amount.trim()} ${toUnit(unit)}` : '');
+
 const blank = {
-  name: '', categoryId: '', subcategoryId: '', price: '', unit: 'MT', qty: '', moq: '',
-  grade: '', emoji: '🌾', origin: '', city: '', country: '', delivery: '', isOffer: false, isAuction: false,
+  name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', unit: 'MT', qty: '', moq: '',
+  grade: '', emoji: '🌾', origin: '', city: '', country: '', delivery: 'delivery', isOffer: false, isAuction: false,
+  safeDeal: true, negotiable: false,
   marketId: '', startBid: '', auctionDays: '7',
   images: [] as string[],
   supplyCountries: [] as string[],
@@ -44,22 +63,31 @@ function MarketPicker({
   onChange: (id: string) => void;
   onError: (msg: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState({ name: '', country: '', city: '', flag: '' });
+  const blankDraft = { name: '', country: '', city: '', address: '' };
+  const [draft, setDraft] = useState(blankDraft);
 
   // Approved markets + this seller's own pending proposals, so a market they
   // just created is selectable immediately.
   const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets', 'mine'], queryFn: () => api.markets.mine() });
 
   const create = useMutation({
-    mutationFn: () => api.markets.create({ name: draft.name, country: draft.country, city: draft.city || undefined, flag: draft.flag || undefined }),
+    mutationFn: () =>
+      api.markets.create({
+        name: draft.name,
+        country: draft.country,
+        city: draft.city || undefined,
+        address: draft.address || undefined,
+        // Derived from the country, never typed.
+        flag: countryFlag(draft.country) || undefined,
+      }),
     onSuccess: (m) => {
       qc.invalidateQueries({ queryKey: ['markets'] });
       onChange(m.id);
       setCreating(false);
-      setDraft({ name: '', country: '', city: '', flag: '' });
+      setDraft(blankDraft);
     },
     onError: (e) => onError(errMessage(e, t('sellerX.market.createError'))),
   });
@@ -91,11 +119,17 @@ function MarketPicker({
         <Card style={{ gap: 10 }}>
           <Txt variant="small">{t('sellerX.market.reviewHint')}</Txt>
           <Input label={t('sellerX.market.name')} placeholder={t('sellerX.market.phName')} value={draft.name} onChangeText={(v) => setDraft({ ...draft, name: v })} />
-          <Row gap={10}>
-            <View style={{ flex: 1 }}><Input label={t('sellerX.market.country')} placeholder={t('sellerX.market.phCountry')} value={draft.country} onChangeText={(v) => setDraft({ ...draft, country: v })} /></View>
-            <View style={{ flex: 1 }}><Input label={t('sellerX.market.city')} placeholder={t('sellerX.market.phCity')} value={draft.city} onChangeText={(v) => setDraft({ ...draft, city: v })} /></View>
-          </Row>
-          <Input label={t('sellerX.market.flag')} placeholder="🇮🇳" value={draft.flag} onChangeText={(v) => setDraft({ ...draft, flag: v })} />
+          <PickerField
+            label={t('sellerX.market.country')}
+            placeholder={t('sellerX.add.searchCountry')}
+            value={draft.country}
+            displayValue={countryOptions(lang).find((o) => o.value === draft.country)?.label}
+            options={countryOptions(lang)}
+            onChange={(country) => setDraft({ ...draft, country })}
+            searchPlaceholder={t('sellerX.add.searchCountry')}
+          />
+          <Input label={t('sellerX.market.city')} placeholder={t('sellerX.market.phCity')} value={draft.city} onChangeText={(v) => setDraft({ ...draft, city: v })} />
+          <Input label={t('sellerX.market.address')} placeholder={t('sellerX.market.phAddress')} value={draft.address} onChangeText={(v) => setDraft({ ...draft, address: v })} />
           <Row gap={8}>
             <Button
               title={create.isPending ? t('sellerX.market.creating') : t('sellerX.market.create')}
@@ -176,8 +210,9 @@ export function GalleryEditor({
 
   return (
     <View style={{ gap: 8 }}>
-      <Txt variant="label">{t('sellerX.gallery.photos', { n: images.length, max })}</Txt>
+      <Txt variant="label">{t('sellerX.gallery.photos', { n: images.length, max })} *</Txt>
       <Txt variant="small">{t('sellerX.gallery.hint')}</Txt>
+      <Txt variant="small">{t('sellerX.gallery.sizeHint')}</Txt>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
         {images.map((src, i) => (
           <View key={src + i} style={{ width: 84, height: 84 }}>
@@ -223,18 +258,17 @@ export function GalleryEditor({
  * box, which buried the rest of the form under several screens of flags. They
  * are searchable sheets now, showing only what the seller actually picked.
  */
-const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c.name, label: `${c.flag} ${c.name}` }));
-
 /** Searchable single-select for the country the goods sit in. */
 function CountryPicker({ value, onChange }: { value: string; onChange: (name: string) => void }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const options = countryOptions(lang);
   return (
     <PickerField
       label={t('sellerX.add.country')}
       placeholder={t('sellerX.add.searchCountry')}
       value={value}
-      displayValue={COUNTRY_OPTIONS.find((o) => o.value === value)?.label}
-      options={COUNTRY_OPTIONS}
+      displayValue={options.find((o) => o.value === value)?.label}
+      options={options}
       onChange={onChange}
       searchPlaceholder={t('sellerX.add.searchCountry')}
     />
@@ -243,14 +277,14 @@ function CountryPicker({ value, onChange }: { value: string; onChange: (name: st
 
 /** Searchable multi-select for the countries the seller can supply to. */
 function SupplyCountriesPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   return (
     <MultiPickerField
       label={t('sellerX.add.supplyCountries')}
       hint={t('sellerX.add.supplyCountriesHint')}
       placeholder={t('sellerX.add.searchCountry')}
       values={value}
-      options={COUNTRY_OPTIONS}
+      options={countryOptions(lang)}
       onChange={onChange}
       searchPlaceholder={t('sellerX.add.searchCountry')}
     />
@@ -305,6 +339,20 @@ function AttributeFields({
             </View>
           );
         }
+        // Percentages are a picker, not a free number: 0.1–0.9 in tenths for
+        // trace values, then 1–100 whole. See the web form.
+        if (isPercentField(f)) {
+          return (
+            <PickerField
+              key={f.key}
+              label={label}
+              value={(raw as string) ?? ''}
+              displayValue={raw ? `${String(raw)}%` : undefined}
+              options={PERCENT_OPTIONS.map((o) => ({ value: o, label: `${o}%` }))}
+              onChange={(v) => setField(f.key, v)}
+            />
+          );
+        }
         if (f.type === 'multiselect') {
           const arr = Array.isArray(raw) ? (raw as string[]) : [];
           return (
@@ -352,7 +400,7 @@ function AttributeFields({
 
 /** Create or edit a product. Edit mode when the Section route carries `productId`. */
 export function SellerAddProduct() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const nav = useNavigation<Nav>();
   const { params } = useRoute<R>();
   const editingId = params?.productId;
@@ -364,7 +412,8 @@ export function SellerAddProduct() {
 
   const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const selectedCategory = categories.find((c) => c.id === form.categoryId);
-  const categoryName = selectedCategory?.name ?? null;
+  // Schema lookups need the canonical English name; `name` is the display label.
+  const categoryName = selectedCategory ? schemaName(selectedCategory) : null;
   // The picker hands back the resolved names, so the form never has to walk the
   // tree itself. `attrSource` is the level-2 ancestor whose schema applies.
   const [taxonomy, setTaxonomy] = useState<CategorySelection>(EMPTY_SELECTION);
@@ -381,15 +430,20 @@ export function SellerAddProduct() {
     if (!editingId) return;
     const p = mine.find((x) => x.id === editingId);
     if (p) {
+      // Editing an existing listing: its name is the seller's, not ours to regenerate.
+      setNameTouched(true);
       setForm((f) => ({
         ...f,
-        name: p.name ?? '', price: String(p.price ?? '').replace(/[^0-9.]/g, ''), unit: toUnit(p.unit),
-        qty: p.qty ?? '', moq: p.moq ?? '', grade: p.grade ?? '', emoji: p.emoji ?? '🌾',
+        name: p.name ?? '', price: bareNumber(p.price), priceCurrency: p.priceCurrency ?? 'USD', unit: toUnit(p.unit),
+        qty: bareNumber(p.qty), moq: bareNumber(p.moq), grade: p.grade ?? '', emoji: p.emoji ?? '🌾',
         origin: p.origin ?? '', city: p.city ?? '', country: p.country ?? '',
         subcategoryId: (p.subcategory && typeof p.subcategory === 'object' ? (p.subcategory as { id?: string }).id : '') ?? '',
         attributes: (p.attributes as Record<string, unknown>) ?? {},
         supplyCountries: p.supplyCountries ?? [],
-        delivery: p.delivery ?? '', isOffer: !!p.isOffer, isAuction: !!p.isAuction,
+        // Legacy rows carry free text ("Ready") — fall back to "we deliver".
+        delivery: isDeliveryOption(p.delivery) ? p.delivery : 'delivery',
+        safeDeal: p.safeDeal ?? true, negotiable: !!p.negotiable,
+        isOffer: !!p.isOffer, isAuction: !!p.isAuction,
         marketId: p.market?.id ?? '',
         startBid: p.startBidCents != null ? String(p.startBidCents / 100) : '',
         // Older rows may predate the gallery; fall back to the single cover.
@@ -407,11 +461,32 @@ export function SellerAddProduct() {
     });
   }, [categoryName, subcategoryName]);
 
+  // Title composed from the taxonomy leaf + picked attributes, tracking the
+  // seller's choices until they type in the field themselves. See the web form.
+  const [nameTouched, setNameTouched] = useState(false);
+  // The generated title reads in the seller's own language, so it uses the
+  // localized labels — not the English names the schema is keyed by.
+  const suggestion = suggestProductName(
+    taxonomy.subcategoryName || taxonomy.categoryName || null,
+    form.attributes,
+  );
+  useEffect(() => {
+    if (nameTouched || !suggestion) return;
+    setForm((f) => (f.name === suggestion ? f : { ...f, name: suggestion }));
+  }, [suggestion, nameTouched]);
+
   const save = useMutation({
     mutationFn: () => {
-      const { images, marketId, startBid, auctionDays, isAuction, subcategoryId, attributes, ...rest } = form;
+      const { images, marketId, startBid, auctionDays, isAuction, subcategoryId, attributes, qty, moq, unit, origin, ...rest } = form;
       const payload: Record<string, unknown> = {
         ...rest,
+        unit: toUnit(unit),
+        // Quantity/MOQ are stored with their metric — see the web form.
+        ...(qty ? { qty: withUnit(qty, unit) } : {}),
+        ...(moq ? { moq: withUnit(moq, unit) } : {}),
+        ...(origin ? { origin } : {}),
+        // The flag follows the origin country, never hand-typed.
+        ...(countryFlag(origin) ? { flag: countryFlag(origin) } : {}),
         isAuction,
         images,
         marketId: marketId || null,
@@ -428,12 +503,15 @@ export function SellerAddProduct() {
       qc.invalidateQueries({ queryKey: ['products', 'mine'] });
       qc.invalidateQueries({ queryKey: ['products'] });
       qc.invalidateQueries({ queryKey: ['auctions'] });
-      nav.goBack();
+      // A saved listing belongs in Inventory — that is where the seller edits it
+      // next. `goBack()` dropped them wherever they happened to come from.
+      nav.navigate('App', { screen: 'Inventory' } as never);
     },
     onError: (e) => setErr(errMessage(e, t('sellerX.add.saveError'))),
   });
 
-  const canSubmit = !!form.name && !!form.price && (!!editingId || !!form.categoryId);
+  // A photo is now mandatory — the API rejects a gallery-less listing.
+  const canSubmit = !!form.name && !!form.price && form.images.length > 0 && (!!editingId || !!form.categoryId);
 
   return (
     <Screen>
@@ -445,7 +523,12 @@ export function SellerAddProduct() {
 
         <GalleryEditor images={form.images} onChange={(images) => setForm((f) => ({ ...f, images }))} onError={setErr} />
 
-        <Input label={t('sellerX.add.name')} placeholder={t('sellerX.add.phName')} value={form.name} onChangeText={set('name')} />
+        <Input
+          label={t('sellerX.add.name')}
+          placeholder={t('sellerX.add.phName')}
+          value={form.name}
+          onChangeText={(v) => { setNameTouched(true); set('name')(v); }}
+        />
         {/* One cascading picker instead of two chip strips — the taxonomy is five
             levels deep, which no chip strip can represent. */}
         <View style={{ gap: 6 }}>
@@ -482,35 +565,94 @@ export function SellerAddProduct() {
 
         <MarketPicker value={form.marketId} onChange={(id) => setForm((f) => ({ ...f, marketId: id }))} onError={setErr} />
 
+        {/* Price is quoted in the seller's OWN currency; the API converts it to a
+            USD baseline so buyers still see it in whatever they picked. */}
         <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.price')} keyboardType="numeric" placeholder="840" value={form.price} onChangeText={set('price')} /></View>
           <View style={{ flex: 1 }}>
             <PickerField
-              label={t('sellerX.add.unit')}
-              value={toUnit(form.unit)}
-              displayValue={t(`enums:unit.${toUnit(form.unit)}`)}
-              options={PRODUCT_UNITS.map((u) => ({ value: u, label: t(`enums:unit.${u}`) }))}
-              onChange={set('unit')}
+              label={t('sellerX.add.currency')}
+              value={form.priceCurrency}
+              displayValue={`${CURRENCY_SYMBOLS[form.priceCurrency] ?? ''} ${form.priceCurrency}`.trim()}
+              options={CURRENCIES.map((c) => ({ value: c, label: `${CURRENCY_SYMBOLS[c] ?? ''} ${c}`.trim() }))}
+              onChange={set('priceCurrency')}
             />
           </View>
+          <View style={{ flex: 1 }}><Input label={t('sellerX.add.price')} keyboardType="numeric" placeholder="840" value={form.price} onChangeText={set('price')} /></View>
         </Row>
+        {/* One metric drives quantity and MOQ — sellers were typing "500 MT",
+            "500mt" and "500 tons" into free-text boxes. */}
+        <PickerField
+          label={t('sellerX.add.unit')}
+          value={toUnit(form.unit)}
+          displayValue={t(`enums:unit.${toUnit(form.unit)}`)}
+          options={PRODUCT_UNITS.map((u) => ({ value: u, label: t(`enums:unit.${u}`) }))}
+          onChange={set('unit')}
+        />
         <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.quantity')} placeholder={t('sellerX.add.phQty')} value={form.qty} onChangeText={set('qty')} /></View>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.moq')} placeholder={t('sellerX.add.phMoq')} value={form.moq} onChangeText={set('moq')} /></View>
+          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.quantity')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="500" value={form.qty} onChangeText={set('qty')} /></View>
+          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.moq')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="25" value={form.moq} onChangeText={set('moq')} /></View>
         </Row>
         <Row gap={10}>
           <View style={{ flex: 1 }}><Input label={t('sellerX.add.grade')} placeholder={t('sellerX.add.phGrade')} value={form.grade} onChangeText={set('grade')} /></View>
           <View style={{ flex: 1 }}><Input label={t('sellerX.add.emoji')} placeholder="🌾" value={form.emoji} onChangeText={set('emoji')} /></View>
         </Row>
-        <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.origin')} placeholder={t('sellerX.add.phOrigin')} value={form.origin} onChangeText={set('origin')} /></View>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.delivery')} placeholder={t('sellerX.add.phDelivery')} value={form.delivery} onChangeText={set('delivery')} /></View>
-        </Row>
+
+        {/* Origin is a country — it is what the listing flag is derived from. */}
+        <PickerField
+          label={t('sellerX.add.origin')}
+          placeholder={t('sellerX.add.searchCountry')}
+          value={form.origin}
+          displayValue={countryOptions(lang).find((o) => o.value === form.origin)?.label}
+          options={countryOptions(lang)}
+          onChange={(origin) => setForm((f) => ({ ...f, origin }))}
+          searchPlaceholder={t('sellerX.add.searchCountry')}
+        />
+
+        {/* "Do you deliver?" — and when not, whether the buyer may collect. */}
+        <PickerField
+          label={t('sellerX.add.delivery')}
+          value={form.delivery === 'delivery' ? 'yes' : 'no'}
+          displayValue={form.delivery === 'delivery' ? t('common:yes') : t('common:no')}
+          options={[{ value: 'yes', label: t('common:yes') }, { value: 'no', label: t('common:no') }]}
+          onChange={(v) => setForm((f) => ({ ...f, delivery: v === 'yes' ? 'delivery' : 'self_pickup' }))}
+        />
+        {form.delivery !== 'delivery' && (
+          <PickerField
+            label={t('sellerX.add.pickup')}
+            value={form.delivery}
+            displayValue={t(`enums:delivery.${form.delivery}`)}
+            options={DELIVERY_OPTIONS.filter((o) => o !== 'delivery').map((o) => ({ value: o, label: t(`enums:delivery.${o}`) }))}
+            onChange={set('delivery')}
+          />
+        )}
 
         {/* Country first — the city belongs to it. */}
         <CountryPicker value={form.country} onChange={(country) => setForm((f) => ({ ...f, country }))} />
         <Input label={t('sellerX.add.city')} placeholder={t('sellerX.add.phCity')} value={form.city} onChangeText={set('city')} />
         <SupplyCountriesPicker value={form.supplyCountries} onChange={(supplyCountries) => setForm((f) => ({ ...f, supplyCountries }))} />
+
+        {/* How the deal is settled and priced — both directions are explicit, so
+            a buyer never has to infer "direct deal" from a missing badge. */}
+        <PickerField
+          label={t('sellerX.add.dealType')}
+          value={form.safeDeal ? 'safe' : 'direct'}
+          displayValue={form.safeDeal ? t('sellerX.add.dealSafe') : t('sellerX.add.dealDirect')}
+          options={[
+            { value: 'safe', label: t('sellerX.add.dealSafe') },
+            { value: 'direct', label: t('sellerX.add.dealDirect') },
+          ]}
+          onChange={(v) => setForm((f) => ({ ...f, safeDeal: v === 'safe' }))}
+        />
+        <PickerField
+          label={t('sellerX.add.priceType')}
+          value={form.negotiable ? 'negotiable' : 'fixed'}
+          displayValue={form.negotiable ? t('sellerX.add.priceNegotiable') : t('sellerX.add.priceFixed')}
+          options={[
+            { value: 'fixed', label: t('sellerX.add.priceFixed') },
+            { value: 'negotiable', label: t('sellerX.add.priceNegotiable') },
+          ]}
+          onChange={(v) => setForm((f) => ({ ...f, negotiable: v === 'negotiable' }))}
+        />
 
         <View style={{ gap: 8 }}>
           <Txt variant="label">{t('sellerX.add.listingType')}</Txt>

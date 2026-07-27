@@ -27,6 +27,21 @@ import { AuditService } from '../common/audit.service';
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
+/**
+ * Localize a taxonomy row's `name` for display, but ALSO ship the canonical
+ * English name as `nameEn`.
+ *
+ * The shared attribute schema (`@agrotraders/types`) is keyed by the English
+ * category/subcategory names, and so are the stored attribute values buyers
+ * filter on. Without `nameEn` a client running in any non-English locale looks
+ * the schema up under the translated name, misses, and silently renders NO
+ * attribute fields at all — the seller form loses its detail section and the
+ * buyer facets disappear.
+ */
+function localizeTaxon<T extends { name: string }>(row: T & { translations?: Partial<Pick<T, 'name'>>[] }) {
+  return { ...localize(row, ['name']), nameEn: row.name };
+}
+
 export class CategoryDto {
   @IsString() @MinLength(2) name!: string;
   @IsOptional() @IsString() emoji?: string;
@@ -137,12 +152,12 @@ export class CategoriesService {
     const byCategory = new Map<string, unknown[]>();
     for (const sub of subs) {
       const list = byCategory.get(sub.categoryId) ?? [];
-      list.push(localize(sub, ['name']));
+      list.push(localizeTaxon(sub));
       byCategory.set(sub.categoryId, list);
     }
 
     const result = categories.map((category) => ({
-      ...localize(category, ['name']),
+      ...localizeTaxon(category),
       subcategories: byCategory.get(category.id) ?? [],
     }));
     this.cache.set(key, result);
@@ -163,7 +178,7 @@ export class CategoriesService {
     const include = this.subInclude(locale);
     if (depth === 'all' && !parentId) {
       const rows = await this.prisma.subcategory.findMany({ where: { categoryId }, ...include });
-      return rows.map((sub) => localize(sub, ['name']));
+      return rows.map((sub) => localizeTaxon(sub));
     }
 
     if (parentId) {
@@ -190,7 +205,7 @@ export class CategoriesService {
       rows.push(...batch);
       cursor = batch.map((r) => r.id);
     }
-    return rows.map((sub) => localize(sub, ['name']));
+    return rows.map((sub) => localizeTaxon(sub));
   }
 
   /** Depth of a node, counting the Category as level 1. */

@@ -74,6 +74,10 @@
       "body": "{{actor}} hat Ihre Einstellungsanfrage {{reference}} angenommen.",
       "title": "Einstellungsanfrage angenommen"
     },
+    "cancelled": {
+      "body": "{{actor}} hat die Buchung {{reference}} storniert. Alle einbehaltenen Gelder wurden zurückerstattet.",
+      "title": "Mietvertrag storniert"
+    },
     "declined": {
       "body": "{{actor}} hat Ihre Einstellungsanfrage abgelehnt {{reference}}.",
       "title": "Einstellungsanfrage abgelehnt"
@@ -93,6 +97,20 @@
       "title": "Identität verifiziert"
     }
   },
+  "loader": {
+    "assigned": {
+      "body": "Sie wurden dem Ladevorgang {{reference}} zugewiesen.",
+      "title": "Ihnen wurde eine Aufgabe zugewiesen"
+    },
+    "completed": {
+      "body": "Der Ladevorgang {{reference}} ist abgeschlossen.",
+      "title": "Ladevorgang abgeschlossen"
+    },
+    "job_claimed": {
+      "body": "{{loaderco}} hat Ihren Ladeauftrag {{reference}} beansprucht.",
+      "title": "Job beansprucht"
+    }
+  },
   "market": {
     "approved": {
       "body": "“{{market}}” ist jetzt gelistet — Käufer und Verkäufer können sich daran anhängen.",
@@ -104,6 +122,10 @@
     }
   },
   "order": {
+    "bid_awarded": {
+      "body": "Sie haben {{reference}} gewonnen. Bestellung {{orderReference}} ist jetzt geöffnet.",
+      "title": "Ihr Gebot wurde vergeben."
+    },
     "delivered_buyer": {
       "body": "Bestellung {{reference}} wurde zugestellt.",
       "title": "Geliefert"
@@ -124,9 +146,17 @@
       "body": "{{buyer}} hat sich nach {{product}} erkundigt.",
       "title": "Neue Anfrage"
     },
+    "new_order": {
+      "body": "{{buyer}} hat eine Bestellung über {{product}} aufgegeben.",
+      "title": "Neue Bestellung {{reference}}"
+    },
     "picked_up": {
       "body": "Bestellung {{reference}} ist unterwegs.",
       "title": "Waren abgeholt"
+    },
+    "placed": {
+      "body": "Ihre Bestellung {{reference}} für {{product}} wurde aufgegeben.",
+      "title": "Bestellung aufgegeben"
     },
     "seller_responded": {
       "body": "{{seller}} zitierte {{amount}} für {{product}}.",
@@ -135,10 +165,6 @@
     "status_changed": {
       "body": "Die Reihenfolge ist jetzt {{status}}.",
       "title": "Bestellung {{reference}} — {{status}}"
-    },
-    "placed": {
-      "title": "Bestellung aufgegeben",
-      "body": "Ihre Bestellung {{reference}} für {{product}} wurde aufgegeben."
     }
   },
   "product": {
@@ -190,6 +216,20 @@
       "title": "Der Nutzer antwortete"
     }
   },
+  "transport": {
+    "assigned": {
+      "body": "Ihr Angebot wurde angenommen – Ihnen wurde die Fahrt {{reference}} von {{fromCity}} nach {{toCity}} zugewiesen.",
+      "title": "Reise zugewiesen"
+    },
+    "delivered": {
+      "body": "Reise {{reference}} wurde zugestellt.",
+      "title": "Reise durchgeführt"
+    },
+    "quote_new": {
+      "body": "Ein Transporteur hat auf Ihre Anfrage hin {{amount}} angeboten.",
+      "title": "Neues Transportangebot"
+    }
+  },
   "wallet": {
     "escrow_release": {
       "body": "{{amount}} wurde Ihrem Wallet gutgeschrieben.",
@@ -199,6 +239,10 @@
       "body": "{{issuer}} hat {{number}} für {{amount}} ausgestellt.",
       "title": "Neue Rechnung"
     },
+    "invoice_paid": {
+      "body": "{{number}} für {{amount}} wurde als bezahlt markiert.",
+      "title": "Rechnung bezahlt"
+    },
     "payout_approved": {
       "body": "Ihre Auszahlung von {{amount}} wurde genehmigt und ausgezahlt.",
       "title": "Auszahlung gesendet"
@@ -206,6 +250,10 @@
     "payout_declined": {
       "body": "Ihr Auszahlungsantrag wurde abgelehnt.",
       "title": "Auszahlung abgelehnt"
+    },
+    "payout_requested": {
+      "body": "Ihr Auszahlungsantrag über {{amount}} ist eingegangen und wird derzeit geprüft.",
+      "title": "Auszahlung beantragt"
     },
     "refund": {
       "body": "{{amount}} wurde Ihrem Wallet gutgeschrieben.",

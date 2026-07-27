@@ -4,12 +4,15 @@
   "close": "Fechar",
   "create": "Criar",
   "dashboard": "Painel",
+  "errorBody": "Não foi possível carregar. Verifique a sua ligação e tente novamente.",
+  "errorTitle": "Algo deu errado",
   "language": "Linguagem",
   "loading": "Carregando…",
   "logOut": "Sair",
   "menu": "Menu",
   "no": "Não",
   "post": "Publicar",
+  "retry": "Tentar novamente",
   "save": "Salvar",
   "search": "Procurar",
   "send": "Enviar",
@@ -51,8 +54,5 @@
     "user": "Usuário"
   },
   "viewAll": "Ver tudo",
-  "yes": "Sim",
-  "errorTitle": "Algo deu errado",
-  "errorBody": "Não foi possível carregar. Verifique a sua ligação e tente novamente.",
-  "retry": "Tentar novamente"
+  "yes": "Sim"
 }

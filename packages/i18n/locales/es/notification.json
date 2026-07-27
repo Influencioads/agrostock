@@ -74,6 +74,10 @@
       "body": "{{actor}} aceptó su solicitud de contratación {{reference}}.",
       "title": "Solicitud de contratación aceptada"
     },
+    "cancelled": {
+      "body": "{{actor}} canceló el alquiler {{reference}}. Se reembolsaron los fondos retenidos.",
+      "title": "Contratación cancelada"
+    },
     "declined": {
       "body": "{{actor}} rechazó su solicitud de contratación {{reference}}.",
       "title": "Solicitud de contratación rechazada"
@@ -93,6 +97,20 @@
       "title": "Identidad verificada"
     }
   },
+  "loader": {
+    "assigned": {
+      "body": "Se te asignó el trabajo de carga {{reference}}.",
+      "title": "Te han asignado un trabajo"
+    },
+    "completed": {
+      "body": "La carga del trabajo {{reference}} ha finalizado.",
+      "title": "Trabajo de carga completado"
+    },
+    "job_claimed": {
+      "body": "{{loaderco}} reclamó tu trabajo de carga {{reference}}.",
+      "title": "Empleo reclamado"
+    }
+  },
   "market": {
     "approved": {
       "body": "“{{market}}” ya está listado; compradores y vendedores pueden adjuntar enlaces a él.",
@@ -104,6 +122,10 @@
     }
   },
   "order": {
+    "bid_awarded": {
+      "body": "Has ganado {{reference}}. El pedido {{orderReference}} ya está abierto.",
+      "title": "Su oferta fue adjudicada."
+    },
     "delivered_buyer": {
       "body": "El pedido {{reference}} fue entregado.",
       "title": "Entregado"
@@ -124,9 +146,17 @@
       "body": "{{buyer}} preguntó sobre {{product}}.",
       "title": "Nueva consulta"
     },
+    "new_order": {
+      "body": "{{buyer}} realizó un pedido de {{product}}.",
+      "title": "Nuevo pedido {{reference}}"
+    },
     "picked_up": {
       "body": "El pedido {{reference}} está en tránsito.",
       "title": "Mercancías recogidas"
+    },
+    "placed": {
+      "body": "Tu pedido {{reference}} de {{product}} se ha realizado.",
+      "title": "Pedido realizado"
     },
     "seller_responded": {
       "body": "{{seller}} cotizó {{amount}} por {{product}}.",
@@ -135,10 +165,6 @@
     "status_changed": {
       "body": "El orden ahora es {{status}}.",
       "title": "Orden {{reference}} — {{status}}"
-    },
-    "placed": {
-      "title": "Pedido realizado",
-      "body": "Tu pedido {{reference}} de {{product}} se ha realizado."
     }
   },
   "product": {
@@ -190,6 +216,20 @@
       "title": "El usuario respondió"
     }
   },
+  "transport": {
+    "assigned": {
+      "body": "Su cotización fue aceptada: el viaje {{reference}} de {{fromCity}} a {{toCity}} le ha sido asignado.",
+      "title": "Viaje asignado"
+    },
+    "delivered": {
+      "body": "El viaje {{reference}} fue entregado.",
+      "title": "Viaje entregado"
+    },
+    "quote_new": {
+      "body": "Un transportista cotizó {{amount}} en su solicitud.",
+      "title": "Nueva cotización de transporte"
+    }
+  },
   "wallet": {
     "escrow_release": {
       "body": "{{amount}} se ha liberado a su billetera.",
@@ -199,6 +239,10 @@
       "body": "{{issuer}} emitió {{number}} por {{amount}}.",
       "title": "Nueva factura"
     },
+    "invoice_paid": {
+      "body": "{{number}} por {{amount}} ha sido marcado como pagado.",
+      "title": "Factura pagada"
+    },
     "payout_approved": {
       "body": "Tu retiro de {{amount}} ha sido aprobado y pagado.",
       "title": "Pago enviado"
@@ -206,6 +250,10 @@
     "payout_declined": {
       "body": "Su solicitud de pago fue rechazada.",
       "title": "El pago fue rechazado"
+    },
+    "payout_requested": {
+      "body": "Su solicitud de retiro de {{amount}} fue recibida y está siendo revisada.",
+      "title": "Solicitud de pago"
     },
     "refund": {
       "body": "Se reembolsaron {{amount}} a su billetera.",

@@ -53,7 +53,7 @@ export class UploadsService {
   async saveImage(
     file: { buffer: Buffer; mimetype: string; size: number } | undefined,
     subdir = 'products',
-    opts: { format?: 'webp' | 'png'; maxWidth?: number; maxHeight?: number } = {},
+    opts: { format?: 'webp' | 'png'; maxWidth?: number; maxHeight?: number; square?: number } = {},
   ): Promise<string> {
     if (!file) throw new BadRequestException('No file uploaded');
     if (!ALLOWED_IMAGE_MIME.has(file.mimetype)) {
@@ -63,18 +63,41 @@ export class UploadsService {
       throw new BadRequestException('Image missing or exceeds size limit');
     }
 
-    const { format = 'webp', maxWidth = 1200, maxHeight = 1200 } = opts;
+    const { format = 'webp', maxWidth = 1200, maxHeight = 1200, square } = opts;
 
     let out: Buffer;
     try {
-      const pipeline = sharp(file.buffer)
-        .rotate() // honour EXIF orientation
-        .resize(maxWidth, maxHeight, { fit: 'inside', withoutEnlargement: true });
+      const source = sharp(file.buffer).rotate(); // honour EXIF orientation
+      let pipeline = source;
+      if (square) {
+        // Catalog photos are always rendered in a square tile, so every upload is
+        // stored as an exact `square`×`square` image. How we get there depends on
+        // what the seller gave us — the one thing we never do is upscale, which
+        // turns a thumbnail into a blurry cover:
+        //   • short edge ≥ target → centre-crop (the common phone photo; lossless)
+        //   • short edge < target → letterbox onto white, so a 16:9 landscape shot
+        //     still lands square with the whole product visible
+        //   • long edge < target → genuinely too small to sell from; reject
+        const { width = 0, height = 0 } = await source.metadata();
+        if (Math.max(width, height) < square) {
+          throw new BadRequestException(
+            `Photos must be at least ${square}px on the longest side — this one is ${width}×${height}px.`,
+          );
+        }
+        pipeline = source.resize(square, square, {
+          fit: Math.min(width, height) >= square ? 'cover' : 'contain',
+          position: 'centre',
+          background: { r: 255, g: 255, b: 255, alpha: 1 },
+        });
+      } else {
+        pipeline = source.resize(maxWidth, maxHeight, { fit: 'inside', withoutEnlargement: true });
+      }
       out = await (format === 'png'
         ? pipeline.png({ compressionLevel: 9 })
         : pipeline.webp({ quality: 80 })
       ).toBuffer();
     } catch (e) {
+      if (e instanceof BadRequestException) throw e;
       this.logger.warn(`Image conversion failed: ${(e as Error).message}`);
       throw new BadRequestException('Could not process this image');
     }

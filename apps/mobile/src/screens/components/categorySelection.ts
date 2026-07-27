@@ -8,18 +8,26 @@
  */
 export interface CategorySelection {
   categoryId: string;
+  /** Localized label, for display. */
   categoryName: string;
+  /**
+   * Canonical ENGLISH category name. The attribute schema is keyed by it, so
+   * looking up with the localized `categoryName` matches nothing and the whole
+   * detail section silently disappears in every non-English locale.
+   */
+  categoryNameEn: string;
   subcategoryId: string;
   subcategoryName: string;
   /** Names from the category down to the selected node, for the trigger label. */
   trail: string[];
-  /** Name to look attribute fields up under — the nearest schema-bearing ancestor. */
+  /** ENGLISH name to look attribute fields up under — nearest schema-bearing ancestor. */
   attrSource: string | null;
 }
 
 export const EMPTY_SELECTION: CategorySelection = {
   categoryId: '',
   categoryName: '',
+  categoryNameEn: '',
   subcategoryId: '',
   subcategoryName: '',
   trail: [],

@@ -82,8 +82,9 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
   // Attribute facets for the chosen (sub)category. A deep pick resolves to its
   // nearest schema-bearing ancestor, so facets keep showing past level 2.
   const attrFields = useMemo(
-    () => getFilterFields(draft.selection.categoryName, draft.selection.attrSource),
-    [draft.selection.categoryName, draft.selection.attrSource],
+    // English name — the schema knows no other language (see CategorySelection).
+    () => getFilterFields(draft.selection.categoryNameEn || draft.selection.categoryName, draft.selection.attrSource),
+    [draft.selection.categoryNameEn, draft.selection.categoryName, draft.selection.attrSource],
   );
 
   const cityOptions = useMemo(

@@ -1,4 +1,9 @@
 {
+  "delivery": {
+    "delivery": "Le vendeur effectue la livraison",
+    "no_delivery": "Aucune livraison ni collecte",
+    "self_pickup": "L'acheteur vient chercher son colis (livraison à domicile)"
+  },
   "hire_status": {
     "accepted": "Accepté",
     "cancelled": "Annulé",

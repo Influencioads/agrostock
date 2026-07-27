@@ -8,7 +8,7 @@ import { attrKey } from '@agrotraders/i18n';
 import { ProductCard } from '../components/site/ProductCard';
 import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
-import { attributeSourceName, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
+import { attributeSourceName, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, schemaName, type SubcategoryNode } from '@agrotraders/api-client';
 import { useI18n } from '../i18n';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -20,11 +20,12 @@ const gradeOptions: { key: string; value: string }[] = [
   { key: 'feed', value: 'Feed' },
   { key: 'milling', value: 'Milling' },
 ];
-const toggleKeys = ['verified', 'safe', 'offers', 'auctions'] as const;
+// `safe` moved out of the on/off toggles: "direct deal only" is a real buyer
+// intent, and an unchecked box could never express it.
+const toggleKeys = ['verified', 'offers', 'auctions'] as const;
 // URL param name per toggle (the header deep-links use ?offer=/?auction=).
 const toggleParam: Record<(typeof toggleKeys)[number], string> = {
   verified: 'verified',
-  safe: 'safe',
   offers: 'offer',
   auctions: 'auction',
 };
@@ -55,6 +56,10 @@ export function MarketPage() {
   const sort = params.get('sort') ?? 'relevance';
   const page = Math.max(1, Number(params.get('page')) || 1);
   const flag = (name: string) => params.get(name) === 'true';
+  // Tri-state: '' = any, 'true'/'false' = one side only.
+  const safe = params.get('safe') ?? '';
+  const negotiable = params.get('negotiable') ?? '';
+  const triState = (v: string) => (v === '' ? undefined : v === 'true');
 
   // Writing any filter resets to page 1; changing the page itself does not.
   const setParam = (k: string, v: string | null) => {
@@ -163,7 +168,8 @@ export function MarketPage() {
     minPrice: minPrice ? Math.round(Number(minPrice) * 100) : undefined,
     maxPrice: maxPrice ? Math.round(Number(maxPrice) * 100) : undefined,
     verified: flag('verified') || undefined,
-    safe: flag('safe') || undefined,
+    safe: triState(safe),
+    negotiable: triState(negotiable),
     offer: flag('offer') || undefined,
     auction: flag('auction') || undefined,
     sort: sort === 'relevance' ? undefined : sort,
@@ -231,11 +237,15 @@ export function MarketPage() {
   // Attribute facets for the current selection. The schema only has entries for
   // level-2 names, so a deep pick resolves to its nearest schema-bearing ancestor
   // — otherwise drilling past level 2 would wipe the facet list entirely.
+  // Facet lookups run on the CANONICAL ENGLISH names: the schema and the stored
+  // attribute values are keyed by them, so using the localized `category` param
+  // matched nothing and every non-English locale lost its facets entirely.
+  const categoryEn = selectedCategory ? schemaName(selectedCategory) : category;
   const attrSourceName = useMemo(
-    () => attributeSourceName(selectedSubcategoryPath, category) ?? subcategory,
-    [selectedSubcategoryPath, category, subcategory],
+    () => attributeSourceName(selectedSubcategoryPath, categoryEn) ?? schemaName(selectedSubcategory) ?? subcategory,
+    [selectedSubcategoryPath, categoryEn, selectedSubcategory, subcategory],
   );
-  const attrFields = useMemo(() => getFilterFields(category, attrSourceName), [category, attrSourceName]);
+  const attrFields = useMemo(() => getFilterFields(categoryEn, attrSourceName), [categoryEn, attrSourceName]);
 
   const subMatches = useMemo(() => {
     const needle = subQuery.trim().toLowerCase();
@@ -560,6 +570,26 @@ export function MarketPage() {
             </div>
           </div>
 
+          {/* deal type + price type — both directions are selectable, so a buyer
+              can ask for direct/fixed listings and not just their opposites */}
+          <div className="mt-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.dealType')}</p>
+            <select value={safe} onChange={(e) => setParam('safe', e.target.value || null)} className={inputCls}>
+              <option value="">{t('page.market.anyDeal')}</option>
+              <option value="true">{t('site.safeDeal')}</option>
+              <option value="false">{t('site.directDeal')}</option>
+            </select>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.priceType')}</p>
+            <select value={negotiable} onChange={(e) => setParam('negotiable', e.target.value || null)} className={inputCls}>
+              <option value="">{t('page.market.anyPrice')}</option>
+              <option value="true">{t('site.negotiable')}</option>
+              <option value="false">{t('site.fixedPrice')}</option>
+            </select>
+          </div>
+
           {/* deal toggles */}
           <div className="mt-5 space-y-2">
             {toggleKeys.map((tg) => {
@@ -607,7 +637,20 @@ export function MarketPage() {
                 )),
               )}
               {flag('verified') && <FilterChip label={t('page.market.chipVerified')} tone="green" onRemove={() => setParam('verified', null)} />}
-              {flag('safe') && <FilterChip label={t('page.market.chipSafe')} tone="green" onRemove={() => setParam('safe', null)} />}
+              {safe && (
+                <FilterChip
+                  label={safe === 'true' ? t('site.safeDeal') : t('site.directDeal')}
+                  tone="green"
+                  onRemove={() => setParam('safe', null)}
+                />
+              )}
+              {negotiable && (
+                <FilterChip
+                  label={negotiable === 'true' ? t('site.negotiable') : t('site.fixedPrice')}
+                  tone="mango"
+                  onRemove={() => setParam('negotiable', null)}
+                />
+              )}
               {flag('offer') && <FilterChip label={t('page.market.chipOffers')} tone="mango" onRemove={() => setParam('offer', null)} />}
               {flag('auction') && <FilterChip label={t('page.market.chipAuctions')} tone="mango" onRemove={() => setParam('auction', null)} />}
             </div>

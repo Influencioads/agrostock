@@ -3,6 +3,7 @@ export {
   COUNTRIES,
   countryFlag,
   countryIso2,
+  countryLabel,
   findCountry,
   type Country,
 } from './countries';

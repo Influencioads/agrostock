@@ -1,4 +1,9 @@
 {
+  "delivery": {
+    "delivery": "販売者が配達します",
+    "no_delivery": "配達も集荷もできません",
+    "self_pickup": "購入者による引き取り（自己配送）"
+  },
   "hire_status": {
     "accepted": "承認済み",
     "cancelled": "キャンセル",

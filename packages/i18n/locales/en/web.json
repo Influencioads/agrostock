@@ -1151,7 +1151,6 @@
       "marketName": "Market name",
       "country": "Country",
       "cityOptional": "City (optional)",
-      "flagOptional": "Flag emoji (optional)",
       "creating": "Creating…",
       "createMarket": "Create market",
       "productName": "Product name",
@@ -1160,7 +1159,7 @@
       "subcategory": "Subcategory",
       "none": "None",
       "optional": "Optional…",
-      "price": "Price (USD / MT)",
+      "price": "Price (per unit)",
       "grade": "Grade",
       "quantity": "Quantity",
       "moq": "MOQ",
@@ -1195,15 +1194,25 @@
       "delete": "Delete",
       "phName": "Premium Basmati Rice 1121",
       "phGrade": "Grade A",
-      "phDelivery": "Ready",
       "phCity": "Kandla",
       "phCountry": "India",
       "phMarketName": "Kandla Port",
-      "phQty": "500 MT",
-      "phMoq": "25 MT",
-      "phOrigin": "🇮🇳 India",
       "stock": "Stock (optional)",
-      "phStock": "e.g. 500 — blank = unlimited"
+      "phStock": "e.g. 500 — blank = unlimited",
+      "photoSizeHint": "Stored as 1080×1080 squares. At least 1080px on the longest side — anything narrower is letterboxed, not cropped.",
+      "marketAddress": "Address (optional)",
+      "phMarketAddress": "Gate 3, Ring Road",
+      "nameAuto": "Suggested from your selections: {{name}}",
+      "currency": "Currency",
+      "pickup": "Buyer collection",
+      "dealType": "Deal type",
+      "dealSafe": "Safe Deal (escrow protected)",
+      "dealDirect": "Direct deal (no escrow)",
+      "dealSafeHint": "Payment is held in escrow and released once the buyer confirms delivery.",
+      "dealDirectHint": "Buyer and seller settle payment between themselves — the platform holds nothing.",
+      "priceType": "Price type",
+      "priceFixed": "Fixed price",
+      "priceNegotiable": "Negotiable"
     },
     "ph": {
       "skill": "Forklift / Bagging",
@@ -1301,7 +1310,15 @@
       "toCity": "Dubai",
       "cargoQty": "Basmati Rice 50MT",
       "location": "Mundra Terminal 4"
-    }
+    },
+    "directDeal": "Direct deal",
+    "negotiable": "Negotiable",
+    "fixedPrice": "Fixed price",
+    "inStock": "In stock",
+    "outOfStock": "Out of stock",
+    "stockCount": "{{count}} {{unit}} in stock",
+    "chatSeller": "Chat with seller",
+    "chatNamed": "Chat with {{name}}"
   },
   "page": {
     "bids": {
@@ -1331,13 +1348,11 @@
       },
       "toggles": {
         "verified": "Verified Seller",
-        "safe": "Safe Deal",
         "offers": "Offers",
         "auctions": "Auctions",
         "intl": "International shipping"
       },
       "chipVerified": "Verified",
-      "chipSafe": "Safe Deal",
       "chipOffers": "Offers",
       "chipAuctions": "Auctions",
       "sortRelevance": "Sort: Relevance",
@@ -1358,7 +1373,11 @@
       "max": "Max",
       "prev": "Previous",
       "next": "Next",
-      "pageOf": "Page {{page}} of {{total}}"
+      "pageOf": "Page {{page}} of {{total}}",
+      "dealType": "Deal type",
+      "anyDeal": "Any deal type",
+      "priceType": "Price",
+      "anyPrice": "Any price type"
     },
     "directory": {
       "sellers": {
@@ -1614,7 +1633,8 @@
       "safeDealProtected": "Safe Deal Protected",
       "escrowNote": "Funds held in escrow until you confirm delivery.",
       "related": "You may also like",
-      "quoteRequested": "Quote requested — {{ref}}. The seller will respond with a price."
+      "quoteRequested": "Quote requested — {{ref}}. The seller will respond with a price.",
+      "directDealNote": "This listing is settled directly between buyer and seller. AgroTraders does not hold the payment."
     },
     "safeDeal": {
       "badge": "SafeDeal Escrow Protection",

@@ -55,6 +55,7 @@
     "void": "无效拍卖"
   },
   "audit": {
+    "actionPh": "Filter action (e.g. wallet, kyc, order)…",
     "detail": "细节",
     "empty": "没有匹配的审计条目。",
     "entityPh": "实体类型（用户、订单……）",
@@ -242,6 +243,33 @@
     "release": "放行给卖家",
     "sub_other": "{{count}} 未决争议"
   },
+  "emailTpl": {
+    "body": "正文（HTML）",
+    "close": "关闭",
+    "ctaLabel": "按钮标签",
+    "defaultBadge": "默认",
+    "disable": "禁用",
+    "disabled": "已禁用",
+    "edit": "编辑",
+    "editedBadge": "已编辑",
+    "enable": "使能够",
+    "enabled": "已启用",
+    "preview": "预览",
+    "previewTitle": "实时预览",
+    "reset": "重置为默认值",
+    "save": "保存更改",
+    "saved": "模板已保存",
+    "saving": "保存…",
+    "sendTest": "把测试结果发给我",
+    "sending": "正在发送…",
+    "smtpOff": "SMTP 未配置——模板可以编辑，但只有在设置 SMTP 后才能发送电子邮件。",
+    "sub": "编辑每封自动发送的电子邮件的文案。更改立即生效。",
+    "subject": "主题",
+    "testFailed": "无法发送（请检查SMTP配置）",
+    "testSent": "已向{{to}}发送测试邮件",
+    "variables": "您可以使用的变量",
+    "varsHint": "请使用双花括号插入，例如{{name}}。未知值或空值将显示为空白。"
+  },
   "genericError": "出错了，请重试。",
   "header": {
     "fallbackTitle": "行政",
@@ -311,6 +339,7 @@
     "awaiting": "{{count}} 等待审核",
     "edit": "编辑",
     "editMarket": "编辑市场",
+    "fAddress": "地址",
     "fCity": "城市",
     "fCountry": "国家",
     "fFlag": "旗帜表情符号",
@@ -319,6 +348,7 @@
     "hidden": "隐",
     "hide": "隐藏",
     "pending": "待办的",
+    "phAddress": "环路3号门",
     "phCity": "德里",
     "phCountry": "🇮🇳 印度",
     "phFlag": "🇮🇳",
@@ -342,6 +372,7 @@
     "cms": "CMS",
     "community": "社区",
     "disputes": "争议",
+    "emailTemplates": "电子邮件模板",
     "invoices": "发票",
     "kyc": "KYC 评论",
     "loaders": "装载机",
@@ -407,6 +438,7 @@
   "overview": {
     "approvalQueue": "审批队列",
     "gmv": "商品总值",
+    "lastMonths": "last {{count}} months",
     "noRecent": "近期无活动。",
     "noSettledYet": "目前尚未有已结算订单。",
     "nothingAwaiting": "暂无待审核事项🎉",
@@ -520,6 +552,7 @@
       "week": "星期"
     },
     "recentTxns": "近期交易",
+    "rejectReason": "拒绝此付款的原因（将向用户显示）：",
     "requested": "请求 {{date}}",
     "searchUser": "按姓名或电子邮件地址搜索用户……",
     "shownCount": "{{count}} 显示",
@@ -528,8 +561,7 @@
       "payouts": "派息",
       "totalBalance": "钱包总余额",
       "wallets": "钱包"
-    },
-    "rejectReason": "拒绝此付款的原因（将向用户显示）："
+    }
   },
   "perm": {
     "ads_moderate": "广告",
@@ -540,6 +572,7 @@
     "cms_manage": "CMS 页",
     "community_moderate": "社区",
     "disputes_manage": "争议",
+    "email_templates": "电子邮件模板",
     "finance_manage": "金融（钱包/支付）",
     "kyc_review": "KYC 评论",
     "loaders_manage": "装载机",
@@ -559,6 +592,40 @@
     "body": "该模块采用相同的布局、表格和组件。随着后端阶段的推进，与实时数据的连接仍在继续。",
     "docs": "查看文档"
   },
+  "prodEdit": {
+    "addPhoto": "添加",
+    "auction": "拍卖",
+    "category": "类别",
+    "city": "城市",
+    "country": "国家",
+    "cover": "覆盖",
+    "delivery": "送货",
+    "details": "产品详情",
+    "grade": "年级",
+    "market": "市场",
+    "moq": "MOQ",
+    "name": "产品名称",
+    "negotiable": "可协商",
+    "offer": "提供",
+    "origin": "起源",
+    "photoHint": "首先是封面，存储格式为 1080×1080",
+    "photos": "照片",
+    "price": "单价",
+    "qty": "数量",
+    "remove": "消除",
+    "safeDeal": "安全交易（第三方托管）",
+    "save": "保存更改",
+    "saveError": "无法保存列表 - 请检查字段。",
+    "saving": "保存…",
+    "select": "选择…",
+    "stock": "库存",
+    "subcategory": "子类别",
+    "title": "编辑“{{name}}”",
+    "unit": "单元",
+    "uploadFailed": "上传失败。",
+    "uploading": "正在上传…",
+    "verified": "已验证"
+  },
   "prodMod": {
     "allTypes": "所有类型",
     "approve": "批准",
@@ -569,6 +636,7 @@
     "colSeller": "卖方",
     "colStatus": "地位",
     "confirm": "确认",
+    "confirmTakedown": "从市场隐藏此商品？",
     "edit": "编辑",
     "fName": "姓名",
     "fPrice": "价格",
@@ -593,13 +661,12 @@
       "auction": "拍卖",
       "offer": "提供",
       "safedeal": "安全交易"
-    },
-    "confirmTakedown": "从市场隐藏此商品？"
+    }
   },
   "profile": {
     "active": "积极的",
-    "inactive": "不活跃",
     "currentPassword": "当前密码",
+    "inactive": "不活跃",
     "newPassword": "新密码",
     "noPermissions": "未分配任何模块权限。",
     "passwordError": "无法更改密码。",
@@ -617,6 +684,10 @@
     "allTime": "所有时间",
     "from": "从",
     "to": "到"
+  },
+  "rbac": {
+    "deniedBody": "您没有查看此部分的权限。如需访问，请联系超级管理员。",
+    "deniedTitle": "无访问权限"
   },
   "reports": {
     "exportCsv": "导出 CSV",
@@ -790,11 +861,15 @@
     "activity": "活动",
     "addRole": "添加角色…",
     "adminOnly": "仅限管理员",
+    "confirmDeactivate": "停用此账户？用户将被登出且无法登录。",
+    "confirmDelete": "永久删除此账户？此操作无法撤销。有订单、商品或财务记录的用户无法删除——请改为停用。",
     "contactEmail": "联系邮箱",
     "country": "国家",
     "dangerBody": "停用会将用户登出并阻止登录，但保留其数据且可撤销。永久删除会移除账户且无法撤销。",
     "dangerZone": "危险区域",
     "deactivate": "停用帐户",
+    "deleteBlocked": "该用户有交易、财务或支持记录，无法永久删除。请改为停用该账户。",
+    "deletePermanently": "永久删除",
     "deleting": "正在删除…",
     "editDetails": "编辑详情",
     "email": "电子邮件",
@@ -807,18 +882,14 @@
     "phone": "电话",
     "primary": "（基本的）",
     "privateContact": "私人联系",
+    "reactivate": "重新启用账户",
     "revokeRole": "撤销角色",
     "roles": "角色",
     "saveChanges": "保存更改",
     "saving": "保存…",
     "title": "管理用户",
     "wallet": "钱包",
-    "whatsapp": "WhatsApp",
-    "confirmDeactivate": "停用此账户？用户将被登出且无法登录。",
-    "reactivate": "重新启用账户",
-    "deletePermanently": "永久删除",
-    "confirmDelete": "永久删除此账户？此操作无法撤销。有订单、商品或财务记录的用户无法删除——请改为停用。",
-    "deleteBlocked": "该用户有交易、财务或支持记录，无法永久删除。请改为停用该账户。"
+    "whatsapp": "WhatsApp"
   },
   "users": {
     "createActive": "积极的",
@@ -836,9 +907,5 @@
     "subtitle": "{{shown}} 共 {{total}} 个账户",
     "title": "用户",
     "view": "看法"
-  },
-  "rbac": {
-    "deniedTitle": "无访问权限",
-    "deniedBody": "您没有查看此部分的权限。如需访问，请联系超级管理员。"
   }
 }

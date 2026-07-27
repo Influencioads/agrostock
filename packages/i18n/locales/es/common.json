@@ -4,12 +4,15 @@
   "close": "Cerrar",
   "create": "Crear",
   "dashboard": "Panel",
+  "errorBody": "No pudimos cargar esto. Comprueba tu conexión e inténtalo de nuevo.",
+  "errorTitle": "Algo salió mal",
   "language": "Idioma",
   "loading": "Cargando…",
   "logOut": "Cerrar sesión",
   "menu": "Menú",
   "no": "No",
   "post": "Correo",
+  "retry": "Reintentar",
   "save": "Ahorrar",
   "search": "Buscar",
   "send": "Enviar",
@@ -51,8 +54,5 @@
     "user": "Usuario"
   },
   "viewAll": "Ver todo",
-  "yes": "Sí",
-  "errorTitle": "Algo salió mal",
-  "errorBody": "No pudimos cargar esto. Comprueba tu conexión e inténtalo de nuevo.",
-  "retry": "Reintentar"
+  "yes": "Sí"
 }

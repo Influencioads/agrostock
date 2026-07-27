@@ -1,4 +1,9 @@
 {
+  "delivery": {
+    "delivery": "卖家发货",
+    "no_delivery": "不提供送货或自取服务",
+    "self_pickup": "买家自提（自行交付）"
+  },
   "hire_status": {
     "accepted": "公认",
     "cancelled": "取消",

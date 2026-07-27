@@ -6,6 +6,7 @@ const withCategory: Filters = {
   selection: {
     categoryId: 'cat1',
     categoryName: 'Grains',
+    categoryNameEn: 'Grains',
     subcategoryId: 'sub9',
     subcategoryName: 'Durum',
     trail: ['Grains', 'Wheat', 'Durum'],

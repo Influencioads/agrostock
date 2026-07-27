@@ -55,6 +55,7 @@
     "void": "Leilão nulo"
   },
   "audit": {
+    "actionPh": "Filter action (e.g. wallet, kyc, order)…",
     "detail": "Detalhe",
     "empty": "Nenhuma das entradas de auditoria corresponde.",
     "entityPh": "Tipo de entidade (Usuário, Pedido…)",
@@ -244,6 +245,33 @@
     "sub_one": "{{count}} disputas abertas",
     "sub_other": "{{count}} disputas abertas"
   },
+  "emailTpl": {
+    "body": "Corpo (HTML)",
+    "close": "Fechar",
+    "ctaLabel": "Rótulo do botão",
+    "defaultBadge": "Padrão",
+    "disable": "Desativar",
+    "disabled": "Desabilitado",
+    "edit": "Editar",
+    "editedBadge": "Editado",
+    "enable": "Habilitar",
+    "enabled": "Habilitado",
+    "preview": "Pré-visualização",
+    "previewTitle": "Pré-visualização ao vivo",
+    "reset": "Restaurar para as configurações padrão",
+    "save": "Salvar alterações",
+    "saved": "Modelo salvo",
+    "saving": "Salvando…",
+    "sendTest": "Envie-me o teste",
+    "sending": "Enviando…",
+    "smtpOff": "O SMTP não está configurado — os modelos são editáveis, mas os e-mails não serão entregues até que o SMTP seja configurado.",
+    "sub": "Edite o texto de todos os e-mails automatizados. As alterações serão aplicadas imediatamente.",
+    "subject": "Assunto",
+    "testFailed": "Não foi possível enviar (verifique a configuração SMTP)",
+    "testSent": "E-mail de teste enviado para {{to}}",
+    "variables": "Variáveis que você pode usar",
+    "varsHint": "Insira com chaves duplas, por exemplo, {{name}}. Valores desconhecidos ou vazios ficam em branco."
+  },
   "genericError": "Algo deu errado. Por favor, tente novamente.",
   "header": {
     "fallbackTitle": "Administrador",
@@ -313,6 +341,7 @@
     "awaiting": "{{count}} aguardando revisão",
     "edit": "Editar",
     "editMarket": "Editar mercado",
+    "fAddress": "Endereço",
     "fCity": "Cidade",
     "fCountry": "País",
     "fFlag": "Emoji de bandeira",
@@ -321,6 +350,7 @@
     "hidden": "Escondido",
     "hide": "Esconder",
     "pending": "Pendente",
+    "phAddress": "Portão 3, Anel Viário",
     "phCity": "Délhi",
     "phCountry": "🇮🇳 Índia",
     "phFlag": "🇮🇳",
@@ -344,6 +374,7 @@
     "cms": "CMS",
     "community": "Comunidade",
     "disputes": "Disputas",
+    "emailTemplates": "Modelos de e-mail",
     "invoices": "Faturas",
     "kyc": "KYC Avaliação",
     "loaders": "Carregadeiras",
@@ -523,6 +554,7 @@
       "week": "Semana"
     },
     "recentTxns": "Transações recentes",
+    "rejectReason": "Motivo para rejeitar este pagamento (mostrado ao utilizador):",
     "requested": "solicitado {{date}}",
     "searchUser": "Pesquise um usuário pelo nome ou e-mail…",
     "shownCount": "{{count}} mostrado",
@@ -531,8 +563,7 @@
       "payouts": "Pagamentos",
       "totalBalance": "Saldo total da carteira",
       "wallets": "Carteiras"
-    },
-    "rejectReason": "Motivo para rejeitar este pagamento (mostrado ao utilizador):"
+    }
   },
   "perm": {
     "ads_moderate": "Anúncios",
@@ -543,6 +574,7 @@
     "cms_manage": "CMS páginas",
     "community_moderate": "Comunidade",
     "disputes_manage": "Disputas",
+    "email_templates": "Modelos de e-mail",
     "finance_manage": "Finanças (carteiras/pagamentos)",
     "kyc_review": "KYC revisão",
     "loaders_manage": "Carregadeiras",
@@ -562,6 +594,40 @@
     "body": "Este módulo compartilha o mesmo layout, tabelas e componentes. A conexão com os dados em tempo real continua à medida que as fases de implementação do backend são concluídas.",
     "docs": "Ver documentação"
   },
+  "prodEdit": {
+    "addPhoto": "Adicionar",
+    "auction": "Leilão",
+    "category": "Categoria",
+    "city": "Cidade",
+    "country": "País",
+    "cover": "Cobrir",
+    "delivery": "Entrega",
+    "details": "Detalhes do produto",
+    "grade": "Nota",
+    "market": "Mercado",
+    "moq": "MOQ",
+    "name": "Nome do produto",
+    "negotiable": "Negociável",
+    "offer": "Oferecer",
+    "origin": "Origem",
+    "photoHint": "Primeiro, a capa · armazenada em 1080×1080",
+    "photos": "Fotos",
+    "price": "Preço (por unidade)",
+    "qty": "Quantidade",
+    "remove": "Remover",
+    "safeDeal": "Negócio seguro (garantia)",
+    "save": "Salvar alterações",
+    "saveError": "Não foi possível salvar o anúncio — verifique os campos.",
+    "saving": "Salvando…",
+    "select": "Selecione…",
+    "stock": "Estoque",
+    "subcategory": "Subcategoria",
+    "title": "Editar “{{name}}”",
+    "unit": "Unidade",
+    "uploadFailed": "O envio falhou.",
+    "uploading": "Carregando…",
+    "verified": "Verificado"
+  },
   "prodMod": {
     "allTypes": "Todos os tipos",
     "approve": "Aprovar",
@@ -572,6 +638,7 @@
     "colSeller": "Vendedor",
     "colStatus": "Status",
     "confirm": "Confirmar",
+    "confirmTakedown": "Ocultar este anúncio do mercado?",
     "edit": "Editar",
     "fName": "Nome",
     "fPrice": "Preço",
@@ -596,13 +663,12 @@
       "auction": "leilão",
       "offer": "oferecer",
       "safedeal": "negócio seguro"
-    },
-    "confirmTakedown": "Ocultar este anúncio do mercado?"
+    }
   },
   "profile": {
     "active": "ativo",
-    "inactive": "inativo",
     "currentPassword": "Senha atual",
+    "inactive": "inativo",
     "newPassword": "Nova Senha",
     "noPermissions": "Nenhuma permissão de módulo atribuída.",
     "passwordError": "Não foi possível alterar a senha.",
@@ -620,6 +686,10 @@
     "allTime": "O tempo todo",
     "from": "De",
     "to": "Para"
+  },
+  "rbac": {
+    "deniedBody": "Não tem permissão para ver esta secção. Peça a um super-admin se precisar.",
+    "deniedTitle": "Sem acesso"
   },
   "reports": {
     "exportCsv": "Exportar CSV",
@@ -793,11 +863,15 @@
     "activity": "Atividade",
     "addRole": "Adicionar uma função…",
     "adminOnly": "somente para administradores",
+    "confirmDeactivate": "Desativar esta conta? O utilizador terá sessão terminada e não poderá entrar.",
+    "confirmDelete": "Excluir permanentemente esta conta? Isto não pode ser desfeito. Utilizadores com pedidos, produtos ou histórico financeiro não podem ser excluídos — desative-os em vez disso.",
     "contactEmail": "E-mail de contato",
     "country": "País",
     "dangerBody": "Desativar encerra a sessão do utilizador e bloqueia o login, mas mantém os seus dados e é reversível. Excluir permanentemente remove a conta e não pode ser desfeito.",
     "dangerZone": "Zona de perigo",
     "deactivate": "Desativar conta",
+    "deleteBlocked": "Este utilizador tem registos comerciais, financeiros ou de suporte e não pode ser excluído permanentemente. Desative a conta em vez disso.",
+    "deletePermanently": "Excluir permanentemente",
     "deleting": "Excluindo…",
     "editDetails": "Editar detalhes",
     "email": "E-mail",
@@ -810,18 +884,14 @@
     "phone": "Telefone",
     "primary": "(primário)",
     "privateContact": "Contato privado",
+    "reactivate": "Reativar conta",
     "revokeRole": "Revogar função",
     "roles": "Funções",
     "saveChanges": "Salvar alterações",
     "saving": "Salvando…",
     "title": "Gerenciar usuário",
     "wallet": "Carteira",
-    "whatsapp": "WhatsApp",
-    "confirmDeactivate": "Desativar esta conta? O utilizador terá sessão terminada e não poderá entrar.",
-    "reactivate": "Reativar conta",
-    "deletePermanently": "Excluir permanentemente",
-    "confirmDelete": "Excluir permanentemente esta conta? Isto não pode ser desfeito. Utilizadores com pedidos, produtos ou histórico financeiro não podem ser excluídos — desative-os em vez disso.",
-    "deleteBlocked": "Este utilizador tem registos comerciais, financeiros ou de suporte e não pode ser excluído permanentemente. Desative a conta em vez disso."
+    "whatsapp": "WhatsApp"
   },
   "users": {
     "createActive": "Ativo",
@@ -839,9 +909,5 @@
     "subtitle": "{{shown}} de {{total}} contas",
     "title": "Usuários",
     "view": "Visualizar"
-  },
-  "rbac": {
-    "deniedTitle": "Sem acesso",
-    "deniedBody": "Não tem permissão para ver esta secção. Peça a um super-admin se precisar."
   }
 }

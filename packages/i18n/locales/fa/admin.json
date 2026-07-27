@@ -20,6 +20,7 @@
     "live": "زنده",
     "liveNow": "همین حالا زندگی کن",
     "noneAwaiting": "هیچ کمپینی در انتظار بررسی نیست.",
+    "noneFilter": "No {{filter}} campaigns.",
     "nothingHere": "اینجا هیچی نیست",
     "paused": "مکث کرد",
     "pending": "در حال بررسی",
@@ -145,15 +146,18 @@
     "empty": "هنوز دسته‌بندی‌ای وجود ندارد. اولین دسته‌بندی را اضافه کنید.",
     "expand": "گسترش",
     "modalAddCategory": "افزودن دسته",
+    "modalAddChild": "Add child under {{name}}",
     "modalAddSub": "زیرشاخه را به {{name}} اضافه کنید",
     "modalEditCategory": "ویرایش رده",
     "modalEditSub": "ویرایش زیررده",
+    "nodeStats": "{{products}} products · {{children}} child levels",
     "phCat": "مثلاً میوه‌ها",
     "phSub": "مثلاً برنج باسماتی",
     "productsCount": "{{count}} محصول",
     "save": "ذخیره",
     "saving": "در حال ذخیره…",
-    "subName": "نام زیرگروه"
+    "subName": "نام زیرگروه",
+    "subStats": "{{subs}} subcategories · {{products}} products"
   },
   "cmsAdmin": {
     "draft": "پیش نویس",
@@ -175,7 +179,9 @@
     "fEmoji": "ایموجی",
     "fName": "نام",
     "glance": "انجمن در یک نگاه",
+    "groupStats": "{{members}} members · {{posts}} posts · {{messages}} messages",
     "groupsCount": "گروه‌ها ({{count}})",
+    "inGroup": "in {{name}}",
     "metric": {
       "groups": "گروه‌ها",
       "messages": "پیام‌ها",
@@ -203,6 +209,7 @@
     "colActions": "اقدامات",
     "colCompany": "شرکت",
     "colListing": "فهرست",
+    "crew": "Crew ({{count}})",
     "detail": "جزئیات شرکت",
     "drivers": "رانندگان",
     "fleet": "ناوگان ({{count}})",
@@ -237,6 +244,33 @@
     "sub_one": "{{count}} اختلافات آشکار",
     "sub_other": "{{count}} اختلافات آشکار"
   },
+  "emailTpl": {
+    "body": "بدنه (HTML)",
+    "close": "بستن",
+    "ctaLabel": "برچسب دکمه",
+    "defaultBadge": "پیش‌فرض",
+    "disable": "غیرفعال کردن",
+    "disabled": "معلول",
+    "edit": "ویرایش",
+    "editedBadge": "ویرایش شده",
+    "enable": "فعال کردن",
+    "enabled": "فعال شده",
+    "preview": "پیش‌نمایش",
+    "previewTitle": "پیش‌نمایش زنده",
+    "reset": "تنظیم مجدد به حالت پیش‌فرض",
+    "save": "ذخیره تغییرات",
+    "saved": "الگو ذخیره شد",
+    "saving": "در حال ذخیره…",
+    "sendTest": "تست رو برای من ارسال کنید",
+    "sending": "در حال ارسال…",
+    "smtpOff": "SMTP پیکربندی نشده است — قالب‌ها قابل ویرایش هستند اما ایمیل‌ها تا زمانی که SMTP تنظیم نشود، تحویل داده نمی‌شوند.",
+    "sub": "متن هر ایمیل خودکار را ویرایش کنید. تغییرات بلافاصله اعمال می‌شوند.",
+    "subject": "موضوع",
+    "testFailed": "ارسال انجام نشد (پیکربندی SMTP را بررسی کنید)",
+    "testSent": "ایمیل آزمایشی به {{to}} ارسال شد",
+    "variables": "متغیرهایی که می‌توانید استفاده کنید",
+    "varsHint": "با دو آکولاد وارد کنید، مثلاً {{name}}. مقادیر ناشناخته یا خالی، خالی نمایش داده می‌شوند."
+  },
   "genericError": "مشکلی پیش آمده است. لطفا دوباره امتحان کنید.",
   "header": {
     "fallbackTitle": "مدیر",
@@ -244,6 +278,7 @@
   },
   "hires": {
     "empty": "هنوز درخواست استخدامی ثبت نشده است.",
+    "subtitle": "{{count}} direct-hire requests — accepted ones convert into trips or loader jobs.",
     "title": "عملیات استخدامی"
   },
   "invoicesAdmin": {
@@ -272,10 +307,13 @@
     "allReviewed": "همه مطالب ارسالی بررسی شد. کار عالی بود.",
     "approve": "تأیید",
     "confirmReject": "تایید، رد",
+    "daysAgo": "{{count}} days ago",
     "docs": "اسناد",
     "docsCount": "{{count}} اسناد",
+    "hoursAgo": "{{count}} hr ago",
     "justNow": "همین الان",
     "noDocs": "هنوز هیچ مدرکی آپلود نشده است.",
+    "noneFilter": "No {{filter}} submissions.",
     "nothingHere": "اینجا هیچی نیست",
     "queueCleared": "صف پاک شد",
     "reject": "رد کردن",
@@ -302,6 +340,7 @@
     "awaiting": "{{count}} در انتظار بررسی",
     "edit": "ویرایش",
     "editMarket": "ویرایش بازار",
+    "fAddress": "آدرس",
     "fCity": "شهر",
     "fCountry": "کشور",
     "fFlag": "ایموجی پرچم",
@@ -310,6 +349,7 @@
     "hidden": "پنهان",
     "hide": "پنهان کردن",
     "pending": "در حال بررسی",
+    "phAddress": "دروازه ۳، جاده کمربندی",
     "phCity": "دهلی",
     "phCountry": "🇮🇳 هند",
     "phFlag": "🇮🇳",
@@ -333,6 +373,7 @@
     "cms": "CMS",
     "community": "جامعه",
     "disputes": "اختلافات",
+    "emailTemplates": "قالب‌های ایمیل",
     "invoices": "فاکتورها",
     "kyc": "KYC نقد و بررسی",
     "loaders": "لودرها",
@@ -398,6 +439,7 @@
   "overview": {
     "approvalQueue": "صف تأیید",
     "gmv": "ارزش ناخالص کالا",
+    "lastMonths": "last {{count}} months",
     "noRecent": "فعالیت اخیری وجود ندارد.",
     "noSettledYet": "هنوز هیچ سفارشی تسویه نشده است.",
     "nothingAwaiting": "چیزی در انتظار بررسی نیست 🎉",
@@ -432,6 +474,7 @@
       "title": "برندسازی"
     },
     "categories": {
+      "subtitle": "{{categories}} categories · {{subcategories}} subcategories",
       "title": "دسته‌ها"
     },
     "community": {
@@ -439,6 +482,7 @@
       "title": "اعتدال جامعه"
     },
     "disputes": {
+      "subtitle": "{{count}} cases · escrow protected",
       "title": "اختلافات"
     },
     "invoices": {
@@ -453,9 +497,11 @@
       "title": "نیروی کار لودر"
     },
     "markets": {
+      "subtitle": "{{count}} trade markets — sellers attach themselves and buyers filter by these.",
       "title": "بازارها"
     },
     "offices": {
+      "subtitle": "{{count}} offices",
       "title": "دفاتر جهانی"
     },
     "overview": {
@@ -507,6 +553,7 @@
       "week": "هفته"
     },
     "recentTxns": "تراکنش‌های اخیر",
+    "rejectReason": "دلیل رد این پرداخت (به کاربر نشان داده می‌شود):",
     "requested": "درخواست شده {{date}}",
     "searchUser": "جستجوی کاربر بر اساس نام یا ایمیل…",
     "shownCount": "{{count}} نشان داده شده است",
@@ -515,8 +562,7 @@
       "payouts": "پرداخت‌ها",
       "totalBalance": "کل موجودی کیف پول",
       "wallets": "کیف پول‌ها"
-    },
-    "rejectReason": "دلیل رد این پرداخت (به کاربر نشان داده می‌شود):"
+    }
   },
   "perm": {
     "ads_moderate": "تبلیغات",
@@ -524,8 +570,10 @@
     "audit_view": "گزارش حسابرسی",
     "bids_manage": "پیشنهادهای خریدار",
     "branding_manage": "برندسازی",
+    "cms_manage": "CMS pages",
     "community_moderate": "جامعه",
     "disputes_manage": "اختلافات",
+    "email_templates": "قالب‌های ایمیل",
     "finance_manage": "امور مالی (کیف پول/پرداخت)",
     "kyc_review": "KYC نقد و بررسی",
     "loaders_manage": "لودرها",
@@ -545,6 +593,40 @@
     "body": "این ماژول از همان طرح‌بندی، جداول و کامپوننت‌ها استفاده می‌کند. اتصال به داده‌های زنده با اجرای فازهای backend ادامه می‌یابد.",
     "docs": "مشاهده مستندات"
   },
+  "prodEdit": {
+    "addPhoto": "اضافه کردن",
+    "auction": "حراج",
+    "category": "دسته بندی",
+    "city": "شهر",
+    "country": "کشور",
+    "cover": "پوشش",
+    "delivery": "تحویل",
+    "details": "جزئیات محصول",
+    "grade": "درجه",
+    "market": "بازار",
+    "moq": "MOQ",
+    "name": "نام محصول",
+    "negotiable": "قابل مذاکره",
+    "offer": "پیشنهاد",
+    "origin": "مبدا",
+    "photoHint": "اول جلد است · با ابعاد 1080×1080 ذخیره شده است",
+    "photos": "عکس‌ها",
+    "price": "قیمت (به ازای هر واحد)",
+    "qty": "مقدار",
+    "remove": "حذف",
+    "safeDeal": "معامله امن (سپرده)",
+    "save": "ذخیره تغییرات",
+    "saveError": "نتوانستم آگهی را ذخیره کنم — فیلدها را بررسی کنید.",
+    "saving": "در حال ذخیره…",
+    "select": "انتخاب کنید…",
+    "stock": "سهام",
+    "subcategory": "زیرشاخه",
+    "title": "Edit “{{name}}”",
+    "unit": "واحد",
+    "uploadFailed": "آپلود ناموفق بود.",
+    "uploading": "در حال آپلود…",
+    "verified": "تأیید شده"
+  },
   "prodMod": {
     "allTypes": "همه انواع",
     "approve": "تأیید",
@@ -555,6 +637,7 @@
     "colSeller": "فروشنده",
     "colStatus": "وضعیت",
     "confirm": "تأیید",
+    "confirmTakedown": "این آگهی از بازار پنهان شود؟",
     "edit": "ویرایش",
     "fName": "نام",
     "fPrice": "قیمت",
@@ -579,13 +662,12 @@
       "auction": "حراج",
       "offer": "پیشنهاد",
       "safedeal": "سیف دیل"
-    },
-    "confirmTakedown": "این آگهی از بازار پنهان شود؟"
+    }
   },
   "profile": {
     "active": "فعال",
-    "inactive": "غیرفعال",
     "currentPassword": "رمز عبور فعلی",
+    "inactive": "غیرفعال",
     "newPassword": "رمز عبور جدید",
     "noPermissions": "هیچ مجوز ماژولی اختصاص داده نشده است.",
     "passwordError": "رمز عبور را نتوانستم تغییر دهم.",
@@ -603,6 +685,10 @@
     "allTime": "تمام وقت",
     "from": "از",
     "to": "به"
+  },
+  "rbac": {
+    "deniedBody": "شما اجازه مشاهده این بخش را ندارید. در صورت نیاز از سوپرادمین بخواهید.",
+    "deniedTitle": "عدم دسترسی"
   },
   "reports": {
     "exportCsv": "صادرات CSV",
@@ -654,6 +740,7 @@
     "save": "ذخیره",
     "saving": "در حال ذخیره…",
     "searchPh": "جستجوی متن، ارزیاب یا بررسی شونده…",
+    "starAria": "{{count}} stars",
     "status": {
       "all": "همه",
       "hidden": "پنهان",
@@ -775,11 +862,15 @@
     "activity": "فعالیت",
     "addRole": "اضافه کردن نقش…",
     "adminOnly": "فقط مدیر",
+    "confirmDeactivate": "این حساب غیرفعال شود؟ کاربر خارج می‌شود و نمی‌تواند وارد شود.",
+    "confirmDelete": "این حساب برای همیشه حذف شود؟ این کار قابل بازگشت نیست. کاربرانی که سفارش، محصول یا سابقه مالی دارند قابل حذف نیستند — به‌جای آن آن‌ها را غیرفعال کنید.",
     "contactEmail": "ایمیل تماس",
     "country": "کشور",
     "dangerBody": "غیرفعال‌سازی کاربر را خارج می‌کند و ورود را مسدود می‌کند، اما داده‌های او را نگه می‌دارد و قابل بازگشت است. حذف دائمی حساب را حذف می‌کند و قابل بازگشت نیست.",
     "dangerZone": "منطقه خطر",
     "deactivate": "غیرفعال کردن حساب کاربری",
+    "deleteBlocked": "این کاربر سوابق تجاری، مالی یا پشتیبانی دارد و نمی‌تواند برای همیشه حذف شود. به‌جای آن حساب را غیرفعال کنید.",
+    "deletePermanently": "حذف دائمی",
     "deleting": "در حال حذف…",
     "editDetails": "جزئیات را ویرایش کنید",
     "email": "ایمیل",
@@ -792,18 +883,14 @@
     "phone": "تلفن",
     "primary": "(اولیه)",
     "privateContact": "تماس خصوصی",
+    "reactivate": "فعال‌سازی مجدد حساب",
     "revokeRole": "لغو نقش",
     "roles": "نقش‌ها",
     "saveChanges": "ذخیره تغییرات",
     "saving": "در حال ذخیره…",
     "title": "مدیریت کاربر",
     "wallet": "کیف پول",
-    "whatsapp": "واتساپ",
-    "confirmDeactivate": "این حساب غیرفعال شود؟ کاربر خارج می‌شود و نمی‌تواند وارد شود.",
-    "reactivate": "فعال‌سازی مجدد حساب",
-    "deletePermanently": "حذف دائمی",
-    "confirmDelete": "این حساب برای همیشه حذف شود؟ این کار قابل بازگشت نیست. کاربرانی که سفارش، محصول یا سابقه مالی دارند قابل حذف نیستند — به‌جای آن آن‌ها را غیرفعال کنید.",
-    "deleteBlocked": "این کاربر سوابق تجاری، مالی یا پشتیبانی دارد و نمی‌تواند برای همیشه حذف شود. به‌جای آن حساب را غیرفعال کنید."
+    "whatsapp": "واتساپ"
   },
   "users": {
     "createActive": "فعال",
@@ -818,11 +905,8 @@
     "filterAll": "همه",
     "invite": "دعوت از کاربر",
     "searchPlaceholder": "جستجوی نام یا ایمیل…",
+    "subtitle": "{{shown}} of {{total}} accounts",
     "title": "کاربران",
     "view": "مشاهده"
-  },
-  "rbac": {
-    "deniedTitle": "عدم دسترسی",
-    "deniedBody": "شما اجازه مشاهده این بخش را ندارید. در صورت نیاز از سوپرادمین بخواهید."
   }
 }

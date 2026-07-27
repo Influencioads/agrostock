@@ -4,12 +4,15 @@
   "close": "关闭",
   "create": "创造",
   "dashboard": "仪表板",
+  "errorBody": "无法加载。请检查网络连接后重试。",
+  "errorTitle": "出错了",
   "language": "语言",
   "loading": "加载中…",
   "logOut": "退出登录",
   "menu": "菜单",
   "no": "不",
   "post": "邮政",
+  "retry": "重试",
   "save": "节省",
   "search": "搜索",
   "send": "发送",
@@ -51,8 +54,5 @@
     "user": "用户"
   },
   "viewAll": "查看全部",
-  "yes": "是的",
-  "errorTitle": "出错了",
-  "errorBody": "无法加载。请检查网络连接后重试。",
-  "retry": "重试"
+  "yes": "是的"
 }

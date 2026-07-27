@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BrandMark, Button, Card, Combobox, Icon, Input, type IconName } from '@agrotraders/ui';
-import { ALL_COUNTRIES } from '@agrotraders/geo';
+import { ALL_COUNTRIES, countryLabel } from '@agrotraders/geo';
 import { isPendingVerification, validateSignupPassword } from '@agrotraders/api-client';
 import { useAuth } from '../auth/AuthContext';
 import { useBranding } from '../branding/BrandingProvider';
@@ -25,7 +25,7 @@ const roles: { id: string; icon: IconName }[] = [
 ];
 
 export function RegisterPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { register } = useAuth();
   const { logoSrc } = useBranding();
   const navigate = useNavigate();
@@ -258,7 +258,7 @@ export function RegisterPage() {
                   <option value="">{t('page.register.pickCountry')}</option>
                   {ALL_COUNTRIES.map((c) => (
                     <option key={c.iso2} value={c.name}>
-                      {c.flag} {c.name}
+                      {c.flag} {countryLabel(c.name, lang)}
                     </option>
                   ))}
                 </select>

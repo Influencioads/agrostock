@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
-import { countryFlag } from '@agrotraders/api-client';
-import { getAttributeFields, unitSuffix } from '@agrotraders/types';
+import { countryFlag, countryLabel } from '@agrotraders/api-client';
+import { getAttributeFields, isDeliveryOption, unitSuffix } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, toCardProduct } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
@@ -20,7 +20,7 @@ import { useDocumentTitle } from '../lib/useDocumentTitle';
 const thumbs = ['🌾', '📦', '🚢', '📄', '🏭'];
 
 export function ProductPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -185,9 +185,17 @@ export function ProductPage() {
                     </button>
                   ))}
                 </div>
-                <div className="flex h-72 items-center justify-center overflow-hidden rounded-xl bg-brand-surface text-8xl">
+                {/* Photos are stored as 1080×1080 squares, so the stage is square too — contain
+                    keeps the whole product visible even for non-square legacy/mock images. */}
+                <div className="flex aspect-square w-full max-w-[540px] items-center justify-center overflow-hidden rounded-xl bg-brand-surface text-8xl">
                   {hasPhotos ? (
-                    <img src={tiles[current]} alt={product.name} className="h-full w-full object-cover" />
+                    <img
+                      src={tiles[current]}
+                      alt={product.name}
+                      width={1080}
+                      height={1080}
+                      className="h-full w-full object-contain"
+                    />
                   ) : (
                     tiles[current]
                   )}
@@ -203,7 +211,11 @@ export function ProductPage() {
                   {t('page.product.verifiedSeller')}
                 </Badge>
               )}
-              {product.safe && <Badge tone="green">{t('site.safeDeal')}</Badge>}
+              {/* Both states are labelled — see ProductCard. */}
+              <Badge tone={product.safe ? 'green' : 'slate'}>{product.safe ? t('site.safeDeal') : t('site.directDeal')}</Badge>
+              <Badge tone={product.negotiable ? 'mango' : 'slate'}>
+                {product.negotiable ? t('site.negotiable') : t('site.fixedPrice')}
+              </Badge>
               {/* F29: only show a rating backed by real reviews — never the
                   cosmetic legacy "4.8" fallback. */}
               {reviewSummary && reviewSummary.count > 0 && (
@@ -236,7 +248,7 @@ export function ProductPage() {
             {(product.city || product.country) && (
               <p className="mt-2 flex items-center gap-1.5 text-sm text-ink-soft">
                 <Icon name="mapPin" size={13} />
-                {t('page.product.locatedIn', { location: [product.city, product.country].filter(Boolean).join(', ') })}
+                {t('page.product.locatedIn', { location: [product.city, countryLabel(product.country, lang)].filter(Boolean).join(', ') })}
               </p>
             )}
             {product.supplyCountries && product.supplyCountries.length > 0 && (
@@ -245,7 +257,7 @@ export function ProductPage() {
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {product.supplyCountries.map((c) => (
                     <span key={c} className="inline-flex items-center gap-1 rounded-pill bg-brand-surface px-2.5 py-1 text-xs font-semibold text-brand-dark">
-                      {countryFlag(c)} {c}
+                      {countryFlag(c)} {countryLabel(c, lang)}
                     </span>
                   ))}
                 </div>
@@ -298,7 +310,18 @@ export function ProductPage() {
               <span className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{fmtPrice(product)}</span>
               <span className="text-ink-soft">{unitSuffix(product.unit)}</span>
             </div>
-            <p className="mt-1 text-sm text-ink-soft">{t('page.product.deliveryLine', { delivery: product.delivery })}</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              {t('page.product.deliveryLine', {
+                delivery: isDeliveryOption(product.delivery) ? t(`enums:delivery.${product.delivery}`) : product.delivery,
+              })}
+            </p>
+            <p className="mt-1 text-sm text-ink-soft">
+              {typeof product.stockQty === 'number'
+                ? product.stockQty > 0
+                  ? t('site.stockCount', { count: product.stockQty, unit: product.unit })
+                  : t('site.outOfStock')
+                : t('site.inStock')}
+            </p>
 
             <label className="mt-4 block">
               <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.quantityMt')}</span>
@@ -339,11 +362,14 @@ export function ProductPage() {
               </div>
             </div>
 
+            {/* Escrow protection is per-listing: promising it on a direct-deal
+                listing would be a straight lie to the buyer. */}
             <div className="mt-4 rounded-md bg-brand-surface p-3 text-xs text-ink-soft">
               <div className="flex items-center gap-2 font-bold text-brand-dark">
-                <Icon name="shield" size={14} /> {t('page.product.safeDealProtected')}
+                <Icon name="shield" size={14} />
+                {product.safe ? t('page.product.safeDealProtected') : t('site.directDeal')}
               </div>
-              {t('page.product.escrowNote')}
+              {product.safe ? t('page.product.escrowNote') : t('page.product.directDealNote')}
             </div>
           </Card>
         </aside>

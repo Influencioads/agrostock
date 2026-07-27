@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import {
   attributeSourceName,
+  schemaName,
   buildSubcategoryTree,
   findSubcategoryPath,
   flattenSubcategoryTree,
@@ -92,13 +93,16 @@ export function CategorySheet({
 
   const commit = (category: ApiCategory, path: SubcategoryNode[]) => {
     const leaf = path[path.length - 1];
+    const categoryNameEn = schemaName(category);
     onSelect({
       categoryId: category.id,
       categoryName: category.name,
+      categoryNameEn,
       subcategoryId: leaf?.id ?? '',
       subcategoryName: leaf?.name ?? '',
       trail: [category.name, ...path.map((n) => n.name)],
-      attrSource: attributeSourceName(path, category.name),
+      // English in, English out — the schema knows no other language.
+      attrSource: attributeSourceName(path, categoryNameEn),
     });
     close();
   };

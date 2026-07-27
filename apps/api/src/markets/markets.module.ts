@@ -26,6 +26,7 @@ export class CreateMarketDto {
   @IsString() @MinLength(2) @MaxLength(80) country!: string;
   @IsOptional() @IsString() @MaxLength(80) city?: string;
   @IsOptional() @IsString() @MaxLength(80) region?: string;
+  @IsOptional() @IsString() @MaxLength(200) address?: string;
   @IsOptional() @IsString() @MaxLength(8) flag?: string;
 }
 
@@ -81,6 +82,7 @@ export class MarketsService {
         country: dto.country,
         city: dto.city,
         region: dto.region,
+        address: dto.address,
         flag: dto.flag,
         status: 'pending',
         active: true,

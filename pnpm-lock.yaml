@@ -590,12 +590,21 @@ importers:
 
   packages/ui:
     dependencies:
+      '@agrotraders/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@agrotraders/i18n':
+        specifier: workspace:^
+        version: link:../i18n
       '@agrotraders/tokens':
         specifier: workspace:*
         version: link:../tokens
       '@agrotraders/types':
         specifier: workspace:*
         version: link:../types
+      '@tanstack/react-query':
+        specifier: ^5.56.2
+        version: 5.101.2(react@18.3.1)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -608,6 +617,9 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      react-i18next:
+        specifier: ^15.0.2
+        version: 15.7.4(i18next@23.16.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
     devDependencies:
       '@agrotraders/config':
         specifier: workspace:*

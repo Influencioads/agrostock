@@ -19,6 +19,29 @@
     "seconds": "SECONDES"
   },
   "auth": {
+    "forgotPassword": {
+      "back": "Retour à la page de connexion",
+      "email": "E-mail",
+      "send": "Envoyer le lien de réinitialisation",
+      "sending": "Envoi…",
+      "sent": "Si cette adresse e-mail est enregistrée, un lien de réinitialisation vous sera envoyé. Ouvrez-le pour définir un nouveau mot de passe.",
+      "subtitle": "Saisissez votre adresse e-mail et nous vous enverrons un lien de réinitialisation.",
+      "title": "Réinitialisez votre mot de passe"
+    },
+    "otpLogin": {
+      "code": "Code à 6 chiffres",
+      "codeSent": "Si cette adresse e-mail est enregistrée, un code est en route.",
+      "email": "E-mail",
+      "invalid": "Code invalide ou expiré.",
+      "resend": "Envoyer un nouveau code",
+      "sendCode": "Envoyez-moi un code par e-mail",
+      "sending": "Envoi…",
+      "subtitle": "Nous vous enverrons par courriel un code à 6 chiffres — aucun mot de passe n'est requis.",
+      "title": "Connectez-vous avec un code",
+      "usePassword": "Utilisez plutôt un mot de passe",
+      "verify": "Se connecter",
+      "verifying": "Connexion…"
+    },
     "password": "Mot de passe",
     "passwordPh": "••••••••",
     "roleHelper": {
@@ -35,8 +58,11 @@
       "demoTitle": "Ou essayez un compte démo",
       "emailOrPhone": "Courriel ou téléphone",
       "emailOrPhonePh": "vous@entreprise.com ou téléphone",
+      "forgot": "Mot de passe oublié ?",
       "invalid": "Adresse e-mail ou mot de passe invalide.",
       "newHere": "Nouveau ici ?",
+      "or": "ou",
+      "otp": "Connectez-vous avec OTP",
       "subtitle": "Connectez-vous à votre compte AgroTraders",
       "title": "Content de te revoir"
     },
@@ -45,6 +71,7 @@
       "checkInboxTitle": "Confirmez votre courriel",
       "cityRegion": "Ville / région",
       "cityRegionPh": "Dubaï",
+      "confirmPassword": "Confirmez le mot de passe",
       "country": "Pays",
       "countryPh": "🇦🇪 Émirats arabes unis",
       "cta": "Créer un compte",
@@ -55,11 +82,15 @@
       "fullNamePh": "Karim Trading",
       "iAmA": "Je suis un…",
       "noCities": "Aucune ville correspondante",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "passwordTooShort": "Le mot de passe doit comporter au moins 8 caractères.",
       "phone": "Téléphone (privé — administrateurs uniquement)",
       "phonePh": "+971 50 123 4567",
       "pickCountryFirst": "Sélectionnez d'abord un pays",
       "resend": "Renvoyer le lien",
       "resent": "Lien envoyé — vérifiez votre boîte de réception",
+      "subtitle": "Choisissez votre rôle — vous pourrez en ajouter d'autres plus tard.",
+      "terms": "En continuant, vous acceptez les conditions d'utilisation et la politique de confidentialité.",
       "title": "Créez votre compte"
     }
   },
@@ -162,17 +193,25 @@
     },
     "orders": {
       "acceptQuote": "Accepter le devis",
+      "cancelOrder": "Annuler la commande",
+      "confirmCancel": "Annuler cette commande ? C’est irréversible.",
+      "confirmDispute": "Vous souhaitez contester cette commande ? Notre équipe va l’examiner.",
       "details": "Détails",
       "detailsOtp": "Détails · OTP",
       "emptyBody": "Parcourez notre sélection pour passer votre première commande.",
       "emptyTitle": "Aucune commande pour le moment",
       "errUpdate": "Impossible de modifier cette commande.",
       "mark": "Marc {{label}}",
+      "openDispute": "Conflit ouvert",
       "orderFallback": "Commande",
       "payEscrow": "Versez le montant sur un compte séquestre.",
       "screenTitle": "Mes commandes",
       "signInBody": "Vos commandes apparaissent ici une fois que vous êtes connecté(e).",
-      "signInTitle": "Connectez-vous pour consulter les commandes"
+      "signInTitle": "Connectez-vous pour consulter les commandes",
+      "stepDispatched": "Expédié",
+      "stepEscrow": "Entiercement",
+      "stepRelease": "Contrôle qualité et libération",
+      "stepTransit": "En transit"
     },
     "room": {
       "awaitingBids": "En attente d'offres",
@@ -196,6 +235,7 @@
       "ownerNote": "Vous avez publié cette exigence",
       "quotes": "Citations",
       "reverseAuction": "vente aux enchères inversée",
+      "sealedBanner": "Mode confidentiel. Les noms et photos des vendeurs sont masqués jusqu'à l'acceptation d'un devis. Les devis restent confidentiels.",
       "sealedNoBid": "Vous n'avez pas encore soumis d'offre pour cette exigence.",
       "sealedNote": "Les offres relatives à une demande de devis restent confidentielles — vous seul pouvez voir les prix.",
       "sellersN_many": "{{count}} vendeurs",
@@ -494,11 +534,21 @@
       "verifyError": "Impossible de vérifier ce code."
     },
     "product": {
+      "addToSaved": "Ajouter à la liste de souhaits",
       "auction": "Enchères",
-      "safeDeal": "Offre sécurisée",
-      "verified": "Vérifié",
+      "available": "{{value}} disponible",
+      "chatSeller": "Chat",
+      "directDeal": "Offre directe",
+      "fixedPrice": "Prix fixe",
+      "inStock": "En stock",
       "moq": "MOQ {{value}}",
-      "available": "{{value}} disponible"
+      "negotiable": "Négociable",
+      "outOfStock": "En rupture de stock",
+      "removeFromSaved": "Retirer de la liste de souhaits",
+      "safeDeal": "Offre sécurisée",
+      "sponsored": "Sponsorisé",
+      "stockCount": "{{count}} {{unit}} en stock",
+      "verified": "Vérifié"
     },
     "profile": {
       "about": "À propos",
@@ -551,6 +601,7 @@
     "activeJobs": "Offres d'emploi actives",
     "activeOrders": "Commandes en cours",
     "activeTrips": "Voyages actifs",
+    "addProduct": "Ajouter un produit",
     "allTime": "tout le temps",
     "assignments": "Devoirs",
     "availability": "Disponibilité",
@@ -569,6 +620,7 @@
     "driverPerformance": "Performance du conducteur",
     "due": "{{count}} dû",
     "earnings": "Gains",
+    "earningsWeek": "Résultats de la semaine",
     "escrow": "Entiercement",
     "etaDays": "ETA {{count}} jours",
     "fleetUtilization": "Utilisation de la flotte",
@@ -576,6 +628,7 @@
     "goOnline": "Connectez-vous en ligne",
     "jobRequests": "Demandes d'emploi",
     "live": "en direct",
+    "liveListings": "Listes en direct",
     "liveTracking": "Suivi en direct",
     "loaderSub": "Vos équipes et vos missions en un coup d'œil.",
     "lowOnStock": "stock limité",
@@ -593,13 +646,19 @@
     "offline": "Vous êtes hors ligne — les recruteurs ne vous verront pas comme disponible.",
     "onTime": "À l'heure {{pct}}%",
     "online": "Vous êtes en ligne et vous acceptez des emplois.",
+    "openRfqs": "Demandes de prix ouvertes",
     "ordersCount": "{{count}} commandes",
     "ordersReceived": "Commandes reçues",
     "paid": "payé",
     "pendingPayments": "Paiements en attente",
     "perMonth": "$ / mois",
     "procurementSpend": "Dépenses d'approvisionnement",
+    "product": "Produit",
     "productViews": "Vues des produits",
+    "quickHireTransport": "Location de transport",
+    "quickKyc": "KYC docs",
+    "quickPostRfq": "Publication RFQ",
+    "quickWallet": "Portefeuille",
     "rating": "Notation",
     "revenue": "Revenu",
     "safeDeal": "Offre sécurisée",
@@ -642,18 +701,19 @@
     "name": "Invité"
   },
   "hub": {
+    "account": "Compte",
     "activeDashboard": "Tableau de bord actif",
     "community": "Communauté",
     "displayCurrency": "Afficher la devise",
+    "kycVerified": "KYC vérifié",
     "logOut": "Déconnexion",
+    "marketplace": "Place de marché",
     "myHires": "Mes embauches",
     "myProfile": "Mon profil",
     "notifications": "Notifications",
     "restartNotice": "L'application va redémarrer pour appliquer la nouvelle direction du texte.",
     "rolesAccess": "Rôles et accès",
-    "support": "Assistance en direct",
-    "marketplace": "Place de marché",
-    "account": "Compte"
+    "support": "Assistance en direct"
   },
   "loaderX": {
     "attendance": {
@@ -951,6 +1011,7 @@
       "listed_other": "{{count}} listés",
       "minDistanceBadge": "Min {{km}} km",
       "minDistanceKm": "Distance minimale (km)",
+      "minHoursBadge": "Min {{hours}}h jobs",
       "minLoaders": "Chargeurs mini",
       "minLoadersBadge": "Min {{count}} équipage",
       "minWorkHours": "heures minimales",
@@ -995,9 +1056,38 @@
       "workers_one": "{{count}} travailleurs",
       "workers_other": "{{count}} travailleurs"
     },
+    "filter": {
+      "apply": "Appliquer",
+      "applyN": "Appliquer ({{count}})",
+      "categoryHint": "Choisis une catégorie pour débloquer ses filtres de spécifications.",
+      "clear": "Effacer",
+      "clearAll": "Tout effacer",
+      "groups": {
+        "category": "Catégorie",
+        "city": "Ville",
+        "country": "Pays",
+        "dealType": "Type d’offre",
+        "grade": "Qualité",
+        "market": "Marché",
+        "price": "Prix"
+      },
+      "searchOptions": "Rechercher",
+      "sortBy": "Trier par",
+      "title": "Filtres"
+    },
     "home": {
+      "cantFindBody": "Publiez une annonce RFQ et obtenez des devis fermes en quelques heures.",
+      "cantFindTitle": "Vous ne trouvez pas votre produit ?",
+      "catAll": "Tous",
+      "categories": "Acheter par catégorie",
       "communityA11y": "AgroTraders Communauté",
+      "dealOfDay": "Offre du jour",
+      "deliverTo": "Livrer à",
       "featured": "En vedette",
+      "freshArrivals": "Nouveautés",
+      "heroCta": "Explorez beaucoup",
+      "heroTag": "Semaine des récoltes",
+      "heroTitle": "Blé Rabi, directement du marché",
       "link": {
         "auctions": "Ventes aux enchères",
         "bids": "Offres",
@@ -1010,20 +1100,23 @@
       "liveAuctions": "Ventes aux enchères en direct",
       "noOffers": "Aucune offre pour le moment.",
       "offersOfDay": "Offres du jour",
+      "postRfq": "Publication RFQ",
+      "promoBody": "Utilisez le code AGRO4 · Protection par séquestre",
+      "promoCta": "RÉCLAMER",
+      "promoTitle": "4 % de réduction sur votre première commande",
+      "promoted": "À la une",
+      "requirements": "Acheteurs en recherche",
       "safeDealBody": "Les fonds sont retenus jusqu'à ce que vous confirmiez la livraison.",
       "safeDealTitle": "Service de dépôt fiduciaire sécurisé",
       "searchHint": "Recherchez des céréales, des légumineuses, des huiles…",
       "seeAll": "Voir tout",
+      "services": "Services",
       "svc": {
         "loaders": "Chargeuses",
         "offices": "Bureaux",
         "safeDeal": "Offre sécurisée",
         "transport": "Transport"
       },
-      "categories": "Acheter par catégorie",
-      "promoted": "À la une",
-      "services": "Services",
-      "requirements": "Acheteurs en recherche",
       "viewAll": "Tout voir"
     },
     "kyc": {
@@ -1059,6 +1152,7 @@
       "caughtUp": "Vous êtes à jour.",
       "channelGeneral": "Général",
       "chooseHow": "Choisissez comment vous souhaitez être notifié pour chaque type d'activité.",
+      "earlier": "Plus tôt",
       "email": "E-mail",
       "inApp": "Dans l'application",
       "markAllRead": "Marquer tout comme lu",
@@ -1066,7 +1160,8 @@
       "push": "Pousser",
       "settingsTitle": "Paramètres de notification",
       "signIn": "Connectez-vous pour voir les notifications",
-      "title": "Notifications"
+      "title": "Notifications",
+      "today": "Aujourd'hui"
     },
     "offers": {
       "emptyBody": "Revenez bientôt pour découvrir de nouvelles offres.",
@@ -1075,11 +1170,17 @@
       "title": "Offres du jour"
     },
     "pd": {
+      "addToRfq": "Ajouter à la demande",
       "alsoLike": "Vous aimerez peut-être aussi",
       "available": "Disponible",
       "buyNow": "Acheter maintenant",
       "buyerReviews": "Avis des acheteurs",
+      "chat": "Chat",
       "chatSeller": "Discutez avec le vendeur",
+      "decreaseQty": "Diminuer la quantité",
+      "delivery": "Livraison",
+      "escrowNote": "Séquestre Safe-Deal · fonds bloqués jusqu'à la validation du contrôle qualité",
+      "increaseQty": "Augmenter la quantité",
       "loading": "Chargement du produit…",
       "moq": "MOQ",
       "offer": "Offre",
@@ -1088,6 +1189,7 @@
       "orderPlacedBody": "Votre commande est sous séquestre via Safe Deal.",
       "orderPlacedTitle": "Commande passée",
       "ordered": "{{count}} commandé le mois dernier",
+      "origin": "Origine",
       "price": "Prix",
       "quality": {
         "documentation": "Documentation",
@@ -1096,25 +1198,26 @@
         "purity": "Pureté"
       },
       "qualityScore": "Score de qualité",
+      "quantity": "Quantité",
       "quoteRequestedBody": "Le vendeur répondra sous peu.",
       "quoteRequestedTitle": "Demande de devis",
       "requestQuote": "Demander un devis",
       "safeDeal": "Offre sécurisée",
       "sellerFallback": "Vendeur",
       "specifications": "Caractéristiques",
+      "supplier": "Fournisseur",
       "suppliesTo": "Fournitures à",
+      "tradeTerms": "Conditions commerciales",
       "transport": "Transport",
       "transportBody": "Réservez votre transport depuis votre console client.",
       "transportTitle": "Transport",
       "verified": "Vérifié",
-      "addToRfq": "Ajouter à la demande",
-      "supplier": "Fournisseur",
-      "tradeTerms": "Conditions commerciales",
-      "origin": "Origine",
-      "delivery": "Livraison"
+      "watching": "{{count}}+ watching now"
     },
     "ph": {
+      "bidTitle": "Basmati rice — 100 MT for Jebel Ali",
       "cargoBasmati": "riz basmati",
+      "cargoBasmati50": "Basmati Rice 50MT",
       "cargoBasmati500": "500 MT Riz Basmati",
       "cityAmritsar": "Amritsar",
       "cityDubai": "Dubaï",
@@ -1144,6 +1247,13 @@
       "supCities": "Mumbai, Dubaï",
       "vehicleType": "Reefer de 40 pieds",
       "workerName": "Imran Sheikh"
+    },
+    "plp": {
+      "clearFilters": "Effacer les filtres",
+      "filters": "Filtrer",
+      "noResults": "Aucun résultat",
+      "results": "{{count}} résultats",
+      "sort": "Trier"
     },
     "profile": {
       "activeRoutes": "Itinéraires actifs",
@@ -1179,55 +1289,31 @@
       "send": "Envoyer",
       "viewOffers": "Voir les offres"
     },
+    "rfq": {
+      "addedBody": "{{name}} est dans ton panier. Envoie la demande quand tu as tout ajouté.",
+      "addedTitle": "Ajouté au panier de devis",
+      "emptyBody": "Ajoute des annonces de n’importe quel fournisseur, puis envoie une demande de devis par fournisseur.",
+      "emptyTitle": "Ton panier de devis est vide",
+      "escrow": "Entiercement",
+      "failBody": "Réessaie.",
+      "failTitle": "Impossible d’envoyer la demande",
+      "footNote": "Chaque fournisseur reçoit sa propre demande. Les devis restent privés.",
+      "lineCount": "{{count}} articles",
+      "noteFromBasket": "Envoyé depuis le panier de devis à {{supplier}}.",
+      "requestQuotes": "Demander des devis",
+      "sentBody": "Le fournisseur répondra par un devis. Suis-le dans Offres.",
+      "sentLabel": "Demande envoyée",
+      "sentTitle": "Demande envoyée",
+      "title": "Panier de devis"
+    },
     "search": {
       "emptyBody": "Saisissez votre requête pour trouver des produits sur l'ensemble du marché.",
       "emptyTitle": "Recherche AgroTraders",
       "noMatchBody": "Aucun résultat trouvé pour \"{{q}}\".",
       "noMatchTitle": "Aucun résultat",
       "placeholder": "Recherchez des céréales, des légumineuses, des huiles…",
-      "recent": "Recherches récentes"
-    },
-    "filter": {
-      "title": "Filtres",
-      "clear": "Effacer",
-      "clearAll": "Tout effacer",
-      "apply": "Appliquer",
-      "applyN": "Appliquer ({{count}})",
-      "sortBy": "Trier par",
-      "searchOptions": "Rechercher",
-      "categoryHint": "Choisis une catégorie pour débloquer ses filtres de spécifications.",
-      "groups": {
-        "category": "Catégorie",
-        "dealType": "Type d’offre",
-        "price": "Prix",
-        "country": "Pays",
-        "city": "Ville",
-        "grade": "Qualité",
-        "market": "Marché"
-      }
-    },
-    "plp": {
-      "results": "{{count}} résultats",
-      "filters": "Filtrer",
-      "sort": "Trier",
-      "clearFilters": "Effacer les filtres",
-      "noResults": "Aucun résultat"
-    },
-    "rfq": {
-      "title": "Panier de devis",
-      "emptyTitle": "Ton panier de devis est vide",
-      "emptyBody": "Ajoute des annonces de n’importe quel fournisseur, puis envoie une demande de devis par fournisseur.",
-      "addedTitle": "Ajouté au panier de devis",
-      "addedBody": "{{name}} est dans ton panier. Envoie la demande quand tu as tout ajouté.",
-      "requestQuotes": "Demander des devis",
-      "sentLabel": "Demande envoyée",
-      "sentTitle": "Demande envoyée",
-      "sentBody": "Le fournisseur répondra par un devis. Suis-le dans Offres.",
-      "failTitle": "Impossible d’envoyer la demande",
-      "failBody": "Réessaie.",
-      "lineCount": "{{count}} articles",
-      "noteFromBasket": "Envoyé depuis le panier de devis à {{supplier}}.",
-      "footNote": "Chaque fournisseur reçoit sa propre demande. Les devis restent privés."
+      "recent": "Recherches récentes",
+      "trending": "Tendances dans votre région"
     }
   },
   "reviews": {
@@ -1293,6 +1379,10 @@
       "category": "Catégorie",
       "city": "Ville",
       "country": "Pays",
+      "currency": "Devise",
+      "dealDirect": "Transaction directe (sans intermédiaire)",
+      "dealSafe": "Transaction sécurisée (protection par séquestre)",
+      "dealType": "Type de contrat",
       "delivery": "Livraison",
       "editTitle": "Modifier le produit",
       "emoji": "Émoji",
@@ -1310,7 +1400,11 @@
       "phOrigin": "Inde",
       "phQty": "500 MT",
       "phUnit": "/MT",
+      "pickup": "Collection de l'acheteur",
       "price": "Prix (USD)",
+      "priceFixed": "Prix fixe",
+      "priceNegotiable": "Négociable",
+      "priceType": "Type de prix",
       "quantity": "Quantité",
       "runsForDays": "Courses pendant (jours)",
       "saveChanges": "Enregistrer les modifications",
@@ -1325,6 +1419,7 @@
       "unit": "Unité"
     },
     "ads": {
+      "activeSpend": "Active daily spend: ${{amount}}",
       "awaitingSuffix": "(en attente d'approbation)",
       "dailyBudget": "Budget quotidien (USD)",
       "emptyBody": "Soumettez votre première promotion — un administrateur l'examinera, puis elle sera mise en ligne.",
@@ -1334,6 +1429,7 @@
       "pause": "Pause",
       "paused": "En pause",
       "pendingReview": "En attente d'examen",
+      "perDay": "{{amount}}/day",
       "product": "Produit",
       "reason": "Raison : {{reason}}",
       "rejected": "Rejeté",
@@ -1423,6 +1519,7 @@
       "hint": "Touchez une photo pour l'utiliser comme couverture. La première photo est celle que voient les acheteurs.",
       "permissionError": "L'autorisation de photographier est nécessaire pour ajouter des images.",
       "photos": "Photos ({{n}}/{{max}})",
+      "sizeHint": "Stockées sous forme de carrés de 1080×1080 pixels. Au moins 1080 pixels sur le côté le plus long.",
       "uploadError": "Le chargement de l'image a échoué. Veuillez essayer des photos plus petites.",
       "uploading": "Chargement en cours…"
     },
@@ -1443,6 +1540,7 @@
     },
     "market": {
       "addNew": "+ Créer un nouveau marché",
+      "address": "Adresse (facultatif)",
       "cancel": "Annuler",
       "city": "Ville",
       "country": "Pays",
@@ -1456,6 +1554,7 @@
       "pendingApproval": "En attente d'approbation",
       "pendingHint": "Visible uniquement pour vous jusqu'à ce qu'un administrateur l'approuve.",
       "pendingSuffix": " (en attente)",
+      "phAddress": "Porte 3, périphérique",
       "phCity": "Kandla",
       "phCountry": "Inde",
       "phName": "Port de Kandla",

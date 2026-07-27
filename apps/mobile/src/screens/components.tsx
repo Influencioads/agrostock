@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, type ApiProduct } from '@agrotraders/api-client';
-import { unitSuffix } from '@agrotraders/types';
+import { toUnit, unitSuffix } from '@agrotraders/types';
 import { C, radius, space, type } from '../theme/tokens';
 import { microLabel } from '../theme/casing';
 import { assetUrl } from '../lib/api';
@@ -53,7 +53,13 @@ function ImageBadges({ product, t, sponsored }: { product: ApiProduct; t: (k: st
   if (sponsored) marks.push({ label: t('compX.product.sponsored'), bg: C.dark, fg: C.white });
   if (product.isAuction) marks.push({ label: t('compX.product.auction'), bg: C.mangoDeep, fg: C.white });
   if (product.verified) marks.push({ label: t('compX.product.verified'), bg: C.evergreen, fg: C.white });
-  else if (product.safeDeal) marks.push({ label: t('compX.product.safeDeal'), bg: C.white, fg: C.dark });
+  // Both settlement modes are labelled: the absence of a "Safe Deal" mark used
+  // to be the only hint that a listing was settled directly.
+  else marks.push(
+    product.safeDeal
+      ? { label: t('compX.product.safeDeal'), bg: C.white, fg: C.dark }
+      : { label: t('compX.product.directDeal'), bg: C.white, fg: C.dark },
+  );
   if (marks.length === 0) return null;
   return (
     <View style={s.badgeStrip}>
@@ -151,11 +157,27 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
           {fmtPrice(product)}
           <Text style={s.unit}>{unitSuffix(product.unit)}</Text>
         </Text>
+        <Text numberOfLines={1} style={s.meta}>
+          {product.negotiable ? t('compX.product.negotiable') : t('compX.product.fixedPrice')}
+        </Text>
         {supply ? <Text numberOfLines={1} style={s.meta}>{supply}</Text> : null}
         {place ? <Text numberOfLines={1} style={s.meta}>{place}</Text> : null}
+        {product.market?.name ? <Text numberOfLines={1} style={s.meta}>🏪 {product.market.name}</Text> : null}
+        <Text numberOfLines={1} style={s.meta}>{stockLabel(product, t)}</Text>
       </View>
     </Pressable>
   );
+}
+
+/**
+ * Managed inventory: a number is the real on-hand count; null/undefined means
+ * the seller does not track stock, so we say "in stock" rather than "0".
+ */
+export function stockLabel(product: ApiProduct, t: (k: string, o?: Record<string, unknown>) => string): string {
+  if (typeof product.stockQty !== 'number') return t('compX.product.inStock');
+  return product.stockQty > 0
+    ? t('compX.product.stockCount', { count: product.stockQty, unit: toUnit(product.unit) })
+    : t('compX.product.outOfStock');
 }
 
 /**

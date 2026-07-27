@@ -99,6 +99,7 @@
     "reqProductPh": "製粉用小麦",
     "reqQuantity": "量",
     "reqTitle": "タイトル",
+    "reqTitlePh": "Need 100 MT Wheat",
     "reqUnit": "ユニット",
     "requirementBadge": "要件",
     "requirements": "要件",
@@ -248,6 +249,7 @@
         "open": "開ける"
       },
       "target": "ターゲット{{price}}",
+      "targetPrice": "Target price per {{unit}} (USD)",
       "title": "タイトル",
       "transportSub": "貨物の発送元から倉庫までの追跡が可能です。",
       "underTarget": "{{pct}}％目標を下回る",
@@ -336,6 +338,7 @@
         "workers": "労働者"
       },
       "live": "ライブ",
+      "liveListings": "出品中",
       "liveTracking": "ライブトラッキング",
       "loaderSub": "担当チームと業務内容を一目で確認できます。",
       "loadingMetrics": "ライブメトリクスを読み込んでいます…",
@@ -363,7 +366,6 @@
       "perMonth": "月額$",
       "procurementSpend": "調達支出",
       "productViews": "製品ビュー",
-      "liveListings": "出品中",
       "readyToWithdraw": "撤退準備完了",
       "recentOrders": "最近の注文",
       "revenue": "注文量",
@@ -378,6 +380,7 @@
       "thisMonth": "今月",
       "topProducts": "人気商品",
       "totalSales": "総売上高",
+      "trackingMeta": "{{km}}km left · ETA {{h}}h",
       "transporterSub": "貴社の保有車両一覧を一目で確認できます。",
       "tripStatus": {
         "delayed": "遅延",
@@ -476,6 +479,7 @@
       "linePlaceholder": "貨物、取り扱い…",
       "loadercoSub": "発行済みおよび受領済みの請求書を作成、ダウンロードし、支払い済みとしてマークします。",
       "markPaid": "マークが支払った",
+      "noInvoices": "No {{tab}} invoices yet.",
       "noInvoicesFiltered": "{{tab}} 請求書はまだありません ({{status}})。",
       "notesPlaceholder": "支払い条件、発注番号…",
       "orderLine": "{{product}} — 順序 {{ref}}",
@@ -537,6 +541,7 @@
       "availabilitySub": "毎日利用可能な乗務員シフトを計画してください。セルをタップして切り替えます。",
       "available": "利用可能",
       "availableForWork": "就業可能",
+      "avgAcross": "Average across {{count}} reviews",
       "buyer": "買い手",
       "checkAgainstJob": "作業員を仕事内容と照合して確認する",
       "checkIn": "チェックイン",
@@ -711,6 +716,7 @@
       "browseMarketplace": "マーケットプレイスを閲覧する →",
       "buyerNote": "購入者メモ：「{{note}}」",
       "buyerOtpNote": "購入者には別途配送コードOTPが送信されています。配達員が到着時にその配送コードを受け取り、注文を完了します。この受け取りコードは、注文の詳細画面からいつでも確認できます。",
+      "cancelOrder": "注文をキャンセルする",
       "carrier": "キャリア",
       "checking": "チェック中…",
       "colAction": "アクション",
@@ -720,6 +726,8 @@
       "colProduct": "製品",
       "colStatus": "状態",
       "confirm": "確認する",
+      "confirmCancel": "この注文をキャンセルしますか？取り消しはできません。",
+      "confirmDispute": "この注文に関して異議申し立てをしますか？弊社のチームが内容を確認いたします。",
       "copied": "コピーしました",
       "copy": "コピー",
       "delivered": "配達済み",
@@ -756,6 +764,7 @@
       "noteOptional": "注記（任意）",
       "notePlaceholder": "FOBムンドラ、納期14日間",
       "notesOptional": "注記（任意）",
+      "openDispute": "公開紛争",
       "orderFallback": "注文",
       "orderTitle": "注文番号{{ref}}",
       "otpSuffix": "· OTP",
@@ -825,6 +834,12 @@
       "createMarketError": "その市場を創り出すことはできなかった。",
       "createNewMarket": "+ 新しい市場を創造する…",
       "creating": "作成…",
+      "currency": "通貨",
+      "dealDirect": "直接取引（エスクローなし）",
+      "dealDirectHint": "購入者と販売者は直接支払いを決済する。プラットフォームは一切の手数料を徴収しない。",
+      "dealSafe": "安全な取引（エスクロー保護付き）",
+      "dealSafeHint": "代金はエスクロー口座に保管され、購入者が配送を確認した時点で支払われます。",
+      "dealType": "取引の種類",
       "delete": "消去",
       "deleteConfirm": "{{name}}を削除しますか？これは元に戻せません。",
       "deleteError": "この製品を削除できませんでした。",
@@ -841,12 +856,14 @@
       "makeCover": "カバーする",
       "markOffer": "オファーとしてマークする",
       "market": "市場",
+      "marketAddress": "住所（任意）",
       "marketName": "市場名",
       "marketPlaceholder": "—これはどこから取引されたものですか？—",
       "moq": "MOQ",
       "moveLeft": "左へ移動",
       "moveRight": "右に進む",
       "myProducts": "私の製品",
+      "nameAuto": "選択内容から提案されたもの：{{name}}",
       "newMarketNote": "新規マーケットは管理者が審査します。承認され次第、すぐに出品情報に掲載できます。他の出品者にも表示されます。",
       "noCountry": "該当する国が見つかりませんでした。",
       "noProducts": "まだ商品がありません。最初の出品を追加してください。",
@@ -860,14 +877,21 @@
       "phCountry": "インド",
       "phDelivery": "準備ができて",
       "phGrade": "グレードA",
+      "phMarketAddress": "環状道路3番ゲート",
       "phMarketName": "カンドラ港",
       "phMoq": "25 MT",
       "phName": "プレミアムバスマティライス 1121",
       "phOrigin": "🇮🇳 インド",
       "phQty": "500 MT",
+      "phStock": "例: 500 — 空欄 = 無制限",
+      "photoSizeHint": "1080×1080ピクセルの正方形として保存されます。最長辺は少なくとも1080ピクセルである必要があります。それより狭い場合は、トリミングではなくレターボックス表示になります。",
       "photos": "写真",
       "photosCount_other": "{{count}} 写真",
-      "price": "価格（USD / MT）",
+      "pickup": "購入者コレクション",
+      "price": "価格（1個あたり）",
+      "priceFixed": "固定価格",
+      "priceNegotiable": "交渉可能",
+      "priceType": "価格タイプ",
       "productName": "製品名",
       "quantity": "量",
       "remove": "取り除く",
@@ -876,14 +900,13 @@
       "saving": "保存中…",
       "searchCountry": "国を検索…",
       "select": "選択…",
+      "stock": "在庫（任意）",
       "subcategory": "サブカテゴリ",
       "supplyCountries": "供給",
       "supplyCountriesHint": "— 発送可能な国をすべて選択してください",
       "unit": "ユニット",
       "uploadFailed": "画像のアップロードに失敗しました。より小さいサイズのJPGまたはPNGファイルをお試しください。",
-      "uploading": "アップロード中…",
-      "stock": "在庫（任意）",
-      "phStock": "例: 500 — 空欄 = 無制限"
+      "uploading": "アップロード中…"
     },
     "requestAccess": "アクセスを要求する",
     "reviewQueue": "レビューキュー",
@@ -1137,7 +1160,8 @@
       },
       "weight": "重量（MT）",
       "withdraw": "撤回する",
-      "year": "年"
+      "year": "年",
+      "yrsExp": "{{years}} yrs exp"
     },
     "userFallback": "ユーザー",
     "worker": {
@@ -1293,13 +1317,24 @@
         "title": "労働者"
       }
     },
+    "forgotPassword": {
+      "backToSignIn": "サインインに戻る",
+      "email": "メール",
+      "send": "リセットリンクを送信",
+      "sending": "送信中…",
+      "sent": "そのメールアドレスが登録されている場合は、リセットリンクが送信されます。受信トレイをご確認ください。",
+      "subtitle": "メールアドレスを入力してください。リセットリンクをお送りします。",
+      "title": "パスワードをリセット"
+    },
     "login": {
       "createOne": "作成する",
       "demoAccounts": "デモアカウント · ワンクリック",
       "demoHint": "パスワード: password123",
       "emailOrPhone": "メールまたは電話で",
       "emailPlaceholder": "you@company.com または電話で",
+      "forgotPassword": "パスワードをお忘れですか？",
       "noAccount": "アカウントをお持ちでないですか？",
+      "otpSignIn": "メールコードでサインインする",
       "password": "パスワード",
       "resendVerification": "確認リンクを再送信",
       "signIn": "サインイン",
@@ -1313,6 +1348,8 @@
       "allCountries": "すべての国",
       "allMarkets": "すべての市場",
       "allSubcategories": "すべてのサブカテゴリ",
+      "anyDeal": "あらゆる取引タイプ",
+      "anyPrice": "あらゆる価格タイプ",
       "category": "カテゴリ",
       "chipAuctions": "オークション",
       "chipOffers": "オファー",
@@ -1321,6 +1358,7 @@
       "city": "市",
       "clearFilters": "フィルターをクリアする",
       "country": "国",
+      "dealType": "取引の種類",
       "filters": "フィルター",
       "grade": "学年",
       "grades": {
@@ -1337,10 +1375,12 @@
       "next": "次",
       "noMatch": "これらの条件に一致する商品はありません。",
       "offline": "オフライン（模擬）",
+      "pageOf": "Page {{page}} of {{total}}",
       "prev": "前の",
       "priceAsc": "価格↑",
       "priceDesc": "価格↓",
       "priceRange": "価格帯（USD）",
+      "priceType": "価格",
       "rating": "評価",
       "searchPlaceholder": "商品を検索…",
       "sortRelevance": "並べ替え：関連性",
@@ -1354,6 +1394,12 @@
         "safe": "セーフディール",
         "verified": "認証済み販売者"
       }
+    },
+    "notFound": {
+      "body": "お探しのページは存在しないか、移動されました。",
+      "browse": "マーケットを見る",
+      "home": "ホームへ",
+      "title": "ページが見つかりません"
     },
     "offices": {
       "list": {
@@ -1402,6 +1448,19 @@
         "warehouse": "倉庫事務所"
       }
     },
+    "otpLogin": {
+      "code": "6桁のコード",
+      "codeSent": "そのメールアドレスが登録されていれば、コードが送信されます。",
+      "email": "メール",
+      "resend": "新しいコードを送信してください",
+      "sendCode": "コードをメールで送ってください",
+      "sending": "送信中…",
+      "subtitle": "ログイン用の6桁のコードをメールでお送りします。パスワードは不要です。",
+      "title": "コードでサインイン",
+      "usePassword": "パスワードでログインしてください",
+      "verify": "サインイン",
+      "verifying": "ログイン中…"
+    },
     "product": {
       "availLine": "{{qty}} 利用可能 · MOQ {{moq}}",
       "browseMarket": "マーケットプレイスを閲覧する",
@@ -1409,6 +1468,7 @@
       "buyerReviews": "購入者レビュー",
       "chatSeller": "出品者とチャットする",
       "deliveryLine": "配達: {{delivery}}",
+      "directDealNote": "この出品は購入者と販売者の間で直接決済されます。AgroTraders は支払いを保留しません。",
       "escrowNote": "お客様が配送を確認するまで、資金はエスクロー口座に保管されます。",
       "home": "家",
       "loaders": "ローダー",
@@ -1429,6 +1489,7 @@
       },
       "qualityScore": "品質スコア",
       "quantityMt": "数量（MT）",
+      "quoteRequested": "見積もりを依頼しました — {{ref}}。販売者から価格が提示されます。",
       "related": "こちらもおすすめ",
       "requestQuote": "見積もり依頼",
       "safeDealProtected": "安全な取引が保護されています",
@@ -1436,8 +1497,7 @@
       "suppliesTo": "供給",
       "transport": "輸送",
       "verifiedSeller": "認証済み販売者",
-      "watchingNow": "{{count}}+人が視聴中",
-      "quoteRequested": "見積もりを依頼しました — {{ref}}。販売者から価格が提示されます。"
+      "watchingNow": "{{count}}+人が視聴中"
     },
     "profile": {
       "activeRoutes": "アクティブルート",
@@ -1477,7 +1537,12 @@
       "changePhoto": "写真を変更する",
       "completeSub": "購入者やパートナーはこれを通じてあなたを見つけます。所要時間はたった2分です。",
       "completeTitle": "プロフィールを完成させてください",
+      "confirmDelete": "このアカウントを削除しますか？アプリからは元に戻せません。",
       "contactEmail": "お問い合わせメール",
+      "dangerZone": "危険な操作",
+      "deleteAccount": "アカウントを削除",
+      "deleteBody": "アカウントを削除するとすべての端末からサインアウトされ、ログインが無効になります。先にウォレット残高を出金してください。",
+      "deleteError": "アカウントを削除できませんでした。もう一度お試しください。",
       "languages": "言語",
       "phLocation": "インド、アムリトサル",
       "phone": "電話",
@@ -1499,12 +1564,7 @@
       "whatsapp": "WhatsApp",
       "whereFrom": "あなたの出身地",
       "youFallback": "あなた",
-      "yourMarket": "あなたの市場",
-      "dangerZone": "危険な操作",
-      "deleteBody": "アカウントを削除するとすべての端末からサインアウトされ、ログインが無効になります。先にウォレット残高を出金してください。",
-      "confirmDelete": "このアカウントを削除しますか？アプリからは元に戻せません。",
-      "deleteAccount": "アカウントを削除",
-      "deleteError": "アカウントを削除できませんでした。もう一度お試しください。"
+      "yourMarket": "あなたの市場"
     },
     "register": {
       "checkInboxBody": "{{email}}宛に確認リンクを送信しました。リンクをクリックしてアカウントを有効化してください。確認が完了次第、ログインできるようになります。",
@@ -1590,6 +1650,18 @@
       "title": "購入者の要件",
       "view": "ビュー"
     },
+    "resetPassword": {
+      "confirmPassword": "パスワードを認証する",
+      "invalidLink": "このリセットリンクは無効であるか、期限切れです。",
+      "mismatch": "パスワードが一致しません。",
+      "newPassword": "新しいパスワード",
+      "requestNew": "新しいリンクをリクエストする",
+      "submit": "新しいパスワードを設定",
+      "submitting": "保存中…",
+      "subtitle": "アカウントの新しいパスワードを入力してください。",
+      "title": "新しいパスワードを選択してください",
+      "tooShort": "パスワードは8文字以上である必要があります。"
+    },
     "safeDeal": {
       "badge": "SafeDealエスクロー保護",
       "browseMarket": "市場を閲覧する",
@@ -1600,6 +1672,7 @@
       "coverSub": "エスクローは売主だけにとどまらず、物流や人件費も対象とする。",
       "coverTitle": "貿易全体にわたって保護されています",
       "coverTransporters": "輸送業者",
+      "coverTransportersBody": "Freight charges are released only after the trip is completed and delivery is verified with the pickup/drop OTP — so you pay for cargo that actually arrives.",
       "coverWorkers": "労働者",
       "coverWorkersBody": "個々の従業員の給与は、業務割り当てに基づいて預託され、チェックインと業務完了が確認された時点で支払われます。勤務後に支払いを催促する必要はありません。",
       "createAccount": "アカウントを作成する",
@@ -1688,12 +1761,6 @@
       "backToSignIn": "サインインに戻る",
       "checking": "メールアドレスを確認しています…",
       "failedTitle": "このリンクを確認できませんでした"
-    },
-    "notFound": {
-      "title": "ページが見つかりません",
-      "body": "お探しのページは存在しないか、移動されました。",
-      "home": "ホームへ",
-      "browse": "マーケットを見る"
     }
   },
   "product": {
@@ -1736,22 +1803,27 @@
     }
   },
   "site": {
+    "addToSaved": "お気に入りに保存",
     "allBidsOwner": "すべての入札（所有者の視点）",
     "auction": "オークション",
-    "sponsored": "スポンサー",
     "availableLine": "{{qty}} 利用可能 · MOQ {{moq}} · {{delivery}}",
     "bid": "入札",
     "bidError": "入札できませんでした。",
     "bidderFallback": "入札者",
     "budget": "予算（USD）",
     "buy": "買う",
+    "buyNamed": "購入{{name}}",
     "byBidder": "{{name}}",
     "cargo": "貨物",
+    "chatNamed": "{{name}}とチャットしよう",
+    "chatSeller": "出品者とチャットする",
     "cookies": "クッキー",
     "copyright": "© {{year}} AgroTraders. 全著作権所有。",
     "describeJob": "仕事内容について説明してください…",
+    "directDeal": "直接取引",
     "done": "終わり",
     "ended": "終了しました",
+    "fixedPrice": "固定価格",
     "footerTagline": "国際的な農業取引・物流プラットフォーム。安全な取引、認証済み販売者、世界各地への配送。",
     "from": "から",
     "globe": {
@@ -1775,6 +1847,7 @@
     "hireLoader": "この荷積み会社を雇いましょう",
     "hireTransporter": "この運送業者を雇ってください",
     "hireWorker": "この従業員を雇いましょう",
+    "inStock": "在庫あり",
     "intl": {
       "grade": "学年",
       "port": "ポート",
@@ -1785,10 +1858,12 @@
     "location": "位置",
     "message": "メッセージ",
     "neededBy": "必要とする",
+    "negotiable": "交渉可能",
     "noBidsBidder": "まだ入札していませんか？最初の入札者になりましょう。",
     "noBidsOwner": "まだ入札はありません。",
     "offer": "オファー",
     "onlyBuyers": "入札できるのは購入者アカウントのみです。",
+    "outOfStock": "在庫切れ",
     "ph": {
       "cargoQty": "バスマティライス 50MT",
       "fromCity": "マンドラ",
@@ -1797,6 +1872,7 @@
     },
     "privacy": "プライバシー",
     "proofLine": "{{watching}}+がウォッチリストに追加 · {{ordered}}が先月注文しました",
+    "removeFromSaved": "お気に入りから削除",
     "requestSent": "リクエスト{{ref}}が送信されました",
     "safeDeal": "セーフディール",
     "sealedBids_other": "{{count}} 封印入札",
@@ -1805,15 +1881,15 @@
     "sendRequest": "採用依頼を送信する",
     "sending": "送信中…",
     "signInHire": "採用依頼を送信するには、ログインしてください。",
+    "sponsored": "スポンサー",
     "startingBid": "開始価格",
+    "stockCount": "在庫数：{{count}} {{unit}}",
     "terms": "条項",
     "to": "に",
     "trackHires": "ダッシュボードの「採用状況」セクションで追跡してください。応募者が返信すると通知が届きます。",
     "workersNeeded": "労働者募集中",
     "you": "あなた",
     "yourBidPlaceholder": "あなたの入札額（USD）",
-    "yourBids": "あなたの入札",
-    "addToSaved": "お気に入りに保存",
-    "removeFromSaved": "お気に入りから削除"
+    "yourBids": "あなたの入札"
   }
 }

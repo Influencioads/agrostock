@@ -53,11 +53,20 @@ export function findSubcategoryPath(nodes: SubcategoryNode[], id: string): Subca
  * Pass the path from `findSubcategoryPath` (root-first). Returns `null` when
  * nothing in the chain has a schema entry — callers should then render no
  * attribute fields rather than guessing.
+ *
+ * Both this and `categoryName` work in CANONICAL ENGLISH (`nameEn`), because
+ * that is how the schema is keyed. Passing a translated label matches nothing,
+ * which is why every non-English locale used to render an empty detail section.
  */
 export function attributeSourceName(path: SubcategoryNode[], categoryName?: string | null): string | null {
   if (!categoryName) return null;
   for (let i = path.length - 1; i >= 0; i--) {
-    if (getAttributeFields(categoryName, path[i].name).length > 0) return path[i].name;
+    const name = schemaName(path[i]);
+    if (getAttributeFields(categoryName, name).length > 0) return name;
   }
   return null;
 }
+
+/** The English name a taxonomy row must be looked up under. */
+export const schemaName = <T extends { name: string; nameEn?: string }>(row: T | null | undefined): string =>
+  row ? row.nameEn || row.name : '';

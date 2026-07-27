@@ -13,6 +13,7 @@
       "title": "Votre enchère a été vendue"
     },
     "won": {
+      "body": "Your {{amount}} bid won “{{product}}”. Complete your order to secure it.",
       "title": "Vous avez remporté l'enchère"
     }
   },
@@ -73,6 +74,10 @@
       "body": "{{actor}} a accepté votre demande d'embauche {{reference}}.",
       "title": "Demande d'embauche acceptée"
     },
+    "cancelled": {
+      "body": "{{actor}} a annulé la location {{reference}}. Tous les fonds retenus ont été remboursés.",
+      "title": "Location annulée"
+    },
     "declined": {
       "body": "{{actor}} a refusé votre demande d'embauche {{reference}}.",
       "title": "Demande d'embauche refusée"
@@ -92,6 +97,20 @@
       "title": "Identité vérifiée"
     }
   },
+  "loader": {
+    "assigned": {
+      "body": "Vous avez été affecté à la tâche de chargement {{reference}}.",
+      "title": "Un poste vous a été attribué."
+    },
+    "completed": {
+      "body": "Le chargement de la tâche {{reference}} est terminé.",
+      "title": "Chargement terminé"
+    },
+    "job_claimed": {
+      "body": "{{loaderco}} a réclamé votre tâche de chargement {{reference}}.",
+      "title": "Emploi revendiqué"
+    }
+  },
   "market": {
     "approved": {
       "body": "« {{market}} » est désormais répertorié — les acheteurs et les vendeurs peuvent s'y associer.",
@@ -103,6 +122,10 @@
     }
   },
   "order": {
+    "bid_awarded": {
+      "body": "Vous avez gagné {{reference}}. La commande {{orderReference}} est maintenant ouverte.",
+      "title": "Votre offre a été acceptée."
+    },
     "delivered_buyer": {
       "body": "La commande {{reference}} a été livrée.",
       "title": "Livré"
@@ -123,9 +146,17 @@
       "body": "{{buyer}} s'est renseigné sur {{product}}.",
       "title": "Nouvelle demande"
     },
+    "new_order": {
+      "body": "{{buyer}} a passé une commande de {{product}}.",
+      "title": "Nouvel ordre {{reference}}"
+    },
     "picked_up": {
       "body": "La commande {{reference}} est en transit.",
       "title": "Marchandises récupérées"
+    },
+    "placed": {
+      "body": "Votre commande {{reference}} pour {{product}} a été passée.",
+      "title": "Commande passée"
     },
     "seller_responded": {
       "body": "{{seller}} a cité {{amount}} pour {{product}}.",
@@ -134,10 +165,6 @@
     "status_changed": {
       "body": "La commande est maintenant de {{status}}.",
       "title": "Commande {{reference}} — {{status}}"
-    },
-    "placed": {
-      "title": "Commande passée",
-      "body": "Votre commande {{reference}} pour {{product}} a été passée."
     }
   },
   "product": {
@@ -189,6 +216,20 @@
       "title": "L'utilisateur a répondu"
     }
   },
+  "transport": {
+    "assigned": {
+      "body": "Votre devis a été accepté — le voyage {{reference}} de {{fromCity}} à {{toCity}} vous est attribué.",
+      "title": "Voyage assigné"
+    },
+    "delivered": {
+      "body": "Le voyage {{reference}} a été effectué.",
+      "title": "Voyage livré"
+    },
+    "quote_new": {
+      "body": "A transporter quoted {{amount}} on your request.",
+      "title": "Nouveau devis de transport"
+    }
+  },
   "wallet": {
     "escrow_release": {
       "body": "{{amount}} a été versé dans votre portefeuille.",
@@ -198,6 +239,10 @@
       "body": "{{issuer}} a émis {{number}} pour {{amount}}.",
       "title": "Nouvelle facture"
     },
+    "invoice_paid": {
+      "body": "{{number}} pour {{amount}} a été marqué comme payé.",
+      "title": "Facture payée"
+    },
     "payout_approved": {
       "body": "Votre retrait de {{amount}} a été approuvé et payé.",
       "title": "Paiement effectué"
@@ -205,6 +250,10 @@
     "payout_declined": {
       "body": "Votre demande de paiement a été refusée.",
       "title": "Le versement a été refusé."
+    },
+    "payout_requested": {
+      "body": "Votre demande de retrait de {{amount}} a été reçue et est en cours d'examen.",
+      "title": "Paiement demandé"
     },
     "refund": {
       "body": "{{amount}} a été remboursé sur votre portefeuille.",

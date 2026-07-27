@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export { BRAND } from './brand';
 export * from './attributes';
+export * from './listing';
 export * from './units';
 
 /** Platform roles (from the AgroTraders design). */

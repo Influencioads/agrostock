@@ -125,3 +125,31 @@ export const countryFlag = (name?: string | null): string => findCountry(name)?.
 
 /** ISO2 for a stored country name, or undefined when we do not recognise it. */
 export const countryIso2 = (name?: string | null): string | undefined => findCountry(name)?.iso2;
+
+/**
+ * Display a country in the reader's language, without shipping 250 names × 11
+ * locales: `Intl.DisplayNames` already knows them, from the ICU data the
+ * runtime carries (browsers, and Hermes on Expo SDK 54).
+ *
+ * The STORED value is always the English `name` — it is what `Product.country`,
+ * `supplyCountries` and every directory filter match on — so this is strictly a
+ * label. Falls back to the English name on any runtime without the API, or for
+ * a name we do not recognise.
+ */
+const labelCache = new Map<string, string>();
+export function countryLabel(name?: string | null, locale = 'en'): string {
+  const country = findCountry(name);
+  if (!country) return name ?? '';
+  if (locale === 'en') return country.name;
+  const key = `${locale}|${country.iso2}`;
+  const hit = labelCache.get(key);
+  if (hit) return hit;
+  let label = country.name;
+  try {
+    label = new Intl.DisplayNames([locale], { type: 'region' }).of(country.iso2) || country.name;
+  } catch {
+    // No ICU region data for this locale — the English name is still truthful.
+  }
+  labelCache.set(key, label);
+  return label;
+}

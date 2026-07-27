@@ -30,6 +30,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { monthlySeries, EARNED_STATUSES, orderDollars } from '../me/me.module';
 import { StatementsModule, StatementsService } from '../statements/statements.module';
 import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
+import { CreateProductDto, ProductsModule, ProductsService } from '../products/products.module';
 
 /** "$1,180" → 1180 (dollars); 0 when unparseable. */
 const parseAmount = (s: string | null | undefined): number => {
@@ -155,18 +156,15 @@ export class RejectProductDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() reason?: string;
 }
 
-export class UpdateProductDto {
-  @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() price?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsInt() priceCents?: number;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() qty?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() moq?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() grade?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() origin?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() unit?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() delivery?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() safeDeal?: boolean;
+/**
+ * Admins edit the WHOLE listing, so this is the seller's own create DTO made
+ * partial — one definition, no drift — plus the two flags only an admin owns.
+ * The handler delegates to `ProductsService.update`, so an admin edit runs the
+ * same currency conversion and validation a seller edit does.
+ */
+export class UpdateProductDto extends PartialType(CreateProductDto) {
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() verified?: boolean;
+  @ApiProperty({ required: false }) @IsOptional() @IsInt() priceCents?: number;
 }
 
 export class UpdateUserDto {
@@ -241,6 +239,7 @@ export class UpsertMarketDto {
   @ApiProperty({ example: '🇮🇳 India' }) @IsString() country!: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() city?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() region?: string;
+  @ApiProperty({ required: false, example: 'Gate 3, Ring Road' }) @IsOptional() @IsString() address?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() flag?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() active?: boolean;
 }
@@ -263,6 +262,7 @@ export class AdminService {
     private walletSvc: WalletService,
     private notifications: NotificationsService,
     private escrow: EscrowService,
+    private products: ProductsService,
   ) {}
 
   users(role?: string, search?: string) {
@@ -583,7 +583,7 @@ export class AdminService {
     const slug = dto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     return this.prisma.market.create({
       // Admin-created markets bypass the proposal queue and go live at once.
-      data: { slug, name: dto.name, country: dto.country, city: dto.city, region: dto.region, flag: dto.flag, active: dto.active ?? true, status: 'approved' },
+      data: { slug, name: dto.name, country: dto.country, city: dto.city, region: dto.region, address: dto.address, flag: dto.flag, active: dto.active ?? true, status: 'approved' },
     });
   }
 
@@ -969,7 +969,14 @@ export class AdminService {
       where,
       orderBy: { createdAt: 'desc' },
       take: 300,
-      include: { seller: { select: { name: true, country: true } }, category: { select: { name: true } } },
+      // Full rows: the admin panel edits every field of a listing, so it needs
+      // every field prefilled — not just the four the old table displayed.
+      include: {
+        seller: { select: { name: true, country: true } },
+        category: { select: { id: true, name: true } },
+        subcategory: { select: { id: true, name: true } },
+        market: { select: { id: true, name: true } },
+      },
     });
   }
 
@@ -1014,9 +1021,16 @@ export class AdminService {
   }
 
   async updateProduct(id: string, dto: UpdateProductDto, adminId: string) {
-    const existing = await this.prisma.product.findUnique({ where: { id }, select: { id: true } });
-    if (!existing) throw new NotFoundException('Product not found');
-    const updated = await this.prisma.product.update({ where: { id }, data: dto });
+    // `verified` is admin-only and not part of the seller DTO; everything else
+    // goes through the seller's own update path (see ProductsService.update).
+    const { verified, priceCents, ...productFields } = dto;
+    const updated = await this.products.update(id, null, productFields);
+    if (verified !== undefined || priceCents !== undefined) {
+      await this.prisma.product.update({
+        where: { id },
+        data: { ...(verified !== undefined ? { verified } : {}), ...(priceCents !== undefined ? { priceCents } : {}) },
+      });
+    }
     await this.audit.log({ actorId: adminId, action: 'product.update', entityType: 'Product', entityId: id, meta: { ...dto } });
     return updated;
   }
@@ -1714,7 +1728,7 @@ export class AdminController {
 }
 
 @Module({
-  imports: [StatementsModule],
+  imports: [StatementsModule, ProductsModule],
   controllers: [AdminController],
   providers: [AdminService],
 })

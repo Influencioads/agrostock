@@ -5,9 +5,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { isPendingVerification, validateSignupPassword } from '@agrotraders/api-client';
-import { ALL_COUNTRIES } from '@agrotraders/geo';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
+import { countryOptions } from '../../lib/countries';
 import { useI18n } from '../../i18n';
 import { Button, Card, Input, Screen, Txt } from '../../ui';
 import { C, radius, space, type } from '../../theme/tokens';
@@ -15,8 +15,6 @@ import type { RootStackParamList } from '../../navigation/types';
 import { SIGNUP_ROLES } from './signupRoles';
 import { TagInput } from '../components/TagInput';
 import { PickerField } from '../components/PickerSheet';
-
-const COUNTRY_OPTIONS = ALL_COUNTRIES.map((c) => ({ value: c.name, label: `${c.flag} ${c.name}` }));
 
 const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker']);
 
@@ -31,7 +29,8 @@ const ROLE_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function SignUp() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const COUNTRY_OPTIONS = countryOptions(lang);
   const nav = useNavigation<Nav>();
   const { register } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '', country: '', role: 'buyer', phone: '', location: '' });

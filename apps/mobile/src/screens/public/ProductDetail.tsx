@@ -4,7 +4,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { countryFlag, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
+import { countryFlag, countryLabel, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
 import { getAttributeFields, unitSuffix } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
@@ -75,7 +75,7 @@ export function ProductDetail() {
   const { params } = useRoute<R>();
   const { user } = useAuth();
   const { fmtPrice } = useCurrency();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const basket = useBasket();
   const [qty, setQty] = useState(1);
   const { data: p, isLoading, isError, refetch } = useQuery<ApiProduct>({ queryKey: ['product', params.slug], queryFn: () => api.products.get(params.slug) });
@@ -253,7 +253,7 @@ export function ProductDetail() {
               <View style={{ flex: 1 }}>
                 <Text style={s.sellerName}>{p.seller.name}</Text>
                 <Txt variant="muted">
-                  {p.seller.country ? `${countryFlag(p.seller.country)} ${p.seller.country}` : ''}
+                  {p.seller.country ? `${countryFlag(p.seller.country)} ${countryLabel(p.seller.country, lang)}` : ''}
                   {p.seller.kycStatus === 'verified' ? ` · ${t('pubX.pd.verified')}` : ''}
                 </Txt>
               </View>
@@ -304,7 +304,7 @@ export function ProductDetail() {
             <Accordion title={t('pubX.pd.suppliesTo')} count={p.supplyCountries.length}>
               <Row gap={6} style={{ flexWrap: 'wrap' }}>
                 {p.supplyCountries.map((c) => (
-                  <Badge key={c} label={`${countryFlag(c)} ${c}`.trim()} tone="green" />
+                  <Badge key={c} label={`${countryFlag(c)} ${countryLabel(c, lang)}`.trim()} tone="green" />
                 ))}
               </Row>
             </Accordion>

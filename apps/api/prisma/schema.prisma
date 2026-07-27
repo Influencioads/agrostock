@@ -396,6 +396,9 @@ model Market {
   city      String?
   country   String
   region    String?
+  /// Street address of the mandi/market yard — what a trader actually needs to
+  /// find the gate. Free text; city/country stay the structured filters.
+  address   String?
   flag      String?
   active    Boolean      @default(true)
   status    MarketStatus @default(approved)
@@ -650,6 +653,10 @@ model Product {
   // Numeric baseline (USD cents) for currency conversion; backfilled from
   // `price` where parseable. `price` stays the display fallback.
   priceCents    Int?
+  /// The currency the SELLER quoted in. `priceCents` is always the USD baseline
+  /// (converted at listing time) so buyer-side conversion and price sorting stay
+  /// comparable across listings; this is what we echo back into the edit form.
+  priceCurrency String    @default("USD")
   unit          String    @default("/MT")
   // Legacy display rating (string). Kept in sync with `ratingAvg` when the
   // product has real reviews, otherwise retains its cosmetic default.
@@ -658,6 +665,9 @@ model Product {
   ratingCount   Int       @default(0)
   verified      Boolean   @default(false)
   safeDeal      Boolean   @default(true)
+  /// Seller accepts price negotiation. Buyers filter on it; the card/detail
+  /// pages label both states so "firm price" is as visible as "negotiable".
+  negotiable    Boolean   @default(false)
   isOffer       Boolean   @default(false)
   isAuction     Boolean   @default(false)
   startBidCents Int?

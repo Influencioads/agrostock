@@ -74,6 +74,10 @@
       "body": "{{actor}} تم قبول طلب التوظيف الخاص بك {{reference}}.",
       "title": "تم قبول طلب التوظيف"
     },
+    "cancelled": {
+      "body": "{{actor}} ألغى الحجز {{reference}}. تم رد أي أموال محتجزة.",
+      "title": "تم إلغاء الحجز"
+    },
     "declined": {
       "body": "{{actor}} رفض طلب التوظيف الخاص بك {{reference}}.",
       "title": "تم رفض طلب التوظيف"
@@ -93,6 +97,20 @@
       "title": "تم التحقق من الهوية"
     }
   },
+  "loader": {
+    "assigned": {
+      "body": "تم تكليفك بتحميل المهمة {{reference}}.",
+      "title": "لقد تم تكليفك بمهمة"
+    },
+    "completed": {
+      "body": "اكتملت عملية التحميل {{reference}}.",
+      "title": "اكتملت عملية التحميل"
+    },
+    "job_claimed": {
+      "body": "{{loaderco}} تم تأكيد مهمة التحميل الخاصة بك {{reference}}.",
+      "title": "ادعى جوب"
+    }
+  },
   "market": {
     "approved": {
       "body": "تم إدراج \"{{market}}\" الآن — يمكن للمشترين والبائعين ربطها به.",
@@ -104,10 +122,16 @@
     }
   },
   "order": {
+    "bid_awarded": {
+      "body": "لقد ربحت {{reference}}. الطلب {{orderReference}} متاح الآن.",
+      "title": "تم منح عرضك"
+    },
     "delivered_buyer": {
+      "body": "Order {{reference}} was delivered.",
       "title": "تم التوصيل"
     },
     "delivered_seller": {
+      "body": "Order {{reference}} was delivered. You can now raise an invoice.",
       "title": "تم التوصيل"
     },
     "dispatched": {
@@ -122,8 +146,17 @@
       "body": "{{buyer}} استفسر عن {{product}}.",
       "title": "استفسار جديد"
     },
+    "new_order": {
+      "body": "{{buyer}} قام بتقديم طلب لـ {{product}}.",
+      "title": "طلب جديد {{reference}}"
+    },
     "picked_up": {
+      "body": "Order {{reference}} is in transit.",
       "title": "تم استلام البضائع"
+    },
+    "placed": {
+      "body": "تم تقديم طلبك {{reference}} لـ {{product}}.",
+      "title": "تم تقديم الطلب"
     },
     "seller_responded": {
       "body": "{{seller}} اقتبس {{amount}} لـ {{product}}.",
@@ -132,10 +165,6 @@
     "status_changed": {
       "body": "الأمر الآن هو {{status}}.",
       "title": "الطلب {{reference}} — {{status}}"
-    },
-    "placed": {
-      "title": "تم تقديم الطلب",
-      "body": "تم تقديم طلبك {{reference}} لـ {{product}}."
     }
   },
   "product": {
@@ -187,6 +216,20 @@
       "title": "رد المستخدم"
     }
   },
+  "transport": {
+    "assigned": {
+      "body": "تم قبول عرض السعر الخاص بك — تم تخصيص الرحلة {{reference}} من {{fromCity}} إلى {{toCity}} لك.",
+      "title": "تم تحديد الرحلة"
+    },
+    "delivered": {
+      "body": "Trip {{reference}} was delivered.",
+      "title": "تم تسليم الرحلة"
+    },
+    "quote_new": {
+      "body": "قدم أحد شركات النقل عرض سعر {{amount}} بناءً على طلبك.",
+      "title": "عرض أسعار جديد للنقل"
+    }
+  },
   "wallet": {
     "escrow_release": {
       "body": "تم إرسال {{amount}} إلى محفظتك.",
@@ -196,6 +239,10 @@
       "body": "{{issuer}} أصدر {{number}} لـ {{amount}}.",
       "title": "فاتورة جديدة"
     },
+    "invoice_paid": {
+      "body": "تم وضع علامة \"مدفوع\" على {{number}} مقابل {{amount}}.",
+      "title": "تم دفع الفاتورة"
+    },
     "payout_approved": {
       "body": "تمت الموافقة على سحب مبلغ {{amount}} ودفع المبلغ.",
       "title": "تم إرسال الدفعة"
@@ -203,6 +250,10 @@
     "payout_declined": {
       "body": "تم رفض طلب السحب الخاص بك.",
       "title": "تم رفض الدفع"
+    },
+    "payout_requested": {
+      "body": "تم استلام طلب السحب الخاص بك بقيمة {{amount}} وهو قيد المراجعة.",
+      "title": "طلب صرف المبلغ"
     },
     "refund": {
       "body": "تم رد المبلغ {{amount}} إلى محفظتك.",

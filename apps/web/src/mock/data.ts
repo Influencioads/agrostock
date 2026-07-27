@@ -142,6 +142,8 @@ export interface Product {
   ratingCount?: number;
   verified: boolean;
   safe: boolean;
+  /** Seller entertains offers on the listed price (live API only). */
+  negotiable?: boolean;
   offer: boolean;
   auction: boolean;
   /** Paid ad placement — cards flagged true render a visible "Sponsored" label
@@ -149,6 +151,12 @@ export interface Product {
   sponsored?: boolean;
   delivery: string;
   category: string;
+  /** Taxonomy leaf name (live API only) — needed to label `attributes`. */
+  subcategory?: string;
+  /** Category-specific attribute values (live API only). */
+  attributes?: Record<string, unknown>;
+  /** FLOW-04 managed inventory (live API only); null/undefined = unlimited. */
+  stockQty?: number | null;
   marketName?: string;
   marketSlug?: string;
   /** Listing location (live API only) — used for filter chips/labels. */

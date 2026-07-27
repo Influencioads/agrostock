@@ -27,6 +27,7 @@
       "title": "پیشنهاد قیمت جدید فروشنده"
     },
     "outbid": {
+      "body": "Another seller undercut you on {{reference}}.",
       "title": "شما بیشتر از حد انتظار پیشنهاد دادید"
     }
   },
@@ -73,6 +74,10 @@
       "body": "{{actor}} درخواست استخدام شما پذیرفته شد {{reference}}.",
       "title": "درخواست اجاره پذیرفته می‌شود"
     },
+    "cancelled": {
+      "body": "{{actor}} اجاره را لغو کرد {{reference}}. هرگونه وجه مسدود شده مسترد شد.",
+      "title": "استخدام لغو شد"
+    },
     "declined": {
       "body": "{{actor}} درخواست استخدام شما را رد کرد {{reference}}.",
       "title": "درخواست استخدام رد شد"
@@ -92,6 +97,20 @@
       "title": "هویت تأیید شد"
     }
   },
+  "loader": {
+    "assigned": {
+      "body": "شما برای بارگذاری کار {{reference}} منصوب شده بودید.",
+      "title": "به شما شغلی محول شده است"
+    },
+    "completed": {
+      "body": "بارگیری کار {{reference}} کامل شد.",
+      "title": "کار بارگیری به پایان رسید"
+    },
+    "job_claimed": {
+      "body": "{{loaderco}} درخواست بارگیری شما {{reference}} ثبت شد.",
+      "title": "شغل ادعا شد"
+    }
+  },
   "market": {
     "approved": {
       "body": "«{{market}}» اکنون فهرست شده است - خریداران و فروشندگان می‌توانند به آن پیوست کنند.",
@@ -103,6 +122,10 @@
     }
   },
   "order": {
+    "bid_awarded": {
+      "body": "شما {{reference}} برنده شدید. سفارش {{orderReference}} اکنون باز است.",
+      "title": "پیشنهاد شما پذیرفته شد"
+    },
     "delivered_buyer": {
       "body": "سفارش {{reference}} تحویل داده شد.",
       "title": "تحویل داده شد"
@@ -116,15 +139,24 @@
       "title": "سفارش ارسال شد"
     },
     "load_assigned": {
+      "body": "Pick up {{cargo}} from {{fromCity}} — ask the seller for the pickup OTP.",
       "title": "بار جدید اختصاص داده شده"
     },
     "new_enquiry": {
       "body": "{{buyer}} درباره {{product}} سوال کرد.",
       "title": "استعلام جدید"
     },
+    "new_order": {
+      "body": "{{buyer}} برای {{product}} سفارش داد.",
+      "title": "سفارش جدید {{reference}}"
+    },
     "picked_up": {
       "body": "سفارش {{reference}} در حال ارسال است.",
       "title": "کالاها برداشت شدند"
+    },
+    "placed": {
+      "body": "سفارش شما {{reference}} برای {{product}} ثبت شد.",
+      "title": "سفارش ثبت شد"
     },
     "seller_responded": {
       "body": "{{seller}} به ازای {{product}}، {{amount}} را ذکر کرده است.",
@@ -133,10 +165,6 @@
     "status_changed": {
       "body": "سفارش اکنون {{status}} است.",
       "title": "سفارش {{reference}} — {{status}}"
-    },
-    "placed": {
-      "title": "سفارش ثبت شد",
-      "body": "سفارش شما {{reference}} برای {{product}} ثبت شد."
     }
   },
   "product": {
@@ -157,7 +185,8 @@
   },
   "role_request": {
     "approved": {
-      "body": "درخواست شما برای تبدیل شدن به یک {{role}} تایید شد. برای شروع، نقش‌های خود را از کنسول تغییر دهید."
+      "body": "درخواست شما برای تبدیل شدن به یک {{role}} تایید شد. برای شروع، نقش‌های خود را از کنسول تغییر دهید.",
+      "title": "You're now a {{role}}"
     },
     "declined": {
       "body": "درخواست شما برای تبدیل شدن به یک {{role}} رد شد.",
@@ -187,13 +216,32 @@
       "title": "کاربر پاسخ داد"
     }
   },
+  "transport": {
+    "assigned": {
+      "body": "پیشنهاد شما پذیرفته شد - سفر {{reference}} از {{fromCity}} تا {{toCity}} به شما اختصاص داده شده است.",
+      "title": "سفر اختصاص داده شده"
+    },
+    "delivered": {
+      "body": "سفر {{reference}} انجام شد.",
+      "title": "سفر تحویل داده شد"
+    },
+    "quote_new": {
+      "body": "یک شرکت حمل و نقل به درخواست شما {{amount}} قیمت گذاری کرد.",
+      "title": "نقل قول جدید حمل و نقل"
+    }
+  },
   "wallet": {
     "escrow_release": {
       "body": "{{amount}} به کیف پول شما اضافه شد.",
       "title": "پرداخت دریافت شد"
     },
     "invoice": {
+      "body": "{{issuer}} issued {{number}} for {{amount}}.",
       "title": "فاکتور جدید"
+    },
+    "invoice_paid": {
+      "body": "{{number}} for {{amount}} has been marked paid.",
+      "title": "فاکتور پرداخت شده"
     },
     "payout_approved": {
       "body": "برداشت شما به مبلغ {{amount}} تایید و پرداخت شده است.",
@@ -202,6 +250,10 @@
     "payout_declined": {
       "body": "درخواست واریز شما رد شد.",
       "title": "پرداخت رد شد"
+    },
+    "payout_requested": {
+      "body": "درخواست برداشت شما برای مبلغ {{amount}} دریافت شد و در دست بررسی است.",
+      "title": "درخواست پرداخت"
     },
     "refund": {
       "body": "مبلغ {{amount}} به کیف پول شما بازگردانده شد.",

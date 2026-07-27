@@ -24,6 +24,7 @@
     "nothingHere": "Rien ici",
     "paused": "En pause",
     "pending": "En attente",
+    "perDaySubmitted": "{{amount}}/day · submitted",
     "queueCleared": "File d'attente vidée",
     "reasonExample": "Budget trop élevé pour cette catégorie",
     "reasonLabel": "Raison : {{reason}}",
@@ -54,6 +55,7 @@
     "void": "Vente aux enchères annulée"
   },
   "audit": {
+    "actionPh": "Filter action (e.g. wallet, kyc, order)…",
     "detail": "Détail",
     "empty": "Aucune entrée d'audit ne correspond.",
     "entityPh": "Type d'entité (Utilisateur, Commande…)",
@@ -177,6 +179,7 @@
     "fEmoji": "Émoji",
     "fName": "Nom",
     "glance": "Aperçu de la communauté",
+    "groupStats": "{{members}} members · {{posts}} posts · {{messages}} messages",
     "groupsCount": "Groupes ({{count}})",
     "inGroup": "dans {{name}}",
     "metric": {
@@ -242,6 +245,33 @@
     "sub_one": "{{count}} litiges ouverts",
     "sub_other": "{{count}} litiges ouverts"
   },
+  "emailTpl": {
+    "body": "Corps (HTML)",
+    "close": "Fermer",
+    "ctaLabel": "Étiquette du bouton",
+    "defaultBadge": "Défaut",
+    "disable": "Désactiver",
+    "disabled": "Désactivé",
+    "edit": "Modifier",
+    "editedBadge": "Édité",
+    "enable": "Activer",
+    "enabled": "Activé",
+    "preview": "Aperçu",
+    "previewTitle": "Aperçu en direct",
+    "reset": "Réinitialiser par défaut",
+    "save": "Enregistrer les modifications",
+    "saved": "Modèle enregistré",
+    "saving": "Économie…",
+    "sendTest": "Envoyez-moi le test",
+    "sending": "Envoi…",
+    "smtpOff": "Le protocole SMTP n'est pas configuré — les modèles sont modifiables, mais les e-mails ne seront pas distribués tant que le protocole SMTP n'est pas configuré.",
+    "sub": "Modifiez le contenu de chaque courriel automatisé. Les modifications sont appliquées immédiatement.",
+    "subject": "Sujet",
+    "testFailed": "Impossible d'envoyer (vérifiez la configuration SMTP)",
+    "testSent": "Courriel de test envoyé à {{to}}",
+    "variables": "Variables que vous pouvez utiliser",
+    "varsHint": "Insérer avec des doubles accolades, par exemple {{name}}. Les valeurs inconnues ou vides s'affichent sans espace."
+  },
   "genericError": "Une erreur s'est produite. Veuillez réessayer.",
   "header": {
     "fallbackTitle": "Administrateur",
@@ -279,7 +309,7 @@
     "approve": "Approuver",
     "confirmReject": "Confirmer le rejet",
     "daysAgo": "{{count}} jours",
-    "docs": "Docs",
+    "docs": "Documents",
     "docsCount": "{{count}} documents",
     "hoursAgo": "{{count}} il y a 0 heure",
     "justNow": "tout à l' heure",
@@ -311,6 +341,7 @@
     "awaiting": "{{count}} En attente d'évaluation",
     "edit": "Modifier",
     "editMarket": "Marché de la modification",
+    "fAddress": "Adresse",
     "fCity": "Ville",
     "fCountry": "Pays",
     "fFlag": "Émoji drapeau",
@@ -319,6 +350,7 @@
     "hidden": "Caché",
     "hide": "Cacher",
     "pending": "En attente",
+    "phAddress": "Porte 3, périphérique",
     "phCity": "Delhi",
     "phCountry": "🇮🇳 Inde",
     "phFlag": "🇮🇳",
@@ -342,6 +374,7 @@
     "cms": "CMS",
     "community": "Communauté",
     "disputes": "Litiges",
+    "emailTemplates": "Modèles d'e-mails",
     "invoices": "Factures",
     "kyc": "KYC Avis",
     "loaders": "Chargeuses",
@@ -521,6 +554,7 @@
       "week": "Semaine"
     },
     "recentTxns": "Transactions récentes",
+    "rejectReason": "Motif du refus de ce paiement (affiché à l'utilisateur) :",
     "requested": "demandé {{date}}",
     "searchUser": "Rechercher un utilisateur par nom ou par adresse e-mail…",
     "shownCount": "{{count}} affiché",
@@ -529,8 +563,7 @@
       "payouts": "Paiements",
       "totalBalance": "Solde total du portefeuille",
       "wallets": "Portefeuilles"
-    },
-    "rejectReason": "Motif du refus de ce paiement (affiché à l'utilisateur) :"
+    }
   },
   "perm": {
     "ads_moderate": "Publicités",
@@ -541,6 +574,7 @@
     "cms_manage": "CMS pages",
     "community_moderate": "Communauté",
     "disputes_manage": "Litiges",
+    "email_templates": "Modèles d'e-mails",
     "finance_manage": "Finance (portefeuilles/paiements)",
     "kyc_review": "KYC avis",
     "loaders_manage": "Chargeuses",
@@ -560,6 +594,40 @@
     "body": "Ce module partage la même structure, les mêmes tables et les mêmes composants. La connexion aux données réelles se poursuit au fur et à mesure du déploiement des phases du backend.",
     "docs": "Consulter la documentation"
   },
+  "prodEdit": {
+    "addPhoto": "Ajouter",
+    "auction": "Enchères",
+    "category": "Catégorie",
+    "city": "Ville",
+    "country": "Pays",
+    "cover": "Couverture",
+    "delivery": "Livraison",
+    "details": "Détails du produit",
+    "grade": "Grade",
+    "market": "Marché",
+    "moq": "MOQ",
+    "name": "Nom du produit",
+    "negotiable": "Négociable",
+    "offer": "Offre",
+    "origin": "Origine",
+    "photoHint": "première image la couverture · enregistrée au format 1080×1080",
+    "photos": "Photos",
+    "price": "Prix (par unité)",
+    "qty": "Quantité",
+    "remove": "Retirer",
+    "safeDeal": "Transaction sécurisée (séquestre)",
+    "save": "Enregistrer les modifications",
+    "saveError": "Impossible d'enregistrer l'annonce — vérifiez les champs.",
+    "saving": "Économie…",
+    "select": "Sélectionner…",
+    "stock": "Action",
+    "subcategory": "Sous-catégorie",
+    "title": "Modifier « {{name}} »",
+    "unit": "Unité",
+    "uploadFailed": "Échec du chargement.",
+    "uploading": "Chargement en cours…",
+    "verified": "Vérifié"
+  },
   "prodMod": {
     "allTypes": "Tous types",
     "approve": "Approuver",
@@ -570,6 +638,7 @@
     "colSeller": "Vendeur",
     "colStatus": "Statut",
     "confirm": "Confirmer",
+    "confirmTakedown": "Masquer cette annonce du marché ?",
     "edit": "Modifier",
     "fName": "Nom",
     "fPrice": "Prix",
@@ -594,13 +663,12 @@
       "auction": "enchères",
       "offer": "offre",
       "safedeal": "safedeal"
-    },
-    "confirmTakedown": "Masquer cette annonce du marché ?"
+    }
   },
   "profile": {
     "active": "actif",
-    "inactive": "inactif",
     "currentPassword": "Mot de passe actuel",
+    "inactive": "inactif",
     "newPassword": "Nouveau mot de passe",
     "noPermissions": "Aucune autorisation de module attribuée.",
     "passwordError": "Impossible de modifier le mot de passe.",
@@ -618,6 +686,10 @@
     "allTime": "Tout le temps",
     "from": "Depuis",
     "to": "À"
+  },
+  "rbac": {
+    "deniedBody": "Vous n'avez pas la permission de voir cette section. Demandez à un super-admin si nécessaire.",
+    "deniedTitle": "Accès refusé"
   },
   "reports": {
     "exportCsv": "Exporter CSV",
@@ -791,11 +863,15 @@
     "activity": "Activité",
     "addRole": "Ajouter un rôle…",
     "adminOnly": "Réservé aux administrateurs",
+    "confirmDeactivate": "Désactiver ce compte ? L'utilisateur sera déconnecté et ne pourra plus se connecter.",
+    "confirmDelete": "Supprimer définitivement ce compte ? Cette action est irréversible. Les utilisateurs ayant des commandes, des produits ou un historique financier ne peuvent pas être supprimés — désactivez-les à la place.",
     "contactEmail": "Adresse e-mail",
     "country": "Pays",
     "dangerBody": "La désactivation déconnecte l'utilisateur et bloque la connexion, mais conserve ses données et est réversible. La suppression définitive supprime le compte et est irréversible.",
     "dangerZone": "Zone dangereuse",
     "deactivate": "Désactiver le compte",
+    "deleteBlocked": "Cet utilisateur a des enregistrements commerciaux, financiers ou d'assistance et ne peut pas être supprimé définitivement. Désactivez le compte à la place.",
+    "deletePermanently": "Supprimer définitivement",
     "deleting": "Suppression…",
     "editDetails": "Modifier les détails",
     "email": "E-mail",
@@ -808,18 +884,14 @@
     "phone": "Téléphone",
     "primary": "(primaire)",
     "privateContact": "Contact privé",
+    "reactivate": "Réactiver le compte",
     "revokeRole": "Révoquer le rôle",
     "roles": "Rôles",
     "saveChanges": "Enregistrer les modifications",
     "saving": "Économie…",
     "title": "Gérer les utilisateurs",
     "wallet": "Portefeuille",
-    "whatsapp": "WhatsApp",
-    "confirmDeactivate": "Désactiver ce compte ? L'utilisateur sera déconnecté et ne pourra plus se connecter.",
-    "reactivate": "Réactiver le compte",
-    "deletePermanently": "Supprimer définitivement",
-    "confirmDelete": "Supprimer définitivement ce compte ? Cette action est irréversible. Les utilisateurs ayant des commandes, des produits ou un historique financier ne peuvent pas être supprimés — désactivez-les à la place.",
-    "deleteBlocked": "Cet utilisateur a des enregistrements commerciaux, financiers ou d'assistance et ne peut pas être supprimé définitivement. Désactivez le compte à la place."
+    "whatsapp": "WhatsApp"
   },
   "users": {
     "createActive": "Actif",
@@ -837,9 +909,5 @@
     "subtitle": "{{shown}} sur {{total}} comptes",
     "title": "Utilisateurs",
     "view": "Voir"
-  },
-  "rbac": {
-    "deniedTitle": "Accès refusé",
-    "deniedBody": "Vous n'avez pas la permission de voir cette section. Demandez à un super-admin si nécessaire."
   }
 }

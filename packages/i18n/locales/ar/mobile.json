@@ -25,6 +25,29 @@
     "seconds": "ثوانٍ"
   },
   "auth": {
+    "forgotPassword": {
+      "back": "العودة إلى تسجيل الدخول",
+      "email": "بريد إلكتروني",
+      "send": "إرسال رابط إعادة التعيين",
+      "sending": "إرسال…",
+      "sent": "إذا كان هذا البريد الإلكتروني مسجلاً، فسيتم إرسال رابط إعادة تعيين كلمة المرور إليه. افتحه لتعيين كلمة مرور جديدة.",
+      "subtitle": "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.",
+      "title": "أعد تعيين كلمة المرور الخاصة بك"
+    },
+    "otpLogin": {
+      "code": "رمز مكون من 6 أرقام",
+      "codeSent": "إذا كان هذا البريد الإلكتروني مسجلاً، فسيتم إرسال رمز في الطريق.",
+      "email": "بريد إلكتروني",
+      "invalid": "رمز غير صالح أو منتهي الصلاحية.",
+      "resend": "أرسل رمزًا جديدًا",
+      "sendCode": "أرسل لي رمزًا عبر البريد الإلكتروني",
+      "sending": "إرسال…",
+      "subtitle": "سنرسل إليك رمزًا مكونًا من 6 أرقام عبر البريد الإلكتروني - لا حاجة لكلمة مرور.",
+      "title": "سجّل الدخول باستخدام رمز",
+      "usePassword": "استخدم كلمة مرور بدلاً من ذلك",
+      "verify": "تسجيل الدخول",
+      "verifying": "جارٍ تسجيل الدخول…"
+    },
     "password": "كلمة المرور",
     "passwordPh": "••••••••",
     "roleHelper": {
@@ -41,8 +64,11 @@
       "demoTitle": "أو جرب حسابًا تجريبيًا",
       "emailOrPhone": "البريد الإلكتروني أو الهاتف",
       "emailOrPhonePh": "you@company.com أو عبر الهاتف",
+      "forgot": "هل نسيت كلمة السر؟",
       "invalid": "بريد إلكتروني أو كلمة مرور غير صحيحة.",
       "newHere": "جديد هنا؟",
+      "or": "أو",
+      "otp": "سجّل الدخول باستخدام OTP",
       "subtitle": "سجّل الدخول إلى حسابك AgroTraders",
       "title": "مرحبًا بعودتك"
     },
@@ -51,6 +77,7 @@
       "checkInboxTitle": "أكد بريدك الإلكتروني",
       "cityRegion": "المدينة / المنطقة",
       "cityRegionPh": "دبي",
+      "confirmPassword": "تأكيد كلمة المرور",
       "country": "دولة",
       "countryPh": "الإمارات العربية المتحدة 🇦🇪",
       "cta": "إنشاء حساب",
@@ -61,11 +88,15 @@
       "fullNamePh": "كريم للتجارة",
       "iAmA": "أنا...",
       "noCities": "لا توجد مدينة مطابقة",
+      "passwordMismatch": "كلمات المرور غير متطابقة.",
+      "passwordTooShort": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.",
       "phone": "رقم الهاتف (خاص - للمسؤولين فقط)",
       "phonePh": "+971 50 123 4567",
       "pickCountryFirst": "اختر دولة أولاً",
       "resend": "أعد إرسال الرابط",
       "resent": "تم إرسال الرابط — تحقق من بريدك الوارد",
+      "subtitle": "اختر دورك — يمكنك إضافة المزيد لاحقًا.",
+      "terms": "بمتابعتك، فإنك توافق على الشروط وسياسة الخصوصية.",
       "title": "أنشئ حسابك"
     }
   },
@@ -177,17 +208,25 @@
     },
     "orders": {
       "acceptQuote": "قبول عرض الأسعار",
+      "cancelOrder": "إلغاء الطلب",
+      "confirmCancel": "إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا.",
+      "confirmDispute": "هل ترغب بفتح نزاع بخصوص هذا الطلب؟ سيقوم فريقنا بمراجعته.",
       "details": "تفاصيل",
       "detailsOtp": "التفاصيل · OTP",
       "emptyBody": "تصفح السوق لتقديم طلبك الأول.",
       "emptyTitle": "لم يتم تقديم أي طلبات حتى الآن",
       "errUpdate": "تعذر تحديث هذا الطلب.",
       "mark": "مارك {{label}}",
+      "openDispute": "نزاع مفتوح",
       "orderFallback": "طلب",
       "payEscrow": "ادفع إلى حساب الضمان",
       "screenTitle": "طلباتي",
       "signInBody": "ستظهر طلباتك هنا بمجرد تسجيل دخولك.",
-      "signInTitle": "سجّل الدخول لعرض الطلبات"
+      "signInTitle": "سجّل الدخول لعرض الطلبات",
+      "stepDispatched": "مُرسَل",
+      "stepEscrow": "الضمان",
+      "stepRelease": "مراقبة الجودة والإفراج",
+      "stepTransit": "في مرحلة انتقالية"
     },
     "room": {
       "awaitingBids": "في انتظار العروض",
@@ -211,6 +250,7 @@
       "ownerNote": "لقد نشرت هذا الشرط",
       "quotes": "يقتبس",
       "reverseAuction": "مزاد عكسي",
+      "sealedBanner": "وضع العرض المغلق. يتم إخفاء أسماء البائعين وصورهم حتى توافق على العرض. لا يمكن للعروض أن ترى بعضها البعض.",
       "sealedNoBid": "لم تقدم عرضًا لهذا الشرط بعد.",
       "sealedNote": "تبقى العروض المقدمة على طلب التسعير سرية - أنت فقط من يرى الأسعار.",
       "sellersN_few": "بائعون {{count}}",
@@ -378,6 +418,12 @@
     },
     "chart": {
       "buyers": "المشترون",
+      "lastMonths_few": "last {{count}} months",
+      "lastMonths_many": "last {{count}} months",
+      "lastMonths_one": "last {{count}} months",
+      "lastMonths_other": "last {{count}} months",
+      "lastMonths_two": "last {{count}} months",
+      "lastMonths_zero": "last {{count}} months",
       "month": {
         "Apr": "أبريل",
         "Aug": "أغسطس",
@@ -521,11 +567,21 @@
       "verifyError": "لم نتمكن من التحقق من هذا الرمز."
     },
     "product": {
+      "addToSaved": "أضف إلى قائمة الأمنيات",
       "auction": "مزاد",
-      "safeDeal": "صفقة آمنة",
-      "verified": "تم التحقق",
+      "available": "{{value}} متاح",
+      "chatSeller": "محادثة",
+      "directDeal": "صفقة مباشرة",
+      "fixedPrice": "سعر ثابت",
+      "inStock": "في الأوراق المالية",
       "moq": "الحد الأدنى {{value}}",
-      "available": "{{value}} متاح"
+      "negotiable": "قابل للتفاوض",
+      "outOfStock": "إنتهى من المخزن",
+      "removeFromSaved": "إزالة من قائمة الأمنيات",
+      "safeDeal": "صفقة آمنة",
+      "sponsored": "برعاية",
+      "stockCount": "{{count}} {{unit}} متوفر في المخزون",
+      "verified": "تم التحقق"
     },
     "profile": {
       "about": "عن",
@@ -578,6 +634,7 @@
     "activeJobs": "الوظائف المتاحة",
     "activeOrders": "الطلبات النشطة",
     "activeTrips": "رحلات نشطة",
+    "addProduct": "إضافة منتج",
     "allTime": "على مر العصور",
     "assignments": "الواجبات",
     "availability": "التوافر",
@@ -599,6 +656,7 @@
     "driverPerformance": "أداء السائق",
     "due": "{{count}} مستحق",
     "earnings": "الأرباح",
+    "earningsWeek": "الأرباح هذا الأسبوع",
     "escrow": "الضمان",
     "etaDays": "ETA {{count}} أيام",
     "fleetUtilization": "استخدام الأسطول",
@@ -606,6 +664,7 @@
     "goOnline": "تصفح الإنترنت",
     "jobRequests": "طلبات التوظيف",
     "live": "يعيش",
+    "liveListings": "قوائم متاحة",
     "liveTracking": "التتبع المباشر",
     "loaderSub": "نظرة سريعة على طواقم العمل والمهام.",
     "lowOnStock": "المخزون منخفض",
@@ -626,13 +685,19 @@
     "offline": "أنت غير متصل بالإنترنت - لن يراك أصحاب العمل على أنك متاح.",
     "onTime": "الالتزام بالمواعيد {{pct}}%",
     "online": "أنت متصل بالإنترنت وتقبل الوظائف.",
+    "openRfqs": "طلبات عروض أسعار مفتوحة",
     "ordersCount": "{{count}} طلبات",
     "ordersReceived": "الطلبات المستلمة",
     "paid": "مدفوع",
     "pendingPayments": "المدفوعات المعلقة",
     "perMonth": "دولار أمريكي / شهرياً",
     "procurementSpend": "الإنفاق على المشتريات",
+    "product": "منتج",
     "productViews": "عرض المنتج",
+    "quickHireTransport": "استئجار وسائل النقل",
+    "quickKyc": "KYC docs",
+    "quickPostRfq": "المنشور RFQ",
+    "quickWallet": "محفظة",
     "rating": "تصنيف",
     "revenue": "ربح",
     "safeDeal": "صفقة آمنة",
@@ -675,18 +740,19 @@
     "name": "ضيف"
   },
   "hub": {
+    "account": "الحساب",
     "activeDashboard": "لوحة معلومات تفاعلية",
     "community": "مجتمع",
     "displayCurrency": "عرض العملة",
+    "kycVerified": "KYC تم التحقق",
     "logOut": "تسجيل الخروج",
+    "marketplace": "السوق",
     "myHires": "موظفاتي",
     "myProfile": "ملفي الشخصي",
     "notifications": "إشعارات",
     "restartNotice": "سيتم إعادة تشغيل التطبيق لتطبيق اتجاه النص الجديد.",
     "rolesAccess": "الأدوار والصلاحيات",
-    "support": "الدعم المباشر",
-    "marketplace": "السوق",
-    "account": "الحساب"
+    "support": "الدعم المباشر"
   },
   "loaderX": {
     "attendance": {
@@ -890,6 +956,7 @@
       "title": "التقييمات والمراجعات"
     },
     "tracking": {
+      "byRoad": "≈ {{km}} km by road · ETA ~{{h}}h · {{straight}} km straight-line",
       "destination": "وجهة",
       "locating": "تحديد المسار...",
       "notFound": "لم يتم العثور على هذا المسار",
@@ -1070,9 +1137,38 @@
       "workers_two": "{{count}} عمال",
       "workers_zero": "{{count}} عمال"
     },
+    "filter": {
+      "apply": "تطبيق",
+      "applyN": "تطبيق ({{count}})",
+      "categoryHint": "اختر فئة لإظهار عوامل التصفية الخاصة بمواصفاتها.",
+      "clear": "مسح",
+      "clearAll": "مسح الكل",
+      "groups": {
+        "category": "الفئة",
+        "city": "المدينة",
+        "country": "الدولة",
+        "dealType": "نوع الصفقة",
+        "grade": "الدرجة",
+        "market": "السوق",
+        "price": "السعر"
+      },
+      "searchOptions": "بحث",
+      "sortBy": "ترتيب حسب",
+      "title": "عوامل التصفية"
+    },
     "home": {
+      "cantFindBody": "انشر رمز RFQ واحصل على عروض أسعار مختومة في غضون ساعات.",
+      "cantFindTitle": "ألا تجد سلعتك؟",
+      "catAll": "الجميع",
+      "categories": "تسوق حسب الفئة",
       "communityA11y": "AgroTraders المجتمع",
+      "dealOfDay": "عرض اليوم",
+      "deliverTo": "التوصيل إلى",
       "featured": "مميز",
+      "freshArrivals": "وصل حديثًا",
+      "heroCta": "استكشف الكثير",
+      "heroTag": "أسبوع الحصاد",
+      "heroTitle": "قمح ربيعي، مباشرة من السوق",
       "link": {
         "auctions": "المزادات",
         "bids": "العطاءات",
@@ -1085,20 +1181,23 @@
       "liveAuctions": "المزادات المباشرة",
       "noOffers": "لا توجد عروض في الوقت الحالي.",
       "offersOfDay": "عروض اليوم",
+      "postRfq": "المنشور RFQ",
+      "promoBody": "استخدم الرمز AGRO4 · محمي بواسطة خدمة الضمان",
+      "promoCta": "مطالبة",
+      "promoTitle": "خصم ثابت 4% على الطلب الأول",
+      "promoted": "مميّز",
+      "requirements": "مشترون يبحثون عن مورّد",
       "safeDealBody": "يتم الاحتفاظ بالأموال حتى تؤكد استلامها.",
       "safeDealTitle": "خدمة الضمان الآمنة للصفقات",
       "searchHint": "ابحث عن الحبوب والبقوليات والزيوت...",
       "seeAll": "عرض الكل",
+      "services": "الخدمات",
       "svc": {
         "loaders": "اللوادر",
         "offices": "المكاتب",
         "safeDeal": "صفقة آمنة",
         "transport": "ينقل"
       },
-      "categories": "تسوق حسب الفئة",
-      "promoted": "مميّز",
-      "services": "الخدمات",
-      "requirements": "مشترون يبحثون عن مورّد",
       "viewAll": "عرض الكل"
     },
     "kyc": {
@@ -1134,6 +1233,7 @@
       "caughtUp": "لقد اطلعت على كل شيء",
       "channelGeneral": "عام",
       "chooseHow": "اختر الطريقة التي تريد أن يتم إخطارك بها لكل نوع من أنواع الأنشطة.",
+      "earlier": "سابقًا",
       "email": "بريد إلكتروني",
       "inApp": "داخل التطبيق",
       "markAllRead": "تم قراءة جميع الكلمات.",
@@ -1141,7 +1241,8 @@
       "push": "يدفع",
       "settingsTitle": "إعدادات الإشعارات",
       "signIn": "سجّل الدخول للاطلاع على الإشعارات",
-      "title": "إشعارات"
+      "title": "إشعارات",
+      "today": "اليوم"
     },
     "offers": {
       "emptyBody": "ترقبوا عروضاً جديدة قريباً.",
@@ -1150,11 +1251,17 @@
       "title": "عروض اليوم"
     },
     "pd": {
+      "addToRfq": "إضافة للطلب",
       "alsoLike": "قد يعجبك أيضاً",
       "available": "متاح",
       "buyNow": "اشتري الآن",
       "buyerReviews": "آراء المشترين",
+      "chat": "محادثة",
       "chatSeller": "تواصل مع البائع",
+      "decreaseQty": "تقليل الكمية",
+      "delivery": "التسليم",
+      "escrowNote": "حساب الضمان الآمن · الأموال محفوظة حتى اجتياز فحص الجودة",
+      "increaseQty": "زيادة الكمية",
       "loading": "جارٍ تحميل المنتج…",
       "moq": "MOQ",
       "offer": "يعرض",
@@ -1163,6 +1270,7 @@
       "orderPlacedBody": "طلبك موجود في حساب الضمان ضمن برنامج \"الصفقة الآمنة\".",
       "orderPlacedTitle": "تم تقديم الطلب",
       "ordered": "{{count}} تم طلبه الشهر الماضي",
+      "origin": "المنشأ",
       "price": "سعر",
       "quality": {
         "documentation": "الوثائق",
@@ -1171,27 +1279,27 @@
         "purity": "نقاء"
       },
       "qualityScore": "تقييم الجودة",
+      "quantity": "كمية",
       "quoteRequestedBody": "سيرد البائع قريباً.",
       "quoteRequestedTitle": "طلب عرض سعر",
       "requestQuote": "طلب عرض سعر",
       "safeDeal": "صفقة آمنة",
       "sellerFallback": "بائع",
       "specifications": "تحديد",
+      "supplier": "المورّد",
       "suppliesTo": "الإمدادات إلى",
+      "tradeTerms": "شروط التعامل",
       "transport": "ينقل",
       "transportBody": "احجز خدمة النقل من لوحة تحكم المشتري الخاصة بك.",
       "transportTitle": "ينقل",
       "verified": "تم التحقق",
-      "watching": "{{count}}+ يشاهد الآن",
-      "addToRfq": "إضافة للطلب",
-      "supplier": "المورّد",
-      "tradeTerms": "شروط التعامل",
-      "origin": "المنشأ",
-      "delivery": "التسليم"
+      "watching": "{{count}}+ يشاهد الآن"
     },
     "ph": {
+      "bidTitle": "Basmati rice — 100 MT for Jebel Ali",
       "cargoBasmati": "أرز بسمتي",
       "cargoBasmati50": "أرز بسمتي 50 طن متري",
+      "cargoBasmati500": "500 MT Basmati Rice",
       "cityAmritsar": "أمريتسار",
       "cityDubai": "دبي",
       "cityMundra": "موندرا",
@@ -1220,6 +1328,13 @@
       "supCities": "مومباي، دبي",
       "vehicleType": "حاوية مبردة بطول 40 قدمًا",
       "workerName": "عمران شيخ"
+    },
+    "plp": {
+      "clearFilters": "مسح عوامل التصفية",
+      "filters": "تصفية",
+      "noResults": "لا توجد نتائج",
+      "results": "{{count}} نتيجة",
+      "sort": "ترتيب"
     },
     "profile": {
       "activeRoutes": "المسارات النشطة",
@@ -1258,55 +1373,31 @@
       "send": "يرسل",
       "viewOffers": "عرض العروض"
     },
+    "rfq": {
+      "addedBody": "{{name}} في سلتك. أرسل الطلب بعد إضافة كل ما تحتاجه.",
+      "addedTitle": "تمت الإضافة إلى سلة التسعير",
+      "emptyBody": "أضف عروضًا من أي مورّد، ثم أرسل طلب تسعير واحدًا لكل مورّد.",
+      "emptyTitle": "سلة طلبات التسعير فارغة",
+      "escrow": "الضمان",
+      "failBody": "يرجى المحاولة مرة أخرى.",
+      "failTitle": "تعذّر إرسال الطلب",
+      "footNote": "يتلقى كل مورّد طلبًا خاصًا به. تبقى العروض خاصة بك.",
+      "lineCount": "{{count}} عنصر",
+      "noteFromBasket": "أُرسل من سلة التسعير إلى {{supplier}}.",
+      "requestQuotes": "طلب عروض أسعار",
+      "sentBody": "سيرد المورّد بعرض سعر. تابعه ضمن العروض.",
+      "sentLabel": "تم إرسال الطلب",
+      "sentTitle": "تم إرسال الطلب",
+      "title": "سلة طلبات التسعير"
+    },
     "search": {
       "emptyBody": "اكتب للعثور على المنتجات في جميع أنحاء السوق.",
       "emptyTitle": "بحث AgroTraders",
       "noMatchBody": "لم يتم العثور على شيء لـ \"{{q}}\".",
       "noMatchTitle": "لا توجد نتائج",
       "placeholder": "ابحث عن الحبوب والبقوليات والزيوت...",
-      "recent": "عمليات البحث الأخيرة"
-    },
-    "filter": {
-      "title": "عوامل التصفية",
-      "clear": "مسح",
-      "clearAll": "مسح الكل",
-      "apply": "تطبيق",
-      "applyN": "تطبيق ({{count}})",
-      "sortBy": "ترتيب حسب",
-      "searchOptions": "بحث",
-      "categoryHint": "اختر فئة لإظهار عوامل التصفية الخاصة بمواصفاتها.",
-      "groups": {
-        "category": "الفئة",
-        "dealType": "نوع الصفقة",
-        "price": "السعر",
-        "country": "الدولة",
-        "city": "المدينة",
-        "grade": "الدرجة",
-        "market": "السوق"
-      }
-    },
-    "plp": {
-      "results": "{{count}} نتيجة",
-      "filters": "تصفية",
-      "sort": "ترتيب",
-      "clearFilters": "مسح عوامل التصفية",
-      "noResults": "لا توجد نتائج"
-    },
-    "rfq": {
-      "title": "سلة طلبات التسعير",
-      "emptyTitle": "سلة طلبات التسعير فارغة",
-      "emptyBody": "أضف عروضًا من أي مورّد، ثم أرسل طلب تسعير واحدًا لكل مورّد.",
-      "addedTitle": "تمت الإضافة إلى سلة التسعير",
-      "addedBody": "{{name}} في سلتك. أرسل الطلب بعد إضافة كل ما تحتاجه.",
-      "requestQuotes": "طلب عروض أسعار",
-      "sentLabel": "تم إرسال الطلب",
-      "sentTitle": "تم إرسال الطلب",
-      "sentBody": "سيرد المورّد بعرض سعر. تابعه ضمن العروض.",
-      "failTitle": "تعذّر إرسال الطلب",
-      "failBody": "يرجى المحاولة مرة أخرى.",
-      "lineCount": "{{count}} عنصر",
-      "noteFromBasket": "أُرسل من سلة التسعير إلى {{supplier}}.",
-      "footNote": "يتلقى كل مورّد طلبًا خاصًا به. تبقى العروض خاصة بك."
+      "recent": "عمليات البحث الأخيرة",
+      "trending": "الأكثر رواجاً في منطقتك"
     }
   },
   "reviews": {
@@ -1375,6 +1466,10 @@
       "category": "فئة",
       "city": "مدينة",
       "country": "دولة",
+      "currency": "عملة",
+      "dealDirect": "صفقة مباشرة (بدون وسيط)",
+      "dealSafe": "صفقة آمنة (محمية بموجب حساب ضمان)",
+      "dealType": "نوع الصفقة",
       "delivery": "توصيل",
       "editTitle": "تعديل المنتج",
       "emoji": "الرموز التعبيرية",
@@ -1392,7 +1487,11 @@
       "phOrigin": "الهند",
       "phQty": "500 MT",
       "phUnit": "/MT",
+      "pickup": "استلام المشتري",
       "price": "السعر (USD)",
+      "priceFixed": "سعر ثابت",
+      "priceNegotiable": "قابل للتفاوض",
+      "priceType": "نوع السعر",
       "quantity": "كمية",
       "runsForDays": "يستمر لمدة (أيام)",
       "saveChanges": "حفظ التغييرات",
@@ -1510,6 +1609,7 @@
       "hint": "انقر على صورة لجعلها الغلاف. الصورة الأولى هي ما يراه المشترون.",
       "permissionError": "يلزم الحصول على إذن لإضافة الصور.",
       "photos": "الصور ({{n}}/{{max}})",
+      "sizeHint": "يتم تخزينها على شكل مربعات بحجم 1080×1080 بكسل. لا يقل طول الضلع الأطول عن 1080 بكسل.",
       "uploadError": "فشل تحميل الصورة. حاول استخدام صور أصغر حجماً.",
       "uploading": "جارٍ التحميل…"
     },
@@ -1533,6 +1633,7 @@
     },
     "market": {
       "addNew": "+ إنشاء سوق جديد",
+      "address": "العنوان (اختياري)",
       "cancel": "يلغي",
       "city": "مدينة",
       "country": "دولة",
@@ -1546,6 +1647,7 @@
       "pendingApproval": "بانتظار الموافقة",
       "pendingHint": "لن يراه أحد سواك حتى يوافق عليه أحد المسؤولين.",
       "pendingSuffix": " (قيد الانتظار)",
+      "phAddress": "البوابة 3، الطريق الدائري",
       "phCity": "كاندلا",
       "phCountry": "الهند",
       "phName": "ميناء كاندلا",
@@ -1568,6 +1670,7 @@
       "dispatchGenerate": "إرسال وتوليد كلمات المرور لمرة واحدة",
       "dispatchTitle": "إرسال {{ref}}",
       "dispatched": "مُرسَل.",
+      "dispatchedTitle": "{{ref}} dispatched",
       "dispatching": "جارٍ الإرسال...",
       "done": "منتهي",
       "driverName": "اسم السائق",
@@ -1701,6 +1804,7 @@
     "requests": {
       "emptyBody": "ستظهر طلبات الشحن الجديدة هنا.",
       "emptyTitle": "لا توجد طلبات مفتوحة",
+      "etaPlaceholder": "ETA days",
       "quote": "يقتبس",
       "quotePlaceholder": "عرض سعر $",
       "title": "الأحمال المتاحة"

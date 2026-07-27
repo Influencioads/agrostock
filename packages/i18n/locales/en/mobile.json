@@ -447,7 +447,6 @@
       "name": "Market name",
       "country": "Country",
       "city": "City",
-      "flag": "Flag emoji",
       "creating": "Creating…",
       "create": "Create market",
       "cancel": "Cancel",
@@ -455,7 +454,9 @@
       "createError": "Could not create that market.",
       "phName": "Kandla Port",
       "phCountry": "India",
-      "phCity": "Kandla"
+      "phCity": "Kandla",
+      "address": "Address (optional)",
+      "phAddress": "Gate 3, Ring Road"
     },
     "gallery": {
       "photos": "Photos ({{n}}/{{max}})",
@@ -464,7 +465,8 @@
       "uploading": "Uploading…",
       "add": "Add",
       "permissionError": "Photo permission is needed to add images.",
-      "uploadError": "Image upload failed. Try smaller photos."
+      "uploadError": "Image upload failed. Try smaller photos.",
+      "sizeHint": "Stored as 1080×1080 squares. At least 1080px on the longest side."
     },
     "add": {
       "editTitle": "Edit Product",
@@ -498,12 +500,16 @@
       "attrSectionTitle": "{{name}} details",
       "phName": "Premium Basmati Rice 1121",
       "phUnit": "/MT",
-      "phQty": "500 MT",
-      "phMoq": "25 MT",
       "phGrade": "Grade A",
-      "phOrigin": "India",
-      "phDelivery": "15 days",
-      "phCity": "Kandla"
+      "phCity": "Kandla",
+      "currency": "Currency",
+      "pickup": "Buyer collection",
+      "dealType": "Deal type",
+      "dealSafe": "Safe Deal (escrow protected)",
+      "dealDirect": "Direct deal (no escrow)",
+      "priceType": "Price type",
+      "priceFixed": "Fixed price",
+      "priceNegotiable": "Negotiable"
     },
     "orders": {
       "title": "Incoming Orders",
@@ -1580,7 +1586,14 @@
       "moq": "MOQ {{value}}",
       "available": "{{value}} available",
       "addToSaved": "Save to wishlist",
-      "removeFromSaved": "Remove from wishlist"
+      "removeFromSaved": "Remove from wishlist",
+      "directDeal": "Direct deal",
+      "negotiable": "Negotiable",
+      "fixedPrice": "Fixed price",
+      "inStock": "In stock",
+      "outOfStock": "Out of stock",
+      "stockCount": "{{count}} {{unit}} in stock",
+      "chatSeller": "Chat"
     },
     "community": {
       "dmSubtitle": "Direct message · contacts stay private",

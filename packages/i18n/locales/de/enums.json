@@ -1,4 +1,9 @@
 {
+  "delivery": {
+    "delivery": "Der Verkäufer liefert",
+    "no_delivery": "Keine Lieferung oder Abholung",
+    "self_pickup": "Abholung durch den Käufer (Selbstlieferung)"
+  },
   "hire_status": {
     "accepted": "Akzeptiert",
     "cancelled": "Abgesagt",

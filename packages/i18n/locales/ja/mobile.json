@@ -15,6 +15,29 @@
     "seconds": "秒"
   },
   "auth": {
+    "forgotPassword": {
+      "back": "サインインに戻る",
+      "email": "メール",
+      "send": "リセットリンクを送信",
+      "sending": "送信中…",
+      "sent": "そのメールアドレスが登録されている場合は、パスワードリセット用のリンクが送信されます。リンクを開いて新しいパスワードを設定してください。",
+      "subtitle": "メールアドレスを入力してください。リセットリンクをお送りします。",
+      "title": "パスワードをリセット"
+    },
+    "otpLogin": {
+      "code": "6桁のコード",
+      "codeSent": "そのメールアドレスが登録されていれば、コードが送信されます。",
+      "email": "メール",
+      "invalid": "無効または期限切れのコードです。",
+      "resend": "新しいコードを送信してください",
+      "sendCode": "コードをメールで送ってください",
+      "sending": "送信中…",
+      "subtitle": "6桁のコードをメールでお送りします。パスワードは不要です。",
+      "title": "コードでサインイン",
+      "usePassword": "代わりにパスワードを使用してください",
+      "verify": "サインイン",
+      "verifying": "ログイン中…"
+    },
     "password": "パスワード",
     "passwordPh": "••••••••",
     "roleHelper": {
@@ -31,8 +54,11 @@
       "demoTitle": "またはデモアカウントをお試しください",
       "emailOrPhone": "メールまたは電話で",
       "emailOrPhonePh": "you@company.com または電話で",
+      "forgot": "パスワードをお忘れですか？",
       "invalid": "メールアドレスまたはパスワードが無効です。",
       "newHere": "初めてですか？",
+      "or": "または",
+      "otp": "OTPでログイン",
       "subtitle": "AgroTradersアカウントにサインインしてください",
       "title": "おかえり"
     },
@@ -41,6 +67,7 @@
       "checkInboxTitle": "メールアドレスを確認してください",
       "cityRegion": "都市／地域",
       "cityRegionPh": "ドバイ",
+      "confirmPassword": "パスワードを認証する",
       "country": "国",
       "countryPh": "🇦🇪 アラブ首長国連邦",
       "cta": "アカウントを作成する",
@@ -51,11 +78,15 @@
       "fullNamePh": "カリムトレーディング",
       "iAmA": "私は…",
       "noCities": "該当する都市はありません",
+      "passwordMismatch": "パスワードが一致しません。",
+      "passwordTooShort": "パスワードは8文字以上である必要があります。",
       "phone": "電話（非公開 - 管理者のみ）",
       "phonePh": "+971 50 123 4567",
       "pickCountryFirst": "まず国を選択してください",
       "resend": "リンクを再送してください",
       "resent": "リンクが送信されました — 受信トレイをご確認ください",
+      "subtitle": "自分の役割を選んでください。後から追加することもできます。",
+      "terms": "続行すると、利用規約とプライバシーポリシーに同意したことになります。",
       "title": "アカウントを作成する"
     }
   },
@@ -105,6 +136,7 @@
       "fieldProduct": "製品",
       "fieldQuantity": "量",
       "fieldQuoteDays": "見積もり期限（日数）",
+      "fieldTargetPrice": "Target price per {{unit}} (USD)",
       "fieldTitle": "タイトル",
       "fieldUnit": "ユニット",
       "modeCopy": {
@@ -151,17 +183,25 @@
     },
     "orders": {
       "acceptQuote": "見積もりを受け入れる",
+      "cancelOrder": "注文をキャンセルする",
+      "confirmCancel": "この注文をキャンセルしますか？取り消しはできません。",
+      "confirmDispute": "この注文に関して異議申し立てをしますか？弊社のチームが内容を確認いたします。",
       "details": "詳細",
       "detailsOtp": "詳細 · OTP",
       "emptyBody": "マーケットプレイスを閲覧して、最初の注文をしてください。",
       "emptyTitle": "まだ注文はありません",
       "errUpdate": "この注文を更新できませんでした。",
       "mark": "マーク{{label}}",
+      "openDispute": "公開紛争",
       "orderFallback": "注文",
       "payEscrow": "エスクロー口座に支払う",
       "screenTitle": "私の注文",
       "signInBody": "ログインすると、ご注文内容がこちらに表示されます。",
-      "signInTitle": "注文内容を確認するにはログインしてください"
+      "signInTitle": "注文内容を確認するにはログインしてください",
+      "stepDispatched": "派遣されました",
+      "stepEscrow": "預託",
+      "stepRelease": "品質管理とリリース",
+      "stepTransit": "輸送中"
     },
     "room": {
       "awaitingBids": "入札待ち",
@@ -185,6 +225,7 @@
       "ownerNote": "この要件を投稿しました",
       "quotes": "名言集",
       "reverseAuction": "リバースオークション",
+      "sealedBanner": "非公開モード。見積もりを承認するまで、出品者名と写真は非表示になります。他の出品者は見積もりを見ることができません。",
       "sealedNoBid": "あなたはまだこの要件に対して入札していません。",
       "sealedNote": "見積もり依頼に対する入札は非公開となり、価格はあなただけが見ることができます。",
       "sellersN_other": "{{count}} 販売者",
@@ -471,11 +512,21 @@
       "verifyError": "そのコードを検証できませんでした。"
     },
     "product": {
+      "addToSaved": "ウィッシュリストに保存",
       "auction": "オークション",
-      "safeDeal": "セーフディール",
-      "verified": "検証済み",
+      "available": "在庫 {{value}}",
+      "chatSeller": "チャット",
+      "directDeal": "直接取引",
+      "fixedPrice": "固定価格",
+      "inStock": "在庫あり",
       "moq": "最小ロット {{value}}",
-      "available": "在庫 {{value}}"
+      "negotiable": "交渉可能",
+      "outOfStock": "在庫切れ",
+      "removeFromSaved": "ウィッシュリストから削除",
+      "safeDeal": "セーフディール",
+      "sponsored": "スポンサー提供",
+      "stockCount": "在庫数：{{count}} {{unit}}",
+      "verified": "検証済み"
     },
     "profile": {
       "about": "について",
@@ -528,6 +579,7 @@
     "activeJobs": "募集中の求人",
     "activeOrders": "有効な注文",
     "activeTrips": "アクティブな旅",
+    "addProduct": "商品を追加する",
     "allTime": "歴代",
     "assignments": "課題",
     "availability": "可用性",
@@ -544,6 +596,7 @@
     "driverPerformance": "ドライバーのパフォーマンス",
     "due": "{{count}} 期限",
     "earnings": "収益",
+    "earningsWeek": "今週の決算発表",
     "escrow": "預託",
     "etaDays": "ETA {{count}}日",
     "fleetUtilization": "車両稼働率",
@@ -551,6 +604,7 @@
     "goOnline": "オンラインにする",
     "jobRequests": "求人依頼",
     "live": "ライブ",
+    "liveListings": "ライブ配信",
     "liveTracking": "ライブトラッキング",
     "loaderSub": "担当チームと業務内容を一目で確認できます。",
     "lowOnStock": "在庫が少なくなっています",
@@ -566,13 +620,19 @@
     "offline": "あなたはオフライン状態です。採用担当者はあなたを就業可能者として認識しません。",
     "onTime": "定刻通り {{pct}}%",
     "online": "あなたはオンラインで仕事を受け付けています。",
+    "openRfqs": "公開見積依頼",
     "ordersCount": "{{count}}件",
     "ordersReceived": "受注状況",
     "paid": "支払い済み",
     "pendingPayments": "未払い金",
     "perMonth": "月額$",
     "procurementSpend": "調達支出",
+    "product": "製品",
     "productViews": "製品ビュー",
+    "quickHireTransport": "レンタカー",
+    "quickKyc": "KYC ドキュメント",
+    "quickPostRfq": "投稿RFQ",
+    "quickWallet": "財布",
     "rating": "評価",
     "revenue": "収益",
     "safeDeal": "セーフディール",
@@ -588,6 +648,7 @@
     "totalEarned": "総獲得額",
     "totalSales": "総売上高",
     "totalSpent": "この期間に支出した合計金額：",
+    "trackingMeta": "{{km}}km left · ETA {{h}}h",
     "transporterSub": "貴社の保有車両一覧を一目で確認できます。",
     "weekdayShort": {
       "fri": "F",
@@ -614,18 +675,19 @@
     "name": "ゲスト"
   },
   "hub": {
+    "account": "アカウント",
     "activeDashboard": "アクティブダッシュボード",
     "community": "コミュニティ",
     "displayCurrency": "通貨を表示",
+    "kycVerified": "KYC 検証済み",
     "logOut": "ログアウト",
+    "marketplace": "マーケットプレイス",
     "myHires": "私の採用",
     "myProfile": "マイプロフィール",
     "notifications": "通知",
     "restartNotice": "新しいテキストの方向を適用するために、アプリが再起動します。",
     "rolesAccess": "役割とアクセス権限",
-    "support": "ライブサポート",
-    "marketplace": "マーケットプレイス",
-    "account": "アカウント"
+    "support": "ライブサポート"
   },
   "loaderX": {
     "attendance": {
@@ -698,6 +760,7 @@
       "title": "価格設定"
     },
     "reviews": {
+      "across_other": "Across {{count}} reviews",
       "clientFallback": "クライアント",
       "emptyBody": "顧客は、あなたが担当した仕事が完了した後にあなたを評価します。",
       "emptyTitle": "レビューはまだありません",
@@ -808,6 +871,7 @@
       "title": "評価とレビュー"
     },
     "tracking": {
+      "byRoad": "≈ {{km}} km by road · ETA ~{{h}}h · {{straight}} km straight-line",
       "destination": "行き先",
       "locating": "ルートを検索中…",
       "notFound": "このルートは見つかりませんでした",
@@ -938,9 +1002,38 @@
       "vehicles_other": "{{count}} 車両",
       "workers_other": "{{count}} 労働者"
     },
+    "filter": {
+      "apply": "適用",
+      "applyN": "適用（{{count}}）",
+      "categoryHint": "カテゴリーを選ぶと仕様の絞り込みが使えます。",
+      "clear": "クリア",
+      "clearAll": "すべてクリア",
+      "groups": {
+        "category": "カテゴリー",
+        "city": "都市",
+        "country": "国",
+        "dealType": "取引タイプ",
+        "grade": "等級",
+        "market": "市場",
+        "price": "価格"
+      },
+      "searchOptions": "検索",
+      "sortBy": "並び替え",
+      "title": "絞り込み"
+    },
     "home": {
+      "cantFindBody": "RFQ を投稿すると、数時間以内に確定見積もりを入手できます。",
+      "cantFindTitle": "お探しの商品が見つかりませんか？",
+      "catAll": "全て",
+      "categories": "カテゴリーから探す",
       "communityA11y": "AgroTraders コミュニティ",
+      "dealOfDay": "本日のお買い得品",
+      "deliverTo": "配達先",
       "featured": "注目の",
+      "freshArrivals": "新着商品",
+      "heroCta": "たくさん探検しよう",
+      "heroTag": "収穫週間",
+      "heroTitle": "ラビ小麦、マンディ直送",
       "link": {
         "auctions": "オークション",
         "bids": "入札",
@@ -953,20 +1046,23 @@
       "liveAuctions": "ライブオークション",
       "noOffers": "現在、オファーはありません。",
       "offersOfDay": "本日のおすすめ商品",
+      "postRfq": "投稿RFQ",
+      "promoBody": "コードAGRO4を使用してください · エスクロー保護",
+      "promoCta": "請求",
+      "promoTitle": "初回注文は一律4%オフ",
+      "promoted": "注目",
+      "requirements": "調達を探している買い手",
       "safeDealBody": "お客様が配送を確認するまで、代金は保留されます。",
       "safeDealTitle": "セーフディールエスクロー",
       "searchHint": "穀物、豆類、油などを検索…",
       "seeAll": "すべて表示",
+      "services": "サービス",
       "svc": {
         "loaders": "ローダー",
         "offices": "オフィス",
         "safeDeal": "セーフディール",
         "transport": "輸送"
       },
-      "categories": "カテゴリーから探す",
-      "promoted": "注目",
-      "services": "サービス",
-      "requirements": "調達を探している買い手",
       "viewAll": "すべて見る"
     },
     "kyc": {
@@ -1002,6 +1098,7 @@
       "caughtUp": "すべて追いつきました",
       "channelGeneral": "一般的な",
       "chooseHow": "各アクティビティの種類ごとに、通知方法を選択してください。",
+      "earlier": "以前",
       "email": "メール",
       "inApp": "アプリ内",
       "markAllRead": "すべて既読にする",
@@ -1009,7 +1106,8 @@
       "push": "押す",
       "settingsTitle": "通知設定",
       "signIn": "通知を見るにはログインしてください",
-      "title": "通知"
+      "title": "通知",
+      "today": "今日"
     },
     "offers": {
       "emptyBody": "お得な最新情報をお見逃しなく！",
@@ -1018,11 +1116,17 @@
       "title": "本日のおすすめ商品"
     },
     "pd": {
+      "addToRfq": "見積依頼に追加",
       "alsoLike": "こちらもおすすめ",
       "available": "利用可能",
       "buyNow": "今すぐ購入",
       "buyerReviews": "購入者レビュー",
+      "chat": "チャット",
       "chatSeller": "出品者とチャットする",
+      "decreaseQty": "数量を減らす",
+      "delivery": "納品",
+      "escrowNote": "セーフディールエスクロー：品質管理が完了するまで資金は保管されます。",
+      "increaseQty": "数量を増やす",
       "loading": "商品を読み込んでいます…",
       "moq": "MOQ",
       "offer": "オファー",
@@ -1031,6 +1135,7 @@
       "orderPlacedBody": "ご注文はSafe Dealによるエスクロー手続き中です。",
       "orderPlacedTitle": "注文完了",
       "ordered": "{{count}}先月注文",
+      "origin": "原産地",
       "price": "価格",
       "quality": {
         "documentation": "文書",
@@ -1039,23 +1144,21 @@
         "purity": "純度"
       },
       "qualityScore": "品質スコア",
+      "quantity": "量",
       "quoteRequestedBody": "出品者からまもなく返信があります。",
       "quoteRequestedTitle": "見積もり依頼",
       "requestQuote": "見積もり依頼",
       "safeDeal": "セーフディール",
       "sellerFallback": "売り手",
       "specifications": "仕様",
+      "supplier": "サプライヤー",
       "suppliesTo": "供給",
+      "tradeTerms": "取引条件",
       "transport": "輸送",
       "transportBody": "購入者コンソールから輸送の手配を行ってください。",
       "transportTitle": "輸送",
       "verified": "検証済み",
-      "watching": "{{count}}+が視聴中",
-      "addToRfq": "見積依頼に追加",
-      "supplier": "サプライヤー",
-      "tradeTerms": "取引条件",
-      "origin": "原産地",
-      "delivery": "納品"
+      "watching": "{{count}}+が視聴中"
     },
     "ph": {
       "bidTitle": "バスマティライス — ジェベル・アリ行き 100 MT",
@@ -1083,12 +1186,20 @@
       "reqDeliverTo": "🇦🇪 アラブ首長国連邦",
       "reqProduct": "デュラム小麦",
       "reqTitle": "小麦500トンが必要です",
+      "reqWheatTitle": "Need 100 MT Wheat",
       "routeName": "西海岸輸出",
       "serviceBulkLoading": "大量積載",
       "skillForklift": "フォークリフト",
       "supCities": "ムンバイ、ドバイ",
       "vehicleType": "40フィート冷凍コンテナ",
       "workerName": "イムラン・シェイク"
+    },
+    "plp": {
+      "clearFilters": "条件をクリア",
+      "filters": "絞り込み",
+      "noResults": "該当なし",
+      "results": "{{count}} 件",
+      "sort": "並び替え"
     },
     "profile": {
       "activeRoutes": "アクティブルート",
@@ -1122,55 +1233,31 @@
       "send": "送信",
       "viewOffers": "オファーを見る"
     },
+    "rfq": {
+      "addedBody": "{{name}} をカートに追加しました。すべて追加してから依頼を送信してください。",
+      "addedTitle": "見積カートに追加しました",
+      "emptyBody": "どのサプライヤーの出品でも追加でき、サプライヤーごとに見積依頼を送れます。",
+      "emptyTitle": "見積カートは空です",
+      "escrow": "預託",
+      "failBody": "もう一度お試しください。",
+      "failTitle": "依頼を送信できませんでした",
+      "footNote": "サプライヤーごとに個別の依頼が送られます。見積内容は非公開です。",
+      "lineCount": "{{count}} 点",
+      "noteFromBasket": "見積カートから {{supplier}} に送信しました。",
+      "requestQuotes": "見積を依頼",
+      "sentBody": "サプライヤーから見積が届きます。入札一覧で確認できます。",
+      "sentLabel": "依頼を送信しました",
+      "sentTitle": "依頼を送信しました",
+      "title": "見積カート"
+    },
     "search": {
       "emptyBody": "マーケットプレイス全体で商品を検索するには、入力してください。",
       "emptyTitle": "検索 AgroTraders",
       "noMatchBody": "「{{q}}」に一致する結果は見つかりませんでした。",
       "noMatchTitle": "一致する項目はありません",
       "placeholder": "穀物、豆類、油などを検索…",
-      "recent": "最近の検索"
-    },
-    "filter": {
-      "title": "絞り込み",
-      "clear": "クリア",
-      "clearAll": "すべてクリア",
-      "apply": "適用",
-      "applyN": "適用（{{count}}）",
-      "sortBy": "並び替え",
-      "searchOptions": "検索",
-      "categoryHint": "カテゴリーを選ぶと仕様の絞り込みが使えます。",
-      "groups": {
-        "category": "カテゴリー",
-        "dealType": "取引タイプ",
-        "price": "価格",
-        "country": "国",
-        "city": "都市",
-        "grade": "等級",
-        "market": "市場"
-      }
-    },
-    "plp": {
-      "results": "{{count}} 件",
-      "filters": "絞り込み",
-      "sort": "並び替え",
-      "clearFilters": "条件をクリア",
-      "noResults": "該当なし"
-    },
-    "rfq": {
-      "title": "見積カート",
-      "emptyTitle": "見積カートは空です",
-      "emptyBody": "どのサプライヤーの出品でも追加でき、サプライヤーごとに見積依頼を送れます。",
-      "addedTitle": "見積カートに追加しました",
-      "addedBody": "{{name}} をカートに追加しました。すべて追加してから依頼を送信してください。",
-      "requestQuotes": "見積を依頼",
-      "sentLabel": "依頼を送信しました",
-      "sentTitle": "依頼を送信しました",
-      "sentBody": "サプライヤーから見積が届きます。入札一覧で確認できます。",
-      "failTitle": "依頼を送信できませんでした",
-      "failBody": "もう一度お試しください。",
-      "lineCount": "{{count}} 点",
-      "noteFromBasket": "見積カートから {{supplier}} に送信しました。",
-      "footNote": "サプライヤーごとに個別の依頼が送られます。見積内容は非公開です。"
+      "recent": "最近の検索",
+      "trending": "お住まいの地域で話題の商品"
     }
   },
   "reviews": {
@@ -1234,6 +1321,10 @@
       "category": "カテゴリ",
       "city": "市",
       "country": "国",
+      "currency": "通貨",
+      "dealDirect": "直接取引（エスクローなし）",
+      "dealSafe": "安全な取引（エスクロー保護付き）",
+      "dealType": "取引の種類",
       "delivery": "配達",
       "editTitle": "商品を編集する",
       "emoji": "絵文字",
@@ -1251,7 +1342,11 @@
       "phOrigin": "インド",
       "phQty": "500 MT",
       "phUnit": "/MT",
+      "pickup": "購入者コレクション",
       "price": "価格（USD）",
+      "priceFixed": "固定価格",
+      "priceNegotiable": "交渉可能",
+      "priceType": "価格タイプ",
       "quantity": "量",
       "runsForDays": "（日間）",
       "saveChanges": "変更を保存する",
@@ -1364,6 +1459,7 @@
       "hint": "写真をタップして表紙に設定してください。最初の写真は購入者に表示される写真です。",
       "permissionError": "画像を追加するには、写真の許可が必要です。",
       "photos": "写真（{{n}}/{{max}}）",
+      "sizeHint": "1080×1080ピクセルの正方形として保存されます。最長辺は少なくとも1080ピクセルです。",
       "uploadError": "画像のアップロードに失敗しました。より小さい画像でお試しください。",
       "uploading": "アップロード中…"
     },
@@ -1382,6 +1478,7 @@
     },
     "market": {
       "addNew": "+ 新しい市場を創造する",
+      "address": "住所（任意）",
       "cancel": "キャンセル",
       "city": "市",
       "country": "国",
@@ -1395,6 +1492,7 @@
       "pendingApproval": "承認待ち",
       "pendingHint": "管理者が承認するまで、あなた以外には表示されません。",
       "pendingSuffix": " （保留中）",
+      "phAddress": "環状道路3番ゲート",
       "phCity": "カンドラ",
       "phCountry": "インド",
       "phName": "カンドラ港",
@@ -1474,7 +1572,8 @@
       "ratingPct": "評価率（％）",
       "saveError": "このドライバーを保存できませんでした。",
       "title": "ドライバー",
-      "vehicle": "割り当てられた車両"
+      "vehicle": "割り当てられた車両",
+      "yrsExp": "{{years}} yrs exp"
     },
     "invoices": {
       "emptyBody": "輸送を完了したら、運賃請求書を発行してください。",

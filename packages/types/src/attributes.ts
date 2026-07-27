@@ -310,7 +310,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_carton",
-            "label": "Count per carton",
+            "label": "Size / caliber (count per carton)",
             "type": "select",
             "options": [
               "12",
@@ -591,7 +591,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_carton",
-            "label": "Count per carton",
+            "label": "Size / caliber (count per carton)",
             "type": "number"
           }
         ]
@@ -681,7 +681,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_carton",
-            "label": "Count per carton",
+            "label": "Size / caliber (count per carton)",
             "type": "select",
             "options": [
               "6",
@@ -975,7 +975,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_carton",
-            "label": "Count per carton",
+            "label": "Size / caliber (count per carton)",
             "type": "number"
           }
         ]
@@ -11511,7 +11511,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_oz",
-            "label": "Count per oz",
+            "label": "Size / caliber (count per oz)",
             "type": "select",
             "options": [
               "35/40",
@@ -11587,7 +11587,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_lb",
-            "label": "Count per lb",
+            "label": "Size / caliber (count per lb)",
             "type": "number",
             "help": "e.g. Large 90-110, Medium 110-130, Small 130-160"
           },
@@ -11972,7 +11972,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_lb",
-            "label": "Count per lb",
+            "label": "Size / caliber (count per lb)",
             "type": "number"
           },
           {
@@ -12024,7 +12024,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "size_count_per_lb",
-            "label": "Whole count per lb",
+            "label": "Size / caliber (whole count per lb)",
             "type": "select",
             "options": [
               "<180",
@@ -12151,7 +12151,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_oz",
-            "label": "Count per oz",
+            "label": "Size / caliber (count per oz)",
             "type": "select",
             "options": [
               "18/20",
@@ -12232,7 +12232,7 @@ export const ATTRIBUTE_SCHEMA: CategoryAttrs[] = [
           },
           {
             "key": "count_per_lb",
-            "label": "Count per lb",
+            "label": "Size / caliber (count per lb)",
             "type": "select",
             "options": [
               "60-65",

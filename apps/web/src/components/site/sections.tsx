@@ -14,7 +14,7 @@ import { useI18n } from '../../i18n';
 import { safeSteps } from '../../mock/data';
 import { ProductCard } from './ProductCard';
 import { api, assetUrl, toCardProduct } from '../../lib/api';
-import { buildSubcategoryTree, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
+import { buildSubcategoryTree, flattenSubcategoryTree, schemaName, type SubcategoryNode } from '@agrotraders/api-client';
 
 /* ── helpers ───────────────────────────────────────────────────── */
 
@@ -272,7 +272,7 @@ function CategoryMegaMenu() {
   // attribute refinements, so the buyer can walk category -> sub -> sub-sub ->
   // deeper children without the options column looking like the final stop early.
   const selectedSubIsLeaf = Boolean(selectedSub && selectedSub.children.length === 0);
-  const leadField = activeCat && selectedSub && selectedSubIsLeaf ? getFilterFields(activeCat.name, selectedSub.name)[0] : undefined;
+  const leadField = activeCat && selectedSub && selectedSubIsLeaf ? getFilterFields(schemaName(activeCat), schemaName(selectedSub))[0] : undefined;
   const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
   const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
   const toggle = () => {
@@ -300,7 +300,7 @@ function CategoryMegaMenu() {
   const pickSub = (node: SubcategoryNode) => {
     // Parent nodes always drill deeper first. Leaf nodes either expose their
     // attribute filters or, when there are no attributes, go straight to results.
-    if (node.children.length > 0 || (activeCat && getFilterFields(activeCat.name, node.name).length > 0)) {
+    if (node.children.length > 0 || (activeCat && getFilterFields(schemaName(activeCat), schemaName(node)).length > 0)) {
       setSubId(node.id);
     } else if (activeCat) {
       go(activeCat, node);
@@ -403,7 +403,7 @@ function CategoryMegaMenu() {
                     <p className={placeholder}>{t('hero.pickCategory', { defaultValue: 'Pick a category to see its subcategories' })}</p>
                   ) : visibleSubs.map((node) => {
                     const active = node.id === subId;
-                    const hasOptions = getFilterFields(activeCat.name, node.name).length > 0;
+                    const hasOptions = getFilterFields(schemaName(activeCat), schemaName(node)).length > 0;
                     return (
                       <button
                         key={node.id}

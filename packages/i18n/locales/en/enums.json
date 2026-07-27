@@ -72,5 +72,10 @@
     "TON": "Ton",
     "BAG": "Bag",
     "PIECE": "Piece"
+  },
+  "delivery": {
+    "delivery": "Seller delivers",
+    "self_pickup": "Buyer collects (self delivery)",
+    "no_delivery": "No delivery or collection"
   }
 }

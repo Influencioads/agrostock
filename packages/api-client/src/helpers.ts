@@ -42,18 +42,10 @@ export function parsePriceCents(price: string | null | undefined): number | null
   return Number.isFinite(n) ? Math.round(n * 100) : null;
 }
 
-/** Currencies offered in the selector (must exist in the fx rates payload). */
-export const CURRENCIES = [
-  'USD', 'EUR', 'GBP', 'AED', 'INR', 'CNY', 'TRY', 'RUB', 'BRL',
-  'PKR', 'BDT', 'VND', 'THB', 'EGP', 'KZT', 'UAH', 'SAR', 'NGN', 'KES', 'JPY',
-] as const;
-export type CurrencyCode = (typeof CURRENCIES)[number];
-
-export const SYMBOLS: Record<string, string> = {
-  USD: '$', EUR: '€', GBP: '£', AED: 'د.إ', INR: '₹', CNY: '¥', TRY: '₺',
-  RUB: '₽', BRL: 'R$', PKR: '₨', BDT: '৳', VND: '₫', THB: '฿', EGP: 'E£',
-  KZT: '₸', UAH: '₴', SAR: '﷼', NGN: '₦', KES: 'KSh', JPY: '¥',
-};
+// Currencies + symbols live in @agrotraders/types: the API validates the
+// seller's quoted currency against the same list and cannot import this package.
+export { CURRENCIES, CURRENCY_SYMBOLS as SYMBOLS, type CurrencyCode } from '@agrotraders/types';
+import { CURRENCY_SYMBOLS as SYMBOLS } from '@agrotraders/types';
 
 /** USD cents → target-currency amount (major units). */
 export function convertCents(usdCents: number, rate: number): number {

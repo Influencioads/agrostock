@@ -1,4 +1,9 @@
 {
+  "delivery": {
+    "delivery": "البائع يسلم",
+    "no_delivery": "لا يوجد توصيل أو استلام",
+    "self_pickup": "يقوم المشتري بالاستلام (التسليم الذاتي)"
+  },
   "hire_status": {
     "accepted": "مقبول",
     "cancelled": "تم الإلغاء",

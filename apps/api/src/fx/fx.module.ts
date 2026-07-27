@@ -43,6 +43,20 @@ export class FxService {
     };
   }
 
+  /**
+   * Convert a seller-quoted amount into the USD cents baseline every price
+   * comparison (sorting, range filters, buyer-side display) runs on. An unknown
+   * currency falls back to 1:1 rather than throwing — a listing with a slightly
+   * wrong baseline beats a listing the seller cannot save.
+   */
+  async toUsdCents(amount: number, currency = 'USD'): Promise<number> {
+    if (!Number.isFinite(amount)) return 0;
+    if (currency === 'USD') return Math.round(amount * 100);
+    const snapshot = await this.rates();
+    const rate = snapshot.rates[currency.toUpperCase()];
+    return Math.round((rate && rate > 0 ? amount / rate : amount) * 100);
+  }
+
   private async refresh() {
     try {
       const res = await fetch(UPSTREAM, { signal: AbortSignal.timeout(8000) });
@@ -68,5 +82,5 @@ export class FxController {
   }
 }
 
-@Module({ controllers: [FxController], providers: [FxService] })
+@Module({ controllers: [FxController], providers: [FxService], exports: [FxService] })
 export class FxModule {}

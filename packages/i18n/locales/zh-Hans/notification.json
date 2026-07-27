@@ -74,6 +74,10 @@
       "body": "{{actor}} 已接受您的雇佣请求 {{reference}}。",
       "title": "招聘申请已接受"
     },
+    "cancelled": {
+      "body": "{{actor}} 取消了租赁 {{reference}}。所有已扣留的款项均已退还。",
+      "title": "取消租赁"
+    },
     "declined": {
       "body": "{{actor}} 拒绝了您的招聘请求 {{reference}}。",
       "title": "招聘请求被拒绝"
@@ -93,6 +97,20 @@
       "title": "身份验证"
     }
   },
+  "loader": {
+    "assigned": {
+      "body": "您被分配到装载作业{{reference}}。",
+      "title": "你已被分配一项工作"
+    },
+    "completed": {
+      "body": "加载任务{{reference}}已完成。",
+      "title": "加载作业完成"
+    },
+    "job_claimed": {
+      "body": "{{loaderco}} 认领了你的装载任务 {{reference}}。",
+      "title": "声称的工作"
+    }
+  },
   "market": {
     "approved": {
       "body": "“{{market}}”现已上线——买家和卖家可以附加到它。",
@@ -104,6 +122,10 @@
     }
   },
   "order": {
+    "bid_awarded": {
+      "body": "您赢得了{{reference}}。订单{{orderReference}}现已开放。",
+      "title": "您的投标已中标"
+    },
     "delivered_buyer": {
       "body": "订单{{reference}}已送达。",
       "title": "发表"
@@ -124,9 +146,17 @@
       "body": "{{buyer}}询问了{{product}}。",
       "title": "新查询"
     },
+    "new_order": {
+      "body": "{{buyer}} 下了 {{product}} 的订单。",
+      "title": "新订单 {{reference}}"
+    },
     "picked_up": {
       "body": "订单{{reference}}正在运输途中。",
       "title": "已提取货物"
+    },
+    "placed": {
+      "body": "您购买 {{product}} 的订单 {{reference}} 已提交。",
+      "title": "订单已提交"
     },
     "seller_responded": {
       "body": "{{seller}} 引用 {{amount}} 为 {{product}}。",
@@ -135,10 +165,6 @@
     "status_changed": {
       "body": "订单现在为{{status}}。",
       "title": "顺序 {{reference}} — {{status}}"
-    },
-    "placed": {
-      "title": "订单已提交",
-      "body": "您购买 {{product}} 的订单 {{reference}} 已提交。"
     }
   },
   "product": {
@@ -190,6 +216,20 @@
       "title": "用户回复"
     }
   },
+  "transport": {
+    "assigned": {
+      "body": "您的报价已被接受——从{{fromCity}}到{{toCity}}的行程{{reference}}已分配给您。",
+      "title": "已安排行程"
+    },
+    "delivered": {
+      "body": "行程{{reference}}已交付。",
+      "title": "行程已完成"
+    },
+    "quote_new": {
+      "body": "根据您的要求，运输商报价为{{amount}}。",
+      "title": "新运输报价"
+    }
+  },
   "wallet": {
     "escrow_release": {
       "body": "{{amount}} 已发放至您的钱包。",
@@ -199,6 +239,10 @@
       "body": "{{issuer}} 签发 {{number}} 用于 {{amount}}。",
       "title": "新发票"
     },
+    "invoice_paid": {
+      "body": "{{number}} 已标记为已支付 {{amount}}。",
+      "title": "发票已付"
+    },
     "payout_approved": {
       "body": "您提现的 {{amount}} 已获批准并已支付。",
       "title": "已支付款项"
@@ -206,6 +250,10 @@
     "payout_declined": {
       "body": "您的提款申请已被拒绝。",
       "title": "赔付拒绝"
+    },
+    "payout_requested": {
+      "body": "我们已收到您提出的 {{amount}} 提现申请，目前正在审核中。",
+      "title": "请求支付"
     },
     "refund": {
       "body": "{{amount}} 已退还至您的钱包。",

@@ -74,6 +74,10 @@
       "body": "{{actor}} があなたの採用リクエスト {{reference}} を承認しました。",
       "title": "採用依頼が承認されました"
     },
+    "cancelled": {
+      "body": "{{actor}}は{{reference}}の予約をキャンセルしました。保留されていた資金はすべて返金されました。",
+      "title": "採用がキャンセルされました"
+    },
     "declined": {
       "body": "{{actor}} はあなたの採用依頼 {{reference}} を拒否しました。",
       "title": "採用依頼は却下されました"
@@ -93,6 +97,20 @@
       "title": "本人確認済み"
     }
   },
+  "loader": {
+    "assigned": {
+      "body": "あなたは積載作業{{reference}}に割り当てられました。",
+      "title": "あなたには仕事が割り当てられました"
+    },
+    "completed": {
+      "body": "ジョブ{{reference}}の読み込みが完了しました。",
+      "title": "ロード作業が完了しました"
+    },
+    "job_claimed": {
+      "body": "{{loaderco}} があなたのロードジョブ {{reference}} を引き受けました。",
+      "title": "仕事が見つかった"
+    }
+  },
   "market": {
     "approved": {
       "body": "「{{market}}」が出品されました。購入者と販売者はこれにアクセスできます。",
@@ -104,6 +122,10 @@
     }
   },
   "order": {
+    "bid_awarded": {
+      "body": "{{reference}}を獲得しました。注文{{orderReference}}の受付を開始しました。",
+      "title": "あなたの入札が落札されました"
+    },
     "delivered_buyer": {
       "body": "注文番号{{reference}}が配達されました。",
       "title": "配達済み"
@@ -124,9 +146,17 @@
       "body": "{{buyer}}は{{product}}について問い合わせました。",
       "title": "新規お問い合わせ"
     },
+    "new_order": {
+      "body": "{{buyer}} は {{product}} の注文をしました。",
+      "title": "新規注文 {{reference}}"
+    },
     "picked_up": {
       "body": "注文番号{{reference}}は配送中です。",
       "title": "商品が回収されました"
+    },
+    "placed": {
+      "body": "{{product}} のご注文 {{reference}} を受け付けました。",
+      "title": "注文完了"
     },
     "seller_responded": {
       "body": "{{seller}}は{{amount}}を{{product}}として引用した。",
@@ -135,10 +165,6 @@
     "status_changed": {
       "body": "注文番号は{{status}}です。",
       "title": "注文番号 {{reference}} — {{status}}"
-    },
-    "placed": {
-      "title": "注文完了",
-      "body": "{{product}} のご注文 {{reference}} を受け付けました。"
     }
   },
   "product": {
@@ -190,6 +216,20 @@
       "title": "ユーザーが返信しました"
     }
   },
+  "transport": {
+    "assigned": {
+      "body": "お見積もりが承認されました。{{fromCity}}から{{toCity}}への旅程{{reference}}があなたに割り当てられました。",
+      "title": "出張が割り当てられました"
+    },
+    "delivered": {
+      "body": "トリップ{{reference}}が完了しました。",
+      "title": "旅行が届きました"
+    },
+    "quote_new": {
+      "body": "運送業者があなたの依頼に対して{{amount}}の見積もりを出しました。",
+      "title": "新しい輸送見積もり"
+    }
+  },
   "wallet": {
     "escrow_release": {
       "body": "{{amount}}があなたのウォレットにリリースされました。",
@@ -199,6 +239,10 @@
       "body": "{{issuer}}は{{amount}}に対して{{number}}を発行しました。",
       "title": "新しい請求書"
     },
+    "invoice_paid": {
+      "body": "{{amount}}に対する{{number}}は支払い済みとマークされました。",
+      "title": "請求書支払い済み"
+    },
     "payout_approved": {
       "body": "{{amount}}の出金が承認され、支払われました。",
       "title": "支払いが送金されました"
@@ -206,6 +250,10 @@
     "payout_declined": {
       "body": "お支払い請求は却下されました。",
       "title": "支払いは拒否されました"
+    },
+    "payout_requested": {
+      "body": "{{amount}}の出金リクエストを受領し、現在審査中です。",
+      "title": "支払いを要求しました"
     },
     "refund": {
       "body": "{{amount}}がウォレットに返金されました。",

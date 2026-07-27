@@ -43,7 +43,15 @@ export default tseslint.config(
   },
   // React apps: enforce hook rules (real bug class — stale deps, conditional hooks).
   {
-    files: ['apps/web/**/*.{ts,tsx}', 'apps/admin/**/*.{ts,tsx}', 'apps/mobile/**/*.{ts,tsx}'],
+    // packages/ui is in here too: it now holds real hook-bearing components
+    // (the shared ProductForm), so the hook rules — and the inline disables
+    // those components carry — have to resolve there as well.
+    files: [
+      'apps/web/**/*.{ts,tsx}',
+      'apps/admin/**/*.{ts,tsx}',
+      'apps/mobile/**/*.{ts,tsx}',
+      'packages/ui/**/*.{ts,tsx}',
+    ],
     plugins: { 'react-hooks': reactHooks },
     rules: {
       'react-hooks/rules-of-hooks': 'error',

@@ -1,4 +1,9 @@
 {
+  "delivery": {
+    "delivery": "O vendedor entrega.",
+    "no_delivery": "Não há serviço de entrega ou coleta.",
+    "self_pickup": "O comprador retira o produto (entrega por conta própria)."
+  },
   "hire_status": {
     "accepted": "Aceito",
     "cancelled": "Cancelado",

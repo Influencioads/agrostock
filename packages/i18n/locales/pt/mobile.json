@@ -19,6 +19,29 @@
     "seconds": "SEGUNDOS"
   },
   "auth": {
+    "forgotPassword": {
+      "back": "Voltar para a página de login",
+      "email": "E-mail",
+      "send": "Enviar link de redefinição",
+      "sending": "Enviando…",
+      "sent": "Se esse e-mail estiver cadastrado, um link para redefinição de senha será enviado. Abra-o para definir uma nova senha.",
+      "subtitle": "Insira seu e-mail e enviaremos um link para redefinir sua senha.",
+      "title": "Redefina sua senha"
+    },
+    "otpLogin": {
+      "code": "Código de 6 dígitos",
+      "codeSent": "Se esse e-mail estiver cadastrado, um código será enviado.",
+      "email": "E-mail",
+      "invalid": "Código inválido ou expirado.",
+      "resend": "Enviar um novo código",
+      "sendCode": "Envie-me um código por e-mail",
+      "sending": "Enviando…",
+      "subtitle": "Enviaremos um código de 6 dígitos por e-mail — não é necessária senha.",
+      "title": "Faça login com um código",
+      "usePassword": "Use uma senha em vez disso.",
+      "verify": "Entrar",
+      "verifying": "Entrando…"
+    },
     "password": "Senha",
     "passwordPh": "••••••••",
     "roleHelper": {
@@ -35,8 +58,11 @@
       "demoTitle": "Ou experimente uma conta de demonstração.",
       "emailOrPhone": "E-mail ou telefone",
       "emailOrPhonePh": "you@company.com ou telefone",
+      "forgot": "Esqueceu sua senha?",
       "invalid": "E-mail ou senha inválidos.",
       "newHere": "É novo por aqui?",
+      "or": "ou",
+      "otp": "Faça login com OTP",
       "subtitle": "Faça login na sua conta AgroTraders",
       "title": "bem vindo de volta"
     },
@@ -45,6 +71,7 @@
       "checkInboxTitle": "Confirme seu e-mail",
       "cityRegion": "Cidade/região",
       "cityRegionPh": "Dubai",
+      "confirmPassword": "Confirme sua senha",
       "country": "País",
       "countryPh": "🇦🇪 Emirados Árabes Unidos",
       "cta": "Criar uma conta",
@@ -55,11 +82,15 @@
       "fullNamePh": "Karim Trading",
       "iAmA": "Eu sou um(a)…",
       "noCities": "Nenhuma cidade correspondente",
+      "passwordMismatch": "As senhas não coincidem.",
+      "passwordTooShort": "A senha deve ter no mínimo 8 caracteres.",
       "phone": "Telefone (privado — somente para administradores)",
       "phonePh": "+971 50 123 4567",
       "pickCountryFirst": "Selecione primeiro um país",
       "resend": "Reenviar o link",
       "resent": "Link enviado — verifique sua caixa de entrada.",
+      "subtitle": "Escolha sua função — você pode adicionar mais depois.",
+      "terms": "Ao continuar, você concorda com os Termos e a Política de Privacidade.",
       "title": "Crie sua conta"
     }
   },
@@ -162,17 +193,25 @@
     },
     "orders": {
       "acceptQuote": "Aceitar cotação",
+      "cancelOrder": "Cancelar pedido",
+      "confirmCancel": "Cancelar este pedido? Esta ação não pode ser desfeita.",
+      "confirmDispute": "Deseja abrir uma disputa sobre este pedido? Nossa equipe irá analisá-la.",
       "details": "Detalhes",
       "detailsOtp": "Detalhes · OTP",
       "emptyBody": "Navegue pelo mercado para fazer seu primeiro pedido.",
       "emptyTitle": "Ainda não há pedidos.",
       "errUpdate": "Não foi possível atualizar este pedido.",
       "mark": "Marca {{label}}",
+      "openDispute": "Disputa aberta",
       "orderFallback": "Ordem",
       "payEscrow": "Deposite o valor em garantia.",
       "screenTitle": "Meus pedidos",
       "signInBody": "Seus pedidos aparecerão aqui assim que você fizer login.",
-      "signInTitle": "Faça login para ver os pedidos."
+      "signInTitle": "Faça login para ver os pedidos.",
+      "stepDispatched": "Despachado",
+      "stepEscrow": "Garantia",
+      "stepRelease": "Controle de qualidade e liberação",
+      "stepTransit": "Em trânsito"
     },
     "room": {
       "awaitingBids": "Aguardando propostas",
@@ -196,6 +235,7 @@
       "ownerNote": "Você publicou este requisito",
       "quotes": "Citações",
       "reverseAuction": "Leilão reverso",
+      "sealedBanner": "Modo oculto. Os nomes e fotos dos vendedores ficam ocultos até que você aceite uma cotação. As cotações não podem ser visualizadas umas pelas outras.",
       "sealedNoBid": "Você ainda não fez uma oferta para este requisito.",
       "sealedNote": "As propostas para uma solicitação de orçamento permanecem privadas — somente você vê os preços.",
       "sellersN_many": "{{count}} vendedores",
@@ -494,11 +534,21 @@
       "verifyError": "Não foi possível verificar esse código."
     },
     "product": {
+      "addToSaved": "Adicionar à lista de desejos",
       "auction": "Leilão",
-      "safeDeal": "Negócio seguro",
-      "verified": "Verificado",
+      "available": "{{value}} disponível",
+      "chatSeller": "Bater papo",
+      "directDeal": "Negociação direta",
+      "fixedPrice": "Preço fixo",
+      "inStock": "Em estoque",
       "moq": "MOQ {{value}}",
-      "available": "{{value}} disponível"
+      "negotiable": "Negociável",
+      "outOfStock": "Fora de estoque",
+      "removeFromSaved": "Remover da lista de desejos",
+      "safeDeal": "Negócio seguro",
+      "sponsored": "Patrocinado",
+      "stockCount": "{{count}} {{unit}} em estoque",
+      "verified": "Verificado"
     },
     "profile": {
       "about": "Sobre",
@@ -551,6 +601,7 @@
     "activeJobs": "Empregos ativos",
     "activeOrders": "Pedidos ativos",
     "activeTrips": "Viagens Ativas",
+    "addProduct": "Adicionar produto",
     "allTime": "o tempo todo",
     "assignments": "Tarefas",
     "availability": "Disponibilidade",
@@ -569,6 +620,7 @@
     "driverPerformance": "Desempenho do motorista",
     "due": "{{count}} devido",
     "earnings": "Ganhos",
+    "earningsWeek": "Resultados desta semana",
     "escrow": "Garantia",
     "etaDays": "ETA {{count}} dias",
     "fleetUtilization": "Utilização da frota",
@@ -576,6 +628,7 @@
     "goOnline": "Acesse a internet.",
     "jobRequests": "Solicitações de emprego",
     "live": "ao vivo",
+    "liveListings": "Listagens ao vivo",
     "liveTracking": "Rastreamento ao vivo",
     "loaderSub": "Suas equipes e trabalhos em um relance.",
     "lowOnStock": "baixo estoque",
@@ -593,13 +646,19 @@
     "offline": "Você está offline — os recrutadores não verão você como disponível.",
     "onTime": "Pontualidade {{pct}}%",
     "online": "Você está online e aceitando trabalhos.",
+    "openRfqs": "Solicitações de cotação abertas",
     "ordersCount": "{{count}} pedidos",
     "ordersReceived": "Pedidos Recebidos",
     "paid": "pago",
     "pendingPayments": "Pagamentos pendentes",
     "perMonth": "$/mês",
     "procurementSpend": "Gastos com Aquisições",
+    "product": "Produto",
     "productViews": "Visualizações do produto",
+    "quickHireTransport": "Contrate um transporte",
+    "quickKyc": "KYC documentos",
+    "quickPostRfq": "Postagem RFQ",
+    "quickWallet": "Carteira",
     "rating": "Avaliação",
     "revenue": "Receita",
     "safeDeal": "Negócio seguro",
@@ -642,18 +701,19 @@
     "name": "Convidado"
   },
   "hub": {
+    "account": "Conta",
     "activeDashboard": "Painel ativo",
     "community": "Comunidade",
     "displayCurrency": "Exibir moeda",
+    "kycVerified": "KYC verificado",
     "logOut": "Sair",
+    "marketplace": "Mercado",
     "myHires": "Minhas contratações",
     "myProfile": "Meu perfil",
     "notifications": "Notificações",
     "restartNotice": "O aplicativo será reiniciado para aplicar a nova direção do texto.",
     "rolesAccess": "Funções e Acesso",
-    "support": "Suporte ao vivo",
-    "marketplace": "Mercado",
-    "account": "Conta"
+    "support": "Suporte ao vivo"
   },
   "loaderX": {
     "attendance": {
@@ -996,9 +1056,38 @@
       "workers_one": "{{count}} trabalhadores",
       "workers_other": "{{count}} trabalhadores"
     },
+    "filter": {
+      "apply": "Aplicar",
+      "applyN": "Aplicar ({{count}})",
+      "categoryHint": "Escolhe uma categoria para desbloquear os filtros de especificações.",
+      "clear": "Limpar",
+      "clearAll": "Limpar tudo",
+      "groups": {
+        "category": "Categoria",
+        "city": "Cidade",
+        "country": "País",
+        "dealType": "Tipo de negócio",
+        "grade": "Qualidade",
+        "market": "Mercado",
+        "price": "Preço"
+      },
+      "searchOptions": "Pesquisar",
+      "sortBy": "Ordenar por",
+      "title": "Filtros"
+    },
     "home": {
+      "cantFindBody": "Publique um RFQ e receba orçamentos selados em poucas horas.",
+      "cantFindTitle": "Não consegue encontrar o produto que procura?",
+      "catAll": "Todos",
+      "categories": "Comprar por categoria",
       "communityA11y": "AgroTraders Comunidade",
+      "dealOfDay": "Oferta do dia",
+      "deliverTo": "Entregar em",
       "featured": "Apresentou",
+      "freshArrivals": "Recém-chegados",
+      "heroCta": "Explore muitos",
+      "heroTag": "Semana da colheita",
+      "heroTitle": "Trigo Rabi, direto do mandi",
       "link": {
         "auctions": "Leilões",
         "bids": "Lances",
@@ -1011,20 +1100,23 @@
       "liveAuctions": "Leilões ao vivo",
       "noOffers": "Nenhuma oferta disponível no momento.",
       "offersOfDay": "Ofertas do dia",
+      "postRfq": "Postagem RFQ",
+      "promoBody": "Use o código AGRO4 · protegido por garantia",
+      "promoCta": "ALEGAR",
+      "promoTitle": "4% de desconto no primeiro pedido",
+      "promoted": "Em destaque",
+      "requirements": "Compradores à procura",
       "safeDealBody": "Os fundos ficarão retidos até que você confirme a entrega.",
       "safeDealTitle": "Escrow de Negócio Seguro",
       "searchHint": "Pesquise grãos, leguminosas, óleos…",
       "seeAll": "Veja tudo",
+      "services": "Serviços",
       "svc": {
         "loaders": "Carregadeiras",
         "offices": "Escritórios",
         "safeDeal": "Negócio seguro",
         "transport": "Transporte"
       },
-      "categories": "Comprar por categoria",
-      "promoted": "Em destaque",
-      "services": "Serviços",
-      "requirements": "Compradores à procura",
       "viewAll": "Ver tudo"
     },
     "kyc": {
@@ -1060,6 +1152,7 @@
       "caughtUp": "Você já está por dentro de tudo.",
       "channelGeneral": "Em geral",
       "chooseHow": "Escolha como deseja ser notificado para cada tipo de atividade.",
+      "earlier": "Mais cedo",
       "email": "E-mail",
       "inApp": "No aplicativo",
       "markAllRead": "Marque tudo como lido",
@@ -1067,7 +1160,8 @@
       "push": "Empurrar",
       "settingsTitle": "Configurações de notificação",
       "signIn": "Faça login para ver as notificações.",
-      "title": "Notificações"
+      "title": "Notificações",
+      "today": "Hoje"
     },
     "offers": {
       "emptyBody": "Volte em breve para conferir novas ofertas.",
@@ -1076,11 +1170,17 @@
       "title": "Ofertas do dia"
     },
     "pd": {
+      "addToRfq": "Adicionar à cotação",
       "alsoLike": "Você também pode gostar",
       "available": "Disponível",
       "buyNow": "Comprar agora",
       "buyerReviews": "Avaliações de compradores",
+      "chat": "Bater papo",
       "chatSeller": "Converse com o vendedor",
+      "decreaseQty": "Diminuir a quantidade",
+      "delivery": "Entrega",
+      "escrowNote": "Depósito em garantia Safe-Deal · fundos retidos até a aprovação do QC",
+      "increaseQty": "Aumentar a quantidade",
       "loading": "Carregando produto…",
       "moq": "MOQ",
       "offer": "Oferecer",
@@ -1089,6 +1189,7 @@
       "orderPlacedBody": "Seu pedido está em custódia sob o programa Safe Deal.",
       "orderPlacedTitle": "Pedido realizado",
       "ordered": "{{count}} pedido no mês passado",
+      "origin": "Origem",
       "price": "Preço",
       "quality": {
         "documentation": "Documentação",
@@ -1097,23 +1198,21 @@
         "purity": "Pureza"
       },
       "qualityScore": "Pontuação de Qualidade",
+      "quantity": "Quantidade",
       "quoteRequestedBody": "O vendedor responderá em breve.",
       "quoteRequestedTitle": "Cotação solicitada",
       "requestQuote": "Solicite um orçamento",
       "safeDeal": "Negócio seguro",
       "sellerFallback": "Vendedor",
       "specifications": "Especificações",
+      "supplier": "Fornecedor",
       "suppliesTo": "Suprimentos para",
+      "tradeTerms": "Condições comerciais",
       "transport": "Transporte",
       "transportBody": "Reserve o transporte a partir do seu painel de controle do comprador.",
       "transportTitle": "Transporte",
       "verified": "Verificado",
-      "watching": "{{count}}+ assistindo agora",
-      "addToRfq": "Adicionar à cotação",
-      "supplier": "Fornecedor",
-      "tradeTerms": "Condições comerciais",
-      "origin": "Origem",
-      "delivery": "Entrega"
+      "watching": "{{count}}+ assistindo agora"
     },
     "ph": {
       "bidTitle": "Arroz Basmati — 100 MT para Jebel Ali",
@@ -1149,6 +1248,13 @@
       "vehicleType": "Contêiner refrigerado de 40 pés",
       "workerName": "Imran Sheikh"
     },
+    "plp": {
+      "clearFilters": "Limpar filtros",
+      "filters": "Filtrar",
+      "noResults": "Nenhum resultado",
+      "results": "{{count}} resultados",
+      "sort": "Ordenar"
+    },
     "profile": {
       "activeRoutes": "Rotas ativas",
       "availableRange": "Disponível {{from}}–{{to}}",
@@ -1183,55 +1289,31 @@
       "send": "Enviar",
       "viewOffers": "Veja as ofertas"
     },
+    "rfq": {
+      "addedBody": "{{name}} está no teu cesto. Envia o pedido quando tiveres adicionado tudo.",
+      "addedTitle": "Adicionado ao cesto de cotações",
+      "emptyBody": "Adiciona anúncios de qualquer fornecedor e envia um pedido de cotação por fornecedor.",
+      "emptyTitle": "O teu cesto de cotações está vazio",
+      "escrow": "Garantia",
+      "failBody": "Tenta novamente.",
+      "failTitle": "Não foi possível enviar o pedido",
+      "footNote": "Cada fornecedor recebe o seu próprio pedido. As cotações ficam privadas.",
+      "lineCount": "{{count}} itens",
+      "noteFromBasket": "Enviado do cesto de cotações para {{supplier}}.",
+      "requestQuotes": "Pedir cotações",
+      "sentBody": "O fornecedor responderá com uma cotação. Acompanha em Propostas.",
+      "sentLabel": "Pedido enviado",
+      "sentTitle": "Pedido enviado",
+      "title": "Cesto de cotações"
+    },
     "search": {
       "emptyBody": "Digite para encontrar produtos em todo o mercado.",
       "emptyTitle": "Pesquisar AgroTraders",
       "noMatchBody": "Nada encontrado para \"{{q}}\".",
       "noMatchTitle": "Nenhuma correspondência",
       "placeholder": "Pesquise grãos, leguminosas, óleos…",
-      "recent": "Pesquisas recentes"
-    },
-    "filter": {
-      "title": "Filtros",
-      "clear": "Limpar",
-      "clearAll": "Limpar tudo",
-      "apply": "Aplicar",
-      "applyN": "Aplicar ({{count}})",
-      "sortBy": "Ordenar por",
-      "searchOptions": "Pesquisar",
-      "categoryHint": "Escolhe uma categoria para desbloquear os filtros de especificações.",
-      "groups": {
-        "category": "Categoria",
-        "dealType": "Tipo de negócio",
-        "price": "Preço",
-        "country": "País",
-        "city": "Cidade",
-        "grade": "Qualidade",
-        "market": "Mercado"
-      }
-    },
-    "plp": {
-      "results": "{{count}} resultados",
-      "filters": "Filtrar",
-      "sort": "Ordenar",
-      "clearFilters": "Limpar filtros",
-      "noResults": "Nenhum resultado"
-    },
-    "rfq": {
-      "title": "Cesto de cotações",
-      "emptyTitle": "O teu cesto de cotações está vazio",
-      "emptyBody": "Adiciona anúncios de qualquer fornecedor e envia um pedido de cotação por fornecedor.",
-      "addedTitle": "Adicionado ao cesto de cotações",
-      "addedBody": "{{name}} está no teu cesto. Envia o pedido quando tiveres adicionado tudo.",
-      "requestQuotes": "Pedir cotações",
-      "sentLabel": "Pedido enviado",
-      "sentTitle": "Pedido enviado",
-      "sentBody": "O fornecedor responderá com uma cotação. Acompanha em Propostas.",
-      "failTitle": "Não foi possível enviar o pedido",
-      "failBody": "Tenta novamente.",
-      "lineCount": "{{count}} itens",
-      "noteFromBasket": "Enviado do cesto de cotações para {{supplier}}.",
-      "footNote": "Cada fornecedor recebe o seu próprio pedido. As cotações ficam privadas."
+      "recent": "Pesquisas recentes",
+      "trending": "Tendências na sua região"
     }
   },
   "reviews": {
@@ -1297,6 +1379,10 @@
       "category": "Categoria",
       "city": "Cidade",
       "country": "País",
+      "currency": "Moeda",
+      "dealDirect": "Negociação direta (sem garantia)",
+      "dealSafe": "Negócio seguro (protegido por garantia)",
+      "dealType": "Tipo de negócio",
       "delivery": "Entrega",
       "editTitle": "Editar produto",
       "emoji": "Emoji",
@@ -1314,7 +1400,11 @@
       "phOrigin": "Índia",
       "phQty": "500 MT",
       "phUnit": "/MT",
+      "pickup": "Coleção do comprador",
       "price": "Preço (USD)",
+      "priceFixed": "Preço fixo",
+      "priceNegotiable": "Negociável",
+      "priceType": "Tipo de preço",
       "quantity": "Quantidade",
       "runsForDays": "Dura (dias)",
       "saveChanges": "Salvar alterações",
@@ -1429,6 +1519,7 @@
       "hint": "Toque em uma foto para torná-la a capa. A primeira foto é o que os compradores veem.",
       "permissionError": "É necessário obter autorização para adicionar imagens.",
       "photos": "Fotos ({{n}}/{{max}})",
+      "sizeHint": "Armazenado como quadrados de 1080×1080. Pelo menos 1080px no lado mais longo.",
       "uploadError": "O envio da imagem falhou. Tente usar fotos menores.",
       "uploading": "Carregando…"
     },
@@ -1449,6 +1540,7 @@
     },
     "market": {
       "addNew": "+ Criar um novo mercado",
+      "address": "Endereço (opcional)",
       "cancel": "Cancelar",
       "city": "Cidade",
       "country": "País",
@@ -1462,6 +1554,7 @@
       "pendingApproval": "Aguardando aprovação",
       "pendingHint": "Visível apenas para você até que um administrador o aprove.",
       "pendingSuffix": "(pendente)",
+      "phAddress": "Portão 3, Anel Viário",
       "phCity": "Kandla",
       "phCountry": "Índia",
       "phName": "Porto de Kandla",

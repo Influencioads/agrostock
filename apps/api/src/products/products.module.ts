@@ -21,9 +21,17 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiTags, PartialType } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
-import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { getAttributeField, getAttributeFields, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import {
+  CURRENCIES,
+  CURRENCY_SYMBOLS,
+  getAttributeField,
+  getAttributeFields,
+  PRODUCT_UNITS,
+  toUnit,
+} from '@agrotraders/types';
+import { FxModule, FxService } from '../fx/fx.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -81,17 +89,26 @@ const slugify = (s: string) =>
 /** Max images per product gallery. Enforced by the DTO and the upload interceptor. */
 export const MAX_PRODUCT_IMAGES = 6;
 
-/** "$1,180" → 118000 cents; null when the string isn't a plain number. */
-const parsePriceCents = (price: string): number | null => {
-  const n = parseFloat(price.replace(/[$,\s]/g, ''));
-  return Number.isFinite(n) ? Math.round(n * 100) : null;
+/** Every catalog photo is stored as an exact square at this edge length. */
+export const PRODUCT_IMAGE_PX = 1080;
+
+/** Bare amount out of whatever the seller typed ("₹ 70,000" → 70000). */
+const parseAmount = (price: string): number => {
+  const n = parseFloat(price.replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(n) ? n : NaN;
 };
+
+/** Display string in the seller's own currency — "₹70,000", "$840". */
+const displayPrice = (amount: number, currency: string): string =>
+  `${CURRENCY_SYMBOLS[currency] ?? `${currency} `}${amount.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 
 export class CreateProductDto {
   @IsString() @MinLength(2) name!: string;
   @IsString() categoryId!: string;
   @IsOptional() @IsString() subcategoryId?: string;
   @IsString() price!: string;
+  /** Currency the seller quoted `price` in. `priceCents` is derived in USD. */
+  @IsOptional() @IsIn(CURRENCIES as unknown as string[]) priceCurrency?: string;
   @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) unit?: string;
   @IsOptional() @IsString() grade?: string;
   @IsOptional() @IsString() qty?: string;
@@ -99,7 +116,9 @@ export class CreateProductDto {
   @IsOptional() @IsString() flag?: string;
   @IsOptional() @IsString() emoji?: string;
   @IsOptional() @IsString() imageUrl?: string;
-  @IsOptional() @IsArray() @ArrayMaxSize(MAX_PRODUCT_IMAGES) @IsString({ each: true }) images?: string[];
+  /** At least one photo — a listing with no picture does not sell and the
+   *  buyer grid has nothing to render but an emoji placeholder. */
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(MAX_PRODUCT_IMAGES) @IsString({ each: true }) images!: string[];
   @IsOptional() @IsString() origin?: string;
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() country?: string;
@@ -110,6 +129,10 @@ export class CreateProductDto {
   @IsOptional() @IsObject() attributes?: Record<string, unknown>;
   @IsOptional() @IsBoolean() isOffer?: boolean;
   @IsOptional() @IsBoolean() isAuction?: boolean;
+  /** Escrow-protected sale vs. a direct deal between the two parties. */
+  @IsOptional() @IsBoolean() safeDeal?: boolean;
+  /** Seller will entertain offers on the listed price. */
+  @IsOptional() @IsBoolean() negotiable?: boolean;
   @IsOptional() @IsString() marketId?: string;
   /**
    * FLOW-04: optional managed inventory. `null`/omitted = unmanaged (unlimited,
@@ -135,7 +158,27 @@ export class ProductsService {
   constructor(
     private prisma: PrismaService,
     private events: EventEmitter2,
+    private fx: FxService,
   ) {}
+
+  /**
+   * A seller quotes in their own currency; every comparison downstream (price
+   * sort, min/max filters, the buyer's display currency) runs on ONE baseline,
+   * so convert to USD cents here and keep the seller's own string for display.
+   */
+  private async pricePatch(rawPrice: string, currency?: string) {
+    const priceCurrency = currency && (CURRENCIES as readonly string[]).includes(currency) ? currency : 'USD';
+    const amount = parseAmount(rawPrice);
+    if (!Number.isFinite(amount)) {
+      // Unparseable ("POA", a range) — keep the seller's text, no baseline.
+      return { price: rawPrice, priceCents: null, priceCurrency };
+    }
+    return {
+      price: displayPrice(amount, priceCurrency),
+      priceCents: await this.fx.toUsdCents(amount, priceCurrency),
+      priceCurrency,
+    };
+  }
 
   private async subcategoryBranchIds(subcategoryId: string, categoryId?: string) {
     const rows = await this.prisma.subcategory.findMany({
@@ -184,12 +227,14 @@ export class ProductsService {
    * match a stored JSON array.
    */
   private async attributeSchemaNames(q: Record<string, string | undefined>) {
-    let categoryName = q.category;
-    if (!categoryName && q.categoryId) {
-      categoryName =
-        (await this.prisma.category.findUnique({ where: { id: q.categoryId }, select: { name: true } }))?.name ??
-        undefined;
-    }
+    // Resolve by ID FIRST. `q.category` is whatever the client had on screen,
+    // which in a non-English locale is the translated label — and the schema is
+    // keyed by the canonical English name, so trusting it silently degraded
+    // every multiselect facet to a scalar `equals` that can never match.
+    let categoryName = q.categoryId
+      ? (await this.prisma.category.findUnique({ where: { id: q.categoryId }, select: { name: true } }))?.name
+      : undefined;
+    categoryName ??= q.category;
     if (!categoryName) return { category: undefined, subcategory: undefined };
 
     let node = await this.findSubcategory(q);
@@ -225,6 +270,11 @@ export class ProductsService {
     else if (q.category) where.category = { name: q.category };
     if (q.verified === 'true') where.verified = true;
     if (q.safe === 'true') where.safeDeal = true;
+    // Explicitly browsable BOTH ways — "direct deal only" is a real buyer intent,
+    // not just the absence of the safe-deal filter.
+    if (q.safe === 'false') where.safeDeal = false;
+    if (q.negotiable === 'true') where.negotiable = true;
+    if (q.negotiable === 'false') where.negotiable = false;
     if (q.offer === 'true') where.isOffer = true;
     if (q.auction === 'true') where.isAuction = true;
     // Both the id and the name form are branch-inclusive: selecting a parent has
@@ -362,11 +412,12 @@ export class ProductsService {
    * A seller may only attach an approved market, or a pending one they created
    * themselves — otherwise a pending market would leak onto a public listing.
    */
-  private async validMarket(sellerId: string, marketId?: string | null) {
+  private async validMarket(sellerId: string | null, marketId?: string | null) {
     if (!marketId) return null;
     const m = await this.prisma.market.findUnique({ where: { id: marketId } });
     if (!m) throw new NotFoundException('Market not found');
-    const usable = m.status === 'approved' || m.createdById === sellerId;
+    // Admins (`sellerId: null`) may attach any market, including pending ones.
+    const usable = sellerId === null || m.status === 'approved' || m.createdById === sellerId;
     if (!usable) throw new ForbiddenException('That market is awaiting approval.');
     return marketId;
   }
@@ -383,14 +434,13 @@ export class ProductsService {
   async create(sellerId: string, dto: CreateProductDto) {
     const subcategoryId = await this.validSubcategory(dto.categoryId, dto.subcategoryId);
     const marketId = await this.validMarket(sellerId, dto.marketId);
-    const price = dto.price.startsWith('$') ? dto.price : `$${dto.price}`;
+    const price = await this.pricePatch(dto.price, dto.priceCurrency);
     const images = dto.images ?? [];
     const product = await this.prisma.product.create({
       data: {
         slug: slugify(dto.name),
         name: dto.name,
-        price,
-        priceCents: parsePriceCents(price),
+        ...price,
         // Legacy rows hold the display form ('/MT'); new writes are canonical.
         unit: toUnit(dto.unit),
         grade: dto.grade,
@@ -408,9 +458,11 @@ export class ProductsService {
         ...(dto.attributes ? { attributes: dto.attributes as Prisma.InputJsonValue } : {}),
         isOffer: dto.isOffer ?? false,
         isAuction: dto.isAuction ?? false,
+        safeDeal: dto.safeDeal ?? true,
+        negotiable: dto.negotiable ?? false,
         // FLOW-04: managed inventory when the seller sets it; null = unlimited.
         stockQty: dto.stockQty ?? null,
-        startBidCents: dto.isAuction ? dto.startBidCents ?? parsePriceCents(price) : null,
+        startBidCents: dto.isAuction ? dto.startBidCents ?? price.priceCents : null,
         auctionEndsAt: dto.isAuction && dto.auctionEndsAt ? new Date(dto.auctionEndsAt) : null,
         verified: false,
         approved: false, // new listings await admin approval before going live
@@ -425,16 +477,24 @@ export class ProductsService {
     return product;
   }
 
-  private async owned(id: string, sellerId: string) {
+  /** `sellerId: null` means an admin is acting — ownership is not theirs to have. */
+  private async owned(id: string, sellerId: string | null) {
     const p = await this.prisma.product.findUnique({ where: { id } });
     if (!p) throw new NotFoundException('Product not found');
-    if (p.sellerId !== sellerId) throw new ForbiddenException('Not your product');
+    if (sellerId !== null && p.sellerId !== sellerId) throw new ForbiddenException('Not your product');
     return p;
   }
 
-  async update(id: string, sellerId: string, data: Partial<CreateProductDto>) {
+  /**
+   * Edit a listing. Admins pass `sellerId: null` and go through this exact path
+   * rather than a parallel one, so an admin edit gets the same currency
+   * conversion, subcategory/market validation and cover-image election a seller
+   * edit does — the admin panel used to write raw columns and could not touch
+   * most of the product at all.
+   */
+  async update(id: string, sellerId: string | null, data: Partial<CreateProductDto>) {
     const existing = await this.owned(id, sellerId);
-    const { categoryId, subcategoryId, auctionEndsAt, price, images, marketId, attributes, ...rest } = data;
+    const { categoryId, subcategoryId, auctionEndsAt, price, priceCurrency, images, marketId, attributes, ...rest } = data;
     const effectiveCategoryId = categoryId ?? existing.categoryId;
     // Re-validate the subcategory whenever category or subcategory is touched.
     const subPatch =
@@ -442,12 +502,12 @@ export class ProductsService {
         ? { subcategoryId: await this.validSubcategory(effectiveCategoryId, subcategoryId) }
         : {};
     const marketPatch = marketId !== undefined ? { marketId: await this.validMarket(sellerId, marketId) } : {};
-    const pricePatch = price !== undefined
-      ? (() => {
-          const normalized = price.startsWith('$') ? price : `$${price}`;
-          return { price: normalized, priceCents: parsePriceCents(normalized) };
-        })()
-      : {};
+    // Re-price whenever either half changes: switching currency alone still
+    // moves the USD baseline every buyer-facing number is derived from.
+    const pricePatch =
+      price !== undefined || priceCurrency !== undefined
+        ? await this.pricePatch(price ?? existing.price, priceCurrency ?? existing.priceCurrency)
+        : {};
     // Reordering the gallery re-elects the cover; clearing it falls back to any
     // explicitly-supplied imageUrl, else null.
     const cover = this.coverOf(images, rest.imageUrl ?? null);
@@ -493,11 +553,12 @@ export class ProductsController {
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller')
+  // Admins upload too — they can edit any part of a listing, photos included.
+  @Roles('seller', 'admin')
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file', uploadLimits()))
   async uploadImage(@UploadedFile() file?: Express.Multer.File) {
-    const imageUrl = await this.uploads.saveImage(file, 'products');
+    const imageUrl = await this.uploads.saveImage(file, 'products', { square: PRODUCT_IMAGE_PX });
     return { imageUrl };
   }
 
@@ -505,14 +566,16 @@ export class ProductsController {
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller')
+  @Roles('seller', 'admin')
   @Post('upload-images')
   @UseInterceptors(FilesInterceptor('files', MAX_PRODUCT_IMAGES, uploadLimits(MAX_PRODUCT_IMAGES)))
   async uploadImages(@UploadedFiles() files?: Express.Multer.File[]) {
     if (!files?.length) throw new BadRequestException('No images were uploaded.');
     // Sequential: sharp is CPU-bound, so parallelising 6 encodes just thrashes.
     const imageUrls: string[] = [];
-    for (const file of files) imageUrls.push(await this.uploads.saveImage(file, 'products'));
+    for (const file of files) {
+      imageUrls.push(await this.uploads.saveImage(file, 'products', { square: PRODUCT_IMAGE_PX }));
+    }
     return { imageUrls };
   }
 
@@ -555,7 +618,10 @@ export class ProductsController {
 }
 
 @Module({
+  imports: [FxModule],
   controllers: [ProductsController],
   providers: [ProductsService],
+  // The admin panel edits listings through this same service (see AdminService).
+  exports: [ProductsService],
 })
 export class ProductsModule {}

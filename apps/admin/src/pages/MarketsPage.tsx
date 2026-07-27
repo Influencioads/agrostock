@@ -2,16 +2,19 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import type { ApiMarket } from '@agrotraders/api-client';
+import { ALL_COUNTRIES, countryFlag, countryLabel } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
 import { errMessage } from '../lib/errors';
 
-const blank = { name: '', country: '', city: '', region: '', flag: '' };
+const blank = { name: '', country: '', city: '', region: '', address: '', flag: '' };
+
+const inputCls = 'h-10 w-full rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf';
 
 /** Markets / mandis sellers attach to — admin CRUD (mirrors CategoriesPage). */
 export function MarketsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [form, setForm] = useState(blank);
   const [editing, setEditing] = useState<string | null>(null);
@@ -43,7 +46,14 @@ export function MarketsPage() {
 
   const startEdit = (m: ApiMarket) => {
     setEditing(m.id);
-    setForm({ name: m.name, country: m.country, city: m.city ?? '', region: m.region ?? '', flag: m.flag ?? '' });
+    setForm({
+      name: m.name,
+      country: m.country,
+      city: m.city ?? '',
+      region: m.region ?? '',
+      address: m.address ?? '',
+      flag: m.flag ?? countryFlag(m.country),
+    });
   };
 
   const toggleActive = async (m: ApiMarket) => {
@@ -84,9 +94,9 @@ export function MarketsPage() {
             {pending.map((m) => (
               <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-surface-border px-3 py-2">
                 <div className="min-w-0">
-                  <div className="font-semibold text-ink">{m.flag} {m.name}</div>
+                  <div className="font-semibold text-ink">{m.flag || countryFlag(m.country)} {m.name}</div>
                   <div className="text-xs text-ink-soft">
-                    {[m.city, m.region, m.country].filter(Boolean).join(' · ')}
+                    {[m.address, m.city, m.region, countryLabel(m.country, lang)].filter(Boolean).join(' · ')}
                     {m.createdBy ? ` · ${t('marketsAdmin.proposedBy', { name: m.createdBy.name })}` : ''}
                   </div>
                 </div>
@@ -104,23 +114,37 @@ export function MarketsPage() {
         <Card>
           <h3 className="font-display font-bold text-ink">{editing ? t('marketsAdmin.editMarket') : t('marketsAdmin.addMarket')}</h3>
           <div className="mt-3 space-y-3">
-            {(
-              [
-                ['name', 'marketsAdmin.fName', 'marketsAdmin.phName'],
-                ['country', 'marketsAdmin.fCountry', 'marketsAdmin.phCountry'],
-                ['city', 'marketsAdmin.fCity', 'marketsAdmin.phCity'],
-                ['region', 'marketsAdmin.fRegion', 'marketsAdmin.phRegion'],
-                ['flag', 'marketsAdmin.fFlag', 'marketsAdmin.phFlag'],
-              ] as const
-            ).map(([k, labelKey, phKey]) => (
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink-soft">{t('marketsAdmin.fName')}</span>
+              <input value={form.name} onChange={set('name')} placeholder={t('marketsAdmin.phName')} className={inputCls} />
+            </label>
+
+            {/* Country is a picker, and the flag follows from it — a hand-typed
+                country never matched the filters, and a hand-typed emoji was
+                wrong about as often as it was right. */}
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink-soft">{t('marketsAdmin.fCountry')}</span>
+              <select
+                value={form.country}
+                onChange={(e) => setForm((f) => ({ ...f, country: e.target.value, flag: countryFlag(e.target.value) }))}
+                className={inputCls + ' bg-white'}
+              >
+                <option value="">{t('marketsAdmin.phCountry')}</option>
+                {/* English name stays the stored value; only the label localizes. */}
+                {ALL_COUNTRIES.map((c) => (
+                  <option key={c.iso2} value={c.name}>{c.flag} {countryLabel(c.name, lang)}</option>
+                ))}
+              </select>
+            </label>
+
+            {([
+              ['city', 'marketsAdmin.fCity', 'marketsAdmin.phCity'],
+              ['region', 'marketsAdmin.fRegion', 'marketsAdmin.phRegion'],
+              ['address', 'marketsAdmin.fAddress', 'marketsAdmin.phAddress'],
+            ] as const).map(([k, labelKey, phKey]) => (
               <label key={k} className="block">
                 <span className="mb-1 block text-xs font-semibold text-ink-soft">{t(labelKey)}</span>
-                <input
-                  value={form[k]}
-                  onChange={set(k)}
-                  placeholder={t(phKey)}
-                  className="h-10 w-full rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
-                />
+                <input value={form[k]} onChange={set(k)} placeholder={t(phKey)} className={inputCls} />
               </label>
             ))}
             {err && <p className="text-xs text-status-error">{err}</p>}
@@ -154,10 +178,10 @@ export function MarketsPage() {
                 {markets.map((m) => (
                   <tr key={m.id} className="border-b border-surface-border/70 last:border-0 hover:bg-brand-surface/30">
                     <td className="px-5 py-3">
-                      <div className="font-semibold text-ink">{m.flag} {m.name}</div>
-                      <div className="text-xs text-ink-soft">{m.city} · {m.region}</div>
+                      <div className="font-semibold text-ink">{m.flag || countryFlag(m.country)} {m.name}</div>
+                      <div className="text-xs text-ink-soft">{[m.city, m.region, m.address].filter(Boolean).join(' · ')}</div>
                     </td>
-                    <td className="px-5 py-3 text-ink-soft">{m.country}</td>
+                    <td className="px-5 py-3 text-ink-soft">{countryLabel(m.country, lang)}</td>
                     <td className="px-5 py-3 text-ink-soft">{m._count?.products ?? 0}</td>
                     <td className="px-5 py-3 text-ink-soft">{m._count?.profiles ?? 0}</td>
                     <td className="px-5 py-3">

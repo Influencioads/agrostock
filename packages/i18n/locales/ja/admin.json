@@ -55,6 +55,7 @@
     "void": "オークション無効"
   },
   "audit": {
+    "actionPh": "Filter action (e.g. wallet, kyc, order)…",
     "detail": "詳細",
     "empty": "一致する監査記録はありません。",
     "entityPh": "エンティティタイプ（ユーザー、注文など）",
@@ -178,6 +179,7 @@
     "fEmoji": "絵文字",
     "fName": "名前",
     "glance": "コミュニティ概要",
+    "groupStats": "{{members}} members · {{posts}} posts · {{messages}} messages",
     "groupsCount": "グループ ({{count}})",
     "inGroup": "{{name}}",
     "metric": {
@@ -240,6 +242,33 @@
     "refund": "返金購入者",
     "release": "売主への引き渡し",
     "sub_other": "{{count}} 未解決の紛争"
+  },
+  "emailTpl": {
+    "body": "本文（HTML）",
+    "close": "近い",
+    "ctaLabel": "ボタンラベル",
+    "defaultBadge": "デフォルト",
+    "disable": "無効にする",
+    "disabled": "無効",
+    "edit": "編集",
+    "editedBadge": "編集済み",
+    "enable": "有効にする",
+    "enabled": "有効",
+    "preview": "プレビュー",
+    "previewTitle": "ライブプレビュー",
+    "reset": "初期設定に戻す",
+    "save": "変更を保存する",
+    "saved": "テンプレートが保存されました",
+    "saving": "保存中…",
+    "sendTest": "テストを送ってください",
+    "sending": "送信中…",
+    "smtpOff": "SMTPが設定されていません。テンプレートは編集可能ですが、SMTPが設定されるまでメールは送信されません。",
+    "sub": "自動送信メールの本文をすべて編集してください。変更は即座に反映されます。",
+    "subject": "主題",
+    "testFailed": "送信できませんでした（SMTP設定を確認してください）",
+    "testSent": "{{to}}宛にテストメールが送信されました",
+    "variables": "使用できる変数",
+    "varsHint": "二重中括弧で囲んで挿入してください（例：{{name}}）。不明な値または空の値は空白で表示されます。"
   },
   "genericError": "エラーが発生しました。もう一度お試しください。",
   "header": {
@@ -310,6 +339,7 @@
     "awaiting": "{{count}} レビュー待ち",
     "edit": "編集",
     "editMarket": "マーケットを編集する",
+    "fAddress": "住所",
     "fCity": "市",
     "fCountry": "国",
     "fFlag": "国旗の絵文字",
@@ -318,6 +348,7 @@
     "hidden": "隠れた",
     "hide": "隠れる",
     "pending": "保留中",
+    "phAddress": "環状道路3番ゲート",
     "phCity": "デリー",
     "phCountry": "🇮🇳 インド",
     "phFlag": "🇮🇳",
@@ -341,6 +372,7 @@
     "cms": "CMS",
     "community": "コミュニティ",
     "disputes": "紛争",
+    "emailTemplates": "メールテンプレート",
     "invoices": "請求書",
     "kyc": "KYC レビュー",
     "loaders": "ローダー",
@@ -453,6 +485,7 @@
       "title": "紛争"
     },
     "invoices": {
+      "subtitle": "{{count}} invoices across the platform",
       "title": "請求書"
     },
     "kyc": {
@@ -519,6 +552,7 @@
       "week": "週"
     },
     "recentTxns": "最近の取引",
+    "rejectReason": "この支払いを却下する理由（ユーザーに表示されます）：",
     "requested": "リクエスト {{date}}",
     "searchUser": "ユーザーを名前またはメールアドレスで検索する…",
     "shownCount": "{{count}}が表示されました",
@@ -527,8 +561,7 @@
       "payouts": "支払い",
       "totalBalance": "ウォレットの合計残高",
       "wallets": "財布"
-    },
-    "rejectReason": "この支払いを却下する理由（ユーザーに表示されます）："
+    }
   },
   "perm": {
     "ads_moderate": "広告",
@@ -539,6 +572,7 @@
     "cms_manage": "CMSページ",
     "community_moderate": "コミュニティ",
     "disputes_manage": "紛争",
+    "email_templates": "メールテンプレート",
     "finance_manage": "金融（ウォレット／決済）",
     "kyc_review": "KYC レビュー",
     "loaders_manage": "ローダー",
@@ -558,6 +592,40 @@
     "body": "このモジュールは、レイアウト、テーブル、コンポーネントを共有しています。バックエンドの各フェーズが実装されるにつれて、ライブデータへの接続作業が継続されます。",
     "docs": "ドキュメントを表示"
   },
+  "prodEdit": {
+    "addPhoto": "追加",
+    "auction": "オークション",
+    "category": "カテゴリ",
+    "city": "市",
+    "country": "国",
+    "cover": "カバー",
+    "delivery": "配達",
+    "details": "商品詳細",
+    "grade": "学年",
+    "market": "市場",
+    "moq": "MOQ",
+    "name": "製品名",
+    "negotiable": "交渉可能",
+    "offer": "オファー",
+    "origin": "起源",
+    "photoHint": "まずカバー画像です。1080×1080で保存されています。",
+    "photos": "写真",
+    "price": "価格（単価）",
+    "qty": "量",
+    "remove": "取り除く",
+    "safeDeal": "安全な取引（エスクロー）",
+    "save": "変更を保存する",
+    "saveError": "出品情報を保存できませんでした。入力項目を確認してください。",
+    "saving": "保存中…",
+    "select": "選択…",
+    "stock": "ストック",
+    "subcategory": "サブカテゴリ",
+    "title": "「{{name}}」を編集",
+    "unit": "ユニット",
+    "uploadFailed": "アップロードに失敗しました。",
+    "uploading": "アップロード中…",
+    "verified": "検証済み"
+  },
   "prodMod": {
     "allTypes": "全種類",
     "approve": "承認する",
@@ -568,6 +636,7 @@
     "colSeller": "売り手",
     "colStatus": "状態",
     "confirm": "確認する",
+    "confirmTakedown": "この出品をマーケットプレイスから非表示にしますか？",
     "edit": "編集",
     "fName": "名前",
     "fPrice": "価格",
@@ -592,13 +661,12 @@
       "auction": "オークション",
       "offer": "オファー",
       "safedeal": "セーフディール"
-    },
-    "confirmTakedown": "この出品をマーケットプレイスから非表示にしますか？"
+    }
   },
   "profile": {
     "active": "アクティブ",
-    "inactive": "非アクティブ",
     "currentPassword": "現在のパスワード",
+    "inactive": "非アクティブ",
     "newPassword": "新しいパスワード",
     "noPermissions": "モジュール権限は割り当てられていません。",
     "passwordError": "パスワードを変更できませんでした。",
@@ -616,6 +684,10 @@
     "allTime": "歴代",
     "from": "から",
     "to": "に"
+  },
+  "rbac": {
+    "deniedBody": "このセクションを表示する権限がありません。必要な場合はスーパー管理者に依頼してください。",
+    "deniedTitle": "アクセス権限がありません"
   },
   "reports": {
     "exportCsv": "エクスポート CSV",
@@ -789,11 +861,15 @@
     "activity": "活動",
     "addRole": "役割を追加する…",
     "adminOnly": "管理者専用",
+    "confirmDeactivate": "このアカウントを無効化しますか？ユーザーはサインアウトされ、ログインできなくなります。",
+    "confirmDelete": "このアカウントを完全に削除しますか？元に戻せません。注文・商品・財務履歴のあるユーザーは削除できません。代わりに無効化してください。",
     "contactEmail": "お問い合わせメール",
     "country": "国",
     "dangerBody": "無効化するとユーザーはサインアウトされログインが禁止されますが、データは保持され元に戻せます。完全削除はアカウントを削除し、元に戻せません。",
     "dangerZone": "危険区域",
     "deactivate": "アカウントを無効にする",
+    "deleteBlocked": "このユーザーには取引・財務・サポートの記録があり、完全に削除できません。代わりにアカウントを無効化してください。",
+    "deletePermanently": "完全に削除",
     "deleting": "削除中…",
     "editDetails": "詳細を編集",
     "email": "メール",
@@ -806,18 +882,14 @@
     "phone": "電話",
     "primary": "（主要な）",
     "privateContact": "プライベートコンタクト",
+    "reactivate": "アカウントを再有効化",
     "revokeRole": "役割を取り消す",
     "roles": "役割",
     "saveChanges": "変更を保存する",
     "saving": "保存中…",
     "title": "ユーザーを管理する",
     "wallet": "財布",
-    "whatsapp": "WhatsApp",
-    "confirmDeactivate": "このアカウントを無効化しますか？ユーザーはサインアウトされ、ログインできなくなります。",
-    "reactivate": "アカウントを再有効化",
-    "deletePermanently": "完全に削除",
-    "confirmDelete": "このアカウントを完全に削除しますか？元に戻せません。注文・商品・財務履歴のあるユーザーは削除できません。代わりに無効化してください。",
-    "deleteBlocked": "このユーザーには取引・財務・サポートの記録があり、完全に削除できません。代わりにアカウントを無効化してください。"
+    "whatsapp": "WhatsApp"
   },
   "users": {
     "createActive": "アクティブ",
@@ -835,9 +907,5 @@
     "subtitle": "{{shown}} / {{total}} アカウント",
     "title": "ユーザー",
     "view": "ビュー"
-  },
-  "rbac": {
-    "deniedTitle": "アクセス権限がありません",
-    "deniedBody": "このセクションを表示する権限がありません。必要な場合はスーパー管理者に依頼してください。"
   }
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, type BadgeTone } from '@agrotraders/ui';
 import type { AdminProduct } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
+import { ProductEditModal } from './ProductEditModal';
 import { api } from '../lib/api';
 import { useI18n } from '../i18n';
 import { unitSuffix } from '@agrotraders/types';
@@ -23,7 +24,8 @@ export function ProductsPage() {
   const [type, setType] = useState<(typeof TYPE_FILTERS)[number]>('all');
   const [search, setSearch] = useState('');
   const [rejecting, setRejecting] = useState<{ id: string; reason: string } | null>(null);
-  const [editing, setEditing] = useState<{ id: string; name: string; price: string; qty: string } | null>(null);
+  // Full-listing editor — admins may change ANY field, not just these three.
+  const [editing, setEditing] = useState<AdminProduct | null>(null);
 
   const { data: products = [], isLoading } = useQuery<AdminProduct[]>({
     queryKey: ['admin-products', status, type, search],
@@ -44,14 +46,6 @@ export function ProductsPage() {
     },
   });
   const takedown = useMutation({ mutationFn: (id: string) => api.admin.deleteProduct(id), onSuccess: invalidate });
-  const save = useMutation({
-    mutationFn: ({ id, ...body }: { id: string; name: string; price: string; qty: string }) => api.admin.updateProduct(id, body),
-    onSuccess: () => {
-      setEditing(null);
-      invalidate();
-    },
-  });
-
   return (
     <div>
       <PageHeader title={t('nav.products')} subtitle={t('prodMod.sub')} action={<Badge tone="green">{t('roleReq.liveApi')}</Badge>} />
@@ -110,21 +104,6 @@ export function ProductsPage() {
                         {p.isAuction && <span className="text-[10px] text-ink-soft">{t('prodMod.tagAuction')}</span>}
                         {p.isOffer && <span className="text-[10px] text-ink-soft">{t('prodMod.tagOffer')}</span>}
                       </div>
-                      {editing?.id === p.id && (
-                        <div className="mt-2 grid gap-2">
-                          <Input label={t('prodMod.fName')} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
-                          <Input label={t('prodMod.fPrice')} value={editing.price} onChange={(e) => setEditing({ ...editing, price: e.target.value })} />
-                          <Input label={t('prodMod.fQty')} value={editing.qty} onChange={(e) => setEditing({ ...editing, qty: e.target.value })} />
-                          <div className="flex gap-2">
-                            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate({ id: p.id, name: editing.name, price: editing.price, qty: editing.qty })}>
-                              {t('prodMod.save')}
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
-                              {t('common:cancel')}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                     </td>
                     <td className="px-5 py-3 text-ink-soft">
                       {p.seller?.name} {p.seller?.country}
@@ -165,7 +144,7 @@ export function ProductsPage() {
                               {t('prodMod.reject')}
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" onClick={() => setEditing({ id: p.id, name: p.name, price: p.price, qty: p.qty ?? '' })}>
+                          <Button size="sm" variant="outline" onClick={() => setEditing(p)}>
                             {t('prodMod.edit')}
                           </Button>
                           {p.status !== 'hidden' && (
@@ -190,6 +169,8 @@ export function ProductsPage() {
           </div>
         )}
       </Card>
+
+      {editing && <ProductEditModal product={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }

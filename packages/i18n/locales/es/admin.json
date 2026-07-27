@@ -55,6 +55,7 @@
     "void": "Subasta nula"
   },
   "audit": {
+    "actionPh": "Filter action (e.g. wallet, kyc, order)…",
     "detail": "Detalle",
     "empty": "No se encontraron coincidencias en los asientos de auditoría.",
     "entityPh": "Tipo de entidad (Usuario, Pedido…)",
@@ -244,6 +245,33 @@
     "sub_one": "{{count}} disputas abiertas",
     "sub_other": "{{count}} disputas abiertas"
   },
+  "emailTpl": {
+    "body": "Cuerpo (HTML)",
+    "close": "Cerca",
+    "ctaLabel": "Etiqueta del botón",
+    "defaultBadge": "Por defecto",
+    "disable": "Desactivar",
+    "disabled": "Desactivado",
+    "edit": "Editar",
+    "editedBadge": "Editado",
+    "enable": "Permitir",
+    "enabled": "Activado",
+    "preview": "Avance",
+    "previewTitle": "Vista previa en directo",
+    "reset": "Restablecer a valores predeterminados",
+    "save": "Guardar cambios",
+    "saved": "Plantilla guardada",
+    "saving": "Ahorro…",
+    "sendTest": "Envíame la prueba",
+    "sending": "Envío…",
+    "smtpOff": "El servidor SMTP no está configurado; las plantillas se pueden editar, pero los correos electrónicos no se entregarán hasta que se configure el SMTP.",
+    "sub": "Edita el texto de cada correo electrónico automatizado. Los cambios se aplican de inmediato.",
+    "subject": "Sujeto",
+    "testFailed": "No se pudo enviar (verifique la configuración SMTP)",
+    "testSent": "Correo electrónico de prueba enviado a {{to}}",
+    "variables": "Variables que puedes usar",
+    "varsHint": "Insertar con llaves dobles, por ejemplo {{name}}. Los valores desconocidos o vacíos se mostrarán en blanco."
+  },
   "genericError": "Algo salió mal. Por favor, inténtalo de nuevo.",
   "header": {
     "fallbackTitle": "Administración",
@@ -280,8 +308,10 @@
     "allReviewed": "Todas las propuestas han sido revisadas. ¡Excelente trabajo!",
     "approve": "Aprobar",
     "confirmReject": "Confirmar rechazo",
+    "daysAgo": "{{count}} days ago",
     "docs": "Documentos",
     "docsCount": "{{count}} documentos",
+    "hoursAgo": "{{count}} hr ago",
     "justNow": "En este momento",
     "noDocs": "Aún no se han subido documentos.",
     "noneFilter": "No se aceptan envíos de {{filter}}.",
@@ -311,6 +341,7 @@
     "awaiting": "{{count}} pendiente de revisión",
     "edit": "Editar",
     "editMarket": "Editar mercado",
+    "fAddress": "DIRECCIÓN",
     "fCity": "Ciudad",
     "fCountry": "País",
     "fFlag": "Emoji de bandera",
@@ -319,6 +350,7 @@
     "hidden": "Oculto",
     "hide": "Esconder",
     "pending": "Pendiente",
+    "phAddress": "Puerta 3, Circunvalación",
     "phCity": "Delhi",
     "phCountry": "🇮🇳 India",
     "phFlag": "🇮🇳",
@@ -342,6 +374,7 @@
     "cms": "CMS",
     "community": "Comunidad",
     "disputes": "Disputas",
+    "emailTemplates": "Plantillas de correo electrónico",
     "invoices": "Facturas",
     "kyc": "KYC Reseña",
     "loaders": "Cargadores",
@@ -521,6 +554,7 @@
       "week": "Semana"
     },
     "recentTxns": "Transacciones recientes",
+    "rejectReason": "Motivo del rechazo de este pago (se muestra al usuario):",
     "requested": "solicitado {{date}}",
     "searchUser": "Buscar un usuario por nombre o correo electrónico…",
     "shownCount": "{{count}} mostrado",
@@ -529,8 +563,7 @@
       "payouts": "Pagos",
       "totalBalance": "Saldo total de la cartera",
       "wallets": "Carteras"
-    },
-    "rejectReason": "Motivo del rechazo de este pago (se muestra al usuario):"
+    }
   },
   "perm": {
     "ads_moderate": "Anuncios",
@@ -541,6 +574,7 @@
     "cms_manage": "CMS páginas",
     "community_moderate": "Comunidad",
     "disputes_manage": "Disputas",
+    "email_templates": "Plantillas de correo electrónico",
     "finance_manage": "Finanzas (billeteras/pagos)",
     "kyc_review": "KYC reseña",
     "loaders_manage": "Cargadores",
@@ -560,6 +594,40 @@
     "body": "Este módulo comparte la misma estructura, tablas y componentes. La conexión con los datos en tiempo real continúa a medida que se implementan las fases de backend.",
     "docs": "Ver documentación"
   },
+  "prodEdit": {
+    "addPhoto": "Agregar",
+    "auction": "Subasta",
+    "category": "Categoría",
+    "city": "Ciudad",
+    "country": "País",
+    "cover": "Cubrir",
+    "delivery": "Entrega",
+    "details": "Detalles del producto",
+    "grade": "Calificación",
+    "market": "Mercado",
+    "moq": "MOQ",
+    "name": "Nombre del producto",
+    "negotiable": "Negociable",
+    "offer": "Oferta",
+    "origin": "Origen",
+    "photoHint": "Primero está la portada · almacenada como 1080×1080",
+    "photos": "Fotos",
+    "price": "Precio (por unidad)",
+    "qty": "Cantidad",
+    "remove": "Eliminar",
+    "safeDeal": "Acuerdo seguro (depósito en garantía)",
+    "save": "Guardar cambios",
+    "saveError": "No se pudo guardar el listado; compruebe los campos.",
+    "saving": "Ahorro…",
+    "select": "Seleccionar…",
+    "stock": "Existencias",
+    "subcategory": "Subcategoría",
+    "title": "Editar “{{name}}”",
+    "unit": "Unidad",
+    "uploadFailed": "Error al subir el archivo.",
+    "uploading": "Subiendo…",
+    "verified": "Verificado"
+  },
   "prodMod": {
     "allTypes": "Todo tipo",
     "approve": "Aprobar",
@@ -570,6 +638,7 @@
     "colSeller": "Vendedor",
     "colStatus": "Estado",
     "confirm": "Confirmar",
+    "confirmTakedown": "¿Ocultar este anuncio del mercado?",
     "edit": "Editar",
     "fName": "Nombre",
     "fPrice": "Precio",
@@ -594,13 +663,12 @@
       "auction": "subasta",
       "offer": "oferta",
       "safedeal": "trato seguro"
-    },
-    "confirmTakedown": "¿Ocultar este anuncio del mercado?"
+    }
   },
   "profile": {
     "active": "activo",
-    "inactive": "inactivo",
     "currentPassword": "Contraseña actual",
+    "inactive": "inactivo",
     "newPassword": "Nueva contraseña",
     "noPermissions": "No se han asignado permisos de módulo.",
     "passwordError": "No se pudo cambiar la contraseña.",
@@ -618,6 +686,10 @@
     "allTime": "Todos los tiempos",
     "from": "De",
     "to": "A"
+  },
+  "rbac": {
+    "deniedBody": "No tienes permiso para ver esta sección. Pide a un superadministrador si lo necesitas.",
+    "deniedTitle": "Sin acceso"
   },
   "reports": {
     "exportCsv": "Exportar CSV",
@@ -791,11 +863,15 @@
     "activity": "Actividad",
     "addRole": "Agregar un rol…",
     "adminOnly": "Solo para administradores",
+    "confirmDeactivate": "¿Desactivar esta cuenta? El usuario cerrará sesión y no podrá iniciar sesión.",
+    "confirmDelete": "¿Eliminar permanentemente esta cuenta? Esto no se puede deshacer. Los usuarios con pedidos, productos o historial financiero no se pueden eliminar; desactívalos en su lugar.",
     "contactEmail": "Correo electrónico de contacto",
     "country": "País",
     "dangerBody": "Desactivar cierra la sesión del usuario y bloquea el inicio de sesión, pero conserva sus datos y es reversible. Eliminar permanentemente borra la cuenta y no se puede deshacer.",
     "dangerZone": "Zona de peligro",
     "deactivate": "Desactivar cuenta",
+    "deleteBlocked": "Este usuario tiene registros comerciales, financieros o de soporte y no se puede eliminar permanentemente. Desactiva la cuenta en su lugar.",
+    "deletePermanently": "Eliminar permanentemente",
     "deleting": "Eliminando…",
     "editDetails": "Editar detalles",
     "email": "Correo electrónico",
@@ -808,18 +884,14 @@
     "phone": "Teléfono",
     "primary": "(primario)",
     "privateContact": "Contacto privado",
+    "reactivate": "Reactivar cuenta",
     "revokeRole": "Revocar rol",
     "roles": "Roles",
     "saveChanges": "Guardar cambios",
     "saving": "Ahorro…",
     "title": "Gestionar usuario",
     "wallet": "Billetera",
-    "whatsapp": "WhatsApp",
-    "confirmDeactivate": "¿Desactivar esta cuenta? El usuario cerrará sesión y no podrá iniciar sesión.",
-    "reactivate": "Reactivar cuenta",
-    "deletePermanently": "Eliminar permanentemente",
-    "confirmDelete": "¿Eliminar permanentemente esta cuenta? Esto no se puede deshacer. Los usuarios con pedidos, productos o historial financiero no se pueden eliminar; desactívalos en su lugar.",
-    "deleteBlocked": "Este usuario tiene registros comerciales, financieros o de soporte y no se puede eliminar permanentemente. Desactiva la cuenta en su lugar."
+    "whatsapp": "WhatsApp"
   },
   "users": {
     "createActive": "Activo",
@@ -837,9 +909,5 @@
     "subtitle": "{{shown}} de {{total}} cuentas",
     "title": "Usuarios",
     "view": "Vista"
-  },
-  "rbac": {
-    "deniedTitle": "Sin acceso",
-    "deniedBody": "No tienes permiso para ver esta sección. Pide a un superadministrador si lo necesitas."
   }
 }

@@ -8,5 +8,9 @@
   "isNumber": "یک عدد وارد کنید.",
   "isString": "این باید متن باشد.",
   "isUrl": "یک URL معتبر وارد کنید.",
+  "max": "Must be at most {{constraint}}.",
+  "maxLength": "Must be at most {{constraint}} characters.",
+  "min": "Must be at least {{constraint}}.",
+  "minLength": "Must be at least {{constraint}} characters.",
   "unknown": "این مقدار معتبر نیست."
 }

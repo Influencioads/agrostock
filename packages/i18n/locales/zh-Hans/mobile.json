@@ -15,6 +15,29 @@
     "seconds": "秒"
   },
   "auth": {
+    "forgotPassword": {
+      "back": "返回登录页面",
+      "email": "电子邮件",
+      "send": "发送重置链接",
+      "sending": "正在发送…",
+      "sent": "如果该邮箱地址已注册，您将会收到一封重置密码的邮件。打开邮件即可设置新密码。",
+      "subtitle": "请输入您的邮箱地址，我们将向您发送重置链接。",
+      "title": "重置密码"
+    },
+    "otpLogin": {
+      "code": "6位代码",
+      "codeSent": "如果该邮箱地址已注册，验证码将很快发送给您。",
+      "email": "电子邮件",
+      "invalid": "无效或已过期的代码。",
+      "resend": "发送新代码",
+      "sendCode": "给我发个验证码",
+      "sending": "正在发送…",
+      "subtitle": "我们会通过电子邮件向您发送一个 6 位数的验证码——无需密码。",
+      "title": "使用验证码登录",
+      "usePassword": "改用密码",
+      "verify": "登入",
+      "verifying": "正在登录……"
+    },
     "password": "密码",
     "passwordPh": "••••••••",
     "roleHelper": {
@@ -31,8 +54,11 @@
       "demoTitle": "或者试试模拟账户",
       "emailOrPhone": "电子邮件或电话",
       "emailOrPhonePh": "you@company.com 或电话",
+      "forgot": "忘记密码？",
       "invalid": "邮箱或密码无效。",
       "newHere": "新来的？",
+      "or": "或者",
+      "otp": "使用 OTP 登录",
       "subtitle": "登录您的AgroTraders帐户",
       "title": "欢迎回来"
     },
@@ -41,6 +67,7 @@
       "checkInboxTitle": "请确认您的电子邮件",
       "cityRegion": "城市/地区",
       "cityRegionPh": "迪拜",
+      "confirmPassword": "确认密码",
       "country": "国家",
       "countryPh": "🇦🇪 阿联酋",
       "cta": "创建账户",
@@ -51,11 +78,15 @@
       "fullNamePh": "卡里姆贸易",
       "iAmA": "我是……",
       "noCities": "没有匹配的城市",
+      "passwordMismatch": "密码不匹配。",
+      "passwordTooShort": "密码长度必须至少为 8 个字符。",
       "phone": "电话（私人号码——仅限管理员）",
       "phonePh": "+971 50 123 4567",
       "pickCountryFirst": "请先选择一个国家/地区",
       "resend": "重新发送链接",
       "resent": "链接已发送——请查看您的收件箱",
+      "subtitle": "选择你的角色——以后可以添加更多角色。",
+      "terms": "继续操作即表示您同意条款和隐私政策。",
       "title": "创建您的帐户"
     }
   },
@@ -152,17 +183,25 @@
     },
     "orders": {
       "acceptQuote": "接受报价",
+      "cancelOrder": "取消订单",
+      "confirmCancel": "取消订单？此操作无法撤销。",
+      "confirmDispute": "对此订单提出争议？我们的团队将进行审核。",
       "details": "细节",
       "detailsOtp": "详情 · OTP",
       "emptyBody": "浏览市场，下您的第一笔订单。",
       "emptyTitle": "目前还没有订单",
       "errUpdate": "无法更新此订单。",
       "mark": "Mark {{label}}",
+      "openDispute": "公开争议",
       "orderFallback": "命令",
       "payEscrow": "存入第三方托管账户",
       "screenTitle": "我的订单",
       "signInBody": "您登录后，订单将显示在此处。",
-      "signInTitle": "登录查看订单"
+      "signInTitle": "登录查看订单",
+      "stepDispatched": "已派送",
+      "stepEscrow": "第三方托管",
+      "stepRelease": "质量控制与放行",
+      "stepTransit": "在途中"
     },
     "room": {
       "awaitingBids": "等待投标",
@@ -186,6 +225,7 @@
       "ownerNote": "您发布了这项要求",
       "quotes": "引号",
       "reverseAuction": "反向拍卖",
+      "sealedBanner": "已启用密封模式。卖家名称和照片在您接受报价前均会被隐藏。不同报价之间互不可见。",
       "sealedNoBid": "您尚未对此需求进行投标。",
       "sealedNote": "报价请求中的出价将保密——只有您才能看到价格。",
       "sellersN_other": "{{count}} 卖家",
@@ -333,6 +373,7 @@
     },
     "chart": {
       "buyers": "买家",
+      "lastMonths_other": "last {{count}} months",
       "month": {
         "Apr": "四月",
         "Aug": "八月",
@@ -471,11 +512,21 @@
       "verifyError": "无法验证该代码。"
     },
     "product": {
+      "addToSaved": "加入愿望清单",
       "auction": "拍卖",
-      "safeDeal": "安全交易",
-      "verified": "已验证",
+      "available": "现货 {{value}}",
+      "chatSeller": "聊天",
+      "directDeal": "直接交易",
+      "fixedPrice": "定价",
+      "inStock": "有存货",
       "moq": "起订量 {{value}}",
-      "available": "现货 {{value}}"
+      "negotiable": "可协商",
+      "outOfStock": "缺货",
+      "removeFromSaved": "从愿望清单中移除",
+      "safeDeal": "安全交易",
+      "sponsored": "赞助",
+      "stockCount": "{{count}} {{unit}} in stock",
+      "verified": "已验证"
     },
     "profile": {
       "about": "关于",
@@ -528,6 +579,7 @@
     "activeJobs": "活跃职位",
     "activeOrders": "有效订单",
     "activeTrips": "积极出行",
+    "addProduct": "添加产品",
     "allTime": "一直以来",
     "assignments": "任务",
     "availability": "可用性",
@@ -544,6 +596,7 @@
     "driverPerformance": "驾驶员性能",
     "due": "{{count}} 到期",
     "earnings": "收益",
+    "earningsWeek": "本周收益",
     "escrow": "第三方托管",
     "etaDays": "ETA {{count}} 天",
     "fleetUtilization": "车队利用率",
@@ -551,6 +604,7 @@
     "goOnline": "上网",
     "jobRequests": "求职申请",
     "live": "居住",
+    "liveListings": "实时房源",
     "liveTracking": "实时追踪",
     "loaderSub": "您的团队和工作一览。",
     "lowOnStock": "库存不足",
@@ -566,13 +620,19 @@
     "offline": "您目前离线——招聘人员将看不到您处于可用状态。",
     "onTime": "准时率 {{pct}}%",
     "online": "你在线并接受工作。",
+    "openRfqs": "公开询价",
     "ordersCount": "{{count}} 订单",
     "ordersReceived": "已收到订单",
     "paid": "有薪酬的",
     "pendingPayments": "待处理款项",
     "perMonth": "每月",
     "procurementSpend": "采购支出",
+    "product": "产品",
     "productViews": "产品视图",
+    "quickHireTransport": "租车",
+    "quickKyc": "KYC 文档",
+    "quickPostRfq": "帖子 RFQ",
+    "quickWallet": "钱包",
     "rating": "等级",
     "revenue": "收入",
     "safeDeal": "安全交易",
@@ -615,18 +675,19 @@
     "name": "客人"
   },
   "hub": {
+    "account": "账户",
     "activeDashboard": "活动仪表板",
     "community": "社区",
     "displayCurrency": "显示货币",
+    "kycVerified": "KYC 已验证",
     "logOut": "退出登录",
+    "marketplace": "交易市场",
     "myHires": "我的招聘",
     "myProfile": "我的个人资料",
     "notifications": "通知",
     "restartNotice": "应用程序将重新启动以应用新的文本方向。",
     "rolesAccess": "角色与访问权限",
-    "support": "在线客服",
-    "marketplace": "交易市场",
-    "account": "账户"
+    "support": "在线客服"
   },
   "loaderX": {
     "attendance": {
@@ -699,6 +760,7 @@
       "title": "定价"
     },
     "reviews": {
+      "across_other": "Across {{count}} reviews",
       "clientFallback": "客户",
       "emptyBody": "客户会在你完成工作后给你评分。",
       "emptyTitle": "暂无评论",
@@ -940,9 +1002,38 @@
       "vehicles_other": "{{count}} 车辆",
       "workers_other": "{{count}} 工人"
     },
+    "filter": {
+      "apply": "应用",
+      "applyN": "应用（{{count}}）",
+      "categoryHint": "选择一个类目即可使用其规格筛选。",
+      "clear": "清除",
+      "clearAll": "全部清除",
+      "groups": {
+        "category": "类目",
+        "city": "城市",
+        "country": "国家",
+        "dealType": "交易类型",
+        "grade": "等级",
+        "market": "市场",
+        "price": "价格"
+      },
+      "searchOptions": "搜索",
+      "sortBy": "排序方式",
+      "title": "筛选"
+    },
     "home": {
+      "cantFindBody": "发布RFQ，即可在数小时内获得密封报价。",
+      "cantFindTitle": "找不到您要的商品？",
+      "catAll": "全部",
+      "categories": "按类目选购",
       "communityA11y": "AgroTraders 社区",
+      "dealOfDay": "今日特惠",
+      "deliverTo": "送至",
       "featured": "精选",
+      "freshArrivals": "新品到货",
+      "heroCta": "探索很多",
+      "heroTag": "收获周",
+      "heroTitle": "拉比小麦，直接从市场运来",
       "link": {
         "auctions": "拍卖",
         "bids": "投标",
@@ -955,20 +1046,23 @@
       "liveAuctions": "现场拍卖",
       "noOffers": "目前暂无报价。",
       "offersOfDay": "今日特惠",
+      "postRfq": "帖子 RFQ",
+      "promoBody": "使用代码 AGRO4 · 托管保护",
+      "promoCta": "宣称",
+      "promoTitle": "首单立享4%折扣",
+      "promoted": "精选",
+      "requirements": "正在寻源的买家",
       "safeDealBody": "款项将保留至您确认收货为止。",
       "safeDealTitle": "安全交易托管",
       "searchHint": "搜索谷物、豆类、油类……",
       "seeAll": "查看全部",
+      "services": "服务",
       "svc": {
         "loaders": "装载机",
         "offices": "办公室",
         "safeDeal": "安全交易",
         "transport": "运输"
       },
-      "categories": "按类目选购",
-      "promoted": "精选",
-      "services": "服务",
-      "requirements": "正在寻源的买家",
       "viewAll": "查看全部"
     },
     "kyc": {
@@ -1004,6 +1098,7 @@
       "caughtUp": "你已经全部了解情况了。",
       "channelGeneral": "一般的",
       "chooseHow": "选择您希望接收每种活动通知的方式。",
+      "earlier": "早些时候",
       "email": "电子邮件",
       "inApp": "应用内",
       "markAllRead": "标记为已读",
@@ -1011,7 +1106,8 @@
       "push": "推",
       "settingsTitle": "通知设置",
       "signIn": "登录以查看通知",
-      "title": "通知"
+      "title": "通知",
+      "today": "今天"
     },
     "offers": {
       "emptyBody": "请稍后回来查看更多优惠信息。",
@@ -1020,11 +1116,17 @@
       "title": "今日特惠"
     },
     "pd": {
+      "addToRfq": "加入询价",
       "alsoLike": "您可能也喜欢",
       "available": "可用的",
       "buyNow": "立即购买",
       "buyerReviews": "买家评论",
+      "chat": "聊天",
       "chatSeller": "与卖家聊天",
+      "decreaseQty": "减少数量",
+      "delivery": "交付",
+      "escrowNote": "安全交易托管 · 资金保留至质量控制通过",
+      "increaseQty": "增加数量",
       "loading": "正在加载产品…",
       "moq": "MOQ",
       "offer": "提供",
@@ -1033,6 +1135,7 @@
       "orderPlacedBody": "您的订单已通过安全交易机制托管。",
       "orderPlacedTitle": "已下单",
       "ordered": "{{count}} 上个月订购",
+      "origin": "产地",
       "price": "价格",
       "quality": {
         "documentation": "文档",
@@ -1041,23 +1144,21 @@
         "purity": "纯度"
       },
       "qualityScore": "质量评分",
+      "quantity": "数量",
       "quoteRequestedBody": "卖家会尽快回复。",
       "quoteRequestedTitle": "询价",
       "requestQuote": "询价",
       "safeDeal": "安全交易",
       "sellerFallback": "卖方",
       "specifications": "规格",
+      "supplier": "供应商",
       "suppliesTo": "供应",
+      "tradeTerms": "交易条件",
       "transport": "运输",
       "transportBody": "通过您的买家控制台预订运输服务。",
       "transportTitle": "运输",
       "verified": "已验证",
-      "watching": "{{count}}+ 正在观看",
-      "addToRfq": "加入询价",
-      "supplier": "供应商",
-      "tradeTerms": "交易条件",
-      "origin": "产地",
-      "delivery": "交付"
+      "watching": "{{count}}+ 正在观看"
     },
     "ph": {
       "bidTitle": "巴斯马蒂大米——杰贝阿里地区 100 MT",
@@ -1093,6 +1194,13 @@
       "vehicleType": "40英尺冷藏船",
       "workerName": "伊姆兰·谢赫"
     },
+    "plp": {
+      "clearFilters": "清除筛选",
+      "filters": "筛选",
+      "noResults": "没有匹配结果",
+      "results": "{{count}} 个结果",
+      "sort": "排序"
+    },
     "profile": {
       "activeRoutes": "活动路线",
       "availableRange": "可用 {{from}}–{{to}}",
@@ -1125,55 +1233,31 @@
       "send": "发送",
       "viewOffers": "查看优惠"
     },
+    "rfq": {
+      "addedBody": "{{name}} 已在询价单中。全部添加完成后再发送请求。",
+      "addedTitle": "已加入询价单",
+      "emptyBody": "添加任意供应商的商品，然后按供应商分别发送询价请求。",
+      "emptyTitle": "你的询价单是空的",
+      "escrow": "第三方托管",
+      "failBody": "请重试。",
+      "failTitle": "请求发送失败",
+      "footNote": "每个供应商都会收到各自的请求。报价仅你可见。",
+      "lineCount": "{{count}} 项",
+      "noteFromBasket": "通过询价单发送给 {{supplier}}。",
+      "requestQuotes": "发送询价",
+      "sentBody": "供应商将回复报价，可在“出价”中查看。",
+      "sentLabel": "请求已发送",
+      "sentTitle": "请求已发送",
+      "title": "询价单"
+    },
     "search": {
       "emptyBody": "输入关键词查找市场上的产品。",
       "emptyTitle": "搜索 AgroTraders",
       "noMatchBody": "未找到“{{q}}”。",
       "noMatchTitle": "没有匹配项",
       "placeholder": "搜索谷物、豆类、油类……",
-      "recent": "最近搜索"
-    },
-    "filter": {
-      "title": "筛选",
-      "clear": "清除",
-      "clearAll": "全部清除",
-      "apply": "应用",
-      "applyN": "应用（{{count}}）",
-      "sortBy": "排序方式",
-      "searchOptions": "搜索",
-      "categoryHint": "选择一个类目即可使用其规格筛选。",
-      "groups": {
-        "category": "类目",
-        "dealType": "交易类型",
-        "price": "价格",
-        "country": "国家",
-        "city": "城市",
-        "grade": "等级",
-        "market": "市场"
-      }
-    },
-    "plp": {
-      "results": "{{count}} 个结果",
-      "filters": "筛选",
-      "sort": "排序",
-      "clearFilters": "清除筛选",
-      "noResults": "没有匹配结果"
-    },
-    "rfq": {
-      "title": "询价单",
-      "emptyTitle": "你的询价单是空的",
-      "emptyBody": "添加任意供应商的商品，然后按供应商分别发送询价请求。",
-      "addedTitle": "已加入询价单",
-      "addedBody": "{{name}} 已在询价单中。全部添加完成后再发送请求。",
-      "requestQuotes": "发送询价",
-      "sentLabel": "请求已发送",
-      "sentTitle": "请求已发送",
-      "sentBody": "供应商将回复报价，可在“出价”中查看。",
-      "failTitle": "请求发送失败",
-      "failBody": "请重试。",
-      "lineCount": "{{count}} 项",
-      "noteFromBasket": "通过询价单发送给 {{supplier}}。",
-      "footNote": "每个供应商都会收到各自的请求。报价仅你可见。"
+      "recent": "最近搜索",
+      "trending": "您所在地区的热门话题"
     }
   },
   "reviews": {
@@ -1237,6 +1321,10 @@
       "category": "类别",
       "city": "城市",
       "country": "国家",
+      "currency": "货币",
+      "dealDirect": "直接交易（无需第三方担保）",
+      "dealSafe": "安全交易（受第三方托管保护）",
+      "dealType": "交易类型",
       "delivery": "送货",
       "editTitle": "编辑产品",
       "emoji": "表情符号",
@@ -1254,7 +1342,11 @@
       "phOrigin": "印度",
       "phQty": "500 MT",
       "phUnit": "/MT",
+      "pickup": "买家收藏",
       "price": "价格（USD）",
+      "priceFixed": "定价",
+      "priceNegotiable": "可协商",
+      "priceType": "价格类型",
       "quantity": "数量",
       "runsForDays": "运行（天）",
       "saveChanges": "保存更改",
@@ -1367,6 +1459,7 @@
       "hint": "点击照片即可将其设为封面。买家首先看到的是第一张照片。",
       "permissionError": "添加图片需要获得照片使用许可。",
       "photos": "照片（{{n}}/{{max}}）",
+      "sizeHint": "存储格式为 1080×1080 像素的正方形。最长边至少为 1080 像素。",
       "uploadError": "图片上传失败。请尝试上传尺寸较小的图片。",
       "uploading": "正在上传…"
     },
@@ -1385,6 +1478,7 @@
     },
     "market": {
       "addNew": "+ 创造新市场",
+      "address": "地址（可选）",
       "cancel": "取消",
       "city": "城市",
       "country": "国家",
@@ -1398,6 +1492,7 @@
       "pendingApproval": "待批准",
       "pendingHint": "只有您自己才能看到，直到管理员批准为止。",
       "pendingSuffix": " （待办的）",
+      "phAddress": "环路3号门",
       "phCity": "坎德拉",
       "phCountry": "印度",
       "phName": "坎德拉港",

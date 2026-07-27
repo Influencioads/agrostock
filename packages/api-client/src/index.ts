@@ -49,13 +49,19 @@ export interface NotificationPrefsPatch {
 // Lives in @agrotraders/geo now (it needs the ISO codes that back the city
 // lists); re-exported here so the existing `from '@agrotraders/api-client'`
 // imports across web and mobile keep working.
-export { COUNTRIES, countryFlag, countryIso2, findCountry, type Country } from '@agrotraders/geo';
+export { ALL_COUNTRIES, COUNTRIES, countryFlag, countryIso2, countryLabel, findCountry, type Country } from '@agrotraders/geo';
 
 /* ── response types (mirror the NestJS API) ─────────────────────── */
 
 export interface ApiSubcategory {
   id: string;
+  /** Localized label — for DISPLAY only. */
   name: string;
+  /**
+   * Canonical English name. The attribute schema and every stored attribute
+   * value are keyed by it, so schema lookups must use this and never `name`.
+   */
+  nameEn?: string;
   slug: string;
   emoji: string | null;
   sort: number;
@@ -66,7 +72,10 @@ export interface ApiSubcategory {
 
 export interface ApiCategory {
   id: string;
+  /** Localized label — for DISPLAY only. See `ApiSubcategory.nameEn`. */
   name: string;
+  /** Canonical English name; use this for attribute-schema lookups. */
+  nameEn?: string;
   slug: string;
   emoji: string | null;
   tint: string | null;
@@ -82,6 +91,8 @@ export interface ApiMarket {
   city?: string | null;
   country: string;
   region?: string | null;
+  /** Street address of the market yard (free text). */
+  address?: string | null;
   flag?: string | null;
   active?: boolean;
   /** Seller-proposed markets are `pending` until an admin approves them. */
@@ -113,7 +124,11 @@ export interface ApiProduct {
   price: string;
   /** USD cents baseline for currency conversion (null when the price string is unparseable). */
   priceCents?: number | null;
+  /** Currency the seller quoted in — `price` is already rendered in it. */
+  priceCurrency?: string;
   unit: string;
+  /** Seller will entertain offers on the listed price. */
+  negotiable?: boolean;
   /**
    * Legacy display rating (string, defaults to "4.8" for listings with no
    * reviews at all). Prefer `ratingAvg`/`ratingCount` — they are the real,
@@ -820,6 +835,7 @@ export interface AdminProduct {
   imageUrl: string | null;
   price: string;
   priceCents: number | null;
+  priceCurrency?: string;
   qty: string | null;
   moq: string | null;
   grade: string | null;
@@ -830,12 +846,26 @@ export interface AdminProduct {
   approved: boolean;
   verified: boolean;
   safeDeal: boolean;
+  negotiable?: boolean;
   isOffer: boolean;
   isAuction: boolean;
   rejectionReason: string | null;
   createdAt: string;
   seller: { name: string; country: string | null } | null;
-  category: { name: string } | null;
+  category: { id?: string; name: string } | null;
+  // Below: only present on the admin list, which returns full rows so the
+  // panel can prefill an edit form for EVERY field of a listing.
+  subcategory?: { id?: string; name: string } | null;
+  market?: { id: string; name: string } | null;
+  images?: string[];
+  city?: string | null;
+  country?: string | null;
+  supplyCountries?: string[];
+  stockQty?: number | null;
+  attributes?: Record<string, unknown> | null;
+  flag?: string | null;
+  startBidCents?: number | null;
+  auctionEndsAt?: string | null;
 }
 
 export interface AdminAuction {
@@ -1294,7 +1324,10 @@ export interface ProductQuery {
   /** Maximum price in USD cents (inclusive). */
   maxPrice?: number;
   verified?: boolean;
+  /** Escrow-protected listings only (`true`) or direct-deal only (`false`). */
   safe?: boolean;
+  /** Negotiable listings only (`true`) or fixed-price only (`false`). */
+  negotiable?: boolean;
   offer?: boolean;
   auction?: boolean;
   search?: string;
@@ -1333,7 +1366,10 @@ function productQueryParams(q: ProductQuery): Record<string, string | undefined>
     minPrice: q.minPrice != null ? String(q.minPrice) : undefined,
     maxPrice: q.maxPrice != null ? String(q.maxPrice) : undefined,
     verified: q.verified ? 'true' : undefined,
-    safe: q.safe ? 'true' : undefined,
+    // safe/negotiable are tri-state: unset browses both, `false` browses only
+    // the direct-deal / fixed-price side.
+    safe: q.safe == null ? undefined : String(q.safe),
+    negotiable: q.negotiable == null ? undefined : String(q.negotiable),
     offer: q.offer ? 'true' : undefined,
     auction: q.auction ? 'true' : undefined,
     search: q.search || undefined,
@@ -1553,7 +1589,7 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Signed-in: approved markets + the caller's own pending proposals. */
       mine: () => get<ApiMarket[]>('/markets/mine'),
       /** Seller proposes a market; it lands `pending` and only they can see it. */
-      create: (body: { name: string; country: string; city?: string; region?: string; flag?: string }) =>
+      create: (body: { name: string; country: string; city?: string; region?: string; address?: string; flag?: string }) =>
         post<ApiMarket>('/markets', body),
     },
     fx: { rates: (symbols?: string) => get<ApiFxRates>('/fx/rates', { symbols }) },

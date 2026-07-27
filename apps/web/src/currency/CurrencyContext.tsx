@@ -58,7 +58,10 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   const fmtPrice = useCallback(
     (p: { price: string; priceCents?: number | null }) => {
-      if (displayCurrency === 'USD') return p.price;
+      // Always convert from the USD cents baseline when we have one. The old
+      // "USD → return p.price verbatim" shortcut was only safe while every
+      // listing was quoted in dollars; sellers now quote in their own currency,
+      // so `price` is a ₹/₺/₽ string that must NOT be shown under a $ heading.
       const cents = p.priceCents ?? parsePriceCents(p.price);
       // Unparseable price strings ("POA", ranges) always fall back to the raw string.
       if (cents == null) return p.price;
