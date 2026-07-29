@@ -20,6 +20,7 @@ WORKDIR /repo
 ENV NODE_ENV=production
 COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/apps/api ./apps/api
+COPY --from=build /repo/data ./data
 COPY --from=build /repo/packages/i18n ./packages/i18n
 COPY --from=build /repo/packages/types ./packages/types
 WORKDIR /repo/apps/api
