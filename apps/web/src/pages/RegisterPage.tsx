@@ -258,7 +258,7 @@ export function RegisterPage() {
                   <option value="">{t('page.register.pickCountry')}</option>
                   {ALL_COUNTRIES.map((c) => (
                     <option key={c.iso2} value={c.name}>
-                      {c.flag} {countryLabel(c.name, lang)}
+                      {countryLabel(c.name, lang)} {c.flag}
                     </option>
                   ))}
                 </select>
@@ -295,7 +295,7 @@ export function RegisterPage() {
                   <option value="">{t('page.register.pickMarket')}</option>
                   {markets.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.flag} {m.name} · {m.city}
+                      {m.name} · {m.city} {m.flag}
                     </option>
                   ))}
                 </select>

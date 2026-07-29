@@ -26,7 +26,7 @@ import { countryOptions } from '../../lib/countries';
 import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, Chip, ChipSelect, Input, Row, Screen, Txt } from '../../ui';
+import { Button, Card, Chip, ChipSelect, Input, Row, Screen, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
 import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
 import { MultiPickerField, PickerField } from '../components/PickerSheet';
@@ -52,47 +52,11 @@ const blank = {
   attributes: {} as Record<string, unknown>,
 };
 
-/* ── Market picker with inline create ─────────────────────────────── */
+/* ── Market picker (read-only: markets are created by admins) ─────── */
 
-function MarketPicker({
-  value,
-  onChange,
-  onError,
-}: {
-  value: string;
-  onChange: (id: string) => void;
-  onError: (msg: string) => void;
-}) {
-  const { t, lang } = useI18n();
-  const qc = useQueryClient();
-  const [creating, setCreating] = useState(false);
-  const blankDraft = { name: '', country: '', city: '', address: '' };
-  const [draft, setDraft] = useState(blankDraft);
-
-  // Approved markets + this seller's own pending proposals, so a market they
-  // just created is selectable immediately.
-  const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets', 'mine'], queryFn: () => api.markets.mine() });
-
-  const create = useMutation({
-    mutationFn: () =>
-      api.markets.create({
-        name: draft.name,
-        country: draft.country,
-        city: draft.city || undefined,
-        address: draft.address || undefined,
-        // Derived from the country, never typed.
-        flag: countryFlag(draft.country) || undefined,
-      }),
-    onSuccess: (m) => {
-      qc.invalidateQueries({ queryKey: ['markets'] });
-      onChange(m.id);
-      setCreating(false);
-      setDraft(blankDraft);
-    },
-    onError: (e) => onError(errMessage(e, t('sellerX.market.createError'))),
-  });
-
-  const selected = markets.find((m) => m.id === value);
+function MarketPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const { t } = useI18n();
+  const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets'], queryFn: () => api.markets.list() });
 
   return (
     <View style={{ gap: 8 }}>
@@ -100,51 +64,11 @@ function MarketPicker({
       <ChipSelect
         options={[
           { id: '', label: t('sellerX.market.none') },
-          ...markets.map((m) => ({
-            id: m.id,
-            label: `${m.flag ?? ''} ${m.name}${m.status === 'pending' ? t('sellerX.market.pendingSuffix') : ''}`.trim(),
-          })),
+          ...markets.map((m) => ({ id: m.id, label: `${m.flag ?? ''} ${m.name}`.trim() })),
         ]}
         value={value}
         onChange={onChange}
       />
-      {selected?.status === 'pending' && (
-        <Row gap={6}>
-          <Badge label={t('sellerX.market.pendingApproval')} tone="warn" />
-          <Txt variant="small">{t('sellerX.market.pendingHint')}</Txt>
-        </Row>
-      )}
-
-      {creating ? (
-        <Card style={{ gap: 10 }}>
-          <Txt variant="small">{t('sellerX.market.reviewHint')}</Txt>
-          <Input label={t('sellerX.market.name')} placeholder={t('sellerX.market.phName')} value={draft.name} onChangeText={(v) => setDraft({ ...draft, name: v })} />
-          <PickerField
-            label={t('sellerX.market.country')}
-            placeholder={t('sellerX.add.searchCountry')}
-            value={draft.country}
-            displayValue={countryOptions(lang).find((o) => o.value === draft.country)?.label}
-            options={countryOptions(lang)}
-            onChange={(country) => setDraft({ ...draft, country })}
-            searchPlaceholder={t('sellerX.add.searchCountry')}
-          />
-          <Input label={t('sellerX.market.city')} placeholder={t('sellerX.market.phCity')} value={draft.city} onChangeText={(v) => setDraft({ ...draft, city: v })} />
-          <Input label={t('sellerX.market.address')} placeholder={t('sellerX.market.phAddress')} value={draft.address} onChangeText={(v) => setDraft({ ...draft, address: v })} />
-          <Row gap={8}>
-            <Button
-              title={create.isPending ? t('sellerX.market.creating') : t('sellerX.market.create')}
-              size="sm"
-              disabled={!draft.name.trim() || !draft.country.trim() || create.isPending}
-              onPress={() => create.mutate()}
-            />
-            <Button title={t('sellerX.market.cancel')} size="sm" variant="ghost" onPress={() => setCreating(false)} />
-          </Row>
-        </Card>
-      ) : (
-        <Pressable onPress={() => setCreating(true)}>
-          <Txt variant="small" color={C.leaf}>{t('sellerX.market.addNew')}</Txt>
-        </Pressable>
-      )}
     </View>
   );
 }
@@ -563,7 +487,7 @@ export function SellerAddProduct() {
           onChange={(attributes) => setForm((f) => ({ ...f, attributes }))}
         />
 
-        <MarketPicker value={form.marketId} onChange={(id) => setForm((f) => ({ ...f, marketId: id }))} onError={setErr} />
+        <MarketPicker value={form.marketId} onChange={(id) => setForm((f) => ({ ...f, marketId: id }))} />
 
         {/* Price is quoted in the seller's OWN currency; the API converts it to a
             USD baseline so buyers still see it in whatever they picked. */}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Button, Icon } from '@agrotraders/ui';
+import { ALL_COUNTRIES, countryLabel } from '@agrotraders/geo';
 import type { ApiDirectoryEntry, ApiMarket, ApiWorkerEntry } from '@agrotraders/api-client';
 import { api } from '../lib/api';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
@@ -34,7 +35,7 @@ function normalize(type: DirectoryType, raw: (ApiDirectoryEntry | ApiWorkerEntry
 }
 
 export function DirectoryPage({ type }: { type: DirectoryType }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [hire, setHire] = useState<HireTarget | null>(null);
@@ -84,26 +85,11 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
   });
   const entries = useMemo(() => normalize(type, raw as (ApiDirectoryEntry | ApiWorkerEntry)[]), [type, raw]);
 
-  const countries = useMemo(
-    () => Array.from(new Set(entries.map((e) => ('country' in e ? e.country : (e as ApiWorkerEntry).user?.country)).filter(Boolean))) as string[],
-    [entries],
-  );
-
-  // Distinct tag values across the current results, for the operating/supplying dropdowns.
-  const operatingCountryOpts = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          entries.flatMap((e) =>
-            type === 'workers' ? (e as ApiWorkerEntry).operatingCountries ?? [] : (e as ApiDirectoryEntry).profile?.operatingCountries ?? [],
-          ),
-        ),
-      ).sort(),
-    [entries, type],
-  );
-  const supplyingCountryOpts = useMemo(
-    () => Array.from(new Set(entries.flatMap((e) => (e as ApiDirectoryEntry).profile?.supplyingCountries ?? []))).sort(),
-    [entries],
+  // Every country, not just the ones the current results happen to cover —
+  // an empty result set used to leave the filter with nothing to pick.
+  const countryOpts = useMemo(
+    () => ALL_COUNTRIES.map((c) => ({ value: c.name, label: `${c.flag} ${countryLabel(c.name, lang)}` })),
+    [lang],
   );
 
   const chatWith = (userId: string | undefined, name: string) => {
@@ -143,8 +129,8 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
           className="h-9 rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
         >
           <option value="">{t('page.directory.allCountries')}</option>
-          {countries.map((c) => (
-            <option key={c} value={c.replace(/[^\w\s]/g, '').trim()}>{c}</option>
+          {countryOpts.map((c) => (
+            <option key={c.value} value={c.value}>{c.label}</option>
           ))}
         </select>
         {type === 'sellers' && (
@@ -155,7 +141,7 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
           >
             <option value="">{t('page.directory.allMarkets')}</option>
             {markets.map((m) => (
-              <option key={m.id} value={m.slug}>{m.flag} {m.name}</option>
+              <option key={m.id} value={m.slug}>{m.name}{m.city ? ` · ${m.city}` : ''} {m.flag}</option>
             ))}
           </select>
         )}
@@ -174,18 +160,16 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
         {/* Operational filters (transporters / loaders / workers). */}
         {type !== 'sellers' && (
           <>
-            {operatingCountryOpts.length > 0 && (
-              <select
-                value={operatingCountry}
-                onChange={(e) => setParam('operatingCountry', e.target.value || null)}
-                className="h-9 rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
-              >
-                <option value="">{t('page.directory.anyOperatingCountry')}</option>
-                {operatingCountryOpts.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            )}
+            <select
+              value={operatingCountry}
+              onChange={(e) => setParam('operatingCountry', e.target.value || null)}
+              className="h-9 rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
+            >
+              <option value="">{t('page.directory.anyOperatingCountry')}</option>
+              {countryOpts.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
             <input
               value={operatingCity}
               onChange={(e) => setParam('operatingCity', e.target.value || null)}
@@ -194,15 +178,15 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
             />
           </>
         )}
-        {(type === 'transporters' || type === 'loaders') && supplyingCountryOpts.length > 0 && (
+        {(type === 'transporters' || type === 'loaders') && (
           <select
             value={supplyingCountry}
             onChange={(e) => setParam('supplyingCountry', e.target.value || null)}
             className="h-9 rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
           >
             <option value="">{t('page.directory.anySupplyingCountry')}</option>
-            {supplyingCountryOpts.map((c) => (
-              <option key={c} value={c}>{c}</option>
+            {countryOpts.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
         )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { ApiCategory, ApiMarket, ApiProduct } from '@agrotraders/api-client';
 import { ALL_COUNTRIES, countryFlag, countryLabel, schemaName } from '@agrotraders/api-client';
@@ -17,8 +17,6 @@ import {
   type AttrField,
 } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
-import { Badge } from './Badge';
-import { Button } from './Button';
 import { Combobox } from './Combobox';
 import { Icon } from './Icon';
 import { Input } from './Input';
@@ -33,10 +31,7 @@ export const MAX_IMAGES = 6;
  */
 export interface ProductFormApi {
   categories: { list: () => Promise<ApiCategory[]> };
-  markets: {
-    mine: () => Promise<ApiMarket[]>;
-    create: (body: { name: string; country: string; city?: string; region?: string; address?: string; flag?: string }) => Promise<ApiMarket>;
-  };
+  markets: { list: () => Promise<ApiMarket[]> };
   products: { uploadImages: (files: File[]) => Promise<{ imageUrls: string[] }> };
   geo: { cities: (country: string, q?: string) => Promise<string[]> };
 }
@@ -50,9 +45,6 @@ export function formErrMessage(e: unknown, fallback: string): string {
   const msg = (e as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
   return Array.isArray(msg) ? msg.join(', ') : msg || fallback;
 }
-
-/** Sentinel option value that opens the inline "create a market" sub-form. */
-const NEW_MARKET = '__new__';
 
 /** Strip a stored "500 MT" back to the bare number the numeric inputs hold. */
 const bareNumber = (s?: string | null) => (s ?? '').replace(/[^\d.]/g, '');
@@ -346,7 +338,7 @@ function CountrySelect({
       <select value={value} onChange={(e) => onChange(e.target.value)} className={selectCls}>
         <option value="">{t('web:console.productForm.select')}</option>
         {ALL_COUNTRIES.map((c) => (
-          <option key={c.iso2} value={c.name}>{c.flag} {countryLabel(c.name, i18n.language)}</option>
+          <option key={c.iso2} value={c.name}>{countryLabel(c.name, i18n.language)} {c.flag}</option>
         ))}
       </select>
     </label>
@@ -392,101 +384,34 @@ function DeliverySelect({ value, onChange }: { value: string; onChange: (v: stri
 
 /* ── Market select, with inline "create a market" ────────────────── */
 
+/** Read-only picker: only admins create markets, so there is nothing to add here. */
 function MarketSelect({
   value,
   onChange,
-  onError,
   api,
-  canCreate,
 }: {
   value: string;
   onChange: (id: string) => void;
-  onError: (msg: string) => void;
   api: ProductFormApi;
-  canCreate: boolean;
 }) {
   const { t } = useTranslation([...NS]);
-  const qc = useQueryClient();
-  const [creating, setCreating] = useState(false);
-  const blankDraft = { name: '', country: '', city: '', region: '', address: '' };
-  const [draft, setDraft] = useState(blankDraft);
-
-  // `markets.mine` = approved markets + this seller's own pending proposals, so
-  // a market they just created is selectable immediately.
-  const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets', 'mine'], queryFn: () => api.markets.mine() });
-
-  const create = useMutation({
-    mutationFn: () =>
-      api.markets.create({
-        name: draft.name,
-        country: draft.country,
-        city: draft.city || undefined,
-        region: draft.region || undefined,
-        address: draft.address || undefined,
-        // Derived from the country, never typed — see the admin form.
-        flag: countryFlag(draft.country) || undefined,
-      }),
-    onSuccess: (m) => {
-      qc.invalidateQueries({ queryKey: ['markets'] });
-      onChange(m.id);
-      setCreating(false);
-      setDraft(blankDraft);
-    },
-    onError: (e) => onError(formErrMessage(e, t('web:console.productForm.createMarketError'))),
-  });
-
-  const selected = markets.find((m) => m.id === value);
+  const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets'], queryFn: () => api.markets.list() });
 
   return (
     <div>
       <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.market')}</span>
       <select
-        value={creating ? NEW_MARKET : value}
-        onChange={(e) => {
-          if (e.target.value === NEW_MARKET) { setCreating(true); return; }
-          setCreating(false);
-          onChange(e.target.value);
-        }}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
       >
         <option value="">{t('web:console.productForm.marketPlaceholder')}</option>
         {markets.map((m) => (
           <option key={m.id} value={m.id}>
-            {m.flag} {m.name}{m.city ? ` · ${m.city}` : ''}{m.status === 'pending' ? t('web:console.productForm.pendingApproval') : ''}
+            {m.name}{m.city ? ` · ${m.city}` : ''} {m.flag}
           </option>
         ))}
-        {/* Creating a market is a seller action (`POST /markets` is seller-only);
-            admins have the Markets page for it. */}
-        {canCreate && <option value={NEW_MARKET}>{t('web:console.productForm.createNewMarket')}</option>}
       </select>
-
-      {selected?.status === 'pending' && !creating && (
-        <p className="mt-1.5 flex items-center gap-2 text-xs text-ink-soft">
-          <Badge tone="warn">{t('web:console.productForm.pendingBadge')}</Badge> {t('web:console.productForm.pendingNote')}
-        </p>
-      )}
-
-      {creating && (
-        <div className="mt-3 space-y-3 rounded-xl border border-surface-border bg-brand-surface/40 p-3">
-          <p className="text-xs text-ink-soft">{t('web:console.productForm.newMarketNote')}</p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Input label={t('web:console.productForm.marketName')} placeholder={t('web:console.productForm.phMarketName')} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-            <CountrySelect
-              label={t('web:console.productForm.country')}
-              value={draft.country}
-              onChange={(country) => setDraft({ ...draft, country })}
-            />
-            <Input label={t('web:console.productForm.cityOptional')} placeholder={t('web:console.productForm.phCity')} value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value })} />
-            <Input label={t('web:console.productForm.marketAddress')} placeholder={t('web:console.productForm.phMarketAddress')} value={draft.address} onChange={(e) => setDraft({ ...draft, address: e.target.value })} />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" disabled={!draft.name.trim() || !draft.country.trim() || create.isPending} onClick={() => create.mutate()}>
-              {create.isPending ? t('web:console.productForm.creating') : t('web:console.productForm.createMarket')}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>{t('common:cancel')}</Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -720,7 +645,6 @@ export function ProductForm({
   onError,
   api,
   assetUrl,
-  canCreateMarket = true,
 }: {
   value: ProductFormValues;
   onChange: (next: ProductFormValues) => void;
@@ -728,8 +652,6 @@ export function ProductForm({
   onError: (msg: string) => void;
   api: ProductFormApi;
   assetUrl: (path?: string | null) => string | undefined;
-  /** False in the admin panel — `POST /markets` is a seller-only route. */
-  canCreateMarket?: boolean;
 }) {
   const { t } = useTranslation([...NS]);
   const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
@@ -805,7 +727,7 @@ export function ProductForm({
             className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
           >
             <option value="">{t('web:console.productForm.select')}</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name} {c.emoji}</option>)}
           </select>
         </label>
         <label className="block">
@@ -817,7 +739,7 @@ export function ProductForm({
             className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf disabled:cursor-not-allowed disabled:bg-brand-surface/40 disabled:text-ink-soft"
           >
             <option value="">{subcategories.length === 0 ? t('web:console.productForm.none') : t('web:console.productForm.optional')}</option>
-            {subcategories.map((s) => <option key={s.id} value={s.id}>{s.emoji ? `${s.emoji} ` : ''}{s.name}</option>)}
+            {subcategories.map((s) => <option key={s.id} value={s.id}>{s.name}{s.emoji ? ` ${s.emoji}` : ''}</option>)}
           </select>
         </label>
       </div>
@@ -830,7 +752,7 @@ export function ProductForm({
         onChange={set('attributes')}
       />
 
-      <MarketSelect value={value.marketId} onChange={set('marketId')} onError={onError} api={api} canCreate={canCreateMarket} />
+      <MarketSelect value={value.marketId} onChange={set('marketId')} api={api} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Price is quoted in the seller's OWN currency; the API converts to a

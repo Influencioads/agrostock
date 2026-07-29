@@ -6,6 +6,7 @@ import type { ApiCategory, ApiMarket } from '@agrotraders/api-client';
 import { getFilterFields } from '@agrotraders/types';
 import { attrKey } from '@agrotraders/i18n';
 import { api } from '../../lib/api';
+import { countryOptions } from '../../lib/countries';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { Button, Input, Sheet } from '../../ui';
@@ -58,7 +59,7 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
   onApply: (next: Filters) => void;
   categories: ApiCategory[];
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [draft, setDraft] = useState<Filters>(applied);
   const [group, setGroup] = useState('category');
   const [catSheet, setCatSheet] = useState(false);
@@ -91,10 +92,8 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
     () => Array.from(new Set(markets.map((m) => m.city).filter(Boolean))) as string[],
     [markets],
   );
-  const countryOptions = useMemo(
-    () => Array.from(new Set(markets.map((m) => m.country).filter(Boolean))) as string[],
-    [markets],
-  );
+  // Every country, not only the ones the loaded markets cover.
+  const countries = countryOptions(lang);
 
   // Facet labels come from the English schema; only the display is localized —
   // the value sent to the API stays canonical English.
@@ -105,7 +104,7 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
     { id: 'category', label: t('pubX.filter.groups.category'), count: draft.selection.categoryId ? 1 : 0 },
     { id: 'dealType', label: t('pubX.filter.groups.dealType'), count: FLAG_IDS.filter((f) => draft.flags[f]).length },
     { id: 'price', label: t('pubX.filter.groups.price'), count: draft.minPrice || draft.maxPrice ? 1 : 0 },
-    ...(countryOptions.length ? [{ id: 'country', label: t('pubX.filter.groups.country'), count: draft.country ? 1 : 0 }] : []),
+    { id: 'country', label: t('pubX.filter.groups.country'), count: draft.country ? 1 : 0 },
     ...(cityOptions.length ? [{ id: 'city', label: t('pubX.filter.groups.city'), count: draft.city ? 1 : 0 }] : []),
     { id: 'grade', label: t('pubX.filter.groups.grade'), count: draft.grade ? 1 : 0 },
     ...(markets.length ? [{ id: 'market', label: t('pubX.filter.groups.market'), count: draft.market ? 1 : 0 }] : []),
@@ -216,7 +215,7 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
 
       case 'country':
         return renderRadio(
-          filterOptions(countryOptions).map((c) => ({ value: c, label: c })),
+          countries.filter((c) => c.label.toLowerCase().includes(optionSearch.trim().toLowerCase())),
           draft.country,
           (v) => setDraft((d) => ({ ...d, country: v })),
           true,

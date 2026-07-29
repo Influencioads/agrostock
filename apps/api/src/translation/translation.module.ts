@@ -3,6 +3,7 @@ import { GoogleTranslateClient } from './google-translate.client';
 import { TranslationService } from './translation.service';
 import { TextTranslationService } from './text-translation.service';
 import { ContentTranslationWorker } from './content-translation.worker';
+import { TranslationSweepService } from './translation-sweep.service';
 
 /**
  * Machine-translation infrastructure (translate-on-write + DB cache).
@@ -13,7 +14,7 @@ import { ContentTranslationWorker } from './content-translation.worker';
  */
 @Global()
 @Module({
-  providers: [GoogleTranslateClient, TranslationService, TextTranslationService, ContentTranslationWorker],
-  exports: [TranslationService, TextTranslationService, ContentTranslationWorker],
+  providers: [GoogleTranslateClient, TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService],
+  exports: [TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService],
 })
 export class TranslationModule {}

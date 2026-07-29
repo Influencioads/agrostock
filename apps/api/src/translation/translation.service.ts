@@ -129,4 +129,14 @@ export class TranslationService {
   translateAuto(texts: string[], target: string): Promise<string[]> {
     return this.google.translate(texts, target, undefined);
   }
+
+  /**
+   * Translate a batch out of a KNOWN source language. Prefer this over
+   * {@link translateAuto} whenever the source is certain: auto-detect fails the
+   * whole batch with `Bad language pair: en|en` as soon as one string happens to
+   * look like the target language — a Latin-script name in a Russian list, say.
+   */
+  translateFrom(texts: string[], target: string, source: string): Promise<string[]> {
+    return this.google.translate(texts, target, source);
+  }
 }

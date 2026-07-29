@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar, Badge, Button, Card, Icon, Input, type BadgeTone } from '@agrotraders/ui';
+import { ALL_COUNTRIES, countryLabel } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
 import { type UserRow } from '../mock/data';
 import { api } from '../lib/api';
@@ -111,9 +112,20 @@ export function UsersPage() {
               ))}
             </select>
           </label>
-          <div className="min-w-36 flex-1">
-            <Input label={t('users.createCountry')} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
-          </div>
+          {/* Picker, not free text — a hand-typed country never matched the filters. */}
+          <label className="min-w-36 flex-1 text-sm text-ink">
+            {t('users.createCountry')}
+            <select
+              value={form.country}
+              onChange={(e) => setForm({ ...form, country: e.target.value })}
+              className="mt-1 h-10 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none"
+            >
+              <option value="">—</option>
+              {ALL_COUNTRIES.map((c) => (
+                <option key={c.iso2} value={c.name}>{c.flag} {countryLabel(c.name, lang)}</option>
+              ))}
+            </select>
+          </label>
           <label className="flex h-10 items-center gap-2 text-sm text-ink">
             <input
               type="checkbox"

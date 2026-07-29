@@ -25,6 +25,7 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions, RequireAnyPermission } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { AuditService } from '../common/audit.service';
+import { slugifyName } from '../common/slug';
 import { WalletService, EscrowService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { monthlySeries, EARNED_STATUSES, orderDollars } from '../me/me.module';
@@ -580,7 +581,8 @@ export class AdminService {
   }
 
   createMarket(dto: UpsertMarketDto) {
-    const slug = dto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    // Transliterating — a Cyrillic name reduced to the empty slug here too.
+    const slug = slugifyName(dto.name);
     return this.prisma.market.create({
       // Admin-created markets bypass the proposal queue and go live at once.
       data: { slug, name: dto.name, country: dto.country, city: dto.city, region: dto.region, address: dto.address, flag: dto.flag, active: dto.active ?? true, status: 'approved' },

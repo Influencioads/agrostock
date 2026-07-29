@@ -23,7 +23,8 @@
     "backfill:translations": "ts-node prisma/backfill-translations.ts",
     "backfill:email-verified": "ts-node prisma/backfill-email-verified.ts",
     "prewarm:text": "ts-node prisma/prewarm-text.ts",
-    "backfill:taxonomy": "ts-node prisma/backfill-taxonomy.ts"
+    "backfill:taxonomy": "ts-node prisma/backfill-taxonomy.ts",
+    "import:ru-markets": "ts-node prisma/import-ru-markets.ts"
   },
   "dependencies": {
     "@agrotraders/i18n": "workspace:^",

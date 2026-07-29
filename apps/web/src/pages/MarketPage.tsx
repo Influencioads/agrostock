@@ -8,7 +8,7 @@ import { attrKey } from '@agrotraders/i18n';
 import { ProductCard } from '../components/site/ProductCard';
 import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
-import { attributeSourceName, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, schemaName, type SubcategoryNode } from '@agrotraders/api-client';
+import { ALL_COUNTRIES, attributeSourceName, buildSubcategoryTree, countryLabel, findSubcategoryPath, flattenSubcategoryTree, schemaName, type SubcategoryNode } from '@agrotraders/api-client';
 import { useI18n } from '../i18n';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -32,7 +32,7 @@ const toggleParam: Record<(typeof toggleKeys)[number], string> = {
 const PAGE_SIZE = 24;
 
 export function MarketPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   useDocumentTitle(t('page.market.title'));
   const [params, setParams] = useSearchParams();
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -262,10 +262,8 @@ export function MarketPage() {
     () => Array.from(new Set(markets.map((m) => m.city).filter(Boolean))) as string[],
     [markets],
   );
-  const countries = useMemo(
-    () => Array.from(new Set(markets.map((m) => m.country).filter(Boolean))) as string[],
-    [markets],
-  );
+  // The whole world, not just the countries the loaded markets cover.
+  const countries = ALL_COUNTRIES;
 
   const marketName = (slug: string) => markets.find((m) => m.slug === slug)?.name ?? slug;
   const inputCls = 'mt-2 h-9 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink';
@@ -428,7 +426,7 @@ export function MarketPage() {
                   </span>
                 </button>
                 {visibleSubOptions.length === 0 ? (
-                  <div className="px-2.5 py-3 text-xs text-ink-soft">No more child categories</div>
+                  <div className="px-2.5 py-3 text-xs text-ink-soft">{t('page.market.noChildCategories')}</div>
                 ) : (
                   <div className="max-h-64 overflow-y-auto p-1.5">
                     {visibleSubOptions.map((node) => {
@@ -502,7 +500,11 @@ export function MarketPage() {
             <select value={market} onChange={(e) => setParam('market', e.target.value || null)} className={inputCls}>
               <option value="">{t('page.market.allMarkets')}</option>
               {markets.map((m) => (
-                <option key={m.id} value={m.slug}>{m.flag} {m.name}</option>
+                // Name FIRST: a native select jumps to the option starting with
+                // the letter you type, and a leading flag emoji made that
+                // impossible — "f" never reached "Food City". City disambiguates
+                // the many markets sharing a name.
+                <option key={m.id} value={m.slug}>{m.name}{m.city ? ` · ${m.city}` : ''} {m.flag}</option>
               ))}
             </select>
           </div>
@@ -512,8 +514,9 @@ export function MarketPage() {
             <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.country')}</p>
             <select value={country} onChange={(e) => setParam('country', e.target.value || null)} className={inputCls}>
               <option value="">{t('page.market.allCountries')}</option>
+              {/* The stored string stays the filter VALUE; only the label localizes. */}
               {countries.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c.iso2} value={c.name}>{c.flag} {countryLabel(c.name, lang)}</option>
               ))}
             </select>
           </div>

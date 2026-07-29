@@ -2,7 +2,9 @@
   "extends": "@agrotraders/config/tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    // `init-shared`/`init-web` run in the browser and read `navigator`.
+    "lib": ["ES2022", "DOM"]
   },
   "include": ["src"]
 }

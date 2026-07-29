@@ -222,7 +222,6 @@
     "web.console.buyer.sellerBidsN_other",
     "web.console.buyer.sellerBidsN_two",
     "web.console.buyer.sellerBidsN_zero",
-    "web.console.buyerBidRoom.sellersN_other",
     "web.console.dash.buyerBidsCount_few",
     "web.console.dash.buyerBidsCount_many",
     "web.console.dash.buyerBidsCount_one",
@@ -314,6 +313,6 @@
     "web.site.sealedBids_two",
     "web.site.sealedBids_zero"
   ],
-  "updatedAt": "2026-07-27T05:09:42.657Z",
+  "updatedAt": "2026-07-29T10:52:09.724Z",
   "provider": "google"
 }

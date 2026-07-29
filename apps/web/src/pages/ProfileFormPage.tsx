@@ -221,7 +221,7 @@ export function ProfileForm() {
               <select value={f.marketId} onChange={set('marketId')} className="h-10 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink">
                 <option value="">{t('page.register.pickMarket')}</option>
                 {markets.map((m) => (
-                  <option key={m.id} value={m.id}>{m.flag} {m.name} · {m.city}</option>
+                  <option key={m.id} value={m.id}>{m.name} · {m.city} {m.flag}</option>
                 ))}
               </select>
             </label>

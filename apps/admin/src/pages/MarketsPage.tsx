@@ -132,7 +132,7 @@ export function MarketsPage() {
                 <option value="">{t('marketsAdmin.phCountry')}</option>
                 {/* English name stays the stored value; only the label localizes. */}
                 {ALL_COUNTRIES.map((c) => (
-                  <option key={c.iso2} value={c.name}>{c.flag} {countryLabel(c.name, lang)}</option>
+                  <option key={c.iso2} value={c.name}>{countryLabel(c.name, lang)} {c.flag}</option>
                 ))}
               </select>
             </label>

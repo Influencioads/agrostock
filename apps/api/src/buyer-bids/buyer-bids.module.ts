@@ -355,7 +355,18 @@ export class BuyerBidsService {
       where: {
         status: 'open',
         ...(query.categoryId ? { categoryId: query.categoryId } : {}),
-        ...(query.search ? { OR: [{ title: { contains: query.search, mode: 'insensitive' } }, { productName: { contains: query.search, mode: 'insensitive' } }] } : {}),
+        // Base row is English; the translations carry every other language, so a
+        // Russian search term has to reach them or it matches nothing.
+        ...(query.search
+          ? {
+              OR: [
+                { title: { contains: query.search, mode: 'insensitive' as const } },
+                { productName: { contains: query.search, mode: 'insensitive' as const } },
+                { translations: { some: { title: { contains: query.search, mode: 'insensitive' as const } } } },
+                { translations: { some: { productName: { contains: query.search, mode: 'insensitive' as const } } } },
+              ],
+            }
+          : {}),
         AND: [
           { OR: [{ deadline: null }, { deadline: { gt: now } }] },
           { OR: [{ auctionEndsAt: null }, { auctionEndsAt: { gt: now } }] },

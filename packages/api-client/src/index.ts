@@ -1583,15 +1583,8 @@ export function createApiClient(opts: ApiClientOptions) {
         }),
     },
     offices: { list: () => get<ApiOffice[]>('/offices') },
-    markets: {
-      /** Public: approved markets only. */
-      list: () => get<ApiMarket[]>('/markets'),
-      /** Signed-in: approved markets + the caller's own pending proposals. */
-      mine: () => get<ApiMarket[]>('/markets/mine'),
-      /** Seller proposes a market; it lands `pending` and only they can see it. */
-      create: (body: { name: string; country: string; city?: string; region?: string; address?: string; flag?: string }) =>
-        post<ApiMarket>('/markets', body),
-    },
+    /** Read-only: markets are created by admins via `/admin/markets`. */
+    markets: { list: () => get<ApiMarket[]>('/markets') },
     fx: { rates: (symbols?: string) => get<ApiFxRates>('/fx/rates', { symbols }) },
     directory: {
       sellers: (q: DirectoryQuery = {}) =>

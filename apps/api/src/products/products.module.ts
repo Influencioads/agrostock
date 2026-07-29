@@ -288,7 +288,18 @@ export class ProductsService {
       else where.subcategory = { name: q.subcategory };
     }
     if (q.grade) where.grade = { equals: q.grade, mode: 'insensitive' };
-    if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
+    // Search hits the English base row AND every translation of it. Matching
+    // only `name` meant a Russian buyer typing "пшеница" got nothing back: the
+    // Russian copy lives in ProductTranslation, and the base name is always
+    // English. Deliberately NOT constrained to the request locale — someone
+    // browsing in English may still type Russian, and vice versa.
+    if (q.search) {
+      const contains = { contains: q.search, mode: 'insensitive' } as const;
+      where.OR = [
+        { name: contains },
+        { translations: { some: { name: contains } } },
+      ];
+    }
     // Buyers can narrow to products a seller ships to their country.
     if (q.supplyCountry) where.supplyCountries = { has: q.supplyCountry };
 

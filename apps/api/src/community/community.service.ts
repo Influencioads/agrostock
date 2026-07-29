@@ -245,7 +245,10 @@ export class CommunityService {
       visibility: 'public',
     };
     if (params.kind) where.kind = params.kind as Prisma.CommunityGroupWhereInput['kind'];
-    if (params.search) where.name = { contains: params.search, mode: 'insensitive' };
+    if (params.search) {
+      const contains = { contains: params.search, mode: 'insensitive' as const };
+      where.OR = [{ name: contains }, { translations: { some: { name: contains } } }];
+    }
     const groups = await this.prisma.communityGroup.findMany({
       where,
       orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
@@ -494,11 +497,15 @@ export class CommunityService {
         ...(params.country
           ? { destinationCountry: { contains: params.country, mode: 'insensitive' as const } }
           : {}),
+        // English base row + every translation of it, so the search works in the
+        // language the reader is actually typing.
         ...(params.search
           ? {
               OR: [
                 { title: { contains: params.search, mode: 'insensitive' as const } },
                 { productName: { contains: params.search, mode: 'insensitive' as const } },
+                { translations: { some: { title: { contains: params.search, mode: 'insensitive' as const } } } },
+                { translations: { some: { productName: { contains: params.search, mode: 'insensitive' as const } } } },
               ],
             }
           : {}),

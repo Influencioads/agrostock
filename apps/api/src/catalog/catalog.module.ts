@@ -87,7 +87,15 @@ export class CategoriesService {
    * page asks for it — so the localized result is memoised per (locale, depth)
    * and cleared by `invalidate()` on any write.
    */
-  private cache = new Map<string, unknown>();
+  private cache = new Map<string, { at: number; value: unknown }>();
+
+  /**
+   * Admin writes clear the cache outright, but translations also arrive OUT of
+   * band — the hourly translation sweep and the CLI backfills write straight to
+   * the DB. Without an expiry a long-running API would keep serving the
+   * pre-backfill English labels until the next deploy.
+   */
+  private static readonly CACHE_TTL_MS = 5 * 60_000;
   private invalidate() {
     this.cache.clear();
   }
@@ -137,7 +145,7 @@ export class CategoriesService {
   async findAll(locale: Lang = FALLBACK_LNG, depth: number | 'all' = 1) {
     const key = `${locale}|${depth}`;
     const hit = this.cache.get(key);
-    if (hit) return hit;
+    if (hit && Date.now() - hit.at < CategoriesService.CACHE_TTL_MS) return hit.value;
 
     const categories = await this.prisma.category.findMany({
       orderBy: [{ sort: 'asc' }, { name: 'asc' }],
@@ -160,7 +168,7 @@ export class CategoriesService {
       ...localizeTaxon(category),
       subcategories: byCategory.get(category.id) ?? [],
     }));
-    this.cache.set(key, result);
+    this.cache.set(key, { at: Date.now(), value: result });
     return result;
   }
 

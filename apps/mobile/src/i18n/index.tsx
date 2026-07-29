@@ -5,7 +5,7 @@ import { I18nextProvider, useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { i18n as I18nInstance } from 'i18next';
 import { createNativeI18n } from '@agrotraders/i18n/init-native';
-import { FALLBACK_LNG, LOCALES, isLang, isRtl, type Lang } from '@agrotraders/i18n';
+import { FALLBACK_LNG, LOCALES, detectLang, isLang, isRtl, type Lang } from '@agrotraders/i18n';
 import { storage } from '../lib/storage';
 import { api, getApiToken, setApiLocale } from '../lib/api';
 
@@ -38,13 +38,17 @@ export function currentLang(): Lang {
   return l && isLang(l) ? l : FALLBACK_LNG;
 }
 
-/** First supported locale matching the device: exact tag, then bare language code. */
+/**
+ * First supported locale matching the device's language preferences; failing
+ * that, the locale we publish for the region the device says it is in (so a
+ * phone set to Uzbek in Tashkent opens in Russian, not English).
+ */
 function deviceLang(): Lang {
-  for (const { languageTag, languageCode } of getLocales()) {
-    if (isLang(languageTag)) return languageTag;
-    if (languageCode && isLang(languageCode)) return languageCode;
-  }
-  return FALLBACK_LNG;
+  const locales = getLocales();
+  return detectLang(
+    locales.map((l) => l.languageTag),
+    locales.find((l) => l.regionCode)?.regionCode,
+  );
 }
 
 async function resolveInitialLang(): Promise<Lang> {

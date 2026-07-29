@@ -59,7 +59,7 @@ export function ProductEditModal({ product, onClose }: { product: AdminProduct; 
     >
       {/* No inline "create a market": `POST /markets` is seller-only, and admins
           have the Markets page for it. */}
-      <ProductForm value={form} onChange={setForm} error={err} onError={setErr} api={api} assetUrl={assetUrl} canCreateMarket={false} />
+      <ProductForm value={form} onChange={setForm} error={err} onError={setErr} api={api} assetUrl={assetUrl} />
     </Modal>
   );
 }

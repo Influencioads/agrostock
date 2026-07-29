@@ -88,18 +88,18 @@ const slug = (s: string) =>
 
 // Physical trade markets / mandis sellers attach to (buyers filter by these).
 const markets: { name: string; city: string; country: string; flag: string; region?: string }[] = [
-  { name: 'Azadpur Mandi', city: 'Delhi', country: '🇮🇳 India', flag: '🇮🇳', region: 'South Asia' },
-  { name: 'Vashi APMC', city: 'Mumbai', country: '🇮🇳 India', flag: '🇮🇳', region: 'South Asia' },
-  { name: 'Al Aweer Central Market', city: 'Dubai', country: '🇦🇪 UAE', flag: '🇦🇪', region: 'Middle East' },
-  { name: 'Mersin Wholesale Market', city: 'Mersin', country: '🇹🇷 Türkiye', flag: '🇹🇷', region: 'Levant' },
-  { name: 'Odesa Grain Exchange', city: 'Odesa', country: '🇺🇦 Ukraine', flag: '🇺🇦', region: 'Black Sea' },
-  { name: 'Novorossiysk Grain Terminal', city: 'Novorossiysk', country: '🇷🇺 Russia', flag: '🇷🇺', region: 'Black Sea' },
-  { name: 'Almaty Dry Port Market', city: 'Almaty', country: '🇰🇿 Kazakhstan', flag: '🇰🇿', region: 'Central Asia' },
-  { name: 'Rungis International', city: 'Paris', country: '🇫🇷 France', flag: '🇫🇷', region: 'Europe' },
-  { name: 'Rotterdam Agri Hub', city: 'Rotterdam', country: '🇳🇱 Netherlands', flag: '🇳🇱', region: 'Europe' },
-  { name: 'Santos Trade Terminal', city: 'Santos', country: '🇧🇷 Brazil', flag: '🇧🇷', region: 'South America' },
-  { name: 'Karachi Sabzi Mandi', city: 'Karachi', country: '🇵🇰 Pakistan', flag: '🇵🇰', region: 'South Asia' },
-  { name: 'Ho Chi Minh Agri Market', city: 'Ho Chi Minh City', country: '🇻🇳 Vietnam', flag: '🇻🇳', region: 'Southeast Asia' },
+  { name: 'Azadpur Mandi', city: 'Delhi', country: 'India', flag: '🇮🇳', region: 'South Asia' },
+  { name: 'Vashi APMC', city: 'Mumbai', country: 'India', flag: '🇮🇳', region: 'South Asia' },
+  { name: 'Al Aweer Central Market', city: 'Dubai', country: 'United Arab Emirates', flag: '🇦🇪', region: 'Middle East' },
+  { name: 'Mersin Wholesale Market', city: 'Mersin', country: 'Turkey', flag: '🇹🇷', region: 'Levant' },
+  { name: 'Odesa Grain Exchange', city: 'Odesa', country: 'Ukraine', flag: '🇺🇦', region: 'Black Sea' },
+  { name: 'Novorossiysk Grain Terminal', city: 'Novorossiysk', country: 'Russia', flag: '🇷🇺', region: 'Black Sea' },
+  { name: 'Almaty Dry Port Market', city: 'Almaty', country: 'Kazakhstan', flag: '🇰🇿', region: 'Central Asia' },
+  { name: 'Rungis International', city: 'Paris', country: 'France', flag: '🇫🇷', region: 'Europe' },
+  { name: 'Rotterdam Agri Hub', city: 'Rotterdam', country: 'Netherlands', flag: '🇳🇱', region: 'Europe' },
+  { name: 'Santos Trade Terminal', city: 'Santos', country: 'Brazil', flag: '🇧🇷', region: 'South America' },
+  { name: 'Karachi Sabzi Mandi', city: 'Karachi', country: 'Pakistan', flag: '🇵🇰', region: 'South Asia' },
+  { name: 'Ho Chi Minh Agri Market', city: 'Ho Chi Minh City', country: 'Vietnam', flag: '🇻🇳', region: 'Southeast Asia' },
 ];
 
 const offices = [
@@ -161,11 +161,11 @@ const parseQty = (qty?: string | null): { qtyValue: number | null; qtyUnit: stri
 };
 
 const demoUsers: { email: string; name: string; role: Role; country: string; kyc: 'verified' | 'pending' | 'rejected' }[] = [
-  { email: 'buyer@agrotraders.org', name: 'Karim Trading', role: 'buyer', country: '🇦🇪 UAE', kyc: 'verified' },
-  { email: 'seller@agrotraders.org', name: 'Punjab Agro Exports', role: 'seller', country: '🇮🇳 India', kyc: 'verified' },
-  { email: 'transporter@agrotraders.org', name: 'SwiftHaul Logistics', role: 'transporter', country: '🇦🇪 UAE', kyc: 'pending' },
-  { email: 'loaderco@agrotraders.org', name: 'PortForce Crews', role: 'loaderco', country: '🇮🇳 India', kyc: 'verified' },
-  { email: 'worker@agrotraders.org', name: 'Imran Sheikh', role: 'worker', country: '🇮🇳 India', kyc: 'verified' },
+  { email: 'buyer@agrotraders.org', name: 'Karim Trading', role: 'buyer', country: 'United Arab Emirates', kyc: 'verified' },
+  { email: 'seller@agrotraders.org', name: 'Punjab Agro Exports', role: 'seller', country: 'India', kyc: 'verified' },
+  { email: 'transporter@agrotraders.org', name: 'SwiftHaul Logistics', role: 'transporter', country: 'United Arab Emirates', kyc: 'pending' },
+  { email: 'loaderco@agrotraders.org', name: 'PortForce Crews', role: 'loaderco', country: 'India', kyc: 'verified' },
+  { email: 'worker@agrotraders.org', name: 'Imran Sheikh', role: 'worker', country: 'India', kyc: 'verified' },
   { email: 'admin@agrotraders.org', name: 'Platform Admin', role: 'admin', country: '🌍', kyc: 'verified' },
 ];
 
@@ -179,44 +179,44 @@ const orders = [
 
 // 10 transport companies (role: transporter). Each gets a vehicle + a route below.
 const transporters: { name: string; country: string; kyc: 'verified' | 'pending' | 'rejected'; vehicle: string; plate: string; capacity: string; from: string; to: string; km: number }[] = [
-  { name: 'SwiftHaul Logistics', country: '🇦🇪 UAE', kyc: 'pending', vehicle: '40ft Reefer', plate: 'DXB-01-AB-1234', capacity: '28', from: 'Mundra', to: 'Dubai', km: 1900 },
-  { name: 'Steppe Freight Lines', country: '🇰🇿 Kazakhstan', kyc: 'verified', vehicle: 'Bulk Tipper', plate: 'KZ-04-CD-5678', capacity: '40', from: 'Almaty', to: 'Tashkent', km: 870 },
-  { name: 'Volga Cargo Movers', country: '🇷🇺 Russia', kyc: 'verified', vehicle: 'Grain Hopper', plate: 'RU-77-EF-9012', capacity: '45', from: 'Rostov', to: 'Novorossiysk', km: 420 },
-  { name: 'Bosphorus Transit', country: '🇹🇷 Türkiye', kyc: 'verified', vehicle: 'Curtain-side', plate: 'TR-34-GH-3456', capacity: '24', from: 'Istanbul', to: 'Mersin', km: 920 },
-  { name: 'Indus Roadways', country: '🇮🇳 India', kyc: 'verified', vehicle: 'Container Trailer', plate: 'GJ-01-IJ-7788', capacity: '30', from: 'Kandla', to: 'Delhi', km: 1150 },
-  { name: 'Pampas Express', country: '🇦🇷 Argentina', kyc: 'pending', vehicle: 'Bulk Tipper', plate: 'AR-11-KL-2211', capacity: '42', from: 'Rosario', to: 'Buenos Aires', km: 300 },
-  { name: 'Nile Valley Transport', country: '🇪🇬 Egypt', kyc: 'verified', vehicle: '40ft Reefer', plate: 'EG-02-MN-4455', capacity: '26', from: 'Alexandria', to: 'Cairo', km: 220 },
-  { name: 'Baltic Haulage', country: '🇱🇹 Lithuania', kyc: 'verified', vehicle: 'Curtain-side', plate: 'LT-05-OP-6677', capacity: '24', from: 'Klaipeda', to: 'Vilnius', km: 310 },
-  { name: 'Mekong Movers', country: '🇻🇳 Vietnam', kyc: 'pending', vehicle: 'Container Trailer', plate: 'VN-29-QR-8899', capacity: '28', from: 'Hai Phong', to: 'Hanoi', km: 120 },
-  { name: 'Andes Freight', country: '🇵🇪 Peru', kyc: 'verified', vehicle: 'Grain Hopper', plate: 'PE-07-ST-1010', capacity: '38', from: 'Callao', to: 'Arequipa', km: 1000 },
+  { name: 'SwiftHaul Logistics', country: 'United Arab Emirates', kyc: 'pending', vehicle: '40ft Reefer', plate: 'DXB-01-AB-1234', capacity: '28', from: 'Mundra', to: 'Dubai', km: 1900 },
+  { name: 'Steppe Freight Lines', country: 'Kazakhstan', kyc: 'verified', vehicle: 'Bulk Tipper', plate: 'KZ-04-CD-5678', capacity: '40', from: 'Almaty', to: 'Tashkent', km: 870 },
+  { name: 'Volga Cargo Movers', country: 'Russia', kyc: 'verified', vehicle: 'Grain Hopper', plate: 'RU-77-EF-9012', capacity: '45', from: 'Rostov', to: 'Novorossiysk', km: 420 },
+  { name: 'Bosphorus Transit', country: 'Turkey', kyc: 'verified', vehicle: 'Curtain-side', plate: 'TR-34-GH-3456', capacity: '24', from: 'Istanbul', to: 'Mersin', km: 920 },
+  { name: 'Indus Roadways', country: 'India', kyc: 'verified', vehicle: 'Container Trailer', plate: 'GJ-01-IJ-7788', capacity: '30', from: 'Kandla', to: 'Delhi', km: 1150 },
+  { name: 'Pampas Express', country: 'Argentina', kyc: 'pending', vehicle: 'Bulk Tipper', plate: 'AR-11-KL-2211', capacity: '42', from: 'Rosario', to: 'Buenos Aires', km: 300 },
+  { name: 'Nile Valley Transport', country: 'Egypt', kyc: 'verified', vehicle: '40ft Reefer', plate: 'EG-02-MN-4455', capacity: '26', from: 'Alexandria', to: 'Cairo', km: 220 },
+  { name: 'Baltic Haulage', country: 'Lithuania', kyc: 'verified', vehicle: 'Curtain-side', plate: 'LT-05-OP-6677', capacity: '24', from: 'Klaipeda', to: 'Vilnius', km: 310 },
+  { name: 'Mekong Movers', country: 'Vietnam', kyc: 'pending', vehicle: 'Container Trailer', plate: 'VN-29-QR-8899', capacity: '28', from: 'Hai Phong', to: 'Hanoi', km: 120 },
+  { name: 'Andes Freight', country: 'Peru', kyc: 'verified', vehicle: 'Grain Hopper', plate: 'PE-07-ST-1010', capacity: '38', from: 'Callao', to: 'Arequipa', km: 1000 },
 ];
 
 // 10 loading companies (role: loaderco). Each gets 2 teams + a job below.
 const loaderCompanies: { name: string; country: string; kyc: 'verified' | 'pending' | 'rejected'; location: string }[] = [
-  { name: 'PortForce Crews', country: '🇮🇳 India', kyc: 'verified', location: 'Mundra Terminal 4' },
-  { name: 'DockHands United', country: '🇦🇪 UAE', kyc: 'verified', location: 'Jebel Ali Port' },
-  { name: 'CargoLift Teams', country: '🇹🇷 Türkiye', kyc: 'pending', location: 'Mersin Terminal 2' },
-  { name: 'Black Sea Stevedores', country: '🇺🇦 Ukraine', kyc: 'verified', location: 'Odesa Grain Berth' },
-  { name: 'Steppe Loaders Co.', country: '🇰🇿 Kazakhstan', kyc: 'verified', location: 'Almaty Dry Port' },
-  { name: 'Delta Handling', country: '🇪🇬 Egypt', kyc: 'pending', location: 'Alexandria Silo 3' },
-  { name: 'Harbor Muscle', country: '🇷🇺 Russia', kyc: 'verified', location: 'Novorossiysk Berth 9' },
-  { name: 'Saigon Loading Group', country: '🇻🇳 Vietnam', kyc: 'verified', location: 'Hai Phong Wharf' },
-  { name: 'Pampas Crews', country: '🇦🇷 Argentina', kyc: 'pending', location: 'Rosario Elevator 12' },
-  { name: 'Levant Stevedores', country: '🇱🇧 Lebanon', kyc: 'verified', location: 'Beirut Port Zone B' },
+  { name: 'PortForce Crews', country: 'India', kyc: 'verified', location: 'Mundra Terminal 4' },
+  { name: 'DockHands United', country: 'United Arab Emirates', kyc: 'verified', location: 'Jebel Ali Port' },
+  { name: 'CargoLift Teams', country: 'Turkey', kyc: 'pending', location: 'Mersin Terminal 2' },
+  { name: 'Black Sea Stevedores', country: 'Ukraine', kyc: 'verified', location: 'Odesa Grain Berth' },
+  { name: 'Steppe Loaders Co.', country: 'Kazakhstan', kyc: 'verified', location: 'Almaty Dry Port' },
+  { name: 'Delta Handling', country: 'Egypt', kyc: 'pending', location: 'Alexandria Silo 3' },
+  { name: 'Harbor Muscle', country: 'Russia', kyc: 'verified', location: 'Novorossiysk Berth 9' },
+  { name: 'Saigon Loading Group', country: 'Vietnam', kyc: 'verified', location: 'Hai Phong Wharf' },
+  { name: 'Pampas Crews', country: 'Argentina', kyc: 'pending', location: 'Rosario Elevator 12' },
+  { name: 'Levant Stevedores', country: 'Lebanon', kyc: 'verified', location: 'Beirut Port Zone B' },
 ];
 
 // 10 loaders/workers (role: worker). Assigned across the loading companies above.
 const loaders: { name: string; country: string; rating: string; status: 'available' | 'on_site' | 'off'; company: string }[] = [
-  { name: 'Imran Sheikh', country: '🇮🇳 India', rating: '4.8', status: 'on_site', company: 'PortForce Crews' },
-  { name: 'Ravi Kumar', country: '🇮🇳 India', rating: '4.9', status: 'on_site', company: 'PortForce Crews' },
-  { name: 'Dmitri Petrov', country: '🇷🇺 Russia', rating: '4.7', status: 'available', company: 'Harbor Muscle' },
-  { name: 'Arman Serik', country: '🇰🇿 Kazakhstan', rating: '4.6', status: 'available', company: 'Steppe Loaders Co.' },
-  { name: 'Mehmet Yilmaz', country: '🇹🇷 Türkiye', rating: '4.8', status: 'on_site', company: 'CargoLift Teams' },
-  { name: 'Oleksandr Kovalenko', country: '🇺🇦 Ukraine', rating: '4.9', status: 'available', company: 'Black Sea Stevedores' },
-  { name: 'Ahmed Farouk', country: '🇪🇬 Egypt', rating: '4.5', status: 'off', company: 'Delta Handling' },
-  { name: 'Nguyen Van Minh', country: '🇻🇳 Vietnam', rating: '4.7', status: 'on_site', company: 'Saigon Loading Group' },
-  { name: 'Rashid Al Amin', country: '🇦🇪 UAE', rating: '4.8', status: 'available', company: 'DockHands United' },
-  { name: 'Diego Morales', country: '🇦🇷 Argentina', rating: '4.6', status: 'off', company: 'Pampas Crews' },
+  { name: 'Imran Sheikh', country: 'India', rating: '4.8', status: 'on_site', company: 'PortForce Crews' },
+  { name: 'Ravi Kumar', country: 'India', rating: '4.9', status: 'on_site', company: 'PortForce Crews' },
+  { name: 'Dmitri Petrov', country: 'Russia', rating: '4.7', status: 'available', company: 'Harbor Muscle' },
+  { name: 'Arman Serik', country: 'Kazakhstan', rating: '4.6', status: 'available', company: 'Steppe Loaders Co.' },
+  { name: 'Mehmet Yilmaz', country: 'Turkey', rating: '4.8', status: 'on_site', company: 'CargoLift Teams' },
+  { name: 'Oleksandr Kovalenko', country: 'Ukraine', rating: '4.9', status: 'available', company: 'Black Sea Stevedores' },
+  { name: 'Ahmed Farouk', country: 'Egypt', rating: '4.5', status: 'off', company: 'Delta Handling' },
+  { name: 'Nguyen Van Minh', country: 'Vietnam', rating: '4.7', status: 'on_site', company: 'Saigon Loading Group' },
+  { name: 'Rashid Al Amin', country: 'United Arab Emirates', rating: '4.8', status: 'available', company: 'DockHands United' },
+  { name: 'Diego Morales', country: 'Argentina', rating: '4.6', status: 'off', company: 'Pampas Crews' },
 ];
 
 const communityChannels: { name: string; kind: CommunityGroupKind; emoji: string }[] = [
@@ -303,7 +303,10 @@ async function main() {
   await prisma.office.deleteMany();
   await prisma.roleRequest.deleteMany();
   await prisma.profile.deleteMany();
-  await prisma.market.deleteMany();
+  // ONLY the demo markets this seed owns. Imported real-world markets (the
+  // Russian wholesale yards) are not the seed's to delete — a reseed used to
+  // take all of them with it.
+  await prisma.market.deleteMany({ where: { slug: { in: markets.map((m) => slug(m.name)) } } });
   await prisma.user.deleteMany();
 
   const passwordHash = await bcrypt.hash('password123', 10);

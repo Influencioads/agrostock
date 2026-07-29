@@ -232,7 +232,7 @@ function StartAuctionModal({ onClose }: { onClose: () => void }) {
                 className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
               >
                 <option value="">{t('console.seller.selectListing')}</option>
-                {eligible.map((p) => <option key={p.id} value={p.id}>{p.emoji} {p.name} — {p.price}{unitSuffix(p.unit)}</option>)}
+                {eligible.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.price}{unitSuffix(p.unit)} {p.emoji}</option>)}
               </select>
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
