@@ -4,6 +4,7 @@ import { access, mkdir, writeFile } from 'fs/promises';
 import { isAbsolute, join, normalize } from 'path';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
+import { resolveUploadDir } from './upload-path';
 
 /** MIME types we accept for image uploads (everything is re-encoded to WebP). */
 const ALLOWED_IMAGE_MIME = new Set([
@@ -71,23 +72,11 @@ export class UploadsService {
       let pipeline = source;
       if (square) {
         // Catalog photos are always rendered in a square tile, so every upload is
-        // stored as an exact `square`×`square` image. How we get there depends on
-        // what the seller gave us — the one thing we never do is upscale, which
-        // turns a thumbnail into a blurry cover:
-        //   • short edge ≥ target → centre-crop (the common phone photo; lossless)
-        //   • short edge < target → letterbox onto white, so a 16:9 landscape shot
-        //     still lands square with the whole product visible
-        //   • long edge < target → genuinely too small to sell from; reject
-        const { width = 0, height = 0 } = await source.metadata();
-        if (Math.max(width, height) < square) {
-          throw new BadRequestException(
-            `Photos must be at least ${square}px on the longest side — this one is ${width}×${height}px.`,
-          );
-        }
+        // stored as an exact `square`×`square` cover. Do not reject small photos:
+        // resize/crop whatever the seller gives us into the required 1:1 shape.
         pipeline = source.resize(square, square, {
-          fit: Math.min(width, height) >= square ? 'cover' : 'contain',
+          fit: 'cover',
           position: 'centre',
-          background: { r: 255, g: 255, b: 255, alpha: 1 },
         });
       } else {
         pipeline = source.resize(maxWidth, maxHeight, { fit: 'inside', withoutEnlargement: true });
@@ -102,7 +91,7 @@ export class UploadsService {
       throw new BadRequestException('Could not process this image');
     }
 
-    const dir = join(process.cwd(), this.baseDir, subdir);
+    const dir = join(resolveUploadDir(process.cwd(), this.baseDir), subdir);
     await mkdir(dir, { recursive: true });
     const filename = `${randomUUID()}.${format}`;
     await writeFile(join(dir, filename), out);
@@ -129,7 +118,7 @@ export class UploadsService {
       throw new BadRequestException('File missing or exceeds size limit');
     }
 
-    const dir = join(process.cwd(), this.privateDir, subdir);
+    const dir = join(resolveUploadDir(process.cwd(), this.privateDir), subdir);
     await mkdir(dir, { recursive: true });
     const filename = `${randomUUID()}.${PRIVATE_EXT[file.mimetype]}`;
     await writeFile(join(dir, filename), file.buffer);
@@ -142,7 +131,7 @@ export class UploadsService {
    * escape the directory.
    */
   privatePath(storageKey: string): string {
-    const root = join(process.cwd(), this.privateDir);
+    const root = resolveUploadDir(process.cwd(), this.privateDir);
     const abs = normalize(join(root, storageKey));
     if (isAbsolute(storageKey) || !abs.startsWith(root)) {
       throw new BadRequestException('Invalid file reference');
