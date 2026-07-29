@@ -3,7 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { join } from 'path';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { I18nExceptionFilter } from './common/i18n-exception.filter';
@@ -13,6 +12,7 @@ import { assertProductionConfig } from './config/production-config';
 import { assertProductionHasNoDemoAccounts } from './config/demo-account-guard';
 import { resolveCorsOrigins } from './config/cors';
 import { PrismaService } from './prisma/prisma.service';
+import { resolveUploadDir } from './uploads/upload-path';
 
 async function bootstrap() {
   assertProductionConfig();
@@ -30,7 +30,7 @@ async function bootstrap() {
 
   // ── public uploads (product images etc.) served as static files ──
   // Stored on the local filesystem (no S3); path configurable for prod hosts.
-  const uploadDir = join(process.cwd(), process.env.UPLOAD_DIR || 'uploads');
+  const uploadDir = resolveUploadDir(process.cwd(), process.env.UPLOAD_DIR || 'uploads');
   app.useStaticAssets(uploadDir, { prefix: '/uploads' });
 
   // ── security hardening ──────────────────────────────────────────
