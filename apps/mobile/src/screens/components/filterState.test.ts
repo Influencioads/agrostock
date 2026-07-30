@@ -10,7 +10,7 @@ const withCategory: Filters = {
     subcategoryId: 'sub9',
     subcategoryName: 'Durum',
     trail: ['Grains', 'Wheat', 'Durum'],
-    attrSource: 'Wheat',
+    attrFields: [{ key: 'grade', label: 'Grade', type: 'select', options: ['A', 'B'] }],
   },
 };
 

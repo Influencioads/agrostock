@@ -9,7 +9,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
-import { TagInput } from '../components/TagInput';
+import { CityField, CityTagField, CountryField, CountryTagField } from '../components/GeoFields';
 
 const STATUS_TONE = { on_site: 'info', available: 'green', off: 'slate' } as const;
 
@@ -125,11 +125,12 @@ function AddWorkerSheet({ onClose }: { onClose: () => void }) {
       <Input label={t('loaderX.workers.dailyWage')} keyboardType="numeric" placeholder="20" value={f.wage} onChangeText={set('wage')} />
       <TeamPicker teams={teams} value={f.teamId} onChange={(id) => setF((p) => ({ ...p, teamId: id }))} />
       <Row gap={10}>
-        <View style={{ flex: 1 }}><Input label={t('pubX.dir.originCountry')} placeholder={t('pubX.ph.countryIndia')} value={f.originCountry} onChangeText={set('originCountry') as (v: string) => void} /></View>
-        <View style={{ flex: 1 }}><Input label={t('pubX.dir.originCity')} placeholder={t('pubX.ph.cityAmritsar')} value={f.originCity} onChangeText={set('originCity') as (v: string) => void} /></View>
+        {/* Country first — the city list is fetched per country, so it resets with it. */}
+        <View style={{ flex: 1 }}><CountryField label={t('pubX.dir.originCountry')} placeholder={t('pubX.ph.countryIndia')} value={f.originCountry} onChange={(v) => setF((p) => ({ ...p, originCountry: v, originCity: '' }))} /></View>
+        <View style={{ flex: 1 }}><CityField label={t('pubX.dir.originCity')} placeholder={t('pubX.ph.cityAmritsar')} country={f.originCountry || undefined} value={f.originCity} onChange={(v) => set('originCity')(v)} /></View>
       </Row>
-      <TagInput label={t('pubX.dir.operatingCountries')} value={f.operatingCountries} onChange={(v) => set('operatingCountries')(v)} placeholder={t('pubX.ph.opCountries')} />
-      <TagInput label={t('pubX.dir.operatingCities')} value={f.operatingCities} onChange={(v) => set('operatingCities')(v)} placeholder={t('pubX.ph.opCities')} />
+      <CountryTagField label={t('pubX.dir.operatingCountries')} value={f.operatingCountries} onChange={(v) => set('operatingCountries')(v)} placeholder={t('pubX.ph.opCountries')} />
+      <CityTagField label={t('pubX.dir.operatingCities')} country={f.originCountry || undefined} value={f.operatingCities} onChange={(v) => set('operatingCities')(v)} placeholder={t('pubX.ph.opCities')} />
       <Input label={t('pubX.dir.opsMinHours')} keyboardType="number-pad" placeholder="4" value={f.minWorkHours} onChangeText={set('minWorkHours') as (v: string) => void} />
       <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <Txt variant="label">{t('loaderX.workers.createLogin')}</Txt>
@@ -192,11 +193,11 @@ function EditWorkerSheet({ worker, onClose }: { worker: ApiLoaderWorker; onClose
         </Row>
       </View>
       <Row gap={10}>
-        <View style={{ flex: 1 }}><Input label={t('pubX.dir.originCountry')} value={f.originCountry} onChangeText={set('originCountry') as (v: string) => void} /></View>
-        <View style={{ flex: 1 }}><Input label={t('pubX.dir.originCity')} value={f.originCity} onChangeText={set('originCity') as (v: string) => void} /></View>
+        <View style={{ flex: 1 }}><CountryField label={t('pubX.dir.originCountry')} value={f.originCountry} onChange={(v) => setF((p) => ({ ...p, originCountry: v, originCity: '' }))} /></View>
+        <View style={{ flex: 1 }}><CityField label={t('pubX.dir.originCity')} country={f.originCountry || undefined} value={f.originCity} onChange={(v) => set('originCity')(v)} /></View>
       </Row>
-      <TagInput label={t('pubX.dir.operatingCountries')} value={f.operatingCountries} onChange={(v) => set('operatingCountries')(v)} placeholder={t('pubX.ph.opCountries')} />
-      <TagInput label={t('pubX.dir.operatingCities')} value={f.operatingCities} onChange={(v) => set('operatingCities')(v)} placeholder={t('pubX.ph.opCities')} />
+      <CountryTagField label={t('pubX.dir.operatingCountries')} value={f.operatingCountries} onChange={(v) => set('operatingCountries')(v)} placeholder={t('pubX.ph.opCountries')} />
+      <CityTagField label={t('pubX.dir.operatingCities')} country={f.originCountry || undefined} value={f.operatingCities} onChange={(v) => set('operatingCities')(v)} placeholder={t('pubX.ph.opCities')} />
       <Input label={t('pubX.dir.opsMinHours')} keyboardType="number-pad" value={f.minWorkHours} onChangeText={set('minWorkHours') as (v: string) => void} />
       <Button title={t('loaderX.common.save')} icon="checkmark" full loading={save.isPending} disabled={!f.name.trim()} onPress={() => save.mutate()} />
     </Sheet>

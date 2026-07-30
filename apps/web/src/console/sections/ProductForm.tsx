@@ -33,6 +33,8 @@ export function ProductForm(props: {
   onChange: (next: ProductFormValues) => void;
   error?: string;
   onError: (msg: string) => void;
+  /** Set once the seller has hit Save: turns every missing field red. */
+  showErrors?: boolean;
 }) {
   return <BaseProductForm {...props} api={api} assetUrl={assetUrl} />;
 }

@@ -26,9 +26,9 @@ const ROOT = join(HERE, '..', '..', '..');
 const LOCALES = readdirSync(LOCALES_DIR).filter((d) => statSync(join(LOCALES_DIR, d)).isDirectory());
 
 const APPS = {
-  web: { src: 'apps/web/src', def: 'web', ns: ['web', 'common', 'nav', 'enums', 'errors', 'attrs'] },
+  web: { src: 'apps/web/src', def: 'web', ns: ['web', 'common', 'nav', 'enums', 'errors'] },
   admin: { src: 'apps/admin/src', def: 'admin', ns: ['admin', 'common', 'nav', 'enums', 'errors'] },
-  mobile: { src: 'apps/mobile/src', def: 'mobile', ns: ['mobile', 'common', 'nav', 'enums', 'errors', 'attrs'] },
+  mobile: { src: 'apps/mobile/src', def: 'mobile', ns: ['mobile', 'common', 'nav', 'enums', 'errors'] },
 };
 
 function loadCatalog(locale, ns) {

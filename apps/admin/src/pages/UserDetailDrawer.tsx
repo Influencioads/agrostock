@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar, Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
+import { CountrySelectField } from '../components/GeoInputs';
 import { api } from '../lib/api';
 import { useI18n } from '../i18n';
 
-const ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker', 'admin'] as const;
+const ROLES =['buyer', 'seller', 'transporter', 'loaderco', 'worker', 'admin'] as const;
 const KYC_STATUSES = ['pending', 'verified', 'rejected'] as const;
 
 /**
@@ -105,7 +106,9 @@ export function UserDetailDrawer({ userId, onClose }: { userId: string; onClose:
               <div className="space-y-3">
                 <Input label={t('userDrawer.name')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 <Input label={t('userDrawer.email')} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                <Input label={t('userDrawer.country')} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+                {/* Picker, not free text — a hand-typed country never matched
+                    the directory or catalog filters. */}
+                <CountrySelectField label={t('userDrawer.country')} value={form.country} onChange={(country) => setForm({ ...form, country })} />
                 <label className="flex items-center gap-2 text-sm text-ink">
                   <input
                     type="checkbox"

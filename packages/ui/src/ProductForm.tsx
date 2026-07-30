@@ -1,23 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { ApiCategory, ApiMarket, ApiProduct } from '@agrotraders/api-client';
-import { ALL_COUNTRIES, countryFlag, countryLabel, schemaName } from '@agrotraders/api-client';
+import {
+  ALL_COUNTRIES,
+  buildSubcategoryTree,
+  countryFlag,
+  countryLabel,
+  findSubcategoryPath,
+  resolveAttrFields,
+} from '@agrotraders/api-client';
 import {
   CURRENCIES,
   CURRENCY_SYMBOLS,
-  DELIVERY_OPTIONS,
-  getAttributeFields,
-  isDeliveryOption,
   isPercentField,
+  optionLabel,
   PERCENT_OPTIONS,
   PRODUCT_UNITS,
   suggestProductName,
   toUnit,
   type AttrField,
 } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
-import { Combobox } from './Combobox';
+import { Combobox, SearchSelect } from './Combobox';
 import { Icon } from './Icon';
 import { Input } from './Input';
 
@@ -38,7 +42,7 @@ export interface ProductFormApi {
 
 /** Namespaces the form reads; every key below is explicitly prefixed, because
  *  the two host apps have different `defaultNS` ('web' vs 'admin'). */
-const NS = ['web', 'common', 'enums', 'attrs'] as const;
+const NS = ['web', 'common', 'enums'] as const;
 
 /** Pull the API's message out of an axios-shaped error. */
 export function formErrMessage(e: unknown, fallback: string): string {
@@ -64,7 +68,6 @@ export interface ProductFormValues {
   unit: string;
   /** Bare number; the metric comes from `unit`. */
   moq: string;
-  grade: string;
   flag: string;
   origin: string;
   city: string;
@@ -92,7 +95,7 @@ export interface ProductFormValues {
 
 export const blankProduct: ProductFormValues = {
   name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', qty: '', unit: 'MT', moq: '',
-  grade: '', flag: '🌾',
+  flag: '🌾',
   origin: '', city: '', country: '', supplyCountries: [], delivery: 'delivery', marketId: '',
   isOffer: false, isAuction: false, safeDeal: true, negotiable: false, startBid: '', auctionEndsAt: '', stock: '',
   attributes: {},
@@ -113,7 +116,6 @@ export interface EditableProduct {
   qty?: string | null;
   unit?: string | null;
   moq?: string | null;
-  grade?: string | null;
   flag?: string | null;
   origin?: string | null;
   city?: string | null;
@@ -126,11 +128,19 @@ export interface EditableProduct {
   safeDeal?: boolean | null;
   negotiable?: boolean | null;
   startBidCents?: number | null;
+  startBidSrcCents?: number | null;
   auctionEndsAt?: string | null;
   stockQty?: number | null;
   attributes?: Record<string, unknown> | null;
   images?: string[] | null;
   imageUrl?: string | null;
+  /**
+   * Canonical English for the columns the API translates, sent by
+   * `GET /products/mine`. The row itself carries the seller's language so the
+   * list reads naturally; the form must edit the original or Save would write
+   * the translation back over the source row.
+   */
+  source?: Partial<Pick<EditableProduct, 'name' | 'origin' | 'qty' | 'moq' | 'delivery' | 'attributes'>> | null;
 }
 
 /** Relations come back as objects here, but plain names on some list shapes. */
@@ -139,35 +149,41 @@ const relId = (v: { id?: string } | string | null | undefined) => (typeof v === 
 /** Map an existing product back onto the form shape (for Edit). */
 export function productToForm(p: EditableProduct | ApiProduct): ProductFormValues {
   const q = p as EditableProduct;
+  // Admin rows and older payloads have no `source`; they are already canonical.
+  const src = q.source ?? {};
   return {
-    name: q.name ?? '',
+    name: src.name ?? q.name ?? '',
     categoryId: relId(q.category),
     subcategoryId: relId(q.subcategory),
     // The API stores the display string ("₹70,000"); the form edits the bare number.
     price: bareNumber(q.price),
     priceCurrency: q.priceCurrency ?? 'USD',
-    qty: bareNumber(q.qty),
+    qty: bareNumber(src.qty ?? q.qty),
     // Listings created before units were a picker stored the display form ('/MT').
     unit: toUnit(q.unit),
-    moq: bareNumber(q.moq),
-    grade: q.grade ?? '',
+    moq: bareNumber(src.moq ?? q.moq),
     flag: q.flag ?? '🌾',
-    origin: q.origin ?? '',
+    origin: src.origin ?? q.origin ?? '',
     city: q.city ?? '',
     country: q.country ?? '',
     supplyCountries: q.supplyCountries ?? [],
-    // Legacy rows carry free text ("Ready"); map anything unrecognised onto the
-    // "we deliver" option rather than showing a blank picker.
-    delivery: isDeliveryOption(q.delivery) ? q.delivery : 'delivery',
+    // Only two answers exist now — the seller delivers, or the buyer arranges a
+    // partner. Legacy free text ("Ready") and the retired "no_delivery" both
+    // collapse onto one of them rather than showing a blank picker.
+    delivery: (src.delivery ?? q.delivery) === 'self_pickup' || (src.delivery ?? q.delivery) === 'no_delivery' ? 'self_pickup' : 'delivery',
     marketId: q.market?.id ?? '',
     isOffer: !!q.isOffer,
     isAuction: !!q.isAuction,
     safeDeal: q.safeDeal ?? true,
     negotiable: !!q.negotiable,
-    startBid: q.startBidCents != null ? String(q.startBidCents / 100) : '',
+    // Prefer the seller's typed amount (their currency); startBidCents is the
+    // USD baseline and only right for legacy rows saved before the split.
+    startBid: q.startBidSrcCents != null ? String(q.startBidSrcCents / 100) : q.startBidCents != null ? String(q.startBidCents / 100) : '',
     auctionEndsAt: q.auctionEndsAt ? new Date(q.auctionEndsAt).toISOString().slice(0, 16) : '',
     stock: q.stockQty != null ? String(q.stockQty) : '',
-    attributes: q.attributes ?? {},
+    // Stored attribute values are canonical English — the buyer facets match on
+    // them, so the translated display copy must never be saved back.
+    attributes: src.attributes ?? q.attributes ?? {},
     images: q.images?.length ? q.images : q.imageUrl ? [q.imageUrl] : [],
   };
 }
@@ -185,7 +201,6 @@ export function formToPayload(f: ProductFormValues) {
     ...(f.qty ? { qty: withUnit(f.qty, f.unit) } : {}),
     unit: toUnit(f.unit),
     ...(f.moq ? { moq: withUnit(f.moq, f.unit) } : {}),
-    ...(f.grade ? { grade: f.grade } : {}),
     // The flag follows the origin country, so it is never hand-typed.
     ...(countryFlag(f.origin) || f.flag ? { flag: countryFlag(f.origin) || f.flag } : {}),
     ...(f.origin ? { origin: f.origin } : {}),
@@ -209,10 +224,24 @@ export function formToPayload(f: ProductFormValues) {
   };
 }
 
-// A photo is now part of "ready": the buyer grid has nothing but an emoji
-// placeholder to render without one, and the API rejects the write anyway.
-export const productFormReady = (f: ProductFormValues) =>
-  !!f.name.trim() && !!f.categoryId && !!f.price.trim() && f.images.length > 0;
+/** The fields the form paints red when they block a save. */
+export type ProductFormField = 'name' | 'categoryId' | 'price' | 'images';
+
+/**
+ * What is missing or wrong, so the seller SEES which field to fix instead of
+ * staring at a dead Save button. A photo is part of "ready": the buyer grid has
+ * nothing but an emoji placeholder without one, and the API rejects the write.
+ */
+export function productFormErrors(f: ProductFormValues): ProductFormField[] {
+  const bad: ProductFormField[] = [];
+  if (!f.name.trim()) bad.push('name');
+  if (!f.categoryId) bad.push('categoryId');
+  if (!f.price.trim() || !(Number(f.price) > 0)) bad.push('price');
+  if (f.images.length === 0) bad.push('images');
+  return bad;
+}
+
+export const productFormReady = (f: ProductFormValues) => productFormErrors(f).length === 0;
 
 /* ── Gallery editor ──────────────────────────────────────────────── */
 
@@ -319,66 +348,62 @@ const selectCls =
 /**
  * Country picker over the FULL ISO list — the curated trade-relevance head first,
  * then every other country. Free-text country fields never matched the directory
- * or catalog filters, which match on these exact names.
+ * or catalog filters, which match on these exact names. Searchable, because a
+ * native `<select>` only jumps to options starting with what you type.
  */
-function CountrySelect({
+export function CountrySelect({
   label,
   value,
   onChange,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (name: string) => void;
+  error?: string;
 }) {
   const { t, i18n } = useTranslation([...NS]);
+  // The English name stays the stored VALUE — only the label is localized, and
+  // both are searchable, since traders often know the English spelling.
+  const options = useMemo(
+    () => ALL_COUNTRIES.map((c) => ({ value: c.name, label: `${countryLabel(c.name, i18n.language)} ${c.flag}` })),
+    [i18n.language],
+  );
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-semibold text-ink">{label}</span>
-      {/* The English name stays the option VALUE — only the label is localized. */}
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={selectCls}>
-        <option value="">{t('web:console.productForm.select')}</option>
-        {ALL_COUNTRIES.map((c) => (
-          <option key={c.iso2} value={c.name}>{countryLabel(c.name, i18n.language)} {c.flag}</option>
-        ))}
-      </select>
-    </label>
+    <SearchSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={t('web:console.productForm.select')}
+      searchPlaceholder={t('web:console.productForm.searchCountry')}
+      emptyLabel={t('web:console.productForm.noCountry')}
+      error={error}
+    />
   );
 }
 
 /**
- * "Do you deliver?" — and when the answer is no, whether the buyer may still
- * collect from the seller. Two dependent pickers instead of the free-text field
- * that used to produce "Ready", "7 days", "ready to ship" and "-".
+ * Who moves the goods: the seller delivers themselves, or the buyer arranges a
+ * delivery partner. Replaces the "do you deliver?" / "can the buyer collect?"
+ * pair — sellers only ever have these two answers, and the second question was
+ * asking about collection when what the buyer actually needs to know is whether
+ * they have to hire transport.
  */
 function DeliverySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { t } = useTranslation([...NS]);
-  const delivers = value === 'delivery';
   return (
-    <>
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.delivery')}</span>
-        <select
-          value={delivers ? 'yes' : 'no'}
-          // Leaving "yes" needs a concrete fallback, so default to self-pickup —
-          // the seller can switch it to "no collection" in the next control.
-          onChange={(e) => onChange(e.target.value === 'yes' ? 'delivery' : 'self_pickup')}
-          className={selectCls}
-        >
-          <option value="yes">{t('common:yes')}</option>
-          <option value="no">{t('common:no')}</option>
-        </select>
-      </label>
-      {!delivers && (
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.pickup')}</span>
-          <select value={value === 'no_delivery' ? 'no_delivery' : 'self_pickup'} onChange={(e) => onChange(e.target.value)} className={selectCls}>
-            {DELIVERY_OPTIONS.filter((o) => o !== 'delivery').map((o) => (
-              <option key={o} value={o}>{t(`enums:delivery.${o}`)}</option>
-            ))}
-          </select>
-        </label>
-      )}
-    </>
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.delivery')}</span>
+      <select
+        value={value === 'delivery' ? 'delivery' : 'self_pickup'}
+        onChange={(e) => onChange(e.target.value)}
+        className={selectCls}
+      >
+        <option value="delivery">{t('enums:delivery.delivery')}</option>
+        <option value="self_pickup">{t('enums:delivery.self_pickup')}</option>
+      </select>
+    </label>
   );
 }
 
@@ -397,22 +422,27 @@ function MarketSelect({
   const { t } = useTranslation([...NS]);
   const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets'], queryFn: () => api.markets.list() });
 
+  // Thousands of markets: the list is only usable with a search box, and the
+  // searchable text has to carry the city and country too, because that is how
+  // a seller looks a market up ("Kandla", "Turkey").
+  const options = useMemo(
+    () =>
+      markets.map((m) => ({
+        value: m.id,
+        label: `${m.name}${m.city ? ` · ${m.city}` : ''}${m.country ? ` · ${m.country}` : ''} ${m.flag ?? ''}`.trim(),
+      })),
+    [markets],
+  );
+
   return (
-    <div>
-      <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.market')}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
-      >
-        <option value="">{t('web:console.productForm.marketPlaceholder')}</option>
-        {markets.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.name}{m.city ? ` · ${m.city}` : ''} {m.flag}
-          </option>
-        ))}
-      </select>
-    </div>
+    <SearchSelect
+      label={t('web:console.productForm.market')}
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={t('web:console.productForm.marketPlaceholder')}
+      searchPlaceholder={t('web:console.productForm.searchMarket')}
+    />
   );
 }
 
@@ -504,30 +534,28 @@ function SupplyCountriesSelect({
 
 /**
  * Renders the dynamic detail fields for the chosen subcategory (grade codes,
- * sizes, processing, etc.) from the shared attribute schema. Values live under
- * `attributes` keyed by each field's `key`.
+ * sizes, processing, etc.). Values live under `attributes` keyed by each field's
+ * `key`.
+ *
+ * `fields` arrives from the API already localized: `label` is translated, while
+ * `options` stay canonical English because that is what gets STORED and what the
+ * buyer facets match on. `optionLabel` bridges the two.
  */
 function AttributeFields({
-  category,
-  subcategory,
+  fields,
   label,
+  subcategory,
   value,
   onChange,
 }: {
-  /** CANONICAL ENGLISH names — the schema is keyed by them. */
-  category?: string | null;
-  subcategory?: string | null;
+  fields: AttrField[];
   /** Localized subcategory label, for the section heading only. */
   label?: string | null;
+  subcategory?: string | null;
   value: Record<string, unknown>;
   onChange: (next: Record<string, unknown>) => void;
 }) {
   const { t } = useTranslation([...NS]);
-  // Only the display is localized — the stored value stays the canonical English
-  // option, because buyer filters match on it.
-  const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
-  const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
-  const fields = getAttributeFields(category, subcategory);
   if (fields.length === 0) return null;
 
   const setField = (key: string, v: unknown) => {
@@ -551,7 +579,7 @@ function AttributeFields({
           const raw = value[f.key];
           const label = (
             <span className="mb-1.5 block text-sm font-semibold text-ink">
-              {aLabel(f.label)}
+              {f.label}
               {f.unit ? <span className="font-normal text-ink-soft"> ({f.unit})</span> : ''}
               {f.required ? <span className="text-brand-mango"> *</span> : ''}
             </span>
@@ -563,7 +591,7 @@ function AttributeFields({
                 {label}
                 <select value={(raw as string) ?? ''} onChange={(e) => setField(f.key, e.target.value)} className={selCls}>
                   <option value="">—</option>
-                  {(f.options ?? []).map((o) => <option key={o} value={o}>{aOpt(o)}</option>)}
+                  {(f.options ?? []).map((o) => <option key={o} value={o}>{optionLabel(f, o)}</option>)}
                 </select>
               </label>
             );
@@ -571,7 +599,7 @@ function AttributeFields({
           if (f.type === 'boolean') {
             return (
               <label key={f.key} className="flex items-center justify-between gap-2 rounded-md border border-surface-border bg-white px-3 py-2.5 text-sm sm:mt-6">
-                <span className="font-semibold text-ink">{aLabel(f.label)}</span>
+                <span className="font-semibold text-ink">{f.label}</span>
                 <input type="checkbox" checked={raw === true} onChange={(e) => setField(f.key, e.target.checked || undefined)} className="accent-[#249653]" />
               </label>
             );
@@ -604,7 +632,7 @@ function AttributeFields({
                         onClick={() => setField(f.key, on ? arr.filter((x) => x !== o) : [...arr, o])}
                         className={`rounded-pill border px-2.5 py-1 text-xs font-semibold transition ${on ? 'border-brand-leaf bg-brand-leaf text-white' : 'border-surface-border bg-white text-ink hover:border-brand-leaf'}`}
                       >
-                        {aOpt(o)}
+                        {optionLabel(f, o)}
                       </button>
                     );
                   })}
@@ -645,6 +673,7 @@ export function ProductForm({
   onError,
   api,
   assetUrl,
+  showErrors,
 }: {
   value: ProductFormValues;
   onChange: (next: ProductFormValues) => void;
@@ -652,8 +681,15 @@ export function ProductForm({
   onError: (msg: string) => void;
   api: ProductFormApi;
   assetUrl: (path?: string | null) => string | undefined;
+  /** Set once the seller has hit Save: turns every missing field red. */
+  showErrors?: boolean;
 }) {
   const { t } = useTranslation([...NS]);
+  const missing = new Set(showErrors ? productFormErrors(value) : []);
+  const required = t('web:console.productForm.required');
+  // Tailwind emits border-surface-border after border-status-error, so appending
+  // the red class would lose — the base class has to be swapped out, not added.
+  const invalidCls = (bad: boolean) => (bad ? selectCls.replace('border-surface-border', 'border-status-error') : selectCls);
   const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const set = <K extends keyof ProductFormValues>(k: K) => (v: ProductFormValues[K]) => onChange({ ...value, [k]: v });
   // City suggestions for wherever the goods sit, searched on the API per country
@@ -666,15 +702,21 @@ export function ProductForm({
     retry: 1,
   });
   const selectedCategory = categories.find((c) => c.id === value.categoryId);
-  const subcategories = selectedCategory?.subcategories ?? [];
-  // Schema lookups key off the CANONICAL ENGLISH names — `name` is the localized
-  // display label, and using it here rendered an empty detail section in every
-  // non-English locale.
-  const categoryName = selectedCategory ? schemaName(selectedCategory) : null;
+  // Memoised because `attrFields` derives from it and the prune effect below
+  // keys on that — a fresh `[]` each render would re-run the effect forever.
+  const subcategories = useMemo(() => selectedCategory?.subcategories ?? [], [selectedCategory]);
   const selectedSub = subcategories.find((s) => s.id === value.subcategoryId);
-  const subcategoryName = selectedSub ? schemaName(selectedSub) : null;
-  // …but the auto-generated title should read in the seller's own language.
+  // The auto-generated title should read in the seller's own language.
   const subcategoryLabel = selectedSub?.name ?? selectedCategory?.name ?? null;
+
+  // Attribute fields come down on the tree, attached to whichever node OWNS
+  // them; a node with none inherits, so resolve along the path rather than
+  // reading the selected node directly.
+  const subTree = useMemo(() => buildSubcategoryTree(subcategories), [subcategories]);
+  const attrFields = useMemo(
+    () => (value.subcategoryId ? resolveAttrFields(findSubcategoryPath(subTree, value.subcategoryId)) : []),
+    [subTree, value.subcategoryId],
+  );
 
   // Changing category invalidates any previously chosen subcategory.
   useEffect(() => {
@@ -684,15 +726,16 @@ export function ProductForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value.categoryId, categories.length]);
 
-  // Drop attribute values that don't belong to the current subcategory's schema.
+  // Drop attribute values that don't belong to the current subcategory's fields.
+  // The API sanitizes on save too — this is so the seller SEES what is dropped.
   useEffect(() => {
-    const keys = new Set(getAttributeFields(categoryName, subcategoryName).map((f) => f.key));
+    const keys = new Set(attrFields.map((f) => f.key));
     const pruned = Object.fromEntries(Object.entries(value.attributes ?? {}).filter(([k]) => keys.has(k)));
     if (Object.keys(pruned).length !== Object.keys(value.attributes ?? {}).length) {
       onChange({ ...value, attributes: pruned });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryName, subcategoryName]);
+  }, [attrFields]);
 
   // The title is composed from the taxonomy leaf + the attributes the seller
   // picked ("Almond Nonpareil Roasted 20/22"), and keeps tracking their choices
@@ -708,13 +751,17 @@ export function ProductForm({
 
   return (
     <div className="space-y-4">
-      <GalleryEditor images={value.images} onChange={set('images')} onError={onError} upload={api.products.uploadImages} assetUrl={assetUrl} />
+      <div>
+        <GalleryEditor images={value.images} onChange={set('images')} onError={onError} upload={api.products.uploadImages} assetUrl={assetUrl} />
+        {missing.has('images') && <p className="mt-1 text-xs font-semibold text-status-error">{required}</p>}
+      </div>
 
       <Input
         label={t('web:console.productForm.productName')}
         placeholder={t('web:console.productForm.phName')}
         value={value.name}
         onChange={(e) => { setNameTouched(true); set('name')(e.target.value); }}
+        error={missing.has('name') ? required : undefined}
         hint={suggestion && suggestion !== value.name ? t('web:console.productForm.nameAuto', { name: suggestion }) : undefined}
       />
 
@@ -724,11 +771,12 @@ export function ProductForm({
           <select
             value={value.categoryId}
             onChange={(e) => onChange({ ...value, categoryId: e.target.value, subcategoryId: '' })}
-            className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
+            className={invalidCls(missing.has('categoryId'))}
           >
             <option value="">{t('web:console.productForm.select')}</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name} {c.emoji}</option>)}
           </select>
+          {missing.has('categoryId') && <span className="mt-1 block text-xs text-status-error">{required}</span>}
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.subcategory')}</span>
@@ -745,8 +793,7 @@ export function ProductForm({
       </div>
 
       <AttributeFields
-        category={categoryName}
-        subcategory={subcategoryName}
+        fields={attrFields}
         label={subcategoryLabel}
         value={value.attributes}
         onChange={set('attributes')}
@@ -764,7 +811,9 @@ export function ProductForm({
               value={value.priceCurrency}
               onChange={(e) => set('priceCurrency')(e.target.value)}
               aria-label={t('web:console.productForm.currency')}
-              className={selectCls + ' w-28 shrink-0'}
+              // w-full must be swapped out, not overridden — Tailwind emits w-full
+              // after w-28, so appending w-28 loses and the select eats the row.
+              className={selectCls.replace('w-full', 'w-28') + ' shrink-0'}
             >
               {CURRENCIES.map((c) => (
                 <option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>
@@ -777,9 +826,10 @@ export function ProductForm({
               placeholder="840"
               value={value.price}
               onChange={(e) => set('price')(e.target.value)}
-              className={selectCls}
+              className={invalidCls(missing.has('price')) + ' min-w-0'}
             />
           </div>
+          {missing.has('price') && <span className="mt-1 block text-xs text-status-error">{required}</span>}
         </label>
         {/* One metric drives quantity, MOQ and stock — sellers were typing
             "500 MT" / "500mt" / "500 tons" into free-text boxes. */}
@@ -819,7 +869,6 @@ export function ProductForm({
           value={value.stock}
           onChange={(e) => set('stock')(e.target.value)}
         />
-        <Input label={t('web:console.productForm.grade')} placeholder={t('web:console.productForm.phGrade')} value={value.grade} onChange={(e) => set('grade')(e.target.value)} />
         {/* Origin is a country, and it is what the listing flag is derived from. */}
         <CountrySelect
           label={t('web:console.productForm.origin')}
@@ -888,11 +937,12 @@ export function ProductForm({
 
       {value.isAuction && (
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-surface-border bg-brand-surface/40 p-3 sm:grid-cols-2">
-          <Input label={t('web:console.seller.startingBid')} type="number" placeholder="800" value={value.startBid} onChange={(e) => set('startBid')(e.target.value)} />
+          <Input label={`${t('web:console.seller.startingBid')} (${value.priceCurrency || 'USD'})`} type="number" placeholder="800" value={value.startBid} onChange={(e) => set('startBid')(e.target.value)} />
           <Input label={t('web:console.seller.auctionCloses')} type="datetime-local" value={value.auctionEndsAt} onChange={(e) => set('auctionEndsAt')(e.target.value)} />
         </div>
       )}
 
+      {missing.size > 0 && <p className="text-sm font-semibold text-status-error">{t('web:console.productForm.fixFields')}</p>}
       {error && <p className="text-sm font-semibold text-status-error">{error}</p>}
     </div>
   );

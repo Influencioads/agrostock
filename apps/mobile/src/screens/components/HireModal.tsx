@@ -10,6 +10,7 @@ import { Button, Card, Input, Row, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { useI18n } from '../../i18n';
+import { CityField } from './GeoFields';
 
 export interface HireTarget {
   targetType: 'transporter' | 'loaderco' | 'worker';
@@ -18,17 +19,30 @@ export interface HireTarget {
   name: string;
 }
 
+const BLANK = { message: '', fromCity: '', toCity: '', cargo: '', location: '', workersNeeded: '1', budget: '' };
+
 /** Bottom-sheet style direct-hire form → POST /hires. */
 /**
- * Pass `orderId` to source logistics from inside one of the seller's orders —
- * the server prefills cargo and, on accept, attaches the minted Trip back to
- * the order so dispatch/OTP keeps working.
+ * Pass `orderId` to source logistics from inside one of the seller's orders — on
+ * accept the minted Trip attaches back to the order so dispatch/OTP keeps working.
+ * Pass `initial` (from `orderLogistics(order)`) so the route and cargo arrive
+ * filled in; the server applies the same fallbacks, so these are editable.
  */
-export function HireModal({ target, orderId, onClose }: { target: HireTarget; orderId?: string; onClose: () => void }) {
+export function HireModal({
+  target,
+  orderId,
+  initial,
+  onClose,
+}: {
+  target: HireTarget;
+  orderId?: string;
+  initial?: Partial<typeof BLANK>;
+  onClose: () => void;
+}) {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t } = useI18n();
   const { user } = useAuth();
-  const [f, setF] = useState({ message: '', fromCity: '', toCity: '', cargo: '', location: '', workersNeeded: '1', budget: '' });
+  const [f, setF] = useState({ ...BLANK, ...initial });
   const [done, setDone] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
@@ -82,8 +96,9 @@ export function HireModal({ target, orderId, onClose }: { target: HireTarget; or
               {isTransport ? (
                 <>
                   <Row gap={10}>
-                    <View style={{ flex: 1 }}><Input label={t('compX.hire.from')} placeholder={t('pubX.ph.cityMundra')} value={f.fromCity} onChangeText={set('fromCity')} /></View>
-                    <View style={{ flex: 1 }}><Input label={t('compX.hire.to')} placeholder={t('pubX.ph.cityDubai')} value={f.toCity} onChangeText={set('toCity')} /></View>
+                    {/* No country on a hire — the pickers search every country. */}
+                    <View style={{ flex: 1 }}><CityField label={t('compX.hire.from')} placeholder={t('pubX.ph.cityMundra')} value={f.fromCity} onChange={set('fromCity')} /></View>
+                    <View style={{ flex: 1 }}><CityField label={t('compX.hire.to')} placeholder={t('pubX.ph.cityDubai')} value={f.toCity} onChange={set('toCity')} /></View>
                   </Row>
                   <Input label={t('compX.hire.cargo')} placeholder={t('pubX.ph.cargoBasmati50')} value={f.cargo} onChangeText={set('cargo')} />
                 </>

@@ -4,8 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiCategory } from '@agrotraders/api-client';
 import { Badge, Button, Card, Icon, Reveal, Stagger, StaggerItem } from '@agrotraders/ui';
-import { getFilterFields } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
+import { filterFields, optionLabel } from '@agrotraders/types';
 import { useI18n } from '../../i18n';
 // WEB-01: `community`, `insights`, `intl` and `officesPreview` were fabricated
 // datasets rendered as real marketplace content; those sections are gone and
@@ -14,7 +13,7 @@ import { useI18n } from '../../i18n';
 import { safeSteps } from '../../mock/data';
 import { ProductCard } from './ProductCard';
 import { api, assetUrl, toCardProduct } from '../../lib/api';
-import { buildSubcategoryTree, flattenSubcategoryTree, schemaName, type SubcategoryNode } from '@agrotraders/api-client';
+import { buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, resolveAttrFields, type SubcategoryNode } from '@agrotraders/api-client';
 
 /* ── helpers ───────────────────────────────────────────────────── */
 
@@ -272,9 +271,14 @@ function CategoryMegaMenu() {
   // attribute refinements, so the buyer can walk category -> sub -> sub-sub ->
   // deeper children without the options column looking like the final stop early.
   const selectedSubIsLeaf = Boolean(selectedSub && selectedSub.children.length === 0);
-  const leadField = activeCat && selectedSub && selectedSubIsLeaf ? getFilterFields(schemaName(activeCat), schemaName(selectedSub))[0] : undefined;
-  const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
-  const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
+  /**
+   * The facets a node offers, inherited from its nearest field-owning ancestor.
+   * A deep leaf now surfaces its parent's facets instead of dropping the buyer
+   * straight into unfiltered results — the old lookup could only see level-2
+   * nodes, so it returned nothing for anything deeper.
+   */
+  const facetsOf = (node: SubcategoryNode) => filterFields(resolveAttrFields(findSubcategoryPath(subTree, node.id)));
+  const leadField = selectedSub && selectedSubIsLeaf ? facetsOf(selectedSub)[0] : undefined;
   const toggle = () => {
     // Reset the drill-down each time the panel is (re)opened.
     setOpen((o) => {
@@ -300,7 +304,7 @@ function CategoryMegaMenu() {
   const pickSub = (node: SubcategoryNode) => {
     // Parent nodes always drill deeper first. Leaf nodes either expose their
     // attribute filters or, when there are no attributes, go straight to results.
-    if (node.children.length > 0 || (activeCat && getFilterFields(schemaName(activeCat), schemaName(node)).length > 0)) {
+    if (node.children.length > 0 || facetsOf(node).length > 0) {
       setSubId(node.id);
     } else if (activeCat) {
       go(activeCat, node);
@@ -403,7 +407,7 @@ function CategoryMegaMenu() {
                     <p className={placeholder}>{t('hero.pickCategory', { defaultValue: 'Pick a category to see its subcategories' })}</p>
                   ) : visibleSubs.map((node) => {
                     const active = node.id === subId;
-                    const hasOptions = getFilterFields(schemaName(activeCat), schemaName(node)).length > 0;
+                    const hasOptions = facetsOf(node).length > 0;
                     return (
                       <button
                         key={node.id}
@@ -430,7 +434,7 @@ function CategoryMegaMenu() {
               }
             >
               <div className={colHead}>
-                {selectedSub && leadField ? aLabel(leadField.label) : t('hero.colOptions', { defaultValue: 'Options' })}
+                {selectedSub && leadField ? leadField.label : t('hero.colOptions', { defaultValue: 'Options' })}
               </div>
               {activeCat && selectedSub && leadField ? (
                 <div className="flex-1 overflow-y-auto p-1.5">
@@ -449,7 +453,7 @@ function CategoryMegaMenu() {
                       onClick={() => go(activeCat, selectedSub, { [`attr_${leadField.key}`]: opt })}
                       className={colBtn + ' text-ink hover:bg-brand-surface/60'}
                     >
-                      <span className="flex-1 truncate">{aOpt(opt)}</span>
+                      <span className="flex-1 truncate">{optionLabel(leadField, opt)}</span>
                     </button>
                   ))}
                 </div>

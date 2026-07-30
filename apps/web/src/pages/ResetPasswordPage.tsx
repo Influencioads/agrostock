@@ -65,6 +65,7 @@ export function ResetPasswordPage() {
               <Input
                 label={t('page.resetPassword.newPassword')}
                 type="password"
+                passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 leftIcon={<Icon name="shield" size={16} />}
@@ -73,6 +74,7 @@ export function ResetPasswordPage() {
               <Input
                 label={t('page.resetPassword.confirmPassword')}
                 type="password"
+                passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 leftIcon={<Icon name="shield" size={16} />}

@@ -4,6 +4,7 @@
   },
   "header": {
     "fallbackTitle": "Admin",
+    "menu": "Menu",
     "searchPlaceholder": "Search users, orders, products…"
   },
   "account": {
@@ -497,7 +498,18 @@
     "enable": "Enable",
     "disable": "Disable",
     "defaultBadge": "Default",
-    "editedBadge": "Edited"
+    "editedBadge": "Edited",
+    "category": {
+      "account": "Account & verification",
+      "auctions": "Auctions",
+      "auth": "Sign-in & account",
+      "hire": "Hiring",
+      "loader": "Loading jobs",
+      "orders": "Orders",
+      "reviews": "Reviews",
+      "transport": "Transport",
+      "wallet": "Wallet & payments"
+    }
   },
   "overview": {
     "reviewQueue": "Review queue",
@@ -616,6 +628,14 @@
     "empty": "No categories yet. Add the first one.",
     "collapse": "Collapse",
     "expand": "Expand",
+    "noSubs": "No subcategories yet.",
+    "searchTree": "Search this category…",
+    "noMatch": "Nothing matches.",
+    "sortLabel": "Sort order",
+    "sortHint": "Lower numbers appear first.",
+    "moveLabel": "Move under",
+    "moveTopLevel": "Top level of",
+    "moveHint": "Moves this node and everything under it.",
     "subStats": "{{subs}} subcategories · {{products}} products",
     "nodeStats": "{{products}} products · {{children}} child levels",
     "productsCount": "{{count}} products",
@@ -639,7 +659,37 @@
     "phSub": "e.g. Basmati Rice",
     "phCat": "e.g. Fruits",
     "emojiLabel": "Emoji (optional)",
-    "emojiHint": "A single emoji shown next to the name."
+    "emojiHint": "A single emoji shown next to the name.",
+    "fields": "Fields",
+    "fieldsCount": "Fields ({{count}})",
+    "fieldsTitle": "Product fields — {{name}}",
+    "fieldsIntro": "These are the details a seller fills in for this subcategory, and the filters buyers get. Order here is the order they appear in.",
+    "inheritNote": "No fields of its own — it currently inherits: {{list}}. Adding one here replaces the inherited set for this node and everything under it.",
+    "addField": "Add field",
+    "fieldLabel": "Label",
+    "fieldKey": "Storage key",
+    "fieldKeyHint": "lower_snake_case. Changing it hides values already saved under the old key.",
+    "fieldType": "Type",
+    "fieldTypes": {
+      "select": "Choose one",
+      "multiselect": "Choose several",
+      "text": "Text",
+      "number": "Number",
+      "boolean": "Yes / no",
+      "date": "Date"
+    },
+    "fieldUnit": "Unit (optional)",
+    "fieldUnitHint": "Shown after the number, e.g. %, mm, kg.",
+    "fieldOptions": "Options",
+    "fieldOptionsHint": "One per line. Keep these in English — they are what gets stored and filtered on; translations are filled in automatically.",
+    "fieldHelp": "Hint (optional)",
+    "fieldRequired": "Required",
+    "fieldAt": "Field {{n}}",
+    "errKey": "{{at}}: storage key must be lower_snake_case and start with a letter.",
+    "errDupKey": "{{at}}: duplicate key “{{key}}”.",
+    "errLabel": "{{at}}: needs a label.",
+    "errOptions": "{{at}}: needs at least one option.",
+    "renameWarning": "Renaming or removing a field leaves existing listings' values in place but hidden; they are cleared the next time that listing is saved."
   },
   "reviewsMod": {
     "status": {

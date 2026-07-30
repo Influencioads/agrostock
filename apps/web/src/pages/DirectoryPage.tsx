@@ -6,6 +6,7 @@ import { ALL_COUNTRIES, countryLabel } from '@agrotraders/geo';
 import type { ApiDirectoryEntry, ApiMarket, ApiWorkerEntry } from '@agrotraders/api-client';
 import { api } from '../lib/api';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
+import { CityInput } from '../components/GeoInputs';
 import { chatBus } from '../chat/chatBus';
 import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
@@ -170,12 +171,17 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
-            <input
-              value={operatingCity}
-              onChange={(e) => setParam('operatingCity', e.target.value || null)}
-              placeholder={t('page.directory.operatingCity')}
-              className="h-9 w-36 rounded-md border border-surface-border bg-white px-2.5 text-sm text-ink outline-none placeholder:text-ink-soft"
-            />
+            {/* Scoped by the operating-country select beside it; unscoped it
+                searches every country, so the filter still works on its own. */}
+            <div className="w-40">
+              <CityInput
+                compact
+                country={operatingCountry || undefined}
+                value={operatingCity}
+                onChange={(v) => setParam('operatingCity', v || null)}
+                placeholder={t('page.directory.operatingCity')}
+              />
+            </div>
           </>
         )}
         {(type === 'transporters' || type === 'loaders') && (

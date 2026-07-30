@@ -9,6 +9,7 @@ import { OtpEntry, OrderDrawer, errMessage } from './order-parts';
 import { BarChart } from './BarChart';
 import { useDrivers, type Driver } from './transporterData';
 import { InvoiceCenter, InvoiceBuilderModal, type BillableSubject } from './InvoiceCenter';
+import { CityInput } from '../../components/GeoInputs';
 
 function SectionHead({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -125,8 +126,10 @@ export function TransporterMyRequests() {
       <SectionHead title={t('console.nav.myrequests')} sub={t('console.transporter.myRequestsSub')} />
       <Card className="mb-5">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
-          <Input label={t('console.transporter.from')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={(e) => setForm((f) => ({ ...f, fromCity: e.target.value }))} />
-          <Input label={t('console.transporter.to')} placeholder={t('console.ph.toCity')} value={form.toCity} onChange={(e) => setForm((f) => ({ ...f, toCity: e.target.value }))} />
+          {/* No country field on a request — the pickers search every country and
+              resolve to "City, Country". */}
+          <CityInput label={t('console.transporter.from')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={(fromCity) => setForm((f) => ({ ...f, fromCity }))} />
+          <CityInput label={t('console.transporter.to')} placeholder={t('console.ph.toCity')} value={form.toCity} onChange={(toCity) => setForm((f) => ({ ...f, toCity }))} />
           <Input label={t('console.transporter.cargo')} placeholder={t('console.ph.cargo')} value={form.cargo} onChange={(e) => setForm((f) => ({ ...f, cargo: e.target.value }))} />
           <div className="flex flex-wrap items-end gap-2 [&>label]:min-w-[6rem] [&>label]:flex-1">
             <Input label={t('console.transporter.weight')} placeholder="24" value={form.weightMt} onChange={(e) => setForm((f) => ({ ...f, weightMt: e.target.value }))} />

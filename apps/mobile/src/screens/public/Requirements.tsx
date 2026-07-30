@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Button, Card, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
+import { CountryField } from '../components/GeoFields';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyRec = Record<string, any>;
@@ -100,7 +101,7 @@ function PostRequirement({ onDone }: { onDone: () => void }) {
         <View style={{ flex: 1 }}><Input label={t('pubX.req.fUnit')} value={f.unit} onChangeText={set('unit')} /></View>
       </Row>
       <Input label={t('pubX.req.fBudget')} placeholder={t('pubX.ph.reqBudget')} value={f.budget} onChangeText={set('budget')} />
-      <Input label={t('pubX.req.fDeliverTo')} placeholder={t('pubX.ph.reqDeliverTo')} value={f.destinationCountry} onChangeText={set('destinationCountry')} />
+      <CountryField label={t('pubX.req.fDeliverTo')} placeholder={t('pubX.ph.reqDeliverTo')} value={f.destinationCountry} onChange={set('destinationCountry')} />
       <Row gap={8}>
         <View style={{ flex: 1 }}><Button title={busy ? t('pubX.req.posting') : t('pubX.req.post')} icon="checkmark" loading={busy} full onPress={submit} /></View>
         <View style={{ flex: 1 }}><Button title={t('pubX.req.cancel')} variant="outline" full onPress={onDone} /></View>

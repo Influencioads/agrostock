@@ -30,6 +30,13 @@ export function Modal({ open, onClose, title, children, footer, className, close
   // on close (keyboard/screen-reader users are returned to where they were).
   const restoreRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
+  // Read through a ref so the focus effect below can depend on `open` ALONE.
+  // Callers pass an inline arrow (`onClose={() => setX(false)}`), so a parent
+  // re-render — a 1s countdown tick, a poll — gave the effect a new identity,
+  // re-running it: focus jumped back to the first field, which closed any open
+  // <select> and stole the caret after a single keystroke.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
 
   // F34: dialog semantics need real focus management — capture + move focus in
   // on open, trap Tab within the panel, close on Escape, and restore focus out.
@@ -45,7 +52,7 @@ export function Modal({ open, onClose, title, children, footer, className, close
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        closeRef.current();
         return;
       }
       if (e.key !== 'Tab' || !panel) return;
@@ -75,7 +82,7 @@ export function Modal({ open, onClose, title, children, footer, className, close
       // Restore focus to the opener on close.
       restoreRef.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return (
     <AnimatePresence>

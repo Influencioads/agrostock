@@ -30,14 +30,37 @@ interface Catalog {
 }
 
 const LOCALES_DIR = join(__dirname, '..', 'locales');
-const cache = new Map<string, Catalog>();
+const cache = new Map<string, Record<string, unknown>>();
+
+function loadJson(lang: Lang, ns: string): Record<string, unknown> {
+  const key = `${lang}/${ns}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const parsed = JSON.parse(readFileSync(join(LOCALES_DIR, lang, `${ns}.json`), 'utf8')) as Record<string, unknown>;
+  cache.set(key, parsed);
+  return parsed;
+}
 
 function loadCatalog(lang: Lang): Catalog {
-  const hit = cache.get(lang);
-  if (hit) return hit;
-  const parsed = JSON.parse(readFileSync(join(LOCALES_DIR, lang, 'notification.json'), 'utf8')) as Catalog;
-  cache.set(lang, parsed);
-  return parsed;
+  return loadJson(lang, 'notification') as unknown as Catalog;
+}
+
+/**
+ * One flat word from the shared `common` catalog — the server needs a handful
+ * ("Yes"/"No" for boolean product attributes) to render text the client used to
+ * render itself. Unknown keys and unreadable catalogs fall back to English, then
+ * to the key, because a missing label must never 500 a product page.
+ */
+export function commonWord(lang: Lang, key: string): string {
+  for (const candidate of [lang, FALLBACK_LNG]) {
+    try {
+      const value = loadJson(candidate, 'common')[key];
+      if (typeof value === 'string') return value;
+    } catch {
+      /* fall through to English, then the key */
+    }
+  }
+  return key;
 }
 
 /** A rendered notification value: a literal, or a reference to a catalog enum label. */

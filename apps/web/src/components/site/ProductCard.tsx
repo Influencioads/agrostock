@@ -6,8 +6,7 @@ import { useI18n } from '../../i18n';
 import { useWishlist } from '../../lib/useWishlist';
 import { chatBus } from '../../chat/chatBus';
 import { countryFlag, countryLabel } from '@agrotraders/api-client';
-import { getAttributeFields, isDeliveryOption, unitSuffix } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
+import { isDeliveryOption, unitSuffix } from '@agrotraders/types';
 
 const cardText = (value: unknown, fallback = ''): string => {
   if (typeof value === 'string') return value;
@@ -46,7 +45,7 @@ export function ProductCard({ p }: { p: Product }) {
   // default the legacy `rating` string carries.
   const rated = (p.ratingCount ?? 0) > 0;
   const rating = rated ? (p.ratingAvg ?? 0).toFixed(1) : '';
-  const unit = unitSuffix(cardText(p.unit));
+  const unit = unitSuffix(cardText(p.unit), t);
   const qty = cardText(p.qty);
   const moq = cardText(p.moq);
   const rawDelivery = cardText(p.delivery);
@@ -65,17 +64,14 @@ export function ProductCard({ p }: { p: Product }) {
       : t('site.inStock');
 
   // "Product details": the first few category-specific specs the seller filled
-  // in, labelled from the shared schema. Values stay canonical English in
-  // storage, so only the display goes through the attrs catalog.
-  const details = getAttributeFields(p.category, p.subcategory)
-    .map((f) => {
-      const v = p.attributes?.[f.key];
-      if (v === undefined || v === null || v === '' || v === false || (Array.isArray(v) && !v.length)) return null;
-      const text = Array.isArray(v) ? String(v[0]) : String(v);
-      return t(`attrs:option.${attrKey(text)}`, { defaultValue: f.unit ? `${text}${f.unit}` : text });
-    })
-    .filter((s): s is string => !!s)
-    .slice(0, 3);
+  // in. The API renders these — label, unit and locale included — because a card
+  // has no category tree to resolve the field definitions from.
+  // A `false` answer is dropped: the card is a highlights strip, and "No" is not
+  // a highlight (the product page still shows it).
+  const details = (p.attributeSpecs ?? [])
+    .filter((spec) => p.attributes?.[spec.key] !== false)
+    .slice(0, 3)
+    .map((spec) => spec.value);
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-surface-border bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(11,61,46,0.12)]">
       <Link to={`/product/${p.id}`} className="relative flex h-36 items-center justify-center overflow-hidden bg-brand-surface text-5xl">

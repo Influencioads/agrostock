@@ -7,10 +7,16 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   hint?: string;
   error?: string;
+  /**
+   * Screen-reader labels for the password eye, same prop-injection pattern as
+   * `Modal`'s `closeLabel` — this package has no i18n of its own. English is
+   * only a fallback; a `type="password"` field should pass these.
+   */
+  passwordLabels?: { show: string; hide: string };
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { leftIcon, label, hint, error, className, id, type, ...rest },
+  { leftIcon, label, hint, error, className, id, type, passwordLabels, ...rest },
   ref,
 ) {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +43,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {isPassword && (
           <button
             type="button"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={
+              showPassword
+                ? passwordLabels?.hide ?? 'Hide password'
+                : passwordLabels?.show ?? 'Show password'
+            }
             onClick={() => setShowPassword((v) => !v)}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-soft transition hover:bg-brand-surface hover:text-ink"
           >

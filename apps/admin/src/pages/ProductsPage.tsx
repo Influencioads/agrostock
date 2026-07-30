@@ -117,7 +117,7 @@ export function ProductsPage() {
                     </td>
                     <td className="px-5 py-3 text-end font-numeric font-bold text-ink">
                       {p.price}
-                      {unitSuffix(p.unit)}
+                      {unitSuffix(p.unit, t)}
                     </td>
                     <td className="px-5 py-3">
                       {rejecting?.id === p.id ? (

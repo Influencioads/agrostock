@@ -379,6 +379,7 @@ export function Input({
   /** Trailing adornment (e.g. a password eye toggle). */
   trailing?: ReactNode;
 }) {
+  const { t } = useI18n();
   const [showSecureText, setShowSecureText] = useState(false);
   const canToggleSecureText = secureTextEntry === true && !trailing;
   const effectiveTrailing = trailing ?? (canToggleSecureText ? (
@@ -386,7 +387,7 @@ export function Input({
       onPress={() => setShowSecureText((v) => !v)}
       hitSlop={8}
       accessibilityRole="button"
-      accessibilityLabel={showSecureText ? 'Hide password' : 'Show password'}
+      accessibilityLabel={t(showSecureText ? 'common:hidePassword' : 'common:showPassword')}
     >
       <Ionicons name={showSecureText ? 'eye-off-outline' : 'eye-outline'} size={19} color={C.inkMuted} />
     </Pressable>
@@ -578,13 +579,14 @@ export function EmptyState({ icon = 'cube-outline', title, body, action, onActio
 export function ErrorState({ title, body, onRetry, retryLabel }: {
   title: string; body?: string; onRetry?: () => void; retryLabel?: string;
 }) {
+  const { t } = useI18n();
   return (
     <Reveal>
       <View style={{ alignItems: 'center', paddingVertical: 48, gap: 4 }}>
         <View style={s.emptyIcon}><Ionicons name="cloud-offline-outline" size={26} color={C.dark} /></View>
         <Text style={[txt.h3, { marginTop: 12 }]}>{title}</Text>
         {body ? <Text style={[txt.muted, { marginTop: 2, textAlign: 'center', maxWidth: 280 }]}>{body}</Text> : null}
-        {onRetry ? <View style={{ marginTop: 14 }}><Button title={retryLabel ?? 'Retry'} variant="outline" size="sm" onPress={onRetry} /></View> : null}
+        {onRetry ? <View style={{ marginTop: 14 }}><Button title={retryLabel ?? t('common:retry')} variant="outline" size="sm" onPress={onRetry} /></View> : null}
       </View>
     </Reveal>
   );

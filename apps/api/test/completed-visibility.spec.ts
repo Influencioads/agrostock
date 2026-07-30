@@ -147,7 +147,12 @@ describe('ProductsService browse', () => {
       subcategory: { findMany: vi.fn(async () => []) },
       $transaction: vi.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
     };
-    const svc = new ProductsService(prisma as never, {} as never);
+    const svc = new ProductsService(prisma as never, {} as never, {} as never, {
+    // These specs assert the `where` clause, not the rendered rows — an empty
+    // field map means no attribute specs and no facet definitions, which is
+    // exactly the shape a product with no subcategory fields produces.
+    fieldMap: async () => new Map(),
+  } as never);
 
     await svc.findAll({});
 

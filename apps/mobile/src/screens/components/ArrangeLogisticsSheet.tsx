@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiHireRequest, ApiOrder } from '@agrotraders/api-client';
+import { orderLogistics, type ApiHireRequest, type ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { Badge, Button, Card, Row, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
@@ -27,12 +27,19 @@ interface ProviderRow {
  * individual workers. Every hire carries this order's id, so once a transporter
  * accepts, the minted Trip attaches to the order and the existing dispatch /
  * pickup-OTP / delivery-OTP flow takes over unchanged.
+ *
+ * The order supplies the route: the lists show only providers serving it, and the
+ * hire form opens pre-filled (web's ArrangeLogisticsModal is the twin of this).
  */
 export function ArrangeLogisticsSheet({ order, onClose }: { order: ApiOrder; onClose: () => void }) {
   const qc = useQueryClient();
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('transporter');
   const [hiring, setHiring] = useState<HireTarget | null>(null);
+  // Escape hatch for a route nobody has declared coverage for.
+  const [allAreas, setAllAreas] = useState(false);
+  const logistics = orderLogistics(order);
+  const serves: Partial<typeof logistics.serves> = allAreas ? {} : logistics.serves;
 
   const { data: hires = [] } = useQuery<ApiHireRequest[]>({
     queryKey: ['hires', 'order', order.id],
@@ -41,13 +48,13 @@ export function ArrangeLogisticsSheet({ order, onClose }: { order: ApiOrder; onC
   });
 
   const { data: providers = [], isLoading } = useQuery<ProviderRow[]>({
-    queryKey: ['directory', tab],
+    queryKey: ['directory', tab, serves.servesCity ?? '', serves.servesCountry ?? ''],
     queryFn: async () => {
       if (tab === 'worker') {
-        const workers = await api.directory.workers();
+        const workers = await api.directory.workers(serves);
         return workers.map((w) => ({ id: w.id, userId: w.user?.id, name: w.name, detail: `${w.rating ?? '—'} ★ · ${w.status}`, workerId: w.id }));
       }
-      const list = tab === 'transporter' ? await api.directory.transporters() : await api.directory.loaders();
+      const list = tab === 'transporter' ? await api.directory.transporters(serves) : await api.directory.loaders(serves);
       return list.map((d) => ({ id: d.id, userId: d.id, name: d.name, detail: [d.country, d.kycStatus].filter(Boolean).join(' · ') }));
     },
   });
@@ -90,6 +97,12 @@ export function ArrangeLogisticsSheet({ order, onClose }: { order: ApiOrder; onC
               </>
             )}
 
+            {!!logistics.label && (
+              <Txt variant="small">
+                {allAreas ? t('compX.logistics.allAreas') : t('compX.logistics.routeNote', { route: logistics.label })}
+              </Txt>
+            )}
+
             <Segmented
               options={[
                 { id: 'transporter', label: t('compX.logistics.tabTransport') },
@@ -103,7 +116,12 @@ export function ArrangeLogisticsSheet({ order, onClose }: { order: ApiOrder; onC
             {isLoading ? (
               <SkeletonRows />
             ) : providers.length === 0 ? (
-              <Txt variant="muted">{t('compX.logistics.emptyDirectory')}</Txt>
+              <>
+                <Txt variant="muted">{t('compX.logistics.emptyDirectory')}</Txt>
+                {!allAreas && !!logistics.label && (
+                  <Button title={t('compX.logistics.showAll')} variant="outline" size="sm" onPress={() => setAllAreas(true)} />
+                )}
+              </>
             ) : (
               providers.map((p) => {
                 const hired = !!p.userId && alreadyHired.has(p.userId);
@@ -137,6 +155,12 @@ export function ArrangeLogisticsSheet({ order, onClose }: { order: ApiOrder; onC
         <HireModal
           target={hiring}
           orderId={order.id}
+          initial={{
+            fromCity: logistics.fromCity,
+            toCity: logistics.toCity,
+            cargo: logistics.cargo,
+            location: logistics.fromCity,
+          }}
           onClose={() => {
             setHiring(null);
             qc.invalidateQueries({ queryKey: ['hires', 'order', order.id] });

@@ -155,6 +155,8 @@ export interface Product {
   subcategory?: string;
   /** Category-specific attribute values (live API only). */
   attributes?: Record<string, unknown>;
+  /** The above, rendered by the API: localized label + formatted value. */
+  attributeSpecs?: { key: string; label: string; value: string }[];
   /** FLOW-04 managed inventory (live API only); null/undefined = unlimited. */
   stockQty?: number | null;
   marketName?: string;

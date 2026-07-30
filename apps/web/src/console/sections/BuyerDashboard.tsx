@@ -140,7 +140,7 @@ export function BuyerDashboard({ name, onNavigate }: { name: string; onNavigate:
                   <div className="truncate text-sm font-semibold text-ink">{p.name}</div>
                   {/* `price` already carries the "$" and `unit` the leading "/". */}
                   <div className="truncate text-xs text-ink-soft">
-                    {p.flag} {p.price}{unitSuffix(p.unit)}
+                    {p.flag} {p.price}{unitSuffix(p.unit, t)}
                   </div>
                 </div>
                 <Badge tone="mango">{t('console.dash.offer')}</Badge>

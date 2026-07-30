@@ -19,6 +19,7 @@
     "prisma:push": "prisma db push",
     "seed": "ts-node prisma/seed.ts",
     "taxonomy:sync": "ts-node prisma/taxonomy-sync.ts",
+    "seed:attrs": "ts-node prisma/seed-attributes.ts",
     "backfill:attrs": "ts-node prisma/backfill-attributes.ts",
     "backfill:translations": "ts-node prisma/backfill-translations.ts",
     "backfill:email-verified": "ts-node prisma/backfill-email-verified.ts",

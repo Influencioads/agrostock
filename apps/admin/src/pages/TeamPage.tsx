@@ -129,6 +129,7 @@ export function TeamPage() {
             <Input
               label={t('team.tempPassword')}
               type="password"
+              passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />

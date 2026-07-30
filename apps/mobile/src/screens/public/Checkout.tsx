@@ -13,6 +13,8 @@ import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { ProductRow } from '../components';
+import { PickerField } from '../components/PickerSheet';
+import { countryOptions } from '../../lib/countries';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -22,13 +24,38 @@ type R = RouteProp<RootStackParamList, 'Checkout'>;
 export function Checkout() {
   const nav = useNavigation<Nav>();
   const { params } = useRoute<R>();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { fmtPrice } = useCurrency();
   const slug = params?.slug;
   const [qty, setQty] = useState(1);
   const { data: p, isLoading } = useQuery<ApiProduct>({ queryKey: ['product', slug], queryFn: () => api.products.get(slug!), enabled: !!slug });
+
+  // Where the goods are going. The order had no destination at all before, which
+  // left dispatch and every hire guessing at the buyer's country. Seeded from the
+  // buyer's own registered place, so the usual case needs no input.
+  const [delivery, setDelivery] = useState<{ city: string; country: string } | null>(null);
+  const [citySearch, setCitySearch] = useState('');
+  const { data: myProfile } = useQuery({ queryKey: ['my-profile'], queryFn: () => api.me.profile(), staleTime: 300e3 });
+  const to =
+    delivery ?? { city: myProfile?.originCity ?? myProfile?.location ?? '', country: myProfile?.originCountry ?? '' };
+  const COUNTRY_OPTIONS = countryOptions(lang);
+  // ~134k cities live on the API, not in the bundle — searched per country.
+  const { data: cities = [], isFetching: citiesLoading } = useQuery({
+    queryKey: ['geo-cities', to.country, citySearch],
+    queryFn: () => api.geo.cities(to.country, citySearch || undefined),
+    enabled: !!to.country,
+    staleTime: 3600e3,
+    retry: 1,
+  });
+
   const place = useMutation({
-    mutationFn: () => api.orders.place({ productSlug: slug!, qty }),
+    mutationFn: () =>
+      api.orders.place({
+        productSlug: slug!,
+        qty,
+        deliveryCity: to.city || undefined,
+        deliveryCountry: to.country || undefined,
+      }),
     onSuccess: () => { Alert.alert(t('pubX.checkout.placedTitle'), t('pubX.checkout.placedBody')); nav.navigate('App'); },
     onError: () => Alert.alert(t('pubX.checkout.failTitle'), t('pubX.checkout.failBody')),
   });
@@ -55,10 +82,38 @@ export function Checkout() {
           />
         </View>
 
+        {/* Routes the shipment: dispatch, the hire form and the provider lists all
+            derive from this. */}
+        <View style={s.block}>
+          <Text style={[s.blockLabel, microLabel()]}>{t('pubX.checkout.deliverTo')}</Text>
+          <View style={{ marginTop: space.sm, gap: space.md }}>
+            <PickerField
+              label={t('pubX.checkout.deliveryCountry')}
+              placeholder={t('auth.signUp.countryPh')}
+              value={to.country}
+              displayValue={COUNTRY_OPTIONS.find((c) => c.value === to.country)?.label}
+              options={COUNTRY_OPTIONS}
+              // Cities belong to a country, so changing it invalidates the city pick.
+              onChange={(country) => setDelivery({ city: '', country })}
+            />
+            <PickerField
+              label={t('pubX.checkout.deliveryCity')}
+              placeholder={to.country ? t('auth.signUp.cityRegionPh') : t('auth.signUp.pickCountryFirst')}
+              value={to.city}
+              options={cities.map((c) => ({ value: c }))}
+              onChange={(city) => setDelivery({ ...to, city })}
+              onSearch={setCitySearch}
+              loading={citiesLoading}
+              disabled={!to.country}
+              emptyLabel={t('auth.signUp.noCities')}
+            />
+          </View>
+        </View>
+
         <View style={s.block}>
           <Text style={[s.blockLabel, microLabel()]}>{t('pubX.checkout.title')}</Text>
           <View style={{ marginTop: space.sm }}>
-            <KeyValue label={t('pubX.pd.price')} value={`${fmtPrice(p)}${unitSuffix(p.unit)}`} />
+            <KeyValue label={t('pubX.pd.price')} value={`${fmtPrice(p)}${unitSuffix(p.unit, t)}`} />
             <KeyValue label={t('pubX.checkout.quantity')} value={String(qty)} strong />
           </View>
         </View>

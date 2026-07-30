@@ -167,7 +167,10 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
 
   const specs: [string, string][] = [
     [t('console.buyer.product'), buyerBid.productName || '—'],
+    // What the buyer drilled to, so a seller can price the exact grade.
+    [t('console.buyer.subcategory'), buyerBid.subcategory?.name || buyerBid.category?.name || '—'],
     [t('console.buyer.quantity'), `${buyerBid.qtyValue} ${buyerBid.qtyUnit}`],
+    [t('console.buyer.procureBy'), buyerBid.procureBy ? t(`enums:procure.${buyerBid.procureBy}`) : '—'],
     [t('console.buyerBidRoom.targetPriceShort'), buyerBid.targetPriceCents != null ? `${usd(buyerBid.targetPriceCents)}/${buyerBid.qtyUnit}` : '—'],
     [t('console.buyer.deliveryPlace'), buyerBid.deliveryPlace || '—'],
     [t('console.buyer.destinationCountry'), buyerBid.destinationCountry || '—'],

@@ -1,9 +1,10 @@
-import { Image, View } from 'react-native';
+import { Alert, Image, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiProduct } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
+import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt, QueryError } from '../../ui';
@@ -20,7 +21,19 @@ export function SellerInventory() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const { data: products = [], isLoading, isError, refetch } = useQuery<SellerProduct[]>({ queryKey: ['products', 'mine'], queryFn: () => api.products.mine() as Promise<SellerProduct[]>, enabled: !!user });
-  const remove = useMutation({ mutationFn: (id: string) => api.products.remove(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['products', 'mine'] }) });
+  const remove = useMutation({
+    mutationFn: (id: string) => api.products.remove(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['products', 'mine'] }),
+    onError: (e) => Alert.alert(t('sellerX.inventory.deleteFailTitle'), errMessage(e, t('common:errorBody'))),
+  });
+
+  // Deleting a listing is irreversible, and this is a single tap next to Edit.
+  function confirmDelete(p: SellerProduct) {
+    Alert.alert(t('sellerX.inventory.deleteTitle'), t('sellerX.inventory.deleteBody', { name: p.name }), [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: t('sellerX.inventory.delete'), style: 'destructive', onPress: () => remove.mutate(p.id) },
+    ]);
+  }
 
   return (
     <Screen edges={['top']}>
@@ -47,14 +60,14 @@ export function SellerInventory() {
                   <Txt variant="muted">{p.flag} {p.qty} · {t('sellerX.inventory.orders', { count: p._count?.orders ?? 0 })}</Txt>
                 </View>
               </Row>
-              <Txt variant="title">{p.price}{unitSuffix(p.unit)}</Txt>
+              <Txt variant="title">{p.price}{unitSuffix(p.unit, t)}</Txt>
             </Row>
             <Row gap={6}>
               {p.isOffer ? <Badge label={t('sellerX.inventory.offer')} tone="mango" /> : null}
               {p.isAuction ? <Badge label={t('sellerX.inventory.auction')} tone="info" /> : null}
               <View style={{ flex: 1 }} />
               <Button title={t('sellerX.inventory.edit')} variant="outline" size="sm" icon="create-outline" onPress={() => nav.navigate('Section', { role: 'seller', section: 'add', title: t('sellerX.inventory.editProductTitle'), productId: p.id })} />
-              <Button title={t('sellerX.inventory.delete')} variant="ghost" size="sm" loading={remove.isPending} onPress={() => remove.mutate(p.id)} />
+              <Button title={t('sellerX.inventory.delete')} variant="ghost" size="sm" loading={remove.isPending && remove.variables === p.id} onPress={() => confirmDelete(p)} />
             </Row>
           </Card>
         ))

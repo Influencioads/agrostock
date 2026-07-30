@@ -5,8 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, countryLabel, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
-import { getAttributeFields, unitSuffix } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
+import { unitSuffix } from '@agrotraders/types';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -123,30 +122,11 @@ export function ProductDetail() {
   const photos = p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [];
   const rated = (p.ratingCount ?? 0) > 0;
 
-  // Real category-specific attributes captured on this listing → labelled rows.
-  // Schema labels and select/multiselect values are English constants, so they
-  // render through the generated `attrs` catalog; free-text values arrive already
-  // localized from the API. Unknown text falls back to itself.
-  const aLabel = (str: string) => t(`attrs:label.${attrKey(str)}`, { defaultValue: str });
-  const aOpt = (str: string) => t(`attrs:option.${attrKey(str)}`, { defaultValue: str });
+  // Category-specific specs, rendered by the API: label and value both arrive
+  // localized and formatted, because the field definitions live in the DB and
+  // this screen has no category tree loaded.
   const subName = p.subcategory && typeof p.subcategory === 'object' && 'name' in p.subcategory ? p.subcategory.name : undefined;
-  const attrVals = (p.attributes ?? {}) as Record<string, unknown>;
-  const attrRows = getAttributeFields(categoryName, subName)
-    .map((f) => {
-      const v = attrVals[f.key];
-      if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) return null;
-      const value = Array.isArray(v)
-        ? v.map((x) => aOpt(String(x))).join(', ')
-        : f.type === 'boolean'
-          ? v ? t('common:yes') : t('common:no')
-          : f.type === 'select'
-            ? aOpt(String(v))
-            : f.unit
-              ? `${v} ${f.unit}`
-              : String(v);
-      return { label: aLabel(f.label), value };
-    })
-    .filter((r): r is { label: string; value: string } => r !== null);
+  const attrRows = p.attributeSpecs ?? [];
 
   const addToRfq = () => {
     basket.add(p, qty);
@@ -185,7 +165,7 @@ export function ProductDetail() {
             <View style={s.priceHead}>
               <Text style={s.bigPrice}>{fmtPrice(p)}</Text>
               <Text style={s.priceUnit}>
-                {unitSuffix(p.unit)}{p.moq ? ` · ${t('pubX.pd.moq')} ${p.moq}` : ''}
+                {unitSuffix(p.unit, t)}{p.moq ? ` · ${t('pubX.pd.moq')} ${p.moq}` : ''}
               </Text>
             </View>
             <View style={s.priceTerms}>
@@ -279,7 +259,7 @@ export function ProductDetail() {
             <Text style={[s.name, { fontSize: 20, marginBottom: space.md }]}>{subName ?? t('pubX.pd.specifications')}</Text>
             <View style={s.specGrid}>
               {attrRows.map((r) => (
-                <View key={r.label} style={s.specCard}>
+                <View key={r.key} style={s.specCard}>
                   <Text numberOfLines={1} style={[s.specLabel, microLabel()]}>{r.label}</Text>
                   <Text numberOfLines={2} style={s.specValue}>{r.value}</Text>
                 </View>

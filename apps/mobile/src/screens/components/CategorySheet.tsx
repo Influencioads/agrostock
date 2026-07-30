@@ -3,7 +3,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, TextInput, View } from
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import {
-  attributeSourceName,
+  resolveAttrFields,
   schemaName,
   buildSubcategoryTree,
   findSubcategoryPath,
@@ -101,8 +101,7 @@ export function CategorySheet({
       subcategoryId: leaf?.id ?? '',
       subcategoryName: leaf?.name ?? '',
       trail: [category.name, ...path.map((n) => n.name)],
-      // English in, English out — the schema knows no other language.
-      attrSource: attributeSourceName(path, categoryNameEn),
+      attrFields: resolveAttrFields(path),
     });
     close();
   };

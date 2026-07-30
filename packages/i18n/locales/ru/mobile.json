@@ -148,10 +148,11 @@
       "fieldAuctionDays": "Длительность аукциона (дни)",
       "fieldDeliveryPlace": "Место доставки",
       "fieldNotes": "Примечания",
+      "fieldProcure": "Когда нужен товар?",
       "fieldProduct": "Товар",
       "fieldQuantity": "Количество",
       "fieldQuoteDays": "Срок подачи предложений (дни)",
-      "fieldTargetPrice": "Целевая цена за {{unit}} (USD)",
+      "fieldTargetPrice": "Целевая цена за {{unit}} ({{currency}})",
       "fieldTitle": "Название",
       "fieldUnit": "Единица",
       "modeCopy": {
@@ -893,7 +894,7 @@
       "markPaid": "Отметить оплаченным",
       "received": "Полученные",
       "signIn": "Войдите, чтобы просмотреть счета",
-      "subtitle": "Track issued and received invoices, then open the PDF when needed.",
+      "subtitle": "Отслеживайте выставленные и полученные счета и открывайте PDF при необходимости.",
       "title": "Счета",
       "to": "кому: {{name}}"
     },
@@ -922,7 +923,7 @@
       "title": "Оценки и отзывы"
     },
     "tracking": {
-      "byRoad": "≈ {{km}} km by road · ETA ~{{h}}h · {{straight}} km straight-line",
+      "byRoad": "≈ {{km}} км по дороге · расчётное время ~{{h}} ч · {{straight}} км по прямой",
       "destination": "Назначение",
       "locating": "Определение маршрута…",
       "notFound": "Не удалось определить маршрут",
@@ -1103,7 +1104,7 @@
       "title": "Фильтры"
     },
     "home": {
-      "cantFindBody": "Post an RFQ and get sealed quotes in hours.",
+      "cantFindBody": "Разместите заявку и получите закрытые предложения за считаные часы.",
       "cantFindTitle": "Не можете найти нужный товар?",
       "catAll": "Все",
       "categories": "Категории",
@@ -1144,7 +1145,8 @@
         "safeDeal": "Безопасная сделка",
         "transport": "Транспорт"
       },
-      "viewAll": "Смотреть все"
+      "viewAll": "Смотреть все",
+      "deliverToUnset": "Укажите страну"
     },
     "kyc": {
       "doc": {
@@ -1415,7 +1417,6 @@
       "delivery": "Доставка",
       "editTitle": "Редактировать товар",
       "emoji": "Эмодзи",
-      "grade": "Сорт",
       "listingType": "Тип объявления",
       "moq": "MOQ",
       "name": "Название товара",
@@ -1423,13 +1424,11 @@
       "origin": "Происхождение",
       "phCity": "Кандла",
       "phDelivery": "15 дней",
-      "phGrade": "Класс А",
       "phMoq": "25 MT",
       "phName": "Высококачественный рис басмати 1121",
       "phOrigin": "Индия",
       "phQty": "500 MT",
       "phUnit": "/MT",
-      "pickup": "Коллекция покупателя",
       "price": "Цена (USD)",
       "priceFixed": "Фиксированная цена",
       "priceNegotiable": "Договорная цена",
@@ -1440,12 +1439,15 @@
       "saveError": "Не удалось сохранить товар. Проверьте поля.",
       "saving": "Сохранение…",
       "searchCountry": "Поиск стран…",
-      "startBid": "Начальная ставка (USD)",
+      "startBid": "Начальная ставка",
       "subcategory": "Подкатегория",
       "subtitle": "Разместите товар, чтобы покупатели могли его найти и заказать.",
       "supplyCountries": "Поставки в",
       "supplyCountriesHint": "Выберите все страны, в которые осуществляется доставка.",
-      "unit": "Единица"
+      "unit": "Единица",
+      "required": "Обязательно",
+      "fixFields": "Некоторые поля требуют внимания — они выделены красным.",
+      "searchMarket": "Поиск рынков по названию, городу или стране…"
     },
     "ads": {
       "activeSpend": "Активные дневные расходы: ${{amount}}",
@@ -1503,7 +1505,7 @@
       "sealedHint": "Закрытые торги: ставки видите только вы. Наибольшая ставка побеждает при закрытии.",
       "start": "Начать",
       "startAuction": "Начать аукцион",
-      "startBid": "Начальная ставка (USD)",
+      "startBid": "Начальная ставка",
       "startError": "Не удалось начать этот аукцион.",
       "startPrefix": "Старт",
       "startSheetTitle": "Начать аукцион",
@@ -1558,6 +1560,9 @@
       "addProductTitle": "Добавить товар",
       "auction": "Аукцион",
       "delete": "Удалить",
+      "deleteBody": "«{{name}}» будет удалён с площадки. Это действие нельзя отменить.",
+      "deleteFailTitle": "Не удалось удалить объявление",
+      "deleteTitle": "Удалить объявление?",
       "edit": "Изменить",
       "editProductTitle": "Редактировать товар",
       "emptyBody": "Добавьте своё первое объявление, чтобы начать продавать.",

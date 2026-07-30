@@ -23,15 +23,10 @@ import { ApiBearerAuth, ApiConsumes, ApiTags, PartialType } from '@nestjs/swagge
 import { Prisma } from '@prisma/client';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  CURRENCIES,
-  CURRENCY_SYMBOLS,
-  getAttributeField,
-  getAttributeFields,
-  PRODUCT_UNITS,
-  toUnit,
-} from '@agrotraders/types';
+import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, toUnit, type AttrField } from '@agrotraders/types';
+import { commonWord } from '@agrotraders/i18n/notifications';
 import { FxModule, FxService } from '../fx/fx.module';
+import { CatalogModule, CategoriesService } from '../catalog/catalog.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -55,6 +50,25 @@ interface ProductTranslationRow {
   attributes: Prisma.JsonValue | null;
 }
 
+/** A joined category/subcategory carrying just its locale label. */
+type TaxonRel = { name: string; translations?: { name: string }[] } | null | undefined;
+
+/**
+ * Include clause for the category/subcategory a product hangs off, joined with
+ * their locale label. Without this the breadcrumb ("Nuts › Almond") stayed
+ * English on every surface, translated product name and all.
+ */
+export function productTaxonInclude(locale: Lang) {
+  const label = { include: { translations: { where: { locale }, select: { name: true } } } };
+  return { category: label, subcategory: label } as const;
+}
+
+/** Fold a joined taxon's translation over its name. Undefined relations pass through. */
+function localizeTaxon<T extends TaxonRel>(rel: T): T {
+  if (!rel) return rel;
+  return localize(rel, ['name']) as T;
+}
+
 /**
  * Fold a product's single locale-matched translation over its base fields, and
  * merge translated attribute values on top of the base attributes JSON. English
@@ -70,6 +84,8 @@ export function localizeProduct<
     delivery: string | null;
     attributes: Prisma.JsonValue | null;
     translations?: ProductTranslationRow[];
+    category?: TaxonRel;
+    subcategory?: TaxonRel;
   },
 >(row: T): T {
   const tr = row.translations?.[0];
@@ -80,7 +96,119 @@ export function localizeProduct<
       ...(tr.attributes as Record<string, unknown>),
     } as Prisma.JsonValue;
   }
+  if (localized.category) localized.category = localizeTaxon(localized.category);
+  if (localized.subcategory) localized.subcategory = localizeTaxon(localized.subcategory);
   return localized;
+}
+
+/** The canonical English values an edit form must write back, never the display text. */
+const PRODUCT_SOURCE_FIELDS = [...PRODUCT_TR_FIELDS, 'attributes'] as const;
+
+/**
+ * Attach the untranslated originals under `source` so the seller/admin edit form
+ * round-trips English.
+ *
+ * `productToForm` → `formToPayload` writes these columns straight back, so a
+ * localized `name` reaching the form means the next Save overwrites the canonical
+ * row with Russian — and the translate-on-write source hash then hashes Russian,
+ * poisoning every future translation of that listing. Display gets the localized
+ * row; the form reads `source`.
+ */
+function withSource<T extends Record<string, unknown>>(row: T, localized: T): T {
+  const source: Record<string, unknown> = {};
+  for (const field of PRODUCT_SOURCE_FIELDS) source[field] = row[field];
+  return { ...localized, source } as T;
+}
+
+/** One rendered attribute row: what the spec table and the card chips display. */
+export interface AttributeSpec {
+  key: string;
+  label: string;
+  value: string;
+}
+
+/**
+ * Render a listing's attribute values into display rows.
+ *
+ * This lives on the server because the field definitions do: the product card,
+ * the product page and the mobile detail screen have no category tree loaded,
+ * and shipping them one would mean shipping the whole schema again. They each
+ * used to re-implement this formatting against the bundled schema — three copies
+ * that drifted.
+ *
+ * Empty values are skipped, but `false` is NOT empty: a seller who answered "no"
+ * said something. Callers that only want positive facts (the card chips) filter
+ * on the raw value they already hold.
+ */
+export function buildAttributeSpecs(
+  attributes: Prisma.JsonValue | null | undefined,
+  fields: AttrField[],
+  locale: Lang,
+): AttributeSpec[] {
+  const vals = (attributes ?? {}) as Record<string, unknown>;
+  const specs: AttributeSpec[] = [];
+  for (const f of fields) {
+    const v = vals[f.key];
+    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) continue;
+    // Options are stored in English; `optionLabels` carries the display text.
+    const opt = (s: string) => {
+      const i = f.options?.indexOf(s) ?? -1;
+      return i >= 0 ? (f.optionLabels?.[i] ?? s) : s;
+    };
+    const value = Array.isArray(v)
+      ? v.map((x) => opt(String(x))).join(', ')
+      : f.type === 'boolean'
+        ? commonWord(locale, v ? 'yes' : 'no')
+        : f.type === 'select'
+          ? opt(String(v))
+          : f.unit
+            ? `${String(v)}${f.unit === '%' ? '' : ' '}${f.unit}`
+            : String(v);
+    specs.push({ key: f.key, label: f.label, value });
+  }
+  return specs;
+}
+
+/** A product row plus the rendered spec rows for its subcategory's fields. */
+export function localizeProductWithSpecs<
+  T extends Parameters<typeof localizeProduct>[0] & { subcategoryId: string | null },
+>(row: T, fields: Map<string, AttrField[]>, locale: Lang) {
+  const p = localizeProduct(row);
+  const defs = row.subcategoryId ? fields.get(row.subcategoryId) : undefined;
+  if (!defs?.length) return p;
+  const attributeSpecs = buildAttributeSpecs(p.attributes, defs, locale);
+  return attributeSpecs.length ? { ...p, attributeSpecs } : p;
+}
+
+/**
+ * Drop anything from a seller's `attributes` payload that the subcategory's
+ * field list does not define, and any choice that is not one of the field's
+ * options.
+ *
+ * Sanitize, never reject: an admin can retire a field or an option at any time,
+ * and a listing created under the old set must stay editable rather than 400 on
+ * every save. `required` is only ever *suggested*-required, so it is not
+ * enforced here either. Free text/number/date pass through as the seller typed
+ * them — those have no closed value set to check against.
+ */
+function sanitizeAttributes(input: Record<string, unknown>, fields: AttrField[]): Record<string, unknown> {
+  const byKey = new Map(fields.map((f) => [f.key, f]));
+  const out: Record<string, unknown> = {};
+  for (const [key, v] of Object.entries(input)) {
+    const f = byKey.get(key);
+    if (!f) continue;
+    if (f.type === 'boolean') {
+      if (typeof v === 'boolean') out[key] = v;
+    } else if (f.type === 'select') {
+      if (typeof v === 'string' && f.options?.includes(v)) out[key] = v;
+    } else if (f.type === 'multiselect') {
+      const picked = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!f.options?.includes(x)) : [];
+      if (picked.length) out[key] = picked;
+    } else if (v !== null && v !== '') {
+      out[key] = v;
+    }
+  }
+  return out;
 }
 
 const slugify = (s: string) =>
@@ -159,6 +287,7 @@ export class ProductsService {
     private prisma: PrismaService,
     private events: EventEmitter2,
     private fx: FxService,
+    private categories: CategoriesService,
   ) {}
 
   /**
@@ -219,41 +348,13 @@ export class ProductsService {
   }
 
   /**
-   * ATTRIBUTE_SCHEMA is keyed by (category name, LEVEL-2 subcategory name), but
-   * buyers can now select a node five levels down. Walk up the ancestor chain to
-   * the nearest name the schema actually knows, so a deep selection still gets
-   * its facets — without this, `getAttributeField` returns undefined and every
-   * `multiselect` filter silently degrades to a scalar `equals` that can never
-   * match a stored JSON array.
+   * The attribute fields in force for whichever subcategory the query selected,
+   * inheritance already applied. Empty when the query names no subcategory.
    */
-  private async attributeSchemaNames(q: Record<string, string | undefined>) {
-    // Resolve by ID FIRST. `q.category` is whatever the client had on screen,
-    // which in a non-English locale is the translated label — and the schema is
-    // keyed by the canonical English name, so trusting it silently degraded
-    // every multiselect facet to a scalar `equals` that can never match.
-    let categoryName = q.categoryId
-      ? (await this.prisma.category.findUnique({ where: { id: q.categoryId }, select: { name: true } }))?.name
-      : undefined;
-    categoryName ??= q.category;
-    if (!categoryName) return { category: undefined, subcategory: undefined };
-
-    let node = await this.findSubcategory(q);
-    if (!node && !q.subcategoryId && q.subcategory) {
-      // Name given but no matching row (stale link) — fall back to the raw name.
-      return { category: categoryName, subcategory: q.subcategory };
-    }
-    for (let hops = 0; node && hops <= 8; hops++) {
-      if (getAttributeFields(categoryName, node.name).length > 0) {
-        return { category: categoryName, subcategory: node.name };
-      }
-      node = node.parentId
-        ? await this.prisma.subcategory.findUnique({
-            where: { id: node.parentId },
-            select: { id: true, name: true, parentId: true, categoryId: true },
-          })
-        : null;
-    }
-    return { category: categoryName, subcategory: undefined };
+  private async fieldsForQuery(q: Record<string, string | undefined>, locale: Lang): Promise<AttrField[]> {
+    const node = await this.findSubcategory(q);
+    if (!node) return [];
+    return (await this.categories.fieldMap(locale)).get(node.id) ?? [];
   }
 
   async findAll(q: Record<string, string | undefined>, locale: Lang = 'en') {
@@ -320,21 +421,19 @@ export class ProductsService {
     if (Object.keys(priceCents).length) where.priceCents = priceCents;
 
     // Category/subcategory-specific attribute filters arrive as ?attr_<key>=v1,v2.
-    // The shared schema (needs the chosen subcategory) tells us whether a field
-    // stores a scalar (equals) or an array (array_contains); multiple selected
-    // values within one field are OR-ed, and separate fields AND together.
+    // The subcategory's field list tells us whether a field stores a scalar
+    // (equals) or an array (array_contains); multiple selected values within one
+    // field are OR-ed, and separate fields AND together.
     const attrConds: Prisma.ProductWhereInput[] = [];
     const hasAttrFilters = Object.entries(q).some(([k, v]) => k.startsWith('attr_') && v);
-    // Resolved once: the walk costs a query per level, and every facet shares it.
-    const attrNames = hasAttrFilters
-      ? await this.attributeSchemaNames(q)
-      : { category: undefined, subcategory: undefined };
+    // Resolved once — every facet in the query shares the same field list.
+    const attrFields = hasAttrFilters ? await this.fieldsForQuery(q, locale) : [];
     for (const [rawKey, rawVal] of Object.entries(q)) {
       if (!rawKey.startsWith('attr_') || !rawVal) continue;
       const key = rawKey.slice(5);
       const values = rawVal.split(',').map((v) => v.trim()).filter(Boolean);
       if (!values.length) continue;
-      const field = getAttributeField(attrNames.category, attrNames.subcategory, key);
+      const field = attrFields.find((f) => f.key === key);
       const isArray = field?.type === 'multiselect';
       const isBool = field?.type === 'boolean';
       const ors = values.map((v): Prisma.ProductWhereInput => {
@@ -368,8 +467,7 @@ export class ProductsService {
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
-          category: { select: { name: true } },
-          subcategory: { select: { name: true } },
+          ...productTaxonInclude(locale),
           seller: { select: { id: true, name: true } },
           market: { select: { id: true, slug: true, name: true, city: true, country: true, flag: true } },
           translations: { where: { locale } },
@@ -377,15 +475,20 @@ export class ProductsService {
       }),
       this.prisma.product.count({ where }),
     ]);
-    return { items: items.map(localizeProduct), total, page, pageSize };
+    const fields = await this.categories.fieldMap(locale);
+    return {
+      items: items.map((p) => localizeProductWithSpecs(p, fields, locale)),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async findOne(slug: string, locale: Lang = 'en') {
     const product = await this.prisma.product.findUnique({
       where: { slug },
       include: {
-        category: true,
-        subcategory: true,
+        ...productTaxonInclude(locale),
         seller: { select: { id: true, name: true, country: true, kycStatus: true } },
         market: { select: { id: true, slug: true, name: true, city: true, country: true, flag: true } },
         translations: { where: { locale } },
@@ -397,19 +500,38 @@ export class ProductsService {
     // can't be browsed. 404 (not 403) so we don't confirm the listing exists.
     // (Expired auctions keep status 'live', so result pages still resolve.)
     if (product.status !== 'live') throw new NotFoundException('Product not found');
-    return localizeProduct(product);
+    return localizeProductWithSpecs(product, await this.categories.fieldMap(locale), locale);
   }
 
-  findMine(sellerId: string) {
-    return this.prisma.product.findMany({
-      where: { sellerId },
+  /**
+   * The seller's own listings, localized like every public surface.
+   *
+   * This list also hydrates the Edit form, so each row carries `source` with the
+   * canonical English — see `withSource`. Everything the seller *reads* is in
+   * their language; everything they save stays English.
+   */
+  async findMine(sellerId: string, locale: Lang = 'en') {
+    const rows = await this.prisma.product.findMany({
+      where: { sellerId, status: { not: 'archived' } },
       orderBy: { createdAt: 'desc' },
       include: {
-        category: { select: { name: true } },
-        subcategory: { select: { name: true } },
+        ...productTaxonInclude(locale),
+        translations: { where: { locale } },
         _count: { select: { orders: true, auctionBids: true } },
       },
     });
+    return rows.map((p) => withSource(p, localizeProduct(p)));
+  }
+
+  /**
+   * The seller's attribute payload, trimmed to what the subcategory's fields
+   * actually define. Until now nothing on the server checked this — the only
+   * guard was a client-side effect, so any JSON reached the column.
+   */
+  private async cleanAttributes(subcategoryId: string | null, attributes: Record<string, unknown>) {
+    if (!subcategoryId) return {};
+    const fields = (await this.categories.fieldMap('en')).get(subcategoryId) ?? [];
+    return sanitizeAttributes(attributes, fields);
   }
 
   /** Keep a subcategory only if it actually belongs to the chosen category. */
@@ -447,6 +569,7 @@ export class ProductsService {
     const marketId = await this.validMarket(sellerId, dto.marketId);
     const price = await this.pricePatch(dto.price, dto.priceCurrency);
     const images = dto.images ?? [];
+    const attributes = dto.attributes ? await this.cleanAttributes(subcategoryId, dto.attributes) : null;
     const product = await this.prisma.product.create({
       data: {
         slug: slugify(dto.name),
@@ -466,14 +589,21 @@ export class ProductsService {
         country: dto.country,
         supplyCountries: dto.supplyCountries ?? [],
         delivery: dto.delivery ?? 'Ready',
-        ...(dto.attributes ? { attributes: dto.attributes as Prisma.InputJsonValue } : {}),
+        ...(attributes ? { attributes: attributes as Prisma.InputJsonValue } : {}),
         isOffer: dto.isOffer ?? false,
         isAuction: dto.isAuction ?? false,
         safeDeal: dto.safeDeal ?? true,
         negotiable: dto.negotiable ?? false,
         // FLOW-04: managed inventory when the seller sets it; null = unlimited.
         stockQty: dto.stockQty ?? null,
-        startBidCents: dto.isAuction ? dto.startBidCents ?? price.priceCents : null,
+        // The client sends the bid in the seller's own currency; convert to the
+        // USD baseline like the price, and keep the raw entry for the edit form.
+        startBidCents: dto.isAuction
+          ? dto.startBidCents != null
+            ? await this.fx.toUsdCents(dto.startBidCents / 100, price.priceCurrency)
+            : price.priceCents
+          : null,
+        startBidSrcCents: dto.isAuction ? dto.startBidCents ?? null : null,
         auctionEndsAt: dto.isAuction && dto.auctionEndsAt ? new Date(dto.auctionEndsAt) : null,
         verified: false,
         approved: false, // new listings await admin approval before going live
@@ -505,34 +635,59 @@ export class ProductsService {
    */
   async update(id: string, sellerId: string | null, data: Partial<CreateProductDto>) {
     const existing = await this.owned(id, sellerId);
-    const { categoryId, subcategoryId, auctionEndsAt, price, priceCurrency, images, marketId, attributes, ...rest } = data;
+    const { categoryId, subcategoryId, auctionEndsAt, price, priceCurrency, startBidCents, images, marketId, attributes, ...rest } = data;
     const effectiveCategoryId = categoryId ?? existing.categoryId;
     // Re-validate the subcategory whenever category or subcategory is touched.
-    const subPatch =
-      categoryId !== undefined || subcategoryId !== undefined
-        ? { subcategoryId: await this.validSubcategory(effectiveCategoryId, subcategoryId) }
-        : {};
+    // `nextSubcategoryId` is wherever the listing ENDS UP — attribute cleaning
+    // below must validate against it, not where the listing started.
+    const touchedSub = categoryId !== undefined || subcategoryId !== undefined;
+    const nextSubcategoryId = touchedSub
+      ? await this.validSubcategory(effectiveCategoryId, subcategoryId)
+      : existing.subcategoryId;
+    const subPatch = touchedSub ? { subcategoryId: nextSubcategoryId } : {};
     const marketPatch = marketId !== undefined ? { marketId: await this.validMarket(sellerId, marketId) } : {};
     // Re-price whenever either half changes: switching currency alone still
     // moves the USD baseline every buyer-facing number is derived from.
-    const pricePatch =
+    const priceInfo =
       price !== undefined || priceCurrency !== undefined
         ? await this.pricePatch(price ?? existing.price, priceCurrency ?? existing.priceCurrency)
+        : null;
+    const pricePatch = priceInfo ?? {};
+    // Like the price, the bid arrives in the seller's own currency — convert to
+    // the USD baseline against wherever the currency ENDS UP this update.
+    const bidPatch =
+      startBidCents !== undefined
+        ? {
+            startBidSrcCents: startBidCents,
+            startBidCents: await this.fx.toUsdCents(
+              startBidCents / 100,
+              priceInfo?.priceCurrency ?? existing.priceCurrency ?? 'USD',
+            ),
+          }
         : {};
     // Reordering the gallery re-elects the cover; clearing it falls back to any
     // explicitly-supplied imageUrl, else null.
     const cover = this.coverOf(images, rest.imageUrl ?? null);
     const imagePatch = images !== undefined ? { images, imageUrl: cover } : {};
+    // Validate against wherever the listing ENDS UP, not where it started — a
+    // move to another subcategory retires the old field set with it.
+    const attrPatch =
+      attributes !== undefined
+        ? {
+            attributes: (await this.cleanAttributes(nextSubcategoryId, attributes)) as Prisma.InputJsonValue,
+          }
+        : {};
     const product = await this.prisma.product.update({
       where: { id },
       data: {
         ...rest,
         ...pricePatch,
+        ...bidPatch,
         ...(categoryId ? { categoryId } : {}),
         ...subPatch,
         ...marketPatch,
         ...imagePatch,
-        ...(attributes !== undefined ? { attributes: attributes as Prisma.InputJsonValue } : {}),
+        ...attrPatch,
         ...(auctionEndsAt !== undefined ? { auctionEndsAt: auctionEndsAt ? new Date(auctionEndsAt) : null } : {}),
       },
     });
@@ -540,9 +695,45 @@ export class ProductsService {
     return product;
   }
 
+  /**
+   * Seller-side delete. A listing that has been traded on is archived rather
+   * than destroyed; only a pristine one is really deleted.
+   *
+   * Both halves of that matter, because the FKs pointing at Product split two
+   * ways and each half broke differently:
+   *
+   * - AuctionBid / AuctionAutoBid / AdCampaign are RESTRICT, so deleting a lot
+   *   that had ever been bid on raised a raw FK error the seller saw as a 500 —
+   *   they simply could not remove it. That's the reported bug.
+   * - Order / Review / BuyerBid are SET NULL, so a delete "succeeded" while
+   *   quietly severing a buyer's order and any review from the product they
+   *   refer to. Silent history loss, which is the worse of the two.
+   *
+   * Hence the explicit history check ahead of the delete: the RESTRICT half
+   * would throw anyway, but nothing except this stops the SET NULL half. The
+   * catch stays as the backstop for the RESTRICT relations (and any future one)
+   * so this can never 500 again if the check misses something.
+   *
+   * Archived leaves every public surface for free — `sellableWhere()` matches
+   * only `live` — and `findMine` drops it from the seller's own list, so it
+   * reads as deleted on both sides. `hidden` stays the admin takedown state.
+   */
   async remove(id: string, sellerId: string) {
     await this.owned(id, sellerId);
-    await this.prisma.product.delete({ where: { id } });
+    const counts = await this.prisma.product.findUnique({
+      where: { id },
+      select: { _count: { select: { orders: true, reviews: true, buyerBids: true } } },
+    });
+    const traded = Object.values(counts?._count ?? {}).some((n) => n > 0);
+    if (!traded) {
+      try {
+        await this.prisma.product.delete({ where: { id } });
+        return { ok: true };
+      } catch (e) {
+        if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2003')) throw e;
+      }
+    }
+    await this.prisma.product.update({ where: { id }, data: { status: 'archived', approved: false } });
     return { ok: true };
   }
 }
@@ -594,8 +785,8 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller')
   @Get('mine')
-  mine(@CurrentUser() user: AuthUser) {
-    return this.products.findMine(user.id);
+  mine(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
+    return this.products.findMine(user.id, locale);
   }
 
   @ApiBearerAuth()
@@ -629,7 +820,7 @@ export class ProductsController {
 }
 
 @Module({
-  imports: [FxModule],
+  imports: [FxModule, CatalogModule],
   controllers: [ProductsController],
   providers: [ProductsService],
   // The admin panel edits listings through this same service (see AdminService).

@@ -73,9 +73,24 @@
     "BAG": "Bag",
     "PIECE": "Piece"
   },
+  "unitShort": {
+    "KG": "KG",
+    "MT": "MT",
+    "QUINTAL": "QTL",
+    "TON": "TON",
+    "BAG": "BAG",
+    "PIECE": "PC"
+  },
   "delivery": {
     "delivery": "Seller delivers",
-    "self_pickup": "Buyer collects (self delivery)",
+    "self_pickup": "Buyer arranges a delivery partner",
     "no_delivery": "No delivery or collection"
+  },
+  "procure": {
+    "immediate": "Immediately",
+    "within_1_month": "Within a month",
+    "within_2_months": "Within 2 months",
+    "within_3_months": "Within 3 months",
+    "flexible": "Flexible"
   }
 }

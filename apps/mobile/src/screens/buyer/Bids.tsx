@@ -4,14 +4,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiBuyerBid, ApiBuyerBidMode } from '@agrotraders/api-client';
-import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import type { ApiBuyerBid } from '@agrotraders/api-client';
+import { PROCURE_WINDOWS, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
 import { GalleryEditor } from '../seller/AddProduct';
 import type { RootStackParamList } from '../../navigation/types';
@@ -30,12 +30,15 @@ function hms(end: string | null | undefined) {
   return `${p(Math.floor(s / 3600))}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}`;
 }
 
-/** Buyer posts a requirement. `auction` mode needs a closing time. */
+/**
+ * Buyer posts what they need; sellers underbid each other on it. One flow — the
+ * old quote/auction choice is gone (see the API's `create`).
+ */
 function NewRequirementSheet({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [mode, setMode] = useState<ApiBuyerBidMode>('quote');
-  const [f, setF] = useState({ title: '', productName: '', qtyValue: '', qtyUnit: 'MT', targetPrice: '', deliveryPlace: '', notes: '', days: '7' });
+  const { currency } = useCurrency();
+  const [f, setF] = useState({ title: '', productName: '', qtyValue: '', qtyUnit: 'MT', targetPrice: '', deliveryPlace: '', notes: '', days: '7', procureBy: 'immediate' });
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
   const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
@@ -44,16 +47,17 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
     mutationFn: () => {
       const closes = new Date(Date.now() + Math.max(Number(f.days) || 7, 1) * 864e5).toISOString();
       return api.buyerBids.create({
-        mode,
         title: f.title,
         productName: f.productName,
         qtyValue: Number(f.qtyValue),
         qtyUnit: f.qtyUnit,
         targetPriceCents: f.targetPrice ? Math.round(Number(f.targetPrice) * 100) : undefined,
+        targetPriceCurrency: currency,
         deliveryPlace: f.deliveryPlace || undefined,
+        procureBy: f.procureBy,
         notes: f.notes || undefined,
         images,
-        ...(mode === 'auction' ? { auctionEndsAt: closes } : { deadline: closes }),
+        deadline: closes,
       });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['buyer-bids', 'mine'] }); onClose(); },
@@ -72,12 +76,7 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
             <Pressable onPress={onClose} hitSlop={10}><Ionicons name="close" size={22} color={C.inkSoft} /></Pressable>
           </Row>
 
-          <Segmented
-            options={[{ id: 'quote', label: t('buyerX.bids.requestQuotes') }, { id: 'auction', label: t('buyerX.bids.createAuction') }]}
-            value={mode}
-            onChange={(m) => setMode(m as ApiBuyerBidMode)}
-          />
-          <Txt variant="muted">{t('buyerX.bids.modeCopy.' + mode)}</Txt>
+          <Txt variant="muted">{t('buyerX.bids.modeCopy.auction')}</Txt>
 
           {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
           <Input label={t('buyerX.bids.fieldTitle')} placeholder={t('pubX.ph.bidTitle')} value={f.title} onChangeText={set('title')} />
@@ -93,9 +92,17 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
               />
             </View>
           </Row>
-          <Input label={t('buyerX.bids.fieldTargetPrice', { unit: f.qtyUnit })} keyboardType="numeric" value={f.targetPrice} onChangeText={set('targetPrice')} />
+          {/* Quoted in the currency the buyer browses in; the API converts it to
+              the USD baseline every bid is compared against. */}
+          <Input label={t('buyerX.bids.fieldTargetPrice', { unit: f.qtyUnit, currency })} keyboardType="numeric" value={f.targetPrice} onChangeText={set('targetPrice')} />
           <Input label={t('buyerX.bids.fieldDeliveryPlace')} placeholder={t('pubX.ph.deliveryJebelAli')} value={f.deliveryPlace} onChangeText={set('deliveryPlace')} />
-          <Input label={mode === 'auction' ? t('buyerX.bids.fieldAuctionDays') : t('buyerX.bids.fieldQuoteDays')} keyboardType="numeric" value={f.days} onChangeText={set('days')} />
+          <ChipSelect
+            label={t('buyerX.bids.fieldProcure')}
+            value={f.procureBy}
+            options={PROCURE_WINDOWS.map((w) => ({ id: w, label: t(`enums:procure.${w}`) }))}
+            onChange={set('procureBy')}
+          />
+          <Input label={t('buyerX.bids.fieldAuctionDays')} keyboardType="numeric" value={f.days} onChangeText={set('days')} />
           <Input label={t('buyerX.bids.fieldNotes')} placeholder={t('pubX.ph.notesSortex')} value={f.notes} onChangeText={set('notes')} />
 
           {/* Buyer's own upload route — the products one is seller-only. */}
@@ -103,7 +110,7 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
           <Txt variant="muted">{t('buyerX.bids.photosHint')}</Txt>
 
           <Button
-            title={create.isPending ? t('buyerX.bids.posting') : mode === 'auction' ? t('buyerX.bids.startAuction') : t('buyerX.bids.requestQuotes')}
+            title={create.isPending ? t('buyerX.bids.posting') : t('buyerX.bids.postTitle')}
             disabled={!ready || create.isPending}
             onPress={() => create.mutate()}
             full

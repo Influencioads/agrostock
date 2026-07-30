@@ -21,6 +21,8 @@ import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard'
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { Locale } from '../common/locale';
+import { CatalogModule, CategoriesService } from '../catalog/catalog.module';
+import { buildAttributeSpecs } from '../products/products.module';
 import type { Lang } from '@agrotraders/i18n';
 
 export class CreateAdDto {
@@ -46,6 +48,7 @@ export class AdsService {
   constructor(
     private prisma: PrismaService,
     private text: TextTranslationService,
+    private categories: CategoriesService,
   ) {}
 
   /**
@@ -153,7 +156,14 @@ export class AdsService {
     products.forEach((p, i) => {
       if (typeof names[i] === 'string') p.name = names[i] as string;
     });
-    return products;
+    // These rows render through the same ProductCard as a browse result, so they
+    // need the same server-rendered spec chips — this is a second serialization
+    // path for a product, easy to forget and silently detail-less if you do.
+    const fields = await this.categories.fieldMap(locale);
+    return products.map((p) => ({
+      ...p,
+      attributeSpecs: buildAttributeSpecs(p.attributes, (p.subcategoryId && fields.get(p.subcategoryId)) || [], locale),
+    }));
   }
 
   /** Public click tracking — increments a campaign's click counter. */
@@ -263,6 +273,7 @@ export class AdminAdsController {
 }
 
 @Module({
+  imports: [CatalogModule],
   controllers: [AdsController, AdminAdsController],
   providers: [AdsService],
 })

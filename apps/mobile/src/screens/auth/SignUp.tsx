@@ -73,11 +73,11 @@ export function SignUp() {
     setErr('');
     const passwordResult = validateSignupPassword(form.password, confirmPassword);
     if (passwordResult === 'too_short') {
-      setErr(t('auth.signUp.passwordTooShort', { defaultValue: 'Password must be at least 8 characters.' }));
+      setErr(t('auth.signUp.passwordTooShort'));
       return;
     }
     if (passwordResult === 'mismatch') {
-      setErr(t('auth.signUp.passwordMismatch', { defaultValue: "Passwords don't match." }));
+      setErr(t('auth.signUp.passwordMismatch'));
       return;
     }
     setBusy(true);
@@ -179,12 +179,12 @@ export function SignUp() {
         <Input label={t('auth.signUp.email')} autoCapitalize="none" keyboardType="email-address" placeholder={t('auth.signUp.emailPh')} value={form.email} onChangeText={set('email')} />
         <Input label={t('auth.password')} secureTextEntry placeholder={t('auth.passwordPh')} value={form.password} onChangeText={set('password')} />
         <Input
-          label={t('auth.signUp.confirmPassword', { defaultValue: 'Confirm password' })}
+          label={t('auth.signUp.confirmPassword')}
           secureTextEntry
           placeholder={t('auth.passwordPh')}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
-          error={err === t('auth.signUp.passwordMismatch', { defaultValue: "Passwords don't match." }) ? err : undefined}
+          error={err === t('auth.signUp.passwordMismatch') ? err : undefined}
         />
         <PickerField
           label={t('auth.signUp.country')}

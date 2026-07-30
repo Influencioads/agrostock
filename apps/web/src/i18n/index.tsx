@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
 import { createWebI18n } from '@agrotraders/i18n/init-web';
-import { isRtl, LOCALES, LOCALE_LABELS, type Lang } from '@agrotraders/i18n';
+import { isRtl, LANG_STORAGE_KEY, LOCALES, LOCALE_LABELS, type Lang } from '@agrotraders/i18n';
 import { api } from '../lib/api';
 
 export type { Lang };
@@ -11,9 +10,9 @@ export type { Lang };
 const i18n = createWebI18n();
 
 /** Namespaces `useI18n().t` can reach without an explicit prefix falling back to `web`. */
-const NS = ['web', 'common', 'nav', 'enums', 'errors', 'attrs'] as const;
+const NS = ['web', 'common', 'nav', 'enums', 'errors'] as const;
 
-/** Keeps `<html lang>`/`<html dir>` in step with the active locale (Arabic is RTL). */
+/** Keeps `<html lang>`/`<html dir>` in step with the active locale. */
 function DocumentLang() {
   const { i18n: instance } = useTranslation();
   const lang = instance.language;
@@ -24,41 +23,10 @@ function DocumentLang() {
   return null;
 }
 
-/**
- * Refetches server data when the locale changes.
- *
- * Product names, requirements, chat messages and the like are translated by the
- * API, which picks the locale off `Accept-Language`. React Query caches those
- * responses under keys that (deliberately) carry no locale, so without this the
- * previous language's rows would stay on screen until something happened to
- * refetch — the switch looked half-applied and only a page reload fixed it.
- * Invalidating marks every query stale, so active ones refetch with the new
- * header and the rest refresh next time they mount. The first run is skipped:
- * on mount the language has not changed, and invalidating would throw away the
- * cache the app just filled.
- */
-function RefetchOnLocaleChange() {
-  const { i18n: instance } = useTranslation();
-  const queryClient = useQueryClient();
-  const lang = instance.language;
-  const mounted = useRef(false);
-
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      return;
-    }
-    void queryClient.invalidateQueries();
-  }, [lang, queryClient]);
-
-  return null;
-}
-
 export function I18nProvider({ children }: { children: ReactNode }) {
   return (
     <I18nextProvider i18n={i18n}>
       <DocumentLang />
-      <RefetchOnLocaleChange />
       {children}
     </I18nextProvider>
   );
@@ -67,15 +35,27 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 export function useI18n() {
   const { t, i18n: instance } = useTranslation([...NS]);
 
-  // Preload the target locale's chunks before switching, otherwise the render
-  // between `changeLanguage` and the fetch resolving would show raw keys.
+  /**
+   * Switches language by persisting the choice and reloading the page.
+   *
+   * Swapping the catalog in place (`changeLanguage` + invalidating React Query)
+   * left the switch half-applied: anything holding text in state, in a closure,
+   * in a memo keyed on something other than the locale, or in a suspended/
+   * unmounted query kept the old language until it happened to re-render, and
+   * server-translated rows arrived out of step with the UI strings. A reload
+   * rebuilds the whole tree — the app boots in one language, from scratch.
+   */
   const setLang = useCallback(
     async (next: Lang) => {
-      await instance.loadLanguages(next);
-      await instance.changeLanguage(next);
+      if (next === instance.language) return;
+      // Written here rather than left to i18next's detector cache because the
+      // reload has to find the choice already stored.
+      localStorage.setItem(LANG_STORAGE_KEY, next);
       // Persist to the signed-in user's profile so server-rendered content
-      // (notifications, push, email) reaches them in this language on every device.
-      if (localStorage.getItem('token')) void api.me.setLocale(next).catch(() => {});
+      // (notifications, push, email) reaches them in this language on every
+      // device. Awaited, not fired-and-forgotten: the reload would abort it.
+      if (localStorage.getItem('token')) await api.me.setLocale(next).catch(() => {});
+      window.location.reload();
     },
     [instance],
   );
@@ -87,7 +67,7 @@ export function useI18n() {
   return { lang: instance.language as Lang, t, setLang, toggle };
 }
 
-/** Compact header dropdown for picking the interface language (all supported locales). */
+/** Compact header dropdown for picking the interface language (English and Russian). */
 export function LanguageSelect({ className = '' }: { className?: string }) {
   const { lang, setLang, t } = useI18n();
   return (

@@ -20,6 +20,8 @@ export interface ComboboxProps {
   filterLocally?: boolean;
   emptyLabel?: string;
   id?: string;
+  /** Filter-bar height (h-9), to sit level with the `<select>`s beside it. */
+  compact?: boolean;
 }
 
 const MAX_VISIBLE = 100;
@@ -45,6 +47,7 @@ export function Combobox({
   filterLocally = true,
   emptyLabel,
   id,
+  compact,
 }: ComboboxProps) {
   const autoId = useId();
   const inputId = id ?? autoId;
@@ -116,7 +119,8 @@ export function Combobox({
       )}
       <span
         className={cn(
-          'flex items-center gap-2 rounded-md border bg-white px-3',
+          'flex items-center gap-2 rounded-md border bg-white',
+          compact ? 'px-2.5' : 'px-3',
           error ? 'border-status-error' : 'border-surface-border focus-within:border-brand-leaf',
           disabled && 'opacity-60',
         )}
@@ -129,7 +133,7 @@ export function Combobox({
           aria-autocomplete="list"
           autoComplete="off"
           disabled={disabled}
-          className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft"
+          className={cn('w-full bg-transparent text-sm outline-none placeholder:text-ink-soft', compact ? 'h-9' : 'h-11')}
           placeholder={placeholder}
           value={value}
           onChange={(e) => {
@@ -183,6 +187,155 @@ export function Combobox({
       ) : (
         hint && <span className="mt-1 block text-xs text-ink-soft">{hint}</span>
       )}
+    </div>
+  );
+}
+
+export interface SearchSelectOption {
+  /** What gets stored. */
+  value: string;
+  /** What the row shows — searched alongside `value`. */
+  label: string;
+}
+
+/**
+ * Closed-set picker with a search box. A native `<select>` only jumps to options
+ * whose FIRST letters match what you type, which is useless over hundreds of
+ * countries or thousands of markets — here any substring of either the label or
+ * the stored value matches.
+ */
+export function SearchSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+  emptyLabel,
+  error,
+  disabled,
+  id,
+}: {
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: SearchSelectOption[];
+  /** Shown when nothing is selected, and as the row that clears the choice. */
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyLabel?: string;
+  error?: string;
+  disabled?: boolean;
+  id?: string;
+}) {
+  const autoId = useId();
+  const buttonId = id ?? autoId;
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const visible = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return options.slice(0, MAX_VISIBLE);
+    return options
+      .filter((o) => o.label.toLowerCase().includes(term) || o.value.toLowerCase().includes(term))
+      .slice(0, MAX_VISIBLE);
+  }, [options, query]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e: MouseEvent | FocusEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDocDown);
+    document.addEventListener('focusin', onDocDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      document.removeEventListener('focusin', onDocDown);
+    };
+  }, [open]);
+
+  const pick = (next: string) => {
+    onChange(next);
+    setOpen(false);
+    setQuery('');
+  };
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative block" ref={wrapRef}>
+      {label && (
+        <label className="mb-1.5 block text-sm font-semibold text-ink" htmlFor={buttonId}>
+          {label}
+        </label>
+      )}
+      <button
+        id={buttonId}
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'flex h-11 w-full items-center justify-between gap-2 rounded-md border bg-white px-3 text-start text-sm outline-none',
+          error ? 'border-status-error' : 'border-surface-border focus:border-brand-leaf',
+          disabled && 'cursor-not-allowed bg-brand-surface/40 text-ink-soft',
+        )}
+      >
+        <span className={cn('truncate', !selected && 'text-ink-soft')}>{selected?.label ?? placeholder ?? ''}</span>
+        <span className="shrink-0 text-ink-soft">▾</span>
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute z-30 mt-1 w-full rounded-md border border-surface-border bg-white shadow-lg">
+          <input
+            autoFocus
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={searchPlaceholder ?? placeholder}
+            className="h-10 w-full rounded-t-md border-b border-surface-border px-3 text-sm outline-none placeholder:text-ink-soft"
+          />
+          <ul role="listbox" className="max-h-60 overflow-auto py-1">
+            {placeholder && (
+              <li>
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); pick(''); }}
+                  className="block w-full px-3 py-2 text-start text-sm text-ink-soft hover:bg-brand-surface"
+                >
+                  {placeholder}
+                </button>
+              </li>
+            )}
+            {visible.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-ink-soft">{emptyLabel ?? '—'}</li>
+            ) : (
+              visible.map((o) => (
+                <li key={o.value}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={o.value === value}
+                    // onMouseDown, not onClick: the search input's blur tears the
+                    // list down before a click would ever register.
+                    onMouseDown={(e) => { e.preventDefault(); pick(o.value); }}
+                    className={cn(
+                      'block w-full px-3 py-2 text-start text-sm text-ink hover:bg-brand-surface',
+                      o.value === value && 'font-semibold',
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      )}
+
+      {error && <span className="mt-1 block text-xs text-status-error">{error}</span>}
     </div>
   );
 }

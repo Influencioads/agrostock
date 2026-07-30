@@ -5,7 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { ApiCategory, ApiProduct } from '@agrotraders/api-client';
-import { attrKey } from '@agrotraders/i18n';
 import { api } from '../../lib/api';
 import { AppBar, FilterBar, SearchBar } from '../../ui';
 import { AppliedFilters } from '../../ui/FilterBar';
@@ -78,8 +77,12 @@ export function Browse() {
   });
 
   const activeCount = countActive(filters);
-  // Memoized so it's a stable dependency of the `chips` memo below.
-  const aLabel = useCallback((s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s }), [t]);
+  // The picker carries the resolved, localized field definitions, so a facet
+  // chip can show the field's real label instead of guessing it from the key.
+  const attrLabel = useCallback(
+    (key: string) => filters.selection.attrFields.find((f) => f.key === key)?.label ?? key,
+    [filters.selection.attrFields],
+  );
 
   /** One removable chip per applied filter, in the order the sheet lists them. */
   const chips = useMemo(() => {
@@ -109,10 +112,10 @@ export function Browse() {
     if (filters.grade) out.push({ key: 'grade', label: filters.grade, onRemove: drop('grade') });
     if (filters.market) out.push({ key: 'market', label: filters.market, onRemove: drop('market') });
     for (const [key, values] of Object.entries(filters.attrs)) {
-      if (values.length) out.push({ key, label: `${aLabel(key)} · ${values.length}`, onRemove: drop(key) });
+      if (values.length) out.push({ key, label: `${attrLabel(key)} · ${values.length}`, onRemove: drop(key) });
     }
     return out;
-  }, [filters, t, aLabel]);
+  }, [filters, t, attrLabel]);
 
   // No 'top' edge: AppBar applies the status-bar inset itself. Adding it here
   // too would leave an empty band above the header.

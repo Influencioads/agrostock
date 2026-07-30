@@ -10,6 +10,7 @@ import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt 
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { FormModal } from './parts';
+import { CityField, CountryField } from '../components/GeoFields';
 
 type Form = { name: string; fromCity: string; fromCountry: string; toCity: string; toCountry: string; distanceKm: string; baseRate: string };
 const empty: Form = { name: '', fromCity: '', fromCountry: '', toCity: '', toCountry: '', distanceKm: '', baseRate: '' };
@@ -88,12 +89,13 @@ function RouteForm({ route, onClose, onSaved }: { route: ApiRoute | null; onClos
     <FormModal visible title={route ? t('transX.routes.editTitle') : t('transX.routes.addTitle')} onClose={onClose} onSubmit={() => save.mutate()} submitting={save.isPending} canSubmit={!!form.name.trim() && !!form.fromCity.trim() && !!form.toCity.trim()}>
       <Input label={t('transX.routes.name')} placeholder={t('pubX.ph.routeName')} value={form.name} onChangeText={set('name')} />
       <Row gap={10}>
-        <View style={{ flex: 1 }}><Input label={t('transX.routes.fromCountry')} placeholder={t('pubX.ph.countryIndia')} value={form.fromCountry} onChangeText={set('fromCountry')} /></View>
-        <View style={{ flex: 1 }}><Input label={t('transX.routes.fromCity')} placeholder={t('pubX.ph.cityMundra')} value={form.fromCity} onChangeText={set('fromCity')} /></View>
+        {/* Country first on each leg — the city list is fetched per country. */}
+        <View style={{ flex: 1 }}><CountryField label={t('transX.routes.fromCountry')} placeholder={t('pubX.ph.countryIndia')} value={form.fromCountry} onChange={(v) => setForm((f) => ({ ...f, fromCountry: v, fromCity: '' }))} /></View>
+        <View style={{ flex: 1 }}><CityField label={t('transX.routes.fromCity')} placeholder={t('pubX.ph.cityMundra')} country={form.fromCountry || undefined} value={form.fromCity} onChange={set('fromCity')} /></View>
       </Row>
       <Row gap={10}>
-        <View style={{ flex: 1 }}><Input label={t('transX.routes.toCountry')} placeholder={t('pubX.ph.countryUae')} value={form.toCountry} onChangeText={set('toCountry')} /></View>
-        <View style={{ flex: 1 }}><Input label={t('transX.routes.toCity')} placeholder={t('pubX.ph.cityDubai')} value={form.toCity} onChangeText={set('toCity')} /></View>
+        <View style={{ flex: 1 }}><CountryField label={t('transX.routes.toCountry')} placeholder={t('pubX.ph.countryUae')} value={form.toCountry} onChange={(v) => setForm((f) => ({ ...f, toCountry: v, toCity: '' }))} /></View>
+        <View style={{ flex: 1 }}><CityField label={t('transX.routes.toCity')} placeholder={t('pubX.ph.cityDubai')} country={form.toCountry || undefined} value={form.toCity} onChange={set('toCity')} /></View>
       </Row>
       <Row gap={10}>
         <View style={{ flex: 1 }}><Input label={t('transX.routes.distance')} placeholder="1900" keyboardType="numeric" value={form.distanceKm} onChangeText={set('distanceKm')} /></View>

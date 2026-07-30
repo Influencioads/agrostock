@@ -37,15 +37,6 @@ export type View = (typeof View)[keyof typeof View];
 export const Lang = {
   En: 'en',
   Ru: 'ru',
-  ZhHans: 'zh-Hans',
-  Es: 'es',
-  Hi: 'hi',
-  Ar: 'ar',
-  Pt: 'pt',
-  Fr: 'fr',
-  De: 'de',
-  Ja: 'ja',
-  Fa: 'fa',
 } as const;
 export type Lang = (typeof Lang)[keyof typeof Lang];
 export const LANGS = Object.values(Lang) as Lang[];

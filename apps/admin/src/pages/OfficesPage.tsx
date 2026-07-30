@@ -4,6 +4,7 @@ import { Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
 import type { ApiOffice } from '@agrotraders/api-client';
 import { GMT_OFFSETS, normalizeGmt } from '@agrotraders/geo';
 import { PageHeader } from '../components/widgets';
+import { CityInput } from '../components/GeoInputs';
 import { api } from '../lib/api';
 import { useI18n } from '../i18n';
 
@@ -20,7 +21,9 @@ function OfficeEditor({ initial, onCancel, onSave, saving }: { initial: OfficeFo
         <Input label={t('officesAdmin.fFlag')} value={form.flag} onChange={(e) => set('flag', e.target.value)} />
         <Input label={t('officesAdmin.fName')} value={form.name} onChange={(e) => set('name', e.target.value)} />
         <Input label={t('officesAdmin.fType')} value={form.type} onChange={(e) => set('type', e.target.value)} />
-        <Input label={t('officesAdmin.fCity')} value={form.city} onChange={(e) => set('city', e.target.value)} />
+        {/* Offices are stored as "Dubai, UAE" — the unscoped search returns
+            exactly that shape, so the value stays consistent across offices. */}
+        <CityInput label={t('officesAdmin.fCity')} value={form.city} onChange={(city) => set('city', city)} />
         <Input label={t('officesAdmin.fManager')} value={form.mgr} onChange={(e) => set('mgr', e.target.value)} />
         <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-ink">{t('officesAdmin.fTimezone')}</span>

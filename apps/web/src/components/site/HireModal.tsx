@@ -5,6 +5,7 @@ import { Button, Icon, Input } from '@agrotraders/ui';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
+import { CityInput } from '../GeoInputs';
 
 export interface HireTarget {
   targetType: 'transporter' | 'loaderco' | 'worker';
@@ -19,17 +20,31 @@ const TITLE_KEY = {
   worker: 'site.hireWorker',
 } as const;
 
+const BLANK = { message: '', fromCity: '', toCity: '', cargo: '', location: '', workersNeeded: '1', neededDate: '', budget: '' };
+
 /**
  * Direct-hire form: per-target-type fields → POST /hires.
  * Pass `orderId` to source logistics from inside one of the seller's orders —
- * the server prefills cargo from the order and, on accept, attaches the minted
- * Trip back to it so dispatch/OTP keeps working.
+ * on accept the minted Trip attaches back to it so dispatch/OTP keeps working.
+ * Pass `initial` (from `orderLogistics(order)`) so the route and cargo arrive
+ * filled in rather than being retyped per provider; the server applies the same
+ * fallbacks, so these are editable, not load-bearing.
  */
-export function HireModal({ target, orderId, onClose }: { target: HireTarget; orderId?: string; onClose: () => void }) {
+export function HireModal({
+  target,
+  orderId,
+  initial,
+  onClose,
+}: {
+  target: HireTarget;
+  orderId?: string;
+  initial?: Partial<typeof BLANK>;
+  onClose: () => void;
+}) {
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [f, setF] = useState({ message: '', fromCity: '', toCity: '', cargo: '', location: '', workersNeeded: '1', neededDate: '', budget: '' });
+  const [f, setF] = useState({ ...BLANK, ...initial });
   const [done, setDone] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((p) => ({ ...p, [k]: e.target.value }));
 
@@ -85,8 +100,9 @@ export function HireModal({ target, orderId, onClose }: { target: HireTarget; or
             {isTransport ? (
               <>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input label={t('site.from')} placeholder={t('site.ph.fromCity')} value={f.fromCity} onChange={set('fromCity')} />
-                  <Input label={t('site.to')} placeholder={t('site.ph.toCity')} value={f.toCity} onChange={set('toCity')} />
+                  {/* No country on a hire — the pickers search every country. */}
+                  <CityInput label={t('site.from')} placeholder={t('site.ph.fromCity')} value={f.fromCity} onChange={(fromCity) => setF((p) => ({ ...p, fromCity }))} />
+                  <CityInput label={t('site.to')} placeholder={t('site.ph.toCity')} value={f.toCity} onChange={(toCity) => setF((p) => ({ ...p, toCity }))} />
                 </div>
                 <Input label={t('site.cargo')} placeholder={t('site.ph.cargoQty')} value={f.cargo} onChange={set('cargo')} />
               </>

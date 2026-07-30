@@ -151,6 +151,11 @@ export class AuctionsService {
 
   /** Gate on a completed lot — same 404 as a slug that was never a lot at all. */
   private async assertVisible(product: Product, viewer?: AuthUser) {
+    // Archived ("seller-deleted") lots read as gone to everyone but admins,
+    // matching the products path which 404s non-live listings.
+    if (product.status === 'archived' && !isAdmin(viewer)) {
+      throw AppException.notFound('auctions.not_found', 'Auction not found');
+    }
     if (!hasEnded(product)) return;
     if (!(await this.isParticipant(product, viewer))) {
       throw AppException.notFound('auctions.not_found', 'Auction not found');
@@ -354,21 +359,29 @@ export class AuctionsService {
     return this.detail(slug, buyer);
   }
 
-  myBids(bidderId: string) {
-    return this.prisma.auctionBid.findMany({
+  async myBids(bidderId: string, locale: Lang = 'en') {
+    const rows = await this.prisma.auctionBid.findMany({
       where: { bidderId },
       orderBy: { createdAt: 'desc' },
-      include: { product: { select: { name: true, slug: true, emoji: true, flag: true } } },
+      include: {
+        product: {
+          select: { name: true, slug: true, emoji: true, flag: true, translations: { where: { locale }, select: { name: true } } },
+        },
+      },
     });
+    return rows.map((b) => ({ ...b, product: localize(b.product, ['name']) }));
   }
 
   /** The seller's own auction listings, with the owner's full public snapshot. */
-  async selling(sellerId: string) {
+  async selling(sellerId: string, locale: Lang = 'en') {
     const products = await this.prisma.product.findMany({
-      where: { sellerId, isAuction: true },
+      where: { sellerId, isAuction: true, status: { not: 'archived' } },
       orderBy: { auctionEndsAt: 'asc' },
+      include: { translations: { where: { locale } } },
     });
-    return Promise.all(products.map(async (p) => ({ ...p, ...(await this.withPublic(p, true)) })));
+    return Promise.all(
+      products.map(async (p) => ({ ...localize(p, [...PRODUCT_TR_FIELDS]), ...(await this.withPublic(p, true)) })),
+    );
   }
 
   async close(slug: string, user: AuthUser) {
@@ -463,7 +476,7 @@ export class AuctionsService {
 
   async adminList(status?: string) {
     const where: Prisma.ProductWhereInput = { isAuction: true };
-    if (status && ['pending', 'live', 'rejected', 'hidden'].includes(status)) where.status = status as never;
+    if (status && ['pending', 'live', 'rejected', 'hidden', 'archived'].includes(status)) where.status = status as never;
     const products = await this.prisma.product.findMany({
       where,
       include: { seller: { select: { id: true, name: true } } },
@@ -495,8 +508,8 @@ export class AuctionsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('buyer')
   @Get('mine')
-  mine(@CurrentUser() user: AuthUser) {
-    return this.auctions.myBids(user.id);
+  mine(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
+    return this.auctions.myBids(user.id, locale);
   }
 
   // Static segments must precede `:slug` or Nest will match them as a slug.
@@ -504,8 +517,8 @@ export class AuctionsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller')
   @Get('selling')
-  selling(@CurrentUser() user: AuthUser) {
-    return this.auctions.selling(user.id);
+  selling(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
+    return this.auctions.selling(user.id, locale);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

@@ -74,7 +74,7 @@ function StartAuctionSheet({ onClose }: { onClose: () => void }) {
                 onChange={setProductId}
               />
               <Row gap={10}>
-                <View style={{ flex: 1 }}><Input label={t('sellerX.auctions.startBid')} keyboardType="numeric" placeholder="800" value={startBid} onChangeText={setStartBid} /></View>
+                <View style={{ flex: 1 }}><Input label={`${t('sellerX.auctions.startBid')} (${eligible.find((p) => p.id === productId)?.priceCurrency ?? 'USD'})`} keyboardType="numeric" placeholder="800" value={startBid} onChangeText={setStartBid} /></View>
                 <View style={{ flex: 1 }}><Input label={t('sellerX.auctions.runsForDays')} keyboardType="numeric" value={days} onChangeText={setDays} /></View>
               </Row>
               <Txt variant="small">{t('sellerX.auctions.sealedHint')}</Txt>

@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
+import { CityField } from '../components/GeoFields';
 
 interface Req {
   id: string; reference: string; fromCity: string; toCity: string; cargo: string; weightMt?: string | null;
@@ -37,8 +38,10 @@ export function TransporterMyRequests() {
 
       <Card style={{ gap: 10 }}>
         <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={t('transX.myRequests.from')} placeholder={t('pubX.ph.cityMundra')} value={form.fromCity} onChangeText={set('fromCity')} /></View>
-          <View style={{ flex: 1 }}><Input label={t('transX.myRequests.to')} placeholder={t('pubX.ph.cityDubai')} value={form.toCity} onChangeText={set('toCity')} /></View>
+          {/* No country on a request — the pickers search every country and
+              resolve to "City, Country". */}
+          <View style={{ flex: 1 }}><CityField label={t('transX.myRequests.from')} placeholder={t('pubX.ph.cityMundra')} value={form.fromCity} onChange={set('fromCity')} /></View>
+          <View style={{ flex: 1 }}><CityField label={t('transX.myRequests.to')} placeholder={t('pubX.ph.cityDubai')} value={form.toCity} onChange={set('toCity')} /></View>
         </Row>
         <Input label={t('transX.myRequests.cargo')} placeholder={t('pubX.ph.cargoBasmati')} value={form.cargo} onChangeText={set('cargo')} />
         <Input label={t('transX.myRequests.weight')} placeholder="24" keyboardType="numeric" value={form.weightMt} onChangeText={set('weightMt')} />

@@ -3,12 +3,11 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Badge, Button, Icon, Reveal } from '@agrotraders/ui';
 import type { ApiCategory, ApiMarket, ApiSubcategory, ProductQuery } from '@agrotraders/api-client';
-import { getFilterFields } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
+import { filterFields, optionLabel, type AttrField } from '@agrotraders/types';
 import { ProductCard } from '../components/site/ProductCard';
 import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
-import { ALL_COUNTRIES, attributeSourceName, buildSubcategoryTree, countryLabel, findSubcategoryPath, flattenSubcategoryTree, schemaName, type SubcategoryNode } from '@agrotraders/api-client';
+import { ALL_COUNTRIES, buildSubcategoryTree, countryLabel, findSubcategoryPath, flattenSubcategoryTree, resolveAttrFields, type SubcategoryNode } from '@agrotraders/api-client';
 import { useI18n } from '../i18n';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -85,8 +84,6 @@ export function MarketPage() {
 
   // Filter facets come from the English schema; only the display is localized —
   // the value sent to the API stays canonical English.
-  const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
-  const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
   const attrSelections = useMemo(() => {
     const out: Record<string, string[]> = {};
     for (const [k, v] of params.entries()) {
@@ -234,18 +231,15 @@ export function MarketPage() {
   const parentSubcategory = selectedSubcategoryPath.length > 1 ? selectedSubcategoryPath[selectedSubcategoryPath.length - 2] : null;
   const goUpSubcategory = () => setSubcategory(parentSubcategory?.id ?? null);
 
-  // Attribute facets for the current selection. The schema only has entries for
-  // level-2 names, so a deep pick resolves to its nearest schema-bearing ancestor
-  // — otherwise drilling past level 2 would wipe the facet list entirely.
-  // Facet lookups run on the CANONICAL ENGLISH names: the schema and the stored
-  // attribute values are keyed by them, so using the localized `category` param
-  // matched nothing and every non-English locale lost its facets entirely.
-  const categoryEn = selectedCategory ? schemaName(selectedCategory) : category;
-  const attrSourceName = useMemo(
-    () => attributeSourceName(selectedSubcategoryPath, categoryEn) ?? schemaName(selectedSubcategory) ?? subcategory,
-    [selectedSubcategoryPath, categoryEn, selectedSubcategory, subcategory],
+  // Attribute facets for the current selection. Fields are attached to whichever
+  // node owns them and inherited downward, so a deep pick resolves along its
+  // path — otherwise drilling past the owning level would wipe the facet list.
+  // Labels arrive localized from the API; option VALUES stay English because
+  // they are what the `attr_*` query params carry and what products store.
+  const attrFields = useMemo(
+    () => filterFields(resolveAttrFields(selectedSubcategoryPath)),
+    [selectedSubcategoryPath],
   );
-  const attrFields = useMemo(() => getFilterFields(categoryEn, attrSourceName), [categoryEn, attrSourceName]);
 
   const subMatches = useMemo(() => {
     const needle = subQuery.trim().toLowerCase();
@@ -384,14 +378,14 @@ export function MarketPage() {
                 type="search"
                 value={subQuery}
                 onChange={(e) => setSubQuery(e.target.value)}
-                placeholder={t('page.market.searchSubcategories', { defaultValue: 'Search all subcategories…' })}
+                placeholder={t('page.market.searchSubcategories')}
                 className="mt-2 h-9 w-full rounded-md border border-surface-border bg-white px-2.5 text-sm text-ink placeholder:text-ink-soft"
               />
               <div className="mt-2 overflow-hidden rounded-md border border-surface-border bg-white">
                 {subQuery.trim() ? (
                   subMatches.length === 0 ? (
                     <div className="px-2.5 py-3 text-xs text-ink-soft">
-                      {t('page.market.noSubcategoryMatch', { defaultValue: 'Nothing matches that.' })}
+                      {t('page.market.noSubcategoryMatch')}
                     </div>
                   ) : (
                     <div className="max-h-64 overflow-y-auto p-1.5">
@@ -421,8 +415,8 @@ export function MarketPage() {
                   <Icon name="check" size={14} />
                   <span className="min-w-0 flex-1 truncate">
                     {currentSubParent
-                      ? `${t('hero.allOf', { defaultValue: 'All' })} ${currentSubParent.name}`
-                      : `${t('hero.allOf', { defaultValue: 'All' })} ${selectedCategory.name}`}
+                      ? `${t('hero.allOf')} ${currentSubParent.name}`
+                      : `${t('hero.allOf')} ${selectedCategory.name}`}
                   </span>
                 </button>
                 {visibleSubOptions.length === 0 ? (
@@ -458,13 +452,13 @@ export function MarketPage() {
           {/* category/subcategory-specific attribute facets */}
           {attrFields.length > 0 && (
             <div className="mt-5 space-y-4 border-t border-surface-border pt-4">
-              {attrFields.map((f) => {
+              {attrFields.map((f: AttrField) => {
                 const selected = attrSelections[f.key] ?? [];
                 // Boolean facet: a single on/off checkbox keyed to "true".
                 if (f.type === 'boolean') {
                   return (
                     <label key={f.key} className="flex cursor-pointer items-center justify-between text-sm text-ink">
-                      {aLabel(f.label)}
+                      {f.label}
                       <input
                         type="checkbox"
                         checked={selected.includes('true')}
@@ -477,13 +471,13 @@ export function MarketPage() {
                 // select / multiselect: pick any number of option chips (OR-ed).
                 return (
                   <div key={f.key}>
-                    <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{aLabel(f.label)}</p>
+                    <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{f.label}</p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {(f.options ?? []).map((opt) => {
                         const active = selected.includes(opt);
                         return (
                           <button key={opt} type="button" onClick={() => toggleAttr(f.key, opt)}>
-                            <Badge tone={active ? 'green' : 'slate'}>{aOpt(opt)}</Badge>
+                            <Badge tone={active ? 'green' : 'slate'}>{optionLabel(f, opt)}</Badge>
                           </button>
                         );
                       })}
@@ -629,11 +623,11 @@ export function MarketPage() {
                   onRemove={() => { setParam('minPrice', null); setParam('maxPrice', null); }}
                 />
               )}
-              {attrFields.flatMap((f) =>
+              {attrFields.flatMap((f: AttrField) =>
                 (attrSelections[f.key] ?? []).map((val) => (
                   <FilterChip
                     key={`${f.key}:${val}`}
-                    label={f.type === 'boolean' ? aLabel(f.label) : aOpt(val)}
+                    label={f.type === 'boolean' ? f.label : optionLabel(f, val)}
                     tone="mango"
                     onRemove={() => toggleAttr(f.key, val)}
                   />

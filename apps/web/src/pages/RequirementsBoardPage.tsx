@@ -5,6 +5,7 @@ import { Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
 import { api } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
+import { CountrySelect } from '@agrotraders/ui/ProductForm';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyRec = Record<string, any>;
@@ -128,7 +129,7 @@ function PostRequirementCard({ onDone, onCancel }: { onDone: () => void; onCance
         </div>
         <Input label={t('page.requirements.fGrade')} placeholder={t('page.requirements.phGrade')} value={f.grade} onChange={set('grade')} />
         <Input label={t('page.requirements.fBudget')} placeholder="$270/MT" value={f.budget} onChange={set('budget')} />
-        <Input label={t('page.requirements.fDeliver')} placeholder={t('page.requirements.phDeliver')} value={f.destinationCountry} onChange={set('destinationCountry')} />
+        <CountrySelect label={t('page.requirements.fDeliver')} value={f.destinationCountry} onChange={(destinationCountry) => setF((p) => ({ ...p, destinationCountry }))} />
       </div>
       <div className="mt-4 flex gap-2">
         <Button onClick={submit} disabled={busy} leftIcon={<Icon name="check" size={15} />}>{busy ? t('page.requirements.posting') : t('page.requirements.post')}</Button>

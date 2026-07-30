@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { DevSettings, I18nManager } from 'react-native';
 import { getLocales } from 'expo-localization';
 import { I18nextProvider, useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
 import type { i18n as I18nInstance } from 'i18next';
 import { createNativeI18n } from '@agrotraders/i18n/init-native';
 import { FALLBACK_LNG, LOCALES, detectLang, isLang, isRtl, type Lang } from '@agrotraders/i18n';
 import { storage } from '../lib/storage';
+import { queryClient } from '../lib/queryClient';
 import { api, getApiToken, setApiLocale } from '../lib/api';
 
 export type { Lang };
@@ -15,7 +15,7 @@ export type { Lang };
 const LANG_KEY = 'agrotraders_lang';
 
 /** Namespaces `useI18n().t` can reach; unprefixed keys fall back to `mobile`. */
-const NS = ['mobile', 'common', 'nav', 'enums', 'errors', 'attrs'] as const;
+const NS = ['mobile', 'common', 'nav', 'enums', 'errors'] as const;
 
 /**
  * The live i18next instance, for non-component modules (e.g. `lib/push.ts`)
@@ -67,6 +67,7 @@ interface I18nValue {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [i18n, setI18n] = useState<I18nInstance | null>(null);
+  const [lang, setLangState] = useState<string>(FALLBACK_LNG);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +77,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       I18nManager.allowRTL(true);
       const instance = createNativeI18n(lang);
       globalI18n = instance;
+      setLangState(lang);
       setI18n(instance);
     });
     return () => {
@@ -83,45 +85,31 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!i18n) return;
+    i18n.on('languageChanged', setLangState);
+    return () => i18n.off('languageChanged', setLangState);
+  }, [i18n]);
+
   // Reading the stored locale is a single async storage hit; rendering the tree
   // before it resolves would flash English at a Russian user.
   if (!i18n) return null;
 
   return (
     <I18nextProvider i18n={i18n}>
-      <RefetchOnLocaleChange />
-      {children}
+      {/*
+        Keying the whole tree on the locale is the mobile equivalent of the web's
+        `window.location.reload()` (see `apps/web/src/i18n/index.tsx`): swapping the
+        catalog in place left the switch half-applied, because anything holding text
+        in state, in a closure or in a memo keyed on something other than the locale
+        kept the old language until it happened to re-render. Remounting rebuilds
+        every screen, context and cached string in one language, from scratch.
+        Auth lives above this provider, so the session survives; navigation does not,
+        so the user lands back on the first tab — the same reset a web reload causes.
+      */}
+      <Fragment key={lang}>{children}</Fragment>
     </I18nextProvider>
   );
-}
-
-/**
- * Refetches server data when the locale changes.
- *
- * Product names, requirements, chat messages and the like are translated by the
- * API, which picks the locale off `Accept-Language` (see `setApiLocale`). React
- * Query caches those responses under keys that (deliberately) carry no locale,
- * so without this the previous language's rows would stay on screen until
- * something happened to refetch. Invalidating marks every query stale, so active
- * ones refetch with the new header and the rest refresh next time they mount.
- * The first run is skipped: on mount the language has not changed, and
- * invalidating would throw away the cache the app just filled.
- */
-function RefetchOnLocaleChange() {
-  const { i18n } = useTranslation();
-  const queryClient = useQueryClient();
-  const lang = i18n.language;
-  const mounted = useRef(false);
-
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      return;
-    }
-    void queryClient.invalidateQueries();
-  }, [lang, queryClient]);
-
-  return null;
 }
 
 export function useI18n(): I18nValue {
@@ -133,6 +121,10 @@ export function useI18n(): I18nValue {
       // unsaved choice would be lost on the way back up.
       await storage.set(LANG_KEY, next);
       setApiLocale(next);
+      // API-translated rows (product names, chat, requirements) are cached under
+      // keys that carry no locale, so the remount below would re-serve them in the
+      // old language. Dropped, not invalidated: nothing should render stale-then-swap.
+      queryClient.clear();
       await i18n.changeLanguage(next);
       // Persist to the signed-in user's profile so server-rendered content
       // (notifications, push, email) reaches them in this language on every device.

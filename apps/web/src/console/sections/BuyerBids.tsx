@@ -1,17 +1,95 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
-import type { ApiBuyerBid, ApiBuyerBidMode, ApiCategory } from '@agrotraders/api-client';
-import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import { Badge, Button, Card, Combobox, Icon, Input, Modal } from '@agrotraders/ui';
+import { CountrySelect } from '@agrotraders/ui/ProductForm';
+import { buildSubcategoryTree, type ApiBuyerBid, type ApiCategory, type SubcategoryNode } from '@agrotraders/api-client';
+import { CURRENCIES, CURRENCY_SYMBOLS, PROCURE_WINDOWS, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
+import { useAuth } from '../../auth/AuthContext';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
 import { errMessage } from './order-parts';
 import { GalleryEditor, MAX_IMAGES } from './ProductForm';
 import { BuyerBidRoom } from './BuyerBidRoom';
 
-const MODE_KEY: Record<ApiBuyerBidMode, string> = { quote: 'console.buyer.modeQuote', auction: 'console.buyer.modeAuction' };
+const selectCls = 'h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf';
+
+/**
+ * One options list per drill-down level: the roots, then the children of
+ * whatever is picked at each level, stopping at the first level with nothing
+ * selected. Exported for the unit test — the drill-down is the fiddly part.
+ */
+export function levelOptions(tree: SubcategoryNode[], path: string[]): SubcategoryNode[][] {
+  const levels: SubcategoryNode[][] = [];
+  let nodes = tree;
+  for (let i = 0; nodes.length > 0; i++) {
+    levels.push(nodes);
+    const picked = nodes.find((n) => n.id === path[i]);
+    if (!picked) break;
+    nodes = picked.children;
+  }
+  return levels;
+}
+
+/**
+ * The requirement's title, composed rather than typed: what it is (the whole
+ * taxonomy path), where it goes, and who wants it. Buyers wrote titles nobody
+ * could search or compare; these three facts are what a seller scans for.
+ */
+export function buyerBidTitle(taxonomy: string[], city?: string, forWhom?: string): string {
+  return [taxonomy.join(' › '), city?.trim(), forWhom?.trim()].filter(Boolean).join(' · ');
+}
+
+/**
+ * Category → subcategory → … as far as the taxonomy goes, so a requirement is
+ * specific enough for a seller to price it. Presentational: the modal owns the
+ * queries because it composes the title out of the SAME names.
+ */
+function TaxonomyPicker({
+  categories,
+  levels,
+  categoryId,
+  path,
+  onChange,
+}: {
+  categories: ApiCategory[];
+  levels: SubcategoryNode[][];
+  categoryId: string;
+  path: string[];
+  onChange: (categoryId: string, path: string[]) => void;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.category')}</span>
+        <select className={selectCls} value={categoryId} onChange={(e) => onChange(e.target.value, [])}>
+          <option value="">{t('console.buyer.any')}</option>
+          {categories.map((c) => <option key={c.id} value={c.id}>{c.name} {c.emoji}</option>)}
+        </select>
+      </label>
+      {levels.map((options, i) => (
+        <label className="block" key={i}>
+          <span className="mb-1.5 block text-sm font-semibold text-ink">
+            {i === 0 ? t('console.buyer.subcategory') : t('console.buyer.narrower')}
+          </span>
+          <select
+            className={selectCls}
+            value={path[i] ?? ''}
+            // Picking at a level drops everything chosen below it.
+            onChange={(e) => onChange(categoryId, e.target.value ? [...path.slice(0, i), e.target.value] : path.slice(0, i))}
+          >
+            <option value="">{t('console.buyer.any')}</option>
+            {options.map((n) => <option key={n.id} value={n.id}>{n.name}{n.emoji ? ` ${n.emoji}` : ''}</option>)}
+          </select>
+        </label>
+      ))}
+    </div>
+  );
+}
 
 /** H:M:S while open; null once closed. Ticks via the parent's 1s clock. */
 function hms(end: string | null | undefined) {
@@ -24,45 +102,81 @@ function hms(end: string | null | undefined) {
   return `${p(Math.floor(s / 3600))}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}`;
 }
 
-/** Buyer posts a requirement. `auction` mode needs a closing time; `quote` doesn't. */
+/**
+ * Buyer posts ONE thing: what they need. Sellers then underbid each other on it
+ * and the buyer awards the cheapest — there is no second "mode" to choose.
+ */
 function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [mode, setMode] = useState<ApiBuyerBidMode>('quote');
+  const { user } = useAuth();
+  // Default the quote currency to whatever the buyer is already browsing in.
+  const { currency } = useCurrency();
   const [f, setF] = useState({
-    title: '', productName: '', qtyValue: '', qtyUnit: 'MT',
-    targetPrice: '', deliveryPlace: '', destinationCountry: '', deadline: '', auctionEndsAt: '', notes: '', categoryId: '',
+    qtyValue: '', qtyUnit: 'MT', targetPrice: '', targetCurrency: currency,
+    deliveryPlace: '', destinationCountry: '', deadline: '', procureBy: 'immediate', notes: '', categoryId: '',
   });
+  const [path, setPath] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const set = <K extends keyof typeof f>(k: K) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
-  const { data: categories = [] } = useQuery<ApiCategory[]>({
-    queryKey: ['categories'],
-    queryFn: () => api.categories.list(),
+  const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
+  const { data: subs } = useQuery({
+    queryKey: ['category-subtree', f.categoryId],
+    queryFn: () => api.categories.subtree(f.categoryId, { depth: 'all' }),
+    enabled: Boolean(f.categoryId),
+    staleTime: 5 * 60 * 1000,
+  });
+  const levels = useMemo(() => levelOptions(buildSubcategoryTree(subs ?? []), path), [subs, path]);
+  // Category name + the name picked at each level — the title's backbone, and
+  // the last of them is what the requirement is FOR (the old "product" field).
+  const taxonomy = useMemo(
+    () =>
+      [
+        categories.find((c) => c.id === f.categoryId)?.name,
+        ...levels.map((options, i) => options.find((n) => n.id === path[i])?.name),
+      ].filter((name): name is string => !!name),
+    [categories, f.categoryId, levels, path],
+  );
+  const title = buyerBidTitle(taxonomy, f.deliveryPlace, user?.name ? t('console.buyer.titleFor', { name: user.name }) : '');
+
+  // City suggestions come from the API per destination country, same as the
+  // product form — the dataset is far too big to ship in the bundle.
+  const { data: cities = [], isFetching: citiesLoading } = useQuery({
+    queryKey: ['geo-cities', f.destinationCountry, f.deliveryPlace],
+    queryFn: () => api.geo.cities(f.destinationCountry, f.deliveryPlace || undefined),
+    enabled: Boolean(f.destinationCountry),
+    staleTime: 3600e3,
+    retry: 1,
   });
 
   const create = useMutation({
     mutationFn: () =>
       api.buyerBids.create({
-        mode,
-        title: f.title,
-        productName: f.productName,
+        title,
+        // No separate "product" box any more: the leaf of the taxonomy IS the
+        // product, and it stays a column because every seller-facing list reads it.
+        productName: taxonomy[taxonomy.length - 1] ?? title,
         qtyValue: Number(f.qtyValue),
         qtyUnit: f.qtyUnit,
         targetPriceCents: f.targetPrice ? Math.round(Number(f.targetPrice) * 100) : undefined,
+        targetPriceCurrency: f.targetCurrency,
         deliveryPlace: f.deliveryPlace || undefined,
         destinationCountry: f.destinationCountry || undefined,
         deadline: f.deadline ? new Date(f.deadline).toISOString() : undefined,
-        auctionEndsAt: mode === 'auction' && f.auctionEndsAt ? new Date(f.auctionEndsAt).toISOString() : undefined,
+        procureBy: f.procureBy || undefined,
         notes: f.notes || undefined,
         categoryId: f.categoryId || undefined,
+        // The deepest node picked; the API stores it as-is at any level.
+        subcategoryId: path[path.length - 1] || undefined,
         images,
       }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-buyer-bids'] }); onClose(); },
     onError: (e) => setError(errMessage(e, t('console.buyer.postError'))),
   });
 
-  const ready = f.title.trim() && f.productName.trim() && Number(f.qtyValue) > 0 && (mode !== 'auction' || !!f.auctionEndsAt);
+  const ready = taxonomy.length > 0 && Number(f.qtyValue) > 0;
 
   return (
     <Modal closeLabel={t('common:close')}
@@ -74,61 +188,94 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>{t('common:cancel')}</Button>
           <Button disabled={!ready || create.isPending} onClick={() => create.mutate()}>
-            {create.isPending ? t('console.buyer.posting') : mode === 'auction' ? t('console.buyer.startAuction') : t('console.buyer.requestBids')}
+            {create.isPending ? t('console.buyer.posting') : t('console.buyer.postRequirement')}
           </Button>
         </div>
       }
     >
       <div className="space-y-4">
-        <div className="flex gap-2">
-          {(['quote', 'auction'] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={
-                'flex-1 rounded-lg border px-3 py-2 text-sm font-semibold ' +
-                (mode === m ? 'border-brand bg-brand-surface text-brand-dark' : 'border-surface-border text-ink-soft')
-              }
-            >
-              {m === 'quote' ? t('console.buyer.requestBids') : t('console.buyer.createAuction')}
-            </button>
-          ))}
-        </div>
-        <p className="rounded-lg bg-mango-soft px-3 py-2 text-xs text-ink-soft">{t(MODE_KEY[mode])}</p>
+        <p className="rounded-lg bg-mango-soft px-3 py-2 text-xs text-ink-soft">{t('console.buyer.modeAuction')}</p>
 
-        <Input label={t('console.buyer.title')} placeholder={t('console.buyer.phTitle')} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
+        {/* Read-only: the title is composed below, so every requirement on the
+            board reads the same way and stays comparable. */}
+        <Input
+          label={t('console.buyer.title')}
+          placeholder={t('console.buyer.phAutoTitle')}
+          value={title}
+          readOnly
+          hint={t('console.buyer.titleHint')}
+        />
+
+        <TaxonomyPicker
+          categories={categories}
+          levels={levels}
+          categoryId={f.categoryId}
+          path={path}
+          onChange={(categoryId, next) => { setF((p) => ({ ...p, categoryId })); setPath(next); }}
+        />
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label={t('console.buyer.product')} placeholder={t('console.buyer.phProduct')} value={f.productName} onChange={(e) => setF({ ...f, productName: e.target.value })} />
-          <label className="block">
-            <span className="mb-1 block text-sm font-semibold text-ink">{t('console.buyer.category')}</span>
-            <select className="w-full rounded-lg border border-surface-border px-3 py-2 text-sm" value={f.categoryId} onChange={(e) => setF({ ...f, categoryId: e.target.value })}>
-              <option value="">{t('console.buyer.any')}</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </label>
-          <Input label={t('console.buyer.quantity')} type="number" value={f.qtyValue} onChange={(e) => setF({ ...f, qtyValue: e.target.value })} />
+          <Input label={t('console.buyer.quantity')} type="number" value={f.qtyValue} onChange={(e) => set('qtyValue')(e.target.value)} />
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.unit')}</span>
-            <select
-              value={toUnit(f.qtyUnit)}
-              onChange={(e) => setF({ ...f, qtyUnit: e.target.value })}
-              className="h-11 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
-            >
+            <select value={toUnit(f.qtyUnit)} onChange={(e) => set('qtyUnit')(e.target.value)} className={selectCls}>
               {PRODUCT_UNITS.map((u) => (
                 <option key={u} value={u}>{t(`enums:unit.${u}`)}</option>
               ))}
             </select>
           </label>
-          <Input label={t('console.buyer.targetPrice', { unit: f.qtyUnit })} type="number" value={f.targetPrice} onChange={(e) => setF({ ...f, targetPrice: e.target.value })} />
-          <Input label={t('console.buyer.deliveryPlace')} placeholder={t('console.buyer.phDeliveryPlace')} value={f.deliveryPlace} onChange={(e) => setF({ ...f, deliveryPlace: e.target.value })} />
-          <Input label={t('console.buyer.destinationCountry')} placeholder={t('console.buyer.phDestCountry')} value={f.destinationCountry} onChange={(e) => setF({ ...f, destinationCountry: e.target.value })} />
-          {mode === 'auction' ? (
-            <Input label={t('console.buyer.auctionCloses')} type="datetime-local" value={f.auctionEndsAt} onChange={(e) => setF({ ...f, auctionEndsAt: e.target.value })} />
-          ) : (
-            <Input label={t('console.buyer.bidDeadline')} type="datetime-local" value={f.deadline} onChange={(e) => setF({ ...f, deadline: e.target.value })} />
-          )}
+          {/* Quote the target in whatever currency the buyer trades in — the API
+              converts it to the USD baseline every bid is compared against. */}
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.targetPrice', { unit: f.qtyUnit })}</span>
+            <div className="flex gap-2">
+              <select
+                value={f.targetCurrency}
+                onChange={(e) => set('targetCurrency')(e.target.value)}
+                aria-label={t('console.productForm.currency')}
+                className={selectCls.replace('w-full', 'w-28') + ' shrink-0'}
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min={0}
+                step="any"
+                value={f.targetPrice}
+                onChange={(e) => set('targetPrice')(e.target.value)}
+                className={selectCls + ' min-w-0'}
+              />
+            </div>
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.procureBy')}</span>
+            <select value={f.procureBy} onChange={(e) => set('procureBy')(e.target.value)} className={selectCls}>
+              {PROCURE_WINDOWS.map((w) => (
+                <option key={w} value={w}>{t(`enums:procure.${w}`)}</option>
+              ))}
+            </select>
+          </label>
+          {/* Country first — cities are fetched per country, so the city resets with it. */}
+          <CountrySelect
+            label={t('console.buyer.destinationCountry')}
+            value={f.destinationCountry}
+            onChange={(destinationCountry) => setF((p) => ({ ...p, destinationCountry, deliveryPlace: '' }))}
+          />
+          <Combobox
+            label={t('console.buyer.deliveryPlace')}
+            placeholder={t('console.productForm.phCity')}
+            value={f.deliveryPlace}
+            onChange={set('deliveryPlace')}
+            options={cities}
+            loading={citiesLoading}
+            // The API already filtered by the typed term.
+            filterLocally={false}
+          />
+          <Input label={t('console.buyer.bidDeadline')} type="datetime-local" value={f.deadline} onChange={(e) => set('deadline')(e.target.value)} />
         </div>
-        <Input label={t('console.buyer.notes')} placeholder={t('console.buyer.phNotes')} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
+        <Input label={t('console.buyer.notes')} placeholder={t('console.buyer.phNotes')} value={f.notes} onChange={(e) => set('notes')(e.target.value)} />
 
         {/* Buyer's own upload route — the products one is seller-only. */}
         <div>

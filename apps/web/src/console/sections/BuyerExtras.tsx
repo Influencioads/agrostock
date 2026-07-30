@@ -60,7 +60,7 @@ export function BrowseSection() {
               <div className="truncate font-display font-bold text-ink">{p.name}</div>
               {/* WEB-10: `p.price` already carries its own "$", so the extra literal
                   rendered "$$840" — and it bypassed the currency selector entirely. */}
-              <div className="truncate text-xs text-ink-soft">{p.flag} {p.origin} · {fmtPrice(p)}{unitSuffix(p.unit)}</div>
+              <div className="truncate text-xs text-ink-soft">{p.flag} {p.origin} · {fmtPrice(p)}{unitSuffix(p.unit, t)}</div>
             </div>
             {p.verified && <Badge tone="green">{t('console.buyer.verified')}</Badge>}
           </Card>
@@ -100,7 +100,7 @@ export function SavedSection() {
                 <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-mango-soft text-2xl">{p.emoji ?? '🌾'}</span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-display font-bold text-ink">{p.name}</div>
-                  <div className="truncate text-xs text-ink-soft">{p.flag} {fmtPrice(p)}{unitSuffix(p.unit)}</div>
+                  <div className="truncate text-xs text-ink-soft">{p.flag} {fmtPrice(p)}{unitSuffix(p.unit, t)}</div>
                 </div>
               </Link>
               <button

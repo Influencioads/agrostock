@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { nextStatusFor, type ApiDirectoryEntry, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
+import { nextStatusFor, orderLogistics, type ApiDirectoryEntry, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
@@ -73,9 +73,11 @@ function DispatchSheet({ order, onClose }: { order: ApiOrder; onClose: () => voi
   const invalidate = useOrderInvalidation();
   const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
+  // Only transporters serving this order's route, not the first 24 on the platform.
+  const serves = orderLogistics(order).serves;
   const { data: transporters = [] } = useQuery<ApiDirectoryEntry[]>({
-    queryKey: ['directory', 'transporters'],
-    queryFn: () => api.directory.transporters({}),
+    queryKey: ['directory', 'transporters', serves.servesCity, serves.servesCountry],
+    queryFn: () => api.directory.transporters(serves),
     enabled: mode === 'platform' && !done,
   });
 

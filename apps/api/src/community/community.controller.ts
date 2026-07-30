@@ -87,8 +87,8 @@ export class CommunityController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('search')
-  search(@CurrentUser() user: AuthUser | undefined, @Query('q') q: string) {
-    return this.community.search(user, q ?? '');
+  search(@CurrentUser() user: AuthUser | undefined, @Locale() locale: Lang, @Query('q') q: string) {
+    return this.community.search(user, q ?? '', locale);
   }
 
   // ── authenticated ────────────────────────────────────────────────
@@ -102,8 +102,8 @@ export class CommunityController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get('my/saved')
-  saved(@CurrentUser() user: AuthUser) {
-    return this.community.savedPosts(user.id);
+  saved(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
+    return this.community.savedPosts(user.id, locale);
   }
 
   @ApiBearerAuth()

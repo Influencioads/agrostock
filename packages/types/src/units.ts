@@ -66,7 +66,14 @@ export function toUnit(raw?: string | null): ProductUnit {
   return normalizeUnit(raw) ?? DEFAULT_UNIT;
 }
 
-/** Price suffix form — `unitSuffix('KG')` → `'/KG'`. Legacy `'/MT'` stays `'/MT'`. */
-export function unitSuffix(raw?: string | null): string {
-  return `/${toUnit(raw)}`;
+/**
+ * Price suffix form — `unitSuffix('KG')` → `'/KG'`. Legacy `'/MT'` stays `'/MT'`.
+ *
+ * Pass the caller's `t` to localize the code (`'/кг'` in Russian). It stays
+ * optional because this package has no i18n dependency and a few call sites —
+ * option labels built from `PRODUCT_UNITS`, tests — genuinely want the raw code.
+ */
+export function unitSuffix(raw?: string | null, t?: (key: string) => string): string {
+  const unit = toUnit(raw);
+  return `/${t ? t(`enums:unitShort.${unit}`) : unit}`;
 }

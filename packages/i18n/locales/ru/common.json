@@ -6,6 +6,7 @@
   "dashboard": "Панель",
   "errorBody": "Не удалось загрузить. Проверьте подключение и попробуйте снова.",
   "errorTitle": "Что-то пошло не так",
+  "hidePassword": "Скрыть пароль",
   "language": "Язык",
   "loading": "Загрузка…",
   "logOut": "Выйти",
@@ -16,6 +17,7 @@
   "save": "Сохранять",
   "search": "Поиск",
   "send": "Отправить",
+  "showPassword": "Показать пароль",
   "signIn": "Войти",
   "signOut": "Выйти",
   "signUp": "Регистрация",
@@ -54,5 +56,15 @@
     "user": "Пользователь"
   },
   "viewAll": "Все",
-  "yes": "Да"
+  "yes": "Да",
+  "geo": {
+    "city": "Город",
+    "country": "Страна",
+    "anyCountry": "Любая страна",
+    "cityPlaceholder": "Начните вводить город…",
+    "citySearchPlaceholder": "Поиск городов",
+    "pickCountryFirst": "Сначала выберите страну",
+    "noCities": "Город не найден",
+    "typeToSearch": "Введите не менее 2 букв"
+  }
 }

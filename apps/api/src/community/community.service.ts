@@ -853,12 +853,28 @@ export class CommunityService {
     return { ok: true };
   }
 
-  savedPosts(userId: string) {
-    return this.prisma.communitySavedPost.findMany({
+  async savedPosts(userId: string, locale: Lang = 'en') {
+    const rows = await this.prisma.communitySavedPost.findMany({
       where: { userId },
-      include: { post: { include: { author: { select: { id: true, name: true, role: true } }, requirement: true } } },
+      include: {
+        post: {
+          include: {
+            author: { select: { id: true, name: true, role: true } },
+            requirement: { include: { translations: { where: { locale } } } },
+            translations: { where: { locale } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
+    // Same fold as the feed: post title/body, then the nested requirement.
+    return rows.map((r) => ({
+      ...r,
+      post: {
+        ...localize(r.post, ['title', 'body']),
+        requirement: r.post.requirement ? localizeRequirement(r.post.requirement) : r.post.requirement,
+      },
+    }));
   }
 
   async report(user: AuthUser, dto: ReportDto) {
@@ -886,12 +902,22 @@ export class CommunityService {
   }
 
   // ── search ────────────────────────────────────────────────────────
-  async search(user: AuthUser | undefined, q: string) {
+  async search(user: AuthUser | undefined, q: string, locale: Lang = 'en') {
     if (!q || q.length < 2) return { groups: [], messages: [] };
     const excluded = user ? await this.blockedIds(user.id) : [];
     const [groups, messages] = await Promise.all([
       this.prisma.communityGroup.findMany({
-        where: { deletedAt: null, visibility: 'public', name: { contains: q, mode: 'insensitive' } },
+        // Match the translated name too — a Russian user searching "Зерно" found
+        // nothing while the list they searched from showed exactly that label.
+        where: {
+          deletedAt: null,
+          visibility: 'public',
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { translations: { some: { name: { contains: q, mode: 'insensitive' } } } },
+          ],
+        },
+        include: { translations: { where: { locale } } },
         take: 10,
       }),
       this.prisma.communityMessage.findMany({
@@ -901,12 +927,19 @@ export class CommunityService {
           group: { visibility: 'public' },
           ...(excluded.length ? { senderId: { notIn: excluded } } : {}),
         },
-        include: { sender: { select: { name: true } }, group: { select: { id: true, name: true } } },
+        include: {
+          sender: { select: { name: true } },
+          group: { select: { id: true, name: true, translations: { where: { locale }, select: { name: true } } } },
+        },
         take: 20,
         orderBy: { createdAt: 'desc' },
       }),
     ]);
-    return { groups, messages };
+    return {
+      groups: groups.map(localizeGroup),
+      // A message can sit outside any group (DM surfaced in search), hence the guard.
+      messages: messages.map((m) => ({ ...m, group: m.group ? localize(m.group, ['name']) : m.group })),
+    };
   }
 
   // ── admin moderation ──────────────────────────────────────────────

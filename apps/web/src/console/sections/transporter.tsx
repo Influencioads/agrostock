@@ -6,6 +6,8 @@ import { api, assetUrl } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
 import { errMessage } from './order-parts';
+import { CountrySelect } from '@agrotraders/ui/ProductForm';
+import { CityInput } from '../../components/GeoInputs';
 
 const tripNext: Record<string, string | null> = { pending: 'loading', loading: 'in_transit', in_transit: 'delivered', delivered: null, delayed: 'in_transit' };
 const tripTone: Record<string, BadgeTone> = { pending: 'slate', loading: 'warn', in_transit: 'info', delivered: 'green', delayed: 'error' };
@@ -277,14 +279,14 @@ function RouteModal({ route, onClose, onSaved }: { route: ApiRoute | null; onClo
       <div className="space-y-3">
         <Input label={t('console.transporter.routeName')} placeholder={t('console.ph.routeName')} value={form.name} onChange={s('name')} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label={t('console.transporter.fromCountry')} placeholder={t('console.ph.country')} value={form.fromCountry} onChange={s('fromCountry')} />
-          <Input label={t('console.transporter.fromCity')} placeholder={t('console.ph.fromCity')} value={form.fromCity} onChange={s('fromCity')} />
-          <Input label={t('console.transporter.toCountry')} placeholder={t('console.ph.countryUae')} value={form.toCountry} onChange={s('toCountry')} />
-          <Input label={t('console.transporter.toCity')} placeholder={t('console.ph.toCity')} value={form.toCity} onChange={s('toCity')} />
+          {/* Country first on each leg — the city list is fetched per country. */}
+          <CountrySelect label={t('console.transporter.fromCountry')} value={form.fromCountry} onChange={(v) => setForm((f) => ({ ...f, fromCountry: v, fromCity: '' }))} />
+          <CityInput label={t('console.transporter.fromCity')} country={form.fromCountry} value={form.fromCity} onChange={(v) => setForm((f) => ({ ...f, fromCity: v }))} placeholder={t('console.ph.fromCity')} />
+          <CountrySelect label={t('console.transporter.toCountry')} value={form.toCountry} onChange={(v) => setForm((f) => ({ ...f, toCountry: v, toCity: '' }))} />
+          <CityInput label={t('console.transporter.toCity')} country={form.toCountry} value={form.toCity} onChange={(v) => setForm((f) => ({ ...f, toCity: v }))} placeholder={t('console.ph.toCity')} />
           <Input label={t('console.transporter.distanceKmLabel')} type="number" placeholder="1900" value={form.distanceKm} onChange={s('distanceKm')} />
           <Input label={t('console.transporter.baseRateLabel')} type="number" placeholder="1200" value={form.baseRate} onChange={s('baseRate')} />
         </div>
-        {/* Google Places autocomplete slots in here later — the city/country fields are already structured for it. */}
         {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       </div>
     </Modal>

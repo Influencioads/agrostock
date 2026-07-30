@@ -4,6 +4,7 @@ import { TranslationService } from './translation.service';
 import { TextTranslationService } from './text-translation.service';
 import { ContentTranslationWorker } from './content-translation.worker';
 import { TranslationSweepService } from './translation-sweep.service';
+import { CatalogModule } from '../catalog/catalog.module';
 
 /**
  * Machine-translation infrastructure (translate-on-write + DB cache).
@@ -14,6 +15,9 @@ import { TranslationSweepService } from './translation-sweep.service';
  */
 @Global()
 @Module({
+  // For CategoriesService.fieldMap(): the worker and the sweep both need the
+  // attribute definitions, which now live in the DB behind the catalog cache.
+  imports: [CatalogModule],
   providers: [GoogleTranslateClient, TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService],
   exports: [TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService],
 })

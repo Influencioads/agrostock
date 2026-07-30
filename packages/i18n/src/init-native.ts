@@ -2,7 +2,7 @@ import i18next, { type i18n as I18nInstance } from 'i18next';
 import { FALLBACK_LNG, LOCALES, type Namespace } from './index';
 import { resources } from './resources.native';
 
-const NS: Namespace[] = ['mobile', 'common', 'nav', 'enums', 'errors', 'attrs'];
+const NS: Namespace[] = ['mobile', 'common', 'nav', 'enums', 'errors'];
 
 /**
  * Builds the React Native i18next instance. Every catalog is already bundled

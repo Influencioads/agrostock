@@ -93,6 +93,7 @@ export function LoginPage() {
             <Input
               label={t('page.login.password')}
               type="password"
+              passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

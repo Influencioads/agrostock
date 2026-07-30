@@ -54,7 +54,7 @@ export function AdminMobileNav({ children }: { children: ReactNode }) {
           id="admin-mobile-nav"
           role="dialog"
           aria-modal="true"
-          aria-label={t('header.menu', { defaultValue: 'Menu' })}
+          aria-label={t('header.menu')}
           style={{ transform: open ? 'translateX(0)' : hidden }}
           className="pointer-events-auto absolute inset-y-0 start-0 flex w-[88%] max-w-[min(288px,88vw)] flex-col bg-brand-dock text-mint shadow-2xl transition-transform duration-300"
         >
@@ -62,7 +62,7 @@ export function AdminMobileNav({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              aria-label={t('common.close', { defaultValue: 'Close' })}
+              aria-label={t('common:close')}
               className="rounded-md p-1.5 text-mint/70 hover:bg-white/10 hover:text-white"
             >
               <Icon name="x" size={18} />
@@ -79,7 +79,7 @@ export function AdminMobileNav({ children }: { children: ReactNode }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={t('header.menu', { defaultValue: 'Menu' })}
+        aria-label={t('header.menu')}
         aria-expanded={open}
         aria-controls="admin-mobile-nav"
         className="shrink-0 rounded-md p-2 text-ink hover:bg-brand-surface lg:hidden"

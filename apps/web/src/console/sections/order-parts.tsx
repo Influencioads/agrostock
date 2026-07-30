@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import {
   ORDER_STEPS,
+  orderLogistics,
   type ApiDirectoryEntry,
   type ApiOrderDetail,
   type ApiOrderStatus,
@@ -166,9 +167,12 @@ export function DispatchModal({ order, open, onClose }: { order: ApiOrderDetail;
   const [dispatched, setDispatched] = useState<ApiOrderDetail | null>(null);
   const invalidate = useOrderInvalidation();
 
+  // Only transporters who serve this order's route — this used to list the first
+  // 24 on the platform regardless of where the shipment goes.
+  const serves = orderLogistics(order).serves;
   const { data: transporters = [] } = useQuery<ApiDirectoryEntry[]>({
-    queryKey: ['directory-transporters'],
-    queryFn: () => api.directory.transporters({}) as Promise<ApiDirectoryEntry[]>,
+    queryKey: ['directory-transporters', serves.servesCity, serves.servesCountry],
+    queryFn: () => api.directory.transporters(serves) as Promise<ApiDirectoryEntry[]>,
     enabled: open && mode === 'platform' && !dispatched,
   });
 

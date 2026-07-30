@@ -51,6 +51,12 @@ export interface DirectoryQuery {
   operatingCountry?: string;
   supplyingCity?: string;
   supplyingCountry?: string;
+  // "Serves this place" — comma-separated, so one param carries both legs of a
+  // route (`servesCity=Mundra,Dubai`). Matched as an OR across the provider's
+  // origin / operating / supplying tags, unlike the single-value filters above
+  // which AND. This is what an order's provider picker sends.
+  servesCity?: string;
+  servesCountry?: string;
   // Numeric thresholds: match providers whose stated minimum is <= the requested
   // value (or who set no minimum). Sent as strings on the query string.
   minWorkHours?: string;
@@ -83,6 +89,58 @@ function num(v?: string): number | undefined {
 function atMost(field: string, v?: number): Prisma.ProfileWhereInput | null {
   if (v == null) return null;
   return { OR: [{ [field]: null }, { [field]: { lte: v } }] } as Prisma.ProfileWhereInput;
+}
+
+/** Split a comma-separated `serves*` param into trimmed, de-duplicated values. */
+function csv(v?: string): string[] {
+  return [...new Set((v ?? '').split(',').map((s) => s.trim()).filter(Boolean))];
+}
+
+/**
+ * "Does this provider serve this place?" — used by an order's provider picker,
+ * which passes both legs of the route at once.
+ *
+ * Semantics differ from the single-value `operatingCity`/`supplyingCity` filters
+ * deliberately: those AND together to narrow a browse, this ORs so a transporter
+ * covering EITHER end of Mundra→Dubai is a candidate. A provider who declared no
+ * areas at all is treated as unrestricted — the same convention as `atMost`, and
+ * the reason an order in an uncovered region still gets a usable list instead of
+ * an empty picker.
+ *
+ * `supplying` is false for workers: the Worker row has no supplying* columns.
+ */
+function serves(q: DirectoryQuery, opts: { supplying: boolean }): { OR: Record<string, unknown>[] } | null {
+  const cities = csv(q.servesCity);
+  const countries = csv(q.servesCountry);
+  if (!cities.length && !countries.length) return null;
+
+  // ponytail: Postgres array containment is case-sensitive and Prisma has no
+  // insensitive mode for it, so match a few spellings of the same tag. Upgrade
+  // path if this ever misses: store the tags lower-cased and add a GIN index
+  // (there is no index on any of these columns today).
+  const variants = (v: string) => [...new Set([v, v.toLowerCase(), v.replace(/\b\w/g, (c) => c.toUpperCase())])];
+
+  const or: Record<string, unknown>[] = [];
+  const arrays = (kind: 'Cities' | 'Countries') =>
+    ['operating', ...(opts.supplying ? ['supplying'] : [])].map((p) => `${p}${kind}`);
+
+  for (const c of cities) {
+    or.push({ originCity: { contains: c, mode: 'insensitive' } });
+    for (const f of arrays('Cities')) or.push({ [f]: { hasSome: variants(c) } });
+  }
+  for (const c of countries) {
+    or.push({ originCountry: { contains: c, mode: 'insensitive' } });
+    for (const f of arrays('Countries')) or.push({ [f]: { hasSome: variants(c) } });
+  }
+  // Declared nothing = no stated restriction = still a candidate.
+  or.push({
+    AND: [
+      { originCity: null },
+      { originCountry: null },
+      ...[...arrays('Cities'), ...arrays('Countries')].map((f) => ({ [f]: { isEmpty: true } })),
+    ],
+  });
+  return { OR: or };
 }
 
 /** Profile-ish object carrying the free-text fields worth translating on read. */
@@ -147,11 +205,14 @@ export class DirectoryService {
     if (q.operatingCountry) profileWhere.operatingCountries = { has: q.operatingCountry };
     if (q.supplyingCity) profileWhere.supplyingCities = { has: q.supplyingCity };
     if (q.supplyingCountry) profileWhere.supplyingCountries = { has: q.supplyingCountry };
-    // Threshold filters (null minimum = accepts anything, so always included).
+    // Threshold filters (null minimum = accepts anything, so always included), plus
+    // the route filter. Both live under AND: `serves` brings its own OR and would
+    // clobber (or be clobbered by) any sibling OR on the same object.
     const thresholds = [
       atMost('minWorkHours', num(q.minWorkHours)),
       atMost('minDistanceKm', num(q.minDistanceKm)),
       atMost('minLoaders', num(q.minLoaders)),
+      serves(q, { supplying: true }) as Prisma.ProfileWhereInput | null,
     ].filter(Boolean) as Prisma.ProfileWhereInput[];
     if (thresholds.length) profileWhere.AND = thresholds;
     if (Object.keys(profileWhere).length > 0) where.profile = profileWhere;
@@ -232,8 +293,14 @@ export class DirectoryService {
     if (q.originCountry) where.originCountry = { contains: q.originCountry, mode: 'insensitive' };
     if (q.operatingCity) where.operatingCities = { has: q.operatingCity };
     if (q.operatingCountry) where.operatingCountries = { has: q.operatingCountry };
+    // Both of these carry their own OR, so they go under AND — a bare `where.OR`
+    // for one would silently drop the other.
     const minHrs = num(q.minWorkHours);
-    if (minHrs != null) where.OR = [{ minWorkHours: null }, { minWorkHours: { lte: minHrs } }];
+    const workerAnd = [
+      minHrs != null ? { OR: [{ minWorkHours: null }, { minWorkHours: { lte: minHrs } }] } : null,
+      serves(q, { supplying: false }),
+    ].filter(Boolean) as Prisma.WorkerWhereInput[];
+    if (workerAnd.length) where.AND = workerAnd;
     const workers = await this.prisma.worker.findMany({
       where,
       orderBy: { rating: 'desc' },

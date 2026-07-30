@@ -65,7 +65,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
     [t('auction.spec.available'), product.qty || '—'],
     [t('auction.spec.moqLot'), product.moq || '—'],
     [t('auction.spec.delivery'), product.delivery || '—'],
-    [t('auction.spec.unit'), unitSuffix(product.unit)],
+    [t('auction.spec.unit'), unitSuffix(product.unit, t)],
   ];
   const sellerInitials = (product.seller ?? 'AG').split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 

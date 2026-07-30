@@ -229,6 +229,7 @@ export function RegisterPage() {
             <Input
               label={t('page.register.password')}
               type="password"
+              passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
               placeholder={t('page.register.passwordHint')}
               value={form.password}
               onChange={set('password')}
@@ -237,6 +238,7 @@ export function RegisterPage() {
             <Input
               label={t('page.resetPassword.confirmPassword')}
               type="password"
+              passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
               placeholder={t('page.register.passwordHint')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

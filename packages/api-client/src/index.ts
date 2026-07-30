@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 import { io, type Socket } from 'socket.io-client';
+import type { AttrField } from '@agrotraders/types';
 
 export type SignupPasswordValidation = 'ok' | 'too_short' | 'mismatch';
 
@@ -67,6 +68,13 @@ export interface ApiSubcategory {
   sort: number;
   categoryId: string;
   parentId?: string | null;
+  /**
+   * Attribute fields this node OWNS, in display order, localized for the
+   * requested locale. Absent means it owns none and inherits from its nearest
+   * ancestor that does — resolve with `resolveAttrFields`, never by reading
+   * this key directly off the selected node.
+   */
+  attrFields?: AttrField[];
   _count?: { products: number; children?: number };
 }
 
@@ -81,7 +89,8 @@ export interface ApiCategory {
   tint: string | null;
   sort?: number;
   subcategories?: ApiSubcategory[];
-  _count?: { products: number };
+  /** `subcategories` is the whole subtree at every depth, not just level 2. */
+  _count?: { products: number; subcategories?: number };
 }
 
 export interface ApiMarket {
@@ -145,12 +154,24 @@ export interface ApiProduct {
   /** New listings await admin approval; only approved products are public. */
   approved?: boolean;
   startBidCents?: number | null;
+  /** The seller's typed starting bid in cents of their priceCurrency (edit round-trip). */
+  startBidSrcCents?: number | null;
   auctionEndsAt?: string | null;
   /** FLOW-04: managed on-hand stock; null = unmanaged (unlimited). */
   stockQty?: number | null;
   delivery: string | null;
-  /** Category/subcategory-specific attribute values, keyed by field key. */
+  /**
+   * Category/subcategory-specific attribute values, keyed by field key.
+   * Canonical English — these are the values the `attr_*` facets match on.
+   */
   attributes?: Record<string, unknown> | null;
+  /**
+   * The above, rendered for display: label and value already localized and
+   * formatted by the API. Present only when the listing has values to show.
+   * Read surfaces use this instead of resolving the field definitions
+   * themselves — they have no category tree loaded.
+   */
+  attributeSpecs?: { key: string; label: string; value: string }[];
   category?: { name: string } | ApiCategory;
   subcategory?: { name: string } | ApiSubcategory | null;
   seller?: { id?: string; name: string; country?: string | null; kycStatus?: string } | null;
@@ -842,7 +863,7 @@ export interface AdminProduct {
   origin: string | null;
   unit: string;
   delivery: string | null;
-  status: 'pending' | 'live' | 'rejected' | 'hidden';
+  status: 'pending' | 'live' | 'rejected' | 'hidden' | 'archived';
   approved: boolean;
   verified: boolean;
   safeDeal: boolean;
@@ -937,6 +958,9 @@ export interface ApiOrder {
   qtyUnit?: string | null;
   currency?: string;
   note?: string | null;
+  /** Destination, named by the buyer at checkout. See `orderLogistics`. */
+  deliveryCity?: string | null;
+  deliveryCountry?: string | null;
   dispatchMode?: ApiDispatchMode | null;
   transporterName?: string | null;
   transporterPhone?: string | null;
@@ -947,7 +971,45 @@ export interface ApiOrder {
   // deep-link to a profile without re-checking for it.
   buyer?: { id: string; name: string; country?: string | null };
   seller?: { id: string; name: string; country?: string | null };
-  product?: { id?: string; name: string; slug?: string; emoji?: string | null; imageUrl?: string | null } | null;
+  /** `city`/`country` are the shipment's origin — where the goods physically sit. */
+  product?: {
+    id?: string;
+    name: string;
+    slug?: string;
+    emoji?: string | null;
+    imageUrl?: string | null;
+    unit?: string | null;
+    city?: string | null;
+    country?: string | null;
+  } | null;
+}
+
+/**
+ * The route, cargo and provider-directory filter an order implies. Both apps
+ * derive a hire's prefill from this one function so web and mobile cannot drift
+ * (the server applies the same fallbacks in `hires.create`, so a hire is routed
+ * even when the form never sends them).
+ */
+export function orderLogistics(o: ApiOrder) {
+  const fromCity = o.product?.city ?? '';
+  const fromCountry = o.product?.country ?? o.seller?.country ?? '';
+  const toCity = o.deliveryCity ?? '';
+  const toCountry = o.deliveryCountry ?? o.buyer?.country ?? '';
+  const cargo = [o.product?.name, o.qty].filter(Boolean).join(' · ');
+  return {
+    fromCity,
+    fromCountry,
+    toCity,
+    toCountry,
+    cargo,
+    /** Route summary for a "showing providers for …" line. */
+    label: [fromCity || fromCountry, toCity || toCountry].filter(Boolean).join(' → '),
+    /** Directory query keeping only providers who serve either leg of the route. */
+    serves: {
+      servesCity: [fromCity, toCity].filter(Boolean).join(','),
+      servesCountry: [...new Set([fromCountry, toCountry].filter(Boolean))].join(','),
+    },
+  };
 }
 
 /** The happy path, in order — drives the progress steppers on web and mobile. */
@@ -1106,6 +1168,8 @@ export interface ApiBuyerBid {
   destinationCountry: string | null;
   deadline: string | null;
   auctionEndsAt: string | null;
+  /** A `PROCURE_WINDOWS` id — when the buyer intends to buy. Null on older rows. */
+  procureBy: string | null;
   notes: string | null;
   /** Buyer-supplied photos of the goods wanted, max 6; the first is the cover. */
   images: string[];
@@ -1114,6 +1178,8 @@ export interface ApiBuyerBid {
   awardedSellerBidId: string | null;
   buyer?: { id: string; name: string; country: string | null };
   category?: { id: string; name: string; slug: string; emoji: string | null } | null;
+  /** The deepest taxonomy node the buyer drilled to, at any level. */
+  subcategory?: { id: string; name: string; slug: string; emoji: string | null } | null;
   product?: { id: string; name: string; slug: string; emoji: string | null } | null;
   /** Lowest price so far. Null in sealed quote-mode when the viewer isn't the buyer. */
   bestPriceCents?: number | null;
@@ -1400,6 +1466,11 @@ export interface DirectoryQuery {
   operatingCountry?: string;
   supplyingCity?: string;
   supplyingCountry?: string;
+  // "Serves this place", comma-separated so one param carries both legs of a route.
+  // OR-matched across origin/operating/supplying; providers who declared no areas
+  // count as unrestricted. Build these with `orderLogistics(order).serves`.
+  servesCity?: string;
+  servesCountry?: string;
   // Numeric thresholds (find providers whose stated minimum is <= this).
   minWorkHours?: number;
   minDistanceKm?: number;
@@ -1662,10 +1733,11 @@ export function createApiClient(opts: ApiClientOptions) {
        * duplicate order, the exact case the key exists to absorb. Callers may pass
        * their own key to make a specific checkout attempt replay-safe.
        */
-      place: (body: { productSlug: string; qty: number; idempotencyKey?: string }) =>
+      place: (body: { productSlug: string; qty: number; deliveryCity?: string; deliveryCountry?: string; idempotencyKey?: string }) =>
         post<ApiOrder>('/orders', { ...body, idempotencyKey: body.idempotencyKey ?? newIdempotencyKey() }),
       /** Step 1 of the lifecycle: ask the seller for terms. */
-      enquiry: (body: { productSlug: string; qty: number; note?: string }) => post<ApiOrder>('/orders/enquiry', body),
+      enquiry: (body: { productSlug: string; qty: number; note?: string; deliveryCity?: string; deliveryCountry?: string }) =>
+        post<ApiOrder>('/orders/enquiry', body),
       /** Step 2: seller answers with a price. */
       respond: (id: string, body: { unitPriceCents?: number; amountCents?: number; note?: string }) =>
         patch<ApiOrder>(`/orders/${id}/respond`, body),
@@ -1682,19 +1754,23 @@ export function createApiClient(opts: ApiClientOptions) {
       get: (id: string) => get<ApiOrderDetail>(`/orders/${id}`),
     },
     buyerBids: {
+      /** Always posted as a reverse auction — the API ignores `mode` (legacy). */
       create: (body: {
-        mode?: ApiBuyerBidMode;
         title: string;
         productName: string;
         qtyValue: number;
         qtyUnit?: string;
+        /** In minor units of `targetPriceCurrency`; the API stores a USD baseline. */
         targetPriceCents?: number;
+        targetPriceCurrency?: string;
         deliveryPlace?: string;
         destinationCountry?: string;
+        /** Bidding closes at this instant. Omit to leave it open until awarded. */
         deadline?: string;
-        auctionEndsAt?: string;
+        procureBy?: string;
         notes?: string;
         categoryId?: string;
+        subcategoryId?: string;
         images?: string[];
       }) => post<ApiBuyerBid>('/buyer-bids', body),
       mine: () => get<ApiBuyerBid[]>('/buyer-bids/mine'),
@@ -1811,6 +1887,9 @@ export function createApiClient(opts: ApiClientOptions) {
       /**
        * City names for a country, filtered server-side. Public (the signup form
        * needs it before an account exists) and capped at 200 results.
+       *
+       * Pass an empty `country` to search every country instead; hits come back
+       * as `"City, Country"` and a query of 2+ characters is required.
        */
       cities: (country: string, q?: string) =>
         get<string[]>('/geo/cities', q ? { country, q } : { country }),
@@ -2152,6 +2231,13 @@ export function createApiClient(opts: ApiClientOptions) {
         body: { name?: string; emoji?: string; sort?: number; parentId?: string | null },
       ) => patch<ApiSubcategory>(`/admin/subcategories/${id}`, body),
       removeSubcategory: (id: string) => del(`/admin/subcategories/${id}`),
+      /**
+       * Replace a subcategory's attribute fields wholesale — array order IS the
+       * display order, so there is nothing stable to PATCH a single field by.
+       * An empty array clears them and the node falls back to inheriting.
+       */
+      updateSubcategoryFields: (id: string, fields: AttrField[]) =>
+        put<ApiSubcategory>(`/admin/subcategories/${id}/fields`, { fields }),
     },
 
     /* ── CHAT SYSTEM 1 — Community (separate from Support) ─────────── */

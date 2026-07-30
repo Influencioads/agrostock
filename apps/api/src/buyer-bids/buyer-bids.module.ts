@@ -50,7 +50,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BUYER_BID_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
 import { Locale, localize } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
-import { PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import { CURRENCIES, PROCURE_WINDOWS, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import { FxModule, FxService } from '../fx/fx.module';
 
 /** Gallery cap on a buyer's requirement photos (mirrors MAX_PRODUCT_IMAGES). */
 export const MAX_BUYER_BID_IMAGES = 6;
@@ -74,7 +75,8 @@ const isCompleted = (b: { status: string; deadline: Date | null; auctionEndsAt: 
 // ── DTOs ─────────────────────────────────────────────────────────
 
 export class CreateBuyerBidDto {
-  @ApiProperty({ enum: ['quote', 'auction'], default: 'quote' })
+  /** Accepted and ignored: every new requirement is a reverse auction (see `create`). */
+  @ApiProperty({ enum: ['quote', 'auction'], default: 'auction', deprecated: true })
   @IsOptional() @IsIn(['quote', 'auction']) mode?: BuyerBidMode;
 
   @ApiProperty() @IsString() @MaxLength(160) title!: string;
@@ -82,8 +84,12 @@ export class CreateBuyerBidDto {
   @ApiProperty({ minimum: 0.01, maximum: MAX_QTY }) @IsNumber() @Min(0.01) @Max(MAX_QTY) qtyValue!: number;
   @ApiProperty({ required: false, enum: PRODUCT_UNITS, default: 'MT' }) @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) qtyUnit?: string;
 
-  @ApiProperty({ required: false, description: 'Target / ceiling price per unit, USD cents' })
+  @ApiProperty({ required: false, description: 'Target / ceiling price per unit, in minor units of `targetPriceCurrency`' })
   @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) targetPriceCents?: number;
+
+  /** What the buyer quoted their target in. Stored as a USD baseline either way. */
+  @ApiProperty({ required: false, enum: CURRENCIES, default: 'USD' })
+  @IsOptional() @IsIn(CURRENCIES as unknown as string[]) targetPriceCurrency?: string;
 
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(160) deliveryPlace?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(80) destinationCountry?: string;
@@ -91,7 +97,11 @@ export class CreateBuyerBidDto {
   @ApiProperty({ required: false, description: 'mode=auction only' }) @IsOptional() @IsDateString() auctionEndsAt?: string;
   @ApiProperty({ required: false, maxLength: 800 }) @IsOptional() @IsString() @MaxLength(800) notes?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() categoryId?: string;
+  /** Deepest taxonomy node the buyer picked; any level of the tree is valid. */
+  @ApiProperty({ required: false }) @IsOptional() @IsString() subcategoryId?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() productId?: string;
+  @ApiProperty({ required: false, enum: PROCURE_WINDOWS })
+  @IsOptional() @IsIn(PROCURE_WINDOWS as unknown as string[]) procureBy?: string;
 
   @ApiProperty({ required: false, type: [String], description: 'Photos of the goods wanted; first is the cover.' })
   @IsOptional() @IsArray() @ArrayMaxSize(MAX_BUYER_BID_IMAGES) @IsString({ each: true })
@@ -109,6 +119,7 @@ export class SubmitSellerBidDto {
 const BUYER_BID_INCLUDE = {
   buyer: { select: { id: true, name: true, country: true } },
   category: { select: { id: true, name: true, slug: true, emoji: true } },
+  subcategory: { select: { id: true, name: true, slug: true, emoji: true } },
   product: { select: { id: true, name: true, slug: true, emoji: true } },
 } as const;
 
@@ -142,6 +153,7 @@ export class BuyerBidsService {
     private prisma: PrismaService,
     private notifications: NotificationsService,
     private events: EventEmitter2,
+    private fx: FxService,
   ) {}
 
   private async notify(userId: string, type: string, params: NotificationParams | undefined, data?: Record<string, unknown>) {
@@ -184,29 +196,42 @@ export class BuyerBidsService {
   // ── buyer ──────────────────────────────────────────────────────
 
   async create(buyer: AuthUser, dto: CreateBuyerBidDto) {
-    const mode = dto.mode ?? 'quote';
-    if (mode === 'auction' && !dto.auctionEndsAt) {
-      throw new BadRequestException('An auction requirement needs a closing time.');
+    // A buyer posts ONE thing — what they need — and sellers underbid each other
+    // for it. `dto.mode` is ignored: sealed quote mode is legacy, kept only so
+    // the requirements posted under it keep rendering. The deadline is the
+    // auction clock; without one the requirement simply stays open until awarded.
+    const closesAt = dto.auctionEndsAt ?? dto.deadline ?? null;
+    if (closesAt && new Date(closesAt).getTime() <= Date.now()) {
+      throw new BadRequestException('The bidding deadline must be in the future.');
     }
-    if (mode === 'auction' && new Date(dto.auctionEndsAt!).getTime() <= Date.now()) {
-      throw new BadRequestException('The auction closing time must be in the future.');
-    }
+    // The buyer may quote their target in their own currency, but every price on
+    // a requirement — seller bids, the best-price headline, the awarded order —
+    // is compared in the USD cents baseline, so it is converted on the way in.
+    const currency = dto.targetPriceCurrency && (CURRENCIES as readonly string[]).includes(dto.targetPriceCurrency)
+      ? dto.targetPriceCurrency
+      : 'USD';
+    const targetPriceCents =
+      dto.targetPriceCents != null ? await this.fx.toUsdCents(dto.targetPriceCents / 100, currency) : undefined;
     const bid = await this.prisma.buyerBid.create({
       data: {
         reference: ref(),
-        mode,
+        mode: 'auction',
         title: dto.title,
         productName: dto.productName,
         qtyValue: dto.qtyValue,
         qtyUnit: toUnit(dto.qtyUnit),
-        targetPriceCents: dto.targetPriceCents,
+        targetPriceCents,
+        // What the buyer typed it in; every stored amount stays USD.
+        currency,
         deliveryPlace: dto.deliveryPlace,
         destinationCountry: dto.destinationCountry,
-        deadline: dto.deadline ? new Date(dto.deadline) : null,
-        auctionEndsAt: mode === 'auction' ? new Date(dto.auctionEndsAt!) : null,
+        deadline: null,
+        auctionEndsAt: closesAt ? new Date(closesAt) : null,
+        procureBy: dto.procureBy || null,
         notes: dto.notes,
         images: dto.images ?? [],
         categoryId: dto.categoryId || null,
+        subcategoryId: dto.subcategoryId || null,
         productId: dto.productId || null,
         buyerId: buyer.id,
       },
@@ -384,12 +409,29 @@ export class BuyerBidsService {
     );
   }
 
-  myBids(sellerId: string) {
-    return this.prisma.sellerBid.findMany({
+  async myBids(sellerId: string, locale: Lang = 'en') {
+    const rows = await this.prisma.sellerBid.findMany({
       where: { sellerId },
       orderBy: { createdAt: 'desc' },
-      include: { buyerBid: { include: BUYER_BID_INCLUDE } },
+      include: {
+        buyerBid: {
+          include: {
+            ...BUYER_BID_INCLUDE,
+            category: { include: { translations: { where: { locale }, select: { name: true } } } },
+            product: { include: { translations: { where: { locale }, select: { name: true } } } },
+            translations: { where: { locale } },
+          },
+        },
+      },
     });
+    return rows.map((b) => ({
+      ...b,
+      buyerBid: {
+        ...localizeBid(b.buyerBid),
+        category: b.buyerBid.category ? localize(b.buyerBid.category, ['name']) : b.buyerBid.category,
+        product: b.buyerBid.product ? localize(b.buyerBid.product, ['name']) : b.buyerBid.product,
+      },
+    }));
   }
 
   /**
@@ -627,8 +669,8 @@ export class BuyerBidsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller')
   @Get('mine/bids')
-  myBids(@CurrentUser() u: AuthUser) {
-    return this.buyerBids.myBids(u.id);
+  myBids(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
+    return this.buyerBids.myBids(u.id, locale);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -713,6 +755,7 @@ export class AdminBuyerBidsController {
 }
 
 @Module({
+  imports: [FxModule],
   controllers: [BuyerBidsController, AdminBuyerBidsController],
   providers: [BuyerBidsService],
   exports: [BuyerBidsService],

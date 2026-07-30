@@ -10,12 +10,15 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, PartialType } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 import { FALLBACK_LNG, type Lang } from '@agrotraders/i18n';
+import type { AttrField, AttrFieldType } from '@agrotraders/types';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { Locale, localize } from '../common/locale';
 import { TextTranslationService } from '../translation/text-translation.service';
@@ -28,18 +31,58 @@ const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 /**
- * Localize a taxonomy row's `name` for display, but ALSO ship the canonical
- * English name as `nameEn`.
- *
- * The shared attribute schema (`@agrotraders/types`) is keyed by the English
- * category/subcategory names, and so are the stored attribute values buyers
- * filter on. Without `nameEn` a client running in any non-English locale looks
- * the schema up under the translated name, misses, and silently renders NO
- * attribute fields at all — the seller form loses its detail section and the
- * buyer facets disappear.
+ * `SubcategoryTranslation.attrFields`: display text for the attribute fields,
+ * keyed by the canonical ENGLISH string. See the schema comment for why this is
+ * a dict and not a parallel field array.
  */
-function localizeTaxon<T extends { name: string }>(row: T & { translations?: Partial<Pick<T, 'name'>>[] }) {
-  return { ...localize(row, ['name']), nameEn: row.name };
+interface AttrDict {
+  label?: Record<string, string>;
+  option?: Record<string, string>;
+}
+
+/**
+ * Overlay a locale's display text onto a field array.
+ *
+ * `label` is translated in place; `options` deliberately is NOT — those strings
+ * are the values stored on `Product.attributes` and the values the buyer facets
+ * match on, so translating them would break filtering. The translated option
+ * text rides alongside as `optionLabels`, positionally aligned because it is
+ * built in the same pass as the options it labels.
+ */
+function localizeFields(fields: AttrField[], dict?: AttrDict | null): AttrField[] {
+  if (!dict) return fields;
+  return fields.map((f) => ({
+    ...f,
+    label: dict.label?.[f.label] ?? f.label,
+    ...(f.options?.length ? { optionLabels: f.options.map((o) => dict.option?.[o] ?? o) } : {}),
+  }));
+}
+
+/** Rows we localize: a name, optionally attribute fields, optionally a translation. */
+type TaxonRow<T extends { name: string }> = T & {
+  attrFields?: unknown;
+  translations?: (Partial<Pick<T, 'name'>> & { attrFields?: unknown })[];
+};
+
+/**
+ * Localize a taxonomy row's `name` for display, but ALSO ship the canonical
+ * English name as `nameEn` — stored attribute values and the `attr_*` facet
+ * filters are English, so a client that only had the translated name could not
+ * round-trip them.
+ *
+ * Subcategories that own attribute fields ship them localized; nodes that own
+ * none omit the key entirely and inherit from their nearest ancestor that does
+ * (clients resolve that with `resolveAttrFields`, the API with `fieldMap`).
+ */
+function localizeTaxon<T extends { name: string }>(row: TaxonRow<T>) {
+  const out = { ...localize(row, ['name']), nameEn: row.name } as Record<string, unknown> & { name: string };
+  const fields = row.attrFields as AttrField[] | null | undefined;
+  if (!fields?.length) {
+    delete out.attrFields;
+    return out;
+  }
+  out.attrFields = localizeFields(fields, row.translations?.[0]?.attrFields as AttrDict | null);
+  return out;
 }
 
 export class CategoryDto {
@@ -61,6 +104,53 @@ export class SubcategoryDto {
   @IsOptional() @IsString() emoji?: string;
   @IsOptional() @IsInt() sort?: number;
   @IsOptional() @IsString() parentId?: string;
+}
+
+/** Keys are the JSON storage keys under `Product.attributes` — snake_case, stable. */
+const ATTR_KEY_RE = /^[a-z][a-z0-9_]{0,59}$/;
+const ATTR_FIELD_TYPES: AttrFieldType[] = ['text', 'number', 'select', 'multiselect', 'boolean', 'date'];
+
+/** One editable attribute field. Validated by hand — `class-validator` cannot see inside a JSON array. */
+export class SubcategoryFieldsDto {
+  @IsArray() @ArrayMaxSize(40) fields!: AttrField[];
+}
+
+/**
+ * Reject a field array an admin could not recover from: a duplicate or
+ * malformed key silently shadows a sibling and orphans every value already
+ * stored under it, and a select with no options renders an unusable control.
+ * Returns the cleaned array, so unknown properties never reach the column.
+ */
+function validateFields(fields: unknown): AttrField[] {
+  if (!Array.isArray(fields)) throw new BadRequestException('`fields` must be an array.');
+  const seen = new Set<string>();
+  return fields.map((raw, i) => {
+    const f = raw as Partial<AttrField>;
+    const at = `Field ${i + 1}`;
+    if (typeof f.key !== 'string' || !ATTR_KEY_RE.test(f.key)) {
+      throw new BadRequestException(`${at}: key must be lower_snake_case, starting with a letter.`);
+    }
+    if (seen.has(f.key)) throw new BadRequestException(`${at}: duplicate key "${f.key}".`);
+    seen.add(f.key);
+    if (typeof f.label !== 'string' || !f.label.trim() || f.label.length > 120) {
+      throw new BadRequestException(`${at}: label is required and must be under 120 characters.`);
+    }
+    if (!f.type || !ATTR_FIELD_TYPES.includes(f.type)) throw new BadRequestException(`${at}: unknown type.`);
+
+    const choice = f.type === 'select' || f.type === 'multiselect';
+    const options = choice ? [...new Set((f.options ?? []).map((o) => String(o).trim()).filter(Boolean))] : undefined;
+    if (choice && !options?.length) throw new BadRequestException(`${at}: needs at least one option.`);
+
+    return {
+      key: f.key,
+      label: f.label.trim(),
+      type: f.type,
+      ...(options ? { options } : {}),
+      ...(f.unit?.trim() ? { unit: f.unit.trim() } : {}),
+      ...(f.required ? { required: true } : {}),
+      ...(f.help?.trim() ? { help: f.help.trim() } : {}),
+    };
+  });
 }
 
 export class UpdateSubcategoryDto {
@@ -98,6 +188,62 @@ export class CategoriesService {
   private static readonly CACHE_TTL_MS = 5 * 60_000;
   private invalidate() {
     this.cache.clear();
+  }
+
+  /**
+   * Every subcategory id → the attribute fields that apply to it, localized.
+   *
+   * Fields are attached to a node by an admin, but a node that owns none
+   * inherits from its nearest ancestor that does — that is what lets a level-5
+   * leaf ("Grain › Rice › Basmati › 1121 Steam") show Rice's fields without
+   * anyone copying them down the tree. Resolving it here, once per locale per
+   * cache window, replaces the per-request ancestor walk the products module
+   * used to do (one query per level, on every filtered request).
+   *
+   * Shares the reference-data cache, so an admin edit clears it via `invalidate()`.
+   */
+  async fieldMap(locale: Lang = FALLBACK_LNG): Promise<Map<string, AttrField[]>> {
+    const key = `fields|${locale}`;
+    const hit = this.cache.get(key);
+    if (hit && Date.now() - hit.at < CategoriesService.CACHE_TTL_MS) {
+      return hit.value as Map<string, AttrField[]>;
+    }
+
+    const rows = await this.prisma.subcategory.findMany({
+      select: {
+        id: true,
+        parentId: true,
+        attrFields: true,
+        translations: { where: { locale }, select: { attrFields: true } },
+      },
+    });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    // Localized once per OWNING node, then shared by reference with every
+    // descendant that inherits it — otherwise Grain's fields get re-localized
+    // for each of its hundreds of children.
+    const owned = new Map<string, AttrField[]>();
+    const out = new Map<string, AttrField[]>();
+
+    for (const row of rows) {
+      let node: (typeof rows)[number] | undefined = row;
+      for (let hops = 0; node && hops <= MAX_TAXONOMY_DEPTH; hops++) {
+        const fields = node.attrFields as AttrField[] | null;
+        if (fields?.length) {
+          const at = node;
+          let localized = owned.get(at.id);
+          if (!localized) {
+            localized = localizeFields(fields, at.translations[0]?.attrFields as AttrDict | null);
+            owned.set(at.id, localized);
+          }
+          out.set(row.id, localized);
+          break;
+        }
+        node = node.parentId ? byId.get(node.parentId) : undefined;
+      }
+    }
+
+    this.cache.set(key, { at: Date.now(), value: out });
+    return out;
   }
 
   private subInclude(locale: Lang) {
@@ -149,7 +295,10 @@ export class CategoriesService {
 
     const categories = await this.prisma.category.findMany({
       orderBy: [{ sort: 'asc' }, { name: 'asc' }],
-      include: { translations: { where: { locale } }, _count: { select: { products: true } } },
+      // `subcategories` counts the WHOLE subtree, not just level 2 — the relation
+      // is keyed by categoryId at every depth. The admin tree header showed the
+      // level-2 count and read as if the taxonomy were 424 nodes, not 14k.
+      include: { translations: { where: { locale } }, _count: { select: { products: true, subcategories: true } } },
     });
     const subs = await this.loadLevels(
       categories.map((c) => c.id),
@@ -396,6 +545,29 @@ export class CategoriesService {
     return updated;
   }
 
+  /**
+   * Replace a subcategory's attribute fields.
+   *
+   * Whole-array replace: order is the display order, so there is no stable
+   * handle to patch one field by. Existing products keep values stored under a
+   * key that was renamed or removed — nothing reads them any more (the spec rows
+   * come from this list), and the next save of that listing strips them. That is
+   * cheaper and safer than rewriting every product's JSON on an admin keystroke.
+   */
+  async setSubcategoryFields(id: string, fields: unknown) {
+    const sub = await this.prisma.subcategory.findUnique({ where: { id }, select: { id: true } });
+    if (!sub) throw new NotFoundException('Subcategory not found');
+    const clean = validateFields(fields);
+    const updated = await this.prisma.subcategory.update({
+      where: { id },
+      // Empty means "own none" — the node falls back to inheriting, which is a
+      // meaningfully different state from an empty array.
+      data: { attrFields: clean.length ? (clean as unknown as Prisma.InputJsonValue) : Prisma.DbNull },
+    });
+    this.invalidate();
+    return updated;
+  }
+
   async removeSubcategory(id: string) {
     const sub = await this.prisma.subcategory.findUnique({
       where: { id },
@@ -497,6 +669,12 @@ export class AdminSubcategoriesController {
     return this.categories.updateSubcategory(id, dto);
   }
 
+  /** Replace the node's attribute fields. See `setSubcategoryFields`. */
+  @Put(':id/fields')
+  setFields(@Param('id') id: string, @Body() dto: SubcategoryFieldsDto) {
+    return this.categories.setSubcategoryFields(id, dto.fields);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.categories.removeSubcategory(id);
@@ -592,5 +770,8 @@ export class AdminOfficesController {
     AdminOfficesController,
   ],
   providers: [CategoriesService, OfficesService],
+  // Products, ads and the translation worker all need `fieldMap()` — and need it
+  // from THIS instance, so they share its cache and its `invalidate()`.
+  exports: [CategoriesService],
 })
 export class CatalogModule {}

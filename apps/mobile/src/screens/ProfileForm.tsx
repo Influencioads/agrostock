@@ -9,6 +9,7 @@ import { errMessage } from '../lib/format';
 import { useAuth } from '../auth/AuthProvider';
 import { Avatar, Badge, Button, Card, Chip, Input, Loading, Row, Txt } from '../ui';
 import { PickerField } from './components/PickerSheet';
+import { CityField } from './components/GeoFields';
 import { C, space } from '../theme/tokens';
 import { useI18n } from '../i18n';
 
@@ -124,7 +125,9 @@ export function ProfileForm() {
         <Txt variant="h3">{t('compX.profile.publicTitle')}</Txt>
         <Txt variant="muted">{t('compX.profile.publicSub')}</Txt>
         <Input label={t('compX.profile.about')} placeholder={t('compX.profile.aboutPlaceholder')} value={f.bio} onChangeText={set('bio')} multiline />
-        <Input label={t('compX.profile.from')} placeholder={t('pubX.ph.locationAmritsarIndia')} value={f.location} onChangeText={set('location')} />
+        {/* Scoped by the account's own country when it has one; otherwise the
+            search spans every country and resolves to "Amritsar, India". */}
+        <CityField label={t('compX.profile.from')} placeholder={t('pubX.ph.locationAmritsarIndia')} country={user?.country || undefined} value={f.location} onChange={set('location')} />
         <AvatarUpload
           name={user?.name ?? t('compX.bid.you')}
           avatarUrl={profile?.avatarUrl}

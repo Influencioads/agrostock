@@ -6,21 +6,18 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiCategory, ApiMarket, ApiProduct } from '@agrotraders/api-client';
-import { countryFlag, schemaName } from '@agrotraders/api-client';
+import { countryFlag } from '@agrotraders/api-client';
 import {
   CURRENCIES,
   CURRENCY_SYMBOLS,
-  DELIVERY_OPTIONS,
-  getAttributeFields,
-  isDeliveryOption,
   isPercentField,
+  optionLabel,
   PERCENT_OPTIONS,
   PRODUCT_UNITS,
   suggestProductName,
   toUnit,
   type AttrField,
 } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
 import { api, assetUrl } from '../../lib/api';
 import { countryOptions } from '../../lib/countries';
 import { errMessage } from '../../lib/format';
@@ -30,6 +27,7 @@ import { Button, Card, Chip, ChipSelect, Input, Row, Screen, Txt } from '../../u
 import { C, radius } from '../../theme/tokens';
 import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
 import { MultiPickerField, PickerField } from '../components/PickerSheet';
+import { CityField } from '../components/GeoFields';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -44,7 +42,7 @@ const withUnit = (amount: string, unit: string) => (amount.trim() ? `${amount.tr
 
 const blank = {
   name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', unit: 'MT', qty: '', moq: '',
-  grade: '', emoji: '🌾', origin: '', city: '', country: '', delivery: 'delivery', isOffer: false, isAuction: false,
+  emoji: '🌾', origin: '', city: '', country: '', delivery: 'delivery', isOffer: false, isAuction: false,
   safeDeal: true, negotiable: false,
   marketId: '', startBid: '', auctionDays: '7',
   images: [] as string[],
@@ -54,22 +52,32 @@ const blank = {
 
 /* ── Market picker (read-only: markets are created by admins) ─────── */
 
+/**
+ * Searchable, because there are thousands of markets — a chip strip listed them
+ * all with no way to look one up. The searched text carries city and country
+ * too, since that is how a seller finds theirs.
+ */
 function MarketPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const { t } = useI18n();
   const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets'], queryFn: () => api.markets.list() });
+  const options = [
+    { value: '', label: t('sellerX.market.none') },
+    ...markets.map((m) => ({
+      value: m.id,
+      label: `${m.flag ?? ''} ${m.name}${m.city ? ` · ${m.city}` : ''}${m.country ? ` · ${m.country}` : ''}`.trim(),
+    })),
+  ];
 
   return (
-    <View style={{ gap: 8 }}>
-      <Txt variant="label">{t('sellerX.market.label')}</Txt>
-      <ChipSelect
-        options={[
-          { id: '', label: t('sellerX.market.none') },
-          ...markets.map((m) => ({ id: m.id, label: `${m.flag ?? ''} ${m.name}`.trim() })),
-        ]}
-        value={value}
-        onChange={onChange}
-      />
-    </View>
+    <PickerField
+      label={t('sellerX.market.label')}
+      placeholder={t('sellerX.market.none')}
+      value={value}
+      displayValue={options.find((o) => o.value === value)?.label}
+      options={options}
+      onChange={onChange}
+      searchPlaceholder={t('sellerX.add.searchMarket')}
+    />
   );
 }
 
@@ -219,20 +227,18 @@ function SupplyCountriesPicker({ value, onChange }: { value: string[]; onChange:
 
 /** Dynamic detail inputs for the chosen subcategory, from the shared schema. */
 function AttributeFields({
-  category,
+  fields,
   subcategory,
   value,
   onChange,
 }: {
-  category?: string | null;
+  /** Already localized and inheritance-resolved by the category picker. */
+  fields: AttrField[];
   subcategory?: string | null;
   value: Record<string, unknown>;
   onChange: (next: Record<string, unknown>) => void;
 }) {
   const { t } = useI18n();
-  const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
-  const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
-  const fields = getAttributeFields(category, subcategory);
   if (fields.length === 0) return null;
 
   const setField = (key: string, v: unknown) => {
@@ -249,14 +255,14 @@ function AttributeFields({
         const raw = value[f.key];
         // Only the display is localized — the stored value stays the canonical
         // English option, because buyer filters match on it.
-        const label = `${aLabel(f.label)}${f.unit ? ` (${f.unit})` : ''}${f.required ? ' *' : ''}`;
+        const label = `${f.label}${f.unit ? ` (${f.unit})` : ''}${f.required ? ' *' : ''}`;
 
         if (f.type === 'select') {
           return (
             <View key={f.key} style={{ gap: 6 }}>
               <Txt variant="small">{label}</Txt>
               <ChipSelect
-                options={[{ id: '', label: '—' }, ...(f.options ?? []).map((o) => ({ id: o, label: aOpt(o) }))]}
+                options={[{ id: '', label: '—' }, ...(f.options ?? []).map((o) => ({ id: o, label: optionLabel(f, o) }))]}
                 value={(raw as string) ?? ''}
                 onChange={(v) => setField(f.key, v)}
               />
@@ -286,7 +292,7 @@ function AttributeFields({
                 {(f.options ?? []).map((o) => (
                   <Chip
                     key={o}
-                    label={aOpt(o)}
+                    label={optionLabel(f, o)}
                     active={arr.includes(o)}
                     onPress={() => setField(f.key, arr.includes(o) ? arr.filter((x) => x !== o) : [...arr, o])}
                   />
@@ -299,7 +305,7 @@ function AttributeFields({
           return (
             <Chip
               key={f.key}
-              label={aLabel(f.label)}
+              label={f.label}
               active={raw === true}
               onPress={() => setField(f.key, raw === true ? undefined : true)}
             />
@@ -333,16 +339,16 @@ export function SellerAddProduct() {
   const [form, setForm] = useState(blank);
   const [err, setErr] = useState('');
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+  // Many Android numeric keyboards (ru locale included) only offer a comma
+  // decimal separator; `Number('840,5')` is NaN, which blocked submit forever.
+  const setNum = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v.replace(',', '.') }));
 
   const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
-  const selectedCategory = categories.find((c) => c.id === form.categoryId);
-  // Schema lookups need the canonical English name; `name` is the display label.
-  const categoryName = selectedCategory ? schemaName(selectedCategory) : null;
-  // The picker hands back the resolved names, so the form never has to walk the
-  // tree itself. `attrSource` is the level-2 ancestor whose schema applies.
+  // The picker hands back the resolved attribute fields, so the form never has
+  // to walk the tree itself.
   const [taxonomy, setTaxonomy] = useState<CategorySelection>(EMPTY_SELECTION);
   const [catSheet, setCatSheet] = useState(false);
-  const subcategoryName = taxonomy.attrSource;
+  const attrFields = taxonomy.attrFields;
 
   // Edit mode: prefill from the seller's own listings.
   const { data: mine = [] } = useQuery<ApiProduct[]>({
@@ -356,34 +362,43 @@ export function SellerAddProduct() {
     if (p) {
       // Editing an existing listing: its name is the seller's, not ours to regenerate.
       setNameTouched(true);
+      // The list is localized for reading; the form must edit the canonical
+      // English or Save writes the translation back over the source row.
+      const src = (p as { source?: Record<string, unknown> }).source ?? {};
+      const canon = <T,>(key: string, fallback: T): T => (src[key] as T) ?? fallback;
+      const delivery = canon('delivery', p.delivery);
       setForm((f) => ({
         ...f,
-        name: p.name ?? '', price: bareNumber(p.price), priceCurrency: p.priceCurrency ?? 'USD', unit: toUnit(p.unit),
-        qty: bareNumber(p.qty), moq: bareNumber(p.moq), grade: p.grade ?? '', emoji: p.emoji ?? '🌾',
-        origin: p.origin ?? '', city: p.city ?? '', country: p.country ?? '',
+        name: canon('name', p.name) ?? '', price: bareNumber(p.price), priceCurrency: p.priceCurrency ?? 'USD', unit: toUnit(p.unit),
+        qty: bareNumber(canon('qty', p.qty)), moq: bareNumber(canon('moq', p.moq)), emoji: p.emoji ?? '🌾',
+        origin: canon('origin', p.origin) ?? '', city: p.city ?? '', country: p.country ?? '',
         subcategoryId: (p.subcategory && typeof p.subcategory === 'object' ? (p.subcategory as { id?: string }).id : '') ?? '',
-        attributes: (p.attributes as Record<string, unknown>) ?? {},
+        attributes: canon('attributes', p.attributes as Record<string, unknown>) ?? {},
         supplyCountries: p.supplyCountries ?? [],
-        // Legacy rows carry free text ("Ready") — fall back to "we deliver".
-        delivery: isDeliveryOption(p.delivery) ? p.delivery : 'delivery',
+        // Legacy rows carry free text ("Ready") and the retired "no_delivery" —
+        // both collapse onto one of the two answers the form now offers.
+        delivery: delivery === 'self_pickup' || delivery === 'no_delivery' ? 'self_pickup' : 'delivery',
         safeDeal: p.safeDeal ?? true, negotiable: !!p.negotiable,
         isOffer: !!p.isOffer, isAuction: !!p.isAuction,
         marketId: p.market?.id ?? '',
-        startBid: p.startBidCents != null ? String(p.startBidCents / 100) : '',
+        // The seller's typed amount (their currency); the USD baseline only
+        // covers legacy rows saved before the split.
+        startBid: p.startBidSrcCents != null ? String(p.startBidSrcCents / 100) : p.startBidCents != null ? String(p.startBidCents / 100) : '',
         // Older rows may predate the gallery; fall back to the single cover.
         images: p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [],
       }));
     }
   }, [editingId, mine]);
 
-  // Drop attribute values that don't belong to the current subcategory's schema.
+  // Drop attribute values that don't belong to the current subcategory's fields.
+  // The API sanitizes on save too — this is so the seller SEES what is dropped.
   useEffect(() => {
-    const keys = new Set(getAttributeFields(categoryName, subcategoryName).map((f) => f.key));
+    const keys = new Set(attrFields.map((f) => f.key));
     setForm((f) => {
       const pruned = Object.fromEntries(Object.entries(f.attributes ?? {}).filter(([k]) => keys.has(k)));
       return Object.keys(pruned).length === Object.keys(f.attributes ?? {}).length ? f : { ...f, attributes: pruned };
     });
-  }, [categoryName, subcategoryName]);
+  }, [attrFields]);
 
   // Title composed from the taxonomy leaf + picked attributes, tracking the
   // seller's choices until they type in the field themselves. See the web form.
@@ -435,7 +450,18 @@ export function SellerAddProduct() {
   });
 
   // A photo is now mandatory — the API rejects a gallery-less listing.
-  const canSubmit = !!form.name && !!form.price && form.images.length > 0 && (!!editingId || !!form.categoryId);
+  const missing = {
+    name: !form.name.trim(),
+    price: !form.price.trim() || !(Number(form.price) > 0),
+    images: form.images.length === 0,
+    category: !editingId && !form.categoryId,
+  };
+  const canSubmit = !Object.values(missing).some(Boolean);
+  // Save stays tappable: a tap on an incomplete form marks the offending fields
+  // red, which a greyed-out button never explained.
+  const [tried, setTried] = useState(false);
+  const bad = (k: keyof typeof missing) => tried && missing[k];
+  const required = t('sellerX.add.required');
 
   return (
     <Screen>
@@ -446,11 +472,13 @@ export function SellerAddProduct() {
         {!!err && <Txt color={C.error} variant="small">{err}</Txt>}
 
         <GalleryEditor images={form.images} onChange={(images) => setForm((f) => ({ ...f, images }))} onError={setErr} />
+        {bad('images') && <Txt variant="small" color={C.error}>{required}</Txt>}
 
         <Input
           label={t('sellerX.add.name')}
           placeholder={t('sellerX.add.phName')}
           value={form.name}
+          error={bad('name') ? required : undefined}
           onChangeText={(v) => { setNameTouched(true); set('name')(v); }}
         />
         {/* One cascading picker instead of two chip strips — the taxonomy is five
@@ -459,7 +487,7 @@ export function SellerAddProduct() {
           <Txt variant="label">{t('sellerX.add.category')}</Txt>
           <Pressable
             onPress={() => setCatSheet(true)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.white, borderWidth: 1, borderColor: form.categoryId ? C.green : C.border, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, paddingVertical: 8 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.white, borderWidth: 1, borderColor: bad('category') ? C.error : form.categoryId ? C.green : C.border, borderRadius: radius.md, paddingHorizontal: 12, minHeight: 46, paddingVertical: 8 }}
           >
             <Ionicons name="grid-outline" size={18} color={form.categoryId ? C.green : C.inkSoft} />
             <Txt style={{ flex: 1, fontWeight: '700', color: form.categoryId ? C.ink : C.inkSoft }} numberOfLines={2}>
@@ -467,6 +495,7 @@ export function SellerAddProduct() {
             </Txt>
             <Ionicons name="chevron-down" size={18} color={C.inkSoft} />
           </Pressable>
+          {bad('category') && <Txt variant="small" color={C.error}>{required}</Txt>}
         </View>
 
         <CategorySheet
@@ -481,8 +510,8 @@ export function SellerAddProduct() {
         />
 
         <AttributeFields
-          category={categoryName}
-          subcategory={subcategoryName}
+          fields={attrFields}
+          subcategory={taxonomy.subcategoryName || taxonomy.categoryName}
           value={form.attributes}
           onChange={(attributes) => setForm((f) => ({ ...f, attributes }))}
         />
@@ -501,7 +530,7 @@ export function SellerAddProduct() {
               onChange={set('priceCurrency')}
             />
           </View>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.price')} keyboardType="numeric" placeholder="840" value={form.price} onChangeText={set('price')} /></View>
+          <View style={{ flex: 1 }}><Input label={t('sellerX.add.price')} keyboardType="numeric" placeholder="840" value={form.price} error={bad('price') ? required : undefined} onChangeText={setNum('price')} /></View>
         </Row>
         {/* One metric drives quantity and MOQ — sellers were typing "500 MT",
             "500mt" and "500 tons" into free-text boxes. */}
@@ -513,13 +542,10 @@ export function SellerAddProduct() {
           onChange={set('unit')}
         />
         <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.quantity')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="500" value={form.qty} onChangeText={set('qty')} /></View>
-          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.moq')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="25" value={form.moq} onChangeText={set('moq')} /></View>
+          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.quantity')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="500" value={form.qty} onChangeText={setNum('qty')} /></View>
+          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.moq')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="25" value={form.moq} onChangeText={setNum('moq')} /></View>
         </Row>
-        <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.grade')} placeholder={t('sellerX.add.phGrade')} value={form.grade} onChangeText={set('grade')} /></View>
-          <View style={{ flex: 1 }}><Input label={t('sellerX.add.emoji')} placeholder="🌾" value={form.emoji} onChangeText={set('emoji')} /></View>
-        </Row>
+        <Input label={t('sellerX.add.emoji')} placeholder="🌾" value={form.emoji} onChangeText={set('emoji')} />
 
         {/* Origin is a country — it is what the listing flag is derived from. */}
         <PickerField
@@ -532,27 +558,22 @@ export function SellerAddProduct() {
           searchPlaceholder={t('sellerX.add.searchCountry')}
         />
 
-        {/* "Do you deliver?" — and when not, whether the buyer may collect. */}
+        {/* Who moves the goods: the seller themselves, or a partner the buyer
+            hires. See the web form — those are the only two answers. */}
         <PickerField
           label={t('sellerX.add.delivery')}
-          value={form.delivery === 'delivery' ? 'yes' : 'no'}
-          displayValue={form.delivery === 'delivery' ? t('common:yes') : t('common:no')}
-          options={[{ value: 'yes', label: t('common:yes') }, { value: 'no', label: t('common:no') }]}
-          onChange={(v) => setForm((f) => ({ ...f, delivery: v === 'yes' ? 'delivery' : 'self_pickup' }))}
+          value={form.delivery === 'delivery' ? 'delivery' : 'self_pickup'}
+          displayValue={t(`enums:delivery.${form.delivery === 'delivery' ? 'delivery' : 'self_pickup'}`)}
+          options={[
+            { value: 'delivery', label: t('enums:delivery.delivery') },
+            { value: 'self_pickup', label: t('enums:delivery.self_pickup') },
+          ]}
+          onChange={set('delivery')}
         />
-        {form.delivery !== 'delivery' && (
-          <PickerField
-            label={t('sellerX.add.pickup')}
-            value={form.delivery}
-            displayValue={t(`enums:delivery.${form.delivery}`)}
-            options={DELIVERY_OPTIONS.filter((o) => o !== 'delivery').map((o) => ({ value: o, label: t(`enums:delivery.${o}`) }))}
-            onChange={set('delivery')}
-          />
-        )}
 
         {/* Country first — the city belongs to it. */}
-        <CountryPicker value={form.country} onChange={(country) => setForm((f) => ({ ...f, country }))} />
-        <Input label={t('sellerX.add.city')} placeholder={t('sellerX.add.phCity')} value={form.city} onChangeText={set('city')} />
+        <CountryPicker value={form.country} onChange={(country) => setForm((f) => ({ ...f, country, city: '' }))} />
+        <CityField label={t('sellerX.add.city')} placeholder={t('sellerX.add.phCity')} country={form.country || undefined} value={form.city} onChange={set('city')} />
         <SupplyCountriesPicker value={form.supplyCountries} onChange={(supplyCountries) => setForm((f) => ({ ...f, supplyCountries }))} />
 
         {/* How the deal is settled and priced — both directions are explicit, so
@@ -588,16 +609,17 @@ export function SellerAddProduct() {
 
         {form.isAuction && (
           <Row gap={10}>
-            <View style={{ flex: 1 }}><Input label={t('sellerX.add.startBid')} keyboardType="numeric" placeholder="800" value={form.startBid} onChangeText={set('startBid')} /></View>
-            <View style={{ flex: 1 }}><Input label={t('sellerX.add.runsForDays')} keyboardType="numeric" value={form.auctionDays} onChangeText={set('auctionDays')} /></View>
+            <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.startBid')} (${form.priceCurrency || 'USD'})`} keyboardType="numeric" placeholder="800" value={form.startBid} onChangeText={setNum('startBid')} /></View>
+            <View style={{ flex: 1 }}><Input label={t('sellerX.add.runsForDays')} keyboardType="numeric" value={form.auctionDays} onChangeText={setNum('auctionDays')} /></View>
           </Row>
         )}
 
+        {tried && !canSubmit && <Txt variant="small" color={C.error}>{t('sellerX.add.fixFields')}</Txt>}
         <Button
           title={save.isPending ? t('sellerX.add.saving') : editingId ? t('sellerX.add.saveChanges') : t('sellerX.add.addProduct')}
           full
-          disabled={!canSubmit || save.isPending}
-          onPress={() => save.mutate()}
+          disabled={save.isPending}
+          onPress={() => (canSubmit ? save.mutate() : setTried(true))}
         />
       </Card>
     </Screen>

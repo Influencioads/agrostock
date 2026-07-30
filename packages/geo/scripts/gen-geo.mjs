@@ -63,6 +63,14 @@ for (const [, name, iso2] of curated.matchAll(/\{ name: '([^']+)',[^}]*iso2: '([
 }
 writeFileSync(join(DATA_DIR, 'country-codes.json'), JSON.stringify(codes), 'utf8');
 
+// The reverse map, for the country-less city search: it labels each hit
+// "City, Country" and needs the display spelling, not the lowercased key above.
+const names = Object.fromEntries(countries.map((c) => [c.isoCode, c.name]));
+for (const [, name, iso2] of curated.matchAll(/\{ name: '([^']+)',[^}]*iso2: '([A-Z]{2})' \}/g)) {
+  names[iso2] = name;
+}
+writeFileSync(join(DATA_DIR, 'country-names.json'), JSON.stringify(names), 'utf8');
+
 let total = 0;
 for (const c of countries) {
   const names = Array.from(new Set((City.getCitiesOfCountry(c.isoCode) ?? []).map((x) => x.name))).sort(

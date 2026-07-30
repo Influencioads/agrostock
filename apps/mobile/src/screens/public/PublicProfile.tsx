@@ -111,7 +111,7 @@ export function PublicProfile() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Txt variant="title" numberOfLines={1}>{prod.name}</Txt>
-                    <Txt variant="muted">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{unitSuffix(prod.unit)}</Txt>
+                    <Txt variant="muted">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{unitSuffix(prod.unit, t)}</Txt>
                   </View>
                   <Ionicons name={forwardChevron()} size={16} color={C.inkSoft} />
                 </Row>

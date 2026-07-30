@@ -16,6 +16,9 @@ function ProductModal({ editing, onClose }: { editing: SellerProduct | null; onC
   const qc = useQueryClient();
   const [form, setForm] = useState<ProductFormValues>(editing ? productToForm(editing) : blankProduct);
   const [err, setErr] = useState('');
+  // Save stays clickable: pressing it on an incomplete form paints the missing
+  // fields red, which a disabled button never explained.
+  const [tried, setTried] = useState(false);
 
   const save = useMutation({
     mutationFn: () => {
@@ -39,13 +42,13 @@ function ProductModal({ editing, onClose }: { editing: SellerProduct | null; onC
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('common:cancel')}</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !productFormReady(form)}>
+          <Button onClick={() => (productFormReady(form) ? save.mutate() : setTried(true))} disabled={save.isPending}>
             {save.isPending ? t('console.productForm.saving') : editing ? t('console.productForm.saveChanges') : t('console.seller.addProduct')}
           </Button>
         </>
       }
     >
-      <ProductForm value={form} onChange={setForm} error={err} onError={setErr} />
+      <ProductForm value={form} onChange={setForm} error={err} onError={setErr} showErrors={tried} />
     </Modal>
   );
 }
@@ -140,7 +143,7 @@ export function SellerProducts() {
                 <div className="mt-2 flex items-end justify-between">
                   <span className="font-display text-lg font-extrabold text-ink">
                     {p.price}
-                    <span className="text-xs font-normal text-ink-soft">{unitSuffix(p.unit)}</span>
+                    <span className="text-xs font-normal text-ink-soft">{unitSuffix(p.unit, t)}</span>
                   </span>
                   <span className="text-xs text-ink-soft">{t('console.dash.ordersCount', { count: p._count?.orders ?? 0 })}</span>
                 </div>

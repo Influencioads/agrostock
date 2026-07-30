@@ -155,7 +155,7 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
         <Text numberOfLines={1} style={s.name}>{product.name}</Text>
         <Text numberOfLines={1} style={s.price}>
           {fmtPrice(product)}
-          <Text style={s.unit}>{unitSuffix(product.unit)}</Text>
+          <Text style={s.unit}>{unitSuffix(product.unit, t)}</Text>
         </Text>
         <Text numberOfLines={1} style={s.meta}>
           {product.negotiable ? t('compX.product.negotiable') : t('compX.product.fixedPrice')}
@@ -192,6 +192,7 @@ export function ProductRow({ product, onPress, right, subtitle }: {
   /** Overrides the supply line, e.g. with an order status. */
   subtitle?: string;
 }) {
+  const { t } = useI18n();
   const { fmtPrice } = useCurrency();
   const supply = useSupplyLine(product);
   const [failed, setFailed] = useState(false);
@@ -212,7 +213,7 @@ export function ProductRow({ product, onPress, right, subtitle }: {
         <Text numberOfLines={2} style={s.name}>{product.name}</Text>
         <Text numberOfLines={1} style={s.price}>
           {fmtPrice(product)}
-          <Text style={s.unit}>{unitSuffix(product.unit)}</Text>
+          <Text style={s.unit}>{unitSuffix(product.unit, t)}</Text>
         </Text>
         {subtitle ?? supply ? <Text numberOfLines={1} style={s.meta}>{subtitle ?? supply}</Text> : null}
       </View>

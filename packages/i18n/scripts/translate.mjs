@@ -28,21 +28,19 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const LOCALES_DIR = join(ROOT, 'locales');
 const SOURCE = 'en';
 
-/** Locales and the provider that actually supports them. DeepL has no Hindi. */
+/**
+ * Locales we translate into, and the provider that actually supports each.
+ * Keep in sync with `LOCALES` in `src/index.ts` — that list is what the apps
+ * publish, this one is what the pipeline is allowed to spend money on.
+ */
 const PROVIDERS = {
-  ru: 'deepl', 'zh-Hans': 'deepl', es: 'deepl', pt: 'deepl', fr: 'deepl', de: 'deepl', ja: 'deepl',
-  ar: 'google', hi: 'google', fa: 'google',
+  ru: 'deepl',
 };
 
 /** CLDR plural categories per locale — i18next appends these as `key_one`, `key_few`, … */
 const PLURAL_CATEGORIES = {
   en: ['one', 'other'],
   ru: ['one', 'few', 'many', 'other'],
-  ar: ['zero', 'one', 'two', 'few', 'many', 'other'],
-  hi: ['one', 'other'], es: ['one', 'many', 'other'], pt: ['one', 'many', 'other'],
-  fr: ['one', 'many', 'other'], de: ['one', 'other'],
-  'zh-Hans': ['other'], ja: ['other'],
-  fa: ['one', 'other'],
 };
 
 /* ── placeholder protection ─────────────────────────────────────── */

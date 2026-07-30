@@ -100,7 +100,7 @@ export function Home() {
             <View style={{ flex: 1 }}>
               <Text style={[s.deliverLabel, microLabel()]}>{t('pubX.home.deliverTo')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text numberOfLines={1} style={s.deliverCity}>{user?.country || 'India'}</Text>
+                <Text numberOfLines={1} style={s.deliverCity}>{user?.country || t('pubX.home.deliverToUnset')}</Text>
                 <Ionicons name="chevron-down" size={15} color={C.ink} />
               </View>
             </View>

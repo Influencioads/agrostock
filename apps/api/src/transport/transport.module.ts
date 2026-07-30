@@ -172,12 +172,15 @@ export class TransportService {
     });
     return q;
   }
-  myQuotes(transporterId: string) {
-    return this.prisma.transportQuote.findMany({
+  async myQuotes(transporterId: string, locale: Lang = 'en') {
+    const rows = await this.prisma.transportQuote.findMany({
       where: { transporterId },
       orderBy: { createdAt: 'desc' },
       include: { request: true },
     });
+    // The cargo description lives on the nested request, so localize that level.
+    const requests = await this.text.localizeRows(rows.map((r) => r.request), ['cargo'], locale);
+    return rows.map((r, i) => ({ ...r, request: requests[i] }));
   }
   async withdrawQuote(id: string, transporterId: string) {
     const q = await this.prisma.transportQuote.findUnique({ where: { id } });
@@ -237,12 +240,27 @@ export class TransportService {
   }
 
   // trips
-  myTrips(transporterId: string) {
-    return this.prisma.trip.findMany({
+  async myTrips(transporterId: string, locale: Lang = 'en') {
+    const rows = await this.prisma.trip.findMany({
       where: { transporterId },
       orderBy: { createdAt: 'desc' },
       include: { vehicle: true, route: true, order: { select: { reference: true, amount: true, buyer: { select: { name: true } } } } },
     });
+    const present = <T,>(v: T | null): v is T => v !== null;
+    const [vehicles, routes] = await Promise.all([
+      this.text.localizeRows(rows.map((r) => r.vehicle).filter(present), ['type', 'notes'], locale),
+      this.text.localizeRows(rows.map((r) => r.route).filter(present), ['name'], locale),
+    ]);
+    // Index by id: the filtered arrays above are shorter than `rows` when a trip
+    // has no vehicle or route, so positional zipping would misalign.
+    const byId = <T extends { id: string }>(list: T[]) => new Map(list.map((x) => [x.id, x]));
+    const vMap = byId(vehicles);
+    const rMap = byId(routes);
+    return rows.map((r) => ({
+      ...r,
+      vehicle: r.vehicle ? vMap.get(r.vehicle.id) ?? r.vehicle : r.vehicle,
+      route: r.route ? rMap.get(r.route.id) ?? r.route : r.route,
+    }));
   }
   async setTripStatus(id: string, transporterId: string, status: TripStatus) {
     const trip = await this.prisma.trip.findUnique({ where: { id } });
@@ -381,8 +399,8 @@ export class TransportController {
   }
   @Roles('transporter')
   @Get('quotes/mine')
-  myQuotes(@CurrentUser() u: AuthUser) {
-    return this.svc.myQuotes(u.id);
+  myQuotes(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
+    return this.svc.myQuotes(u.id, locale);
   }
   @Roles('transporter')
   @Delete('quotes/:id')
@@ -395,8 +413,8 @@ export class TransportController {
   }
   @Roles('transporter')
   @Get('trips/mine')
-  myTrips(@CurrentUser() u: AuthUser) {
-    return this.svc.myTrips(u.id);
+  myTrips(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
+    return this.svc.myTrips(u.id, locale);
   }
   @Roles('transporter')
   @Patch('trips/:id/status')

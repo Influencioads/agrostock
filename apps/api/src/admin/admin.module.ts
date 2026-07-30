@@ -961,7 +961,7 @@ export class AdminService {
   /** Full moderation list with filters — not just the pending queue. */
   allProducts(opts: { status?: string; search?: string; categoryId?: string; type?: string }) {
     const where: Prisma.ProductWhereInput = {};
-    if (opts.status && ['pending', 'live', 'rejected', 'hidden'].includes(opts.status)) where.status = opts.status as ProductStatus;
+    if (opts.status && ['pending', 'live', 'rejected', 'hidden', 'archived'].includes(opts.status)) where.status = opts.status as ProductStatus;
     if (opts.categoryId) where.categoryId = opts.categoryId;
     if (opts.type === 'auction') where.isAuction = true;
     else if (opts.type === 'offer') where.isOffer = true;

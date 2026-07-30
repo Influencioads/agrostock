@@ -84,6 +84,7 @@ export function ProfilePage() {
           <Input
             label={t('profile.currentPassword')}
             type="password"
+            passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
             value={currentPassword}
             onChange={(e) => {
               setCurrentPassword(e.target.value);
@@ -94,6 +95,7 @@ export function ProfilePage() {
             <Input
               label={t('profile.newPassword')}
               type="password"
+              passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);

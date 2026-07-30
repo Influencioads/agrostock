@@ -6,6 +6,8 @@
   "dashboard": "Dashboard",
   "errorTitle": "Something went wrong",
   "errorBody": "We couldn't load this. Check your connection and try again.",
+  "hidePassword": "Hide password",
+  "showPassword": "Show password",
   "retry": "Retry",
   "language": "Language",
   "loading": "Loading…",
@@ -54,5 +56,15 @@
     "user": "User"
   },
   "viewAll": "View all",
-  "yes": "Yes"
+  "yes": "Yes",
+  "geo": {
+    "city": "City",
+    "country": "Country",
+    "anyCountry": "Any country",
+    "cityPlaceholder": "Start typing a city…",
+    "citySearchPlaceholder": "Search cities",
+    "pickCountryFirst": "Pick a country first",
+    "noCities": "No matching city",
+    "typeToSearch": "Type at least 2 letters"
+  }
 }

@@ -5,7 +5,8 @@ import type { ApiLoaderWorker, ApiLoaderTeam } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
-import { TagInput } from '../../components/TagInput';
+import { CountrySelect } from '@agrotraders/ui/ProductForm';
+import { CityInput, CityTagInput, CountryTagInput } from '../../components/GeoInputs';
 
 const STATUS_TONE = { on_site: 'info', available: 'green', off: 'slate' } as const;
 
@@ -117,11 +118,12 @@ export function LoaderWorkers() {
             </label>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Input label={t('page.register.country')} placeholder={t('console.ph.country')} value={form.originCountry} onChange={(e) => set({ originCountry: e.target.value })} />
-            <Input label={t('page.register.cityRegion')} placeholder={t('console.ph.city')} value={form.originCity} onChange={(e) => set({ originCity: e.target.value })} />
+            {/* Country first — the city list is fetched per country, so it resets with it. */}
+            <CountrySelect label={t('page.register.country')} value={form.originCountry} onChange={(originCountry) => set({ originCountry, originCity: '' })} />
+            <CityInput label={t('page.register.cityRegion')} country={form.originCountry} value={form.originCity} onChange={(originCity) => set({ originCity })} placeholder={form.originCountry ? t('console.ph.city') : t('common:geo.cityPlaceholder')} />
           </div>
-          <TagInput label={t('page.register.operatingCountries')} value={form.operatingCountries} onChange={(v) => set({ operatingCountries: v })} placeholder={t('page.register.phCountries')} hint={t('page.register.tagHint')} />
-          <TagInput label={t('page.register.operatingCities')} value={form.operatingCities} onChange={(v) => set({ operatingCities: v })} placeholder={t('page.register.phCities')} hint={t('page.register.tagHint')} />
+          <CountryTagInput label={t('page.register.operatingCountries')} value={form.operatingCountries} onChange={(v) => set({ operatingCountries: v })} placeholder={t('page.register.phCountries')} hint={t('page.register.tagHintPick')} />
+          <CityTagInput label={t('page.register.operatingCities')} country={form.originCountry} value={form.operatingCities} onChange={(v) => set({ operatingCities: v })} placeholder={t('page.register.phCities')} hint={t('page.register.tagHintPick')} />
           <Input label={t('page.register.minWorkHours')} type="number" min={0} placeholder="4" value={form.minWorkHours} onChange={(e) => set({ minWorkHours: e.target.value })} />
           <label className="flex cursor-pointer items-center gap-2 pt-1">
             <input type="checkbox" checked={form.withLogin} onChange={(e) => set({ withLogin: e.target.checked })} className="h-4 w-4 accent-brand-leaf" />
@@ -198,11 +200,11 @@ function EditWorkerModal({ worker, teams, saving, onClose, onSave }: {
           </select>
         </label>
         <div className="grid grid-cols-2 gap-3">
-          <Input label={t('page.register.country')} value={originCountry} onChange={(e) => setOriginCountry(e.target.value)} />
-          <Input label={t('page.register.cityRegion')} value={originCity} onChange={(e) => setOriginCity(e.target.value)} />
+          <CountrySelect label={t('page.register.country')} value={originCountry} onChange={(next) => { setOriginCountry(next); setOriginCity(''); }} />
+          <CityInput label={t('page.register.cityRegion')} country={originCountry} value={originCity} onChange={setOriginCity} />
         </div>
-        <TagInput label={t('page.register.operatingCountries')} value={operatingCountries} onChange={setOperatingCountries} placeholder={t('page.register.phCountries')} hint={t('page.register.tagHint')} />
-        <TagInput label={t('page.register.operatingCities')} value={operatingCities} onChange={setOperatingCities} placeholder={t('page.register.phCities')} hint={t('page.register.tagHint')} />
+        <CountryTagInput label={t('page.register.operatingCountries')} value={operatingCountries} onChange={setOperatingCountries} placeholder={t('page.register.phCountries')} hint={t('page.register.tagHintPick')} />
+        <CityTagInput label={t('page.register.operatingCities')} country={originCountry} value={operatingCities} onChange={setOperatingCities} placeholder={t('page.register.phCities')} hint={t('page.register.tagHintPick')} />
         <Input label={t('page.register.minWorkHours')} type="number" min={0} value={minWorkHours} onChange={(e) => setMinWorkHours(e.target.value)} />
       </div>
     </Modal>

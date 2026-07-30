@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Prisma } from '@prisma/client';
+import type { AttrField } from '@agrotraders/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { TranslationService } from './translation.service';
 import { ContentTranslationWorker } from './content-translation.worker';
@@ -22,6 +24,12 @@ import { ContentTranslationWorker } from './content-translation.worker';
  * Country names are deliberately absent: they are not stored text, they come
  * from `Intl.DisplayNames` at render time (see `packages/geo`).
  */
+/** `SubcategoryTranslation.attrFields`: display text keyed by the English string. */
+interface AttrDict {
+  label?: Record<string, string>;
+  option?: Record<string, string>;
+}
+
 @Injectable()
 export class TranslationSweepService {
   private readonly logger = new Logger('TranslationSweep');
@@ -163,6 +171,73 @@ export class TranslationSweepService {
       }
     }
 
+    return filled + (await this.sweepAttributeFields(limit));
+  }
+
+  /**
+   * Labels and options an admin typed into a subcategory's attribute fields.
+   *
+   * Unlike everything above this cannot key off `translations: { none: locale }`
+   * — the translation row already exists (it holds the subcategory's name), and
+   * what is missing is one STRING inside its dict. So it diffs the field
+   * definitions against the stored dict and translates only the gaps. After the
+   * initial seed that is zero strings, so a quiet hour costs one query per
+   * locale and no API call.
+   */
+  private async sweepAttributeFields(limit: number | undefined): Promise<number> {
+    const rows = await this.prisma.subcategory.findMany({
+      where: { NOT: { attrFields: { equals: Prisma.DbNull } } },
+      select: { id: true, attrFields: true, translations: { select: { id: true, locale: true, attrFields: true } } },
+    });
+    let filled = 0;
+
+    for (const locale of this.translation.targets) {
+      const jobs: { id: string; dict: AttrDict; missing: string[]; kinds: ('label' | 'option')[] }[] = [];
+      for (const row of rows) {
+        const tr = row.translations.find((t) => t.locale === locale);
+        if (!tr) continue; // no row yet — the subcategory sweep above creates it first
+        const dict = (tr.attrFields as AttrDict | null) ?? {};
+        const missing: string[] = [];
+        const kinds: ('label' | 'option')[] = [];
+        for (const f of (row.attrFields as unknown as AttrField[]) ?? []) {
+          if (!dict.label?.[f.label] && !missing.includes(f.label)) {
+            missing.push(f.label);
+            kinds.push('label');
+          }
+          for (const o of f.options ?? []) {
+            if (!dict.option?.[o] && !missing.includes(o)) {
+              missing.push(o);
+              kinds.push('option');
+            }
+          }
+        }
+        if (missing.length) jobs.push({ id: tr.id, dict, missing, kinds });
+        if (limit && jobs.length >= limit) break;
+      }
+      if (!jobs.length) continue;
+
+      for (const job of jobs) {
+        // Source stated, never detected: auto-detect 400s a whole batch the
+        // moment it decides an English label is already Italian.
+        const out = await this.translation.translateFrom(job.missing, locale, 'en');
+        const label = { ...job.dict.label };
+        const option = { ...job.dict.option };
+        job.missing.forEach((src, i) => {
+          // Store the identity mapping when Google returns nothing or the same
+          // text — an unstored string reads as "missing" again next hour and
+          // would be re-sent to Google forever ("20/22", "IQF", …).
+          const text = out[i] || src;
+          if (job.kinds[i] === 'label') label[src] = text;
+          else option[src] = text;
+        });
+        await this.prisma.subcategoryTranslation.update({
+          where: { id: job.id },
+          data: { attrFields: { label, option } as Prisma.InputJsonValue },
+        });
+      }
+      filled += jobs.length;
+      this.capped(`attrFields/${locale}`, jobs.length, limit);
+    }
     return filled;
   }
 

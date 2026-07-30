@@ -21,6 +21,16 @@ export function isDeliveryOption(value: unknown): value is DeliveryOption {
   return typeof value === 'string' && (DELIVERY_OPTIONS as readonly string[]).includes(value);
 }
 
+/* ── procurement window ──────────────────────────────────────────── */
+
+/**
+ * When a buyer actually intends to buy, on their posted requirement. Sellers
+ * use it to tell a live need from a price-discovery post, so it is a closed set
+ * (labels: `enums:procure.<id>`), not free text.
+ */
+export const PROCURE_WINDOWS = ['immediate', 'within_1_month', 'within_2_months', 'within_3_months', 'flexible'] as const;
+export type ProcureWindow = (typeof PROCURE_WINDOWS)[number];
+
 /* ── currency ────────────────────────────────────────────────────── */
 
 /**
@@ -62,6 +72,11 @@ export const isPercentField = (f: AttrField): boolean => f.type === 'number' && 
  * Attribute keys that belong in an auto-composed listing title, most
  * distinguishing first. Anything not listed is left out — a title carrying
  * every attribute is noise, and the specs table already shows them all.
+ *
+ * ponytail: hardcoded key list. Now that admins can rename a field's storage
+ * key, renaming e.g. `variety` silently drops it from suggested titles — no
+ * error, just a shorter name. Promote to a per-field "use in title" checkbox
+ * on the admin field editor if that actually bites.
  */
 const NAME_ATTR_KEYS = [
   'variety',

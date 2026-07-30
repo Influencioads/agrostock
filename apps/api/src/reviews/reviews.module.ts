@@ -294,23 +294,33 @@ export class ReviewsService {
     return { avg: Math.round(avg * 10) / 10, count, breakdown };
   }
 
-  async forSubject(kind: ReviewKind, subjectId: string) {
+  /** Fold each row's locale-matched translation over its text (English → base). */
+  private foldText<T extends { translations: { text: string }[] }>(list: T[]) {
+    return list.map(({ translations, ...r }) => {
+      const translated = translations[0]?.text;
+      return translated ? { ...r, text: translated } : r;
+    });
+  }
+
+  async forSubject(kind: ReviewKind, subjectId: string, locale: Lang = 'en') {
     const list = await this.prisma.review.findMany({
       where: { kind, subjectId, status: 'visible' },
       orderBy: { createdAt: 'desc' },
-      select: REVIEW_PUBLIC_SELECT,
+      select: { ...REVIEW_PUBLIC_SELECT, translations: { where: { locale }, select: { text: true } } },
     });
-    return { ...this.summarize(list), list };
+    const localized = this.foldText(list);
+    return { ...this.summarize(localized), list: localized };
   }
 
   /** Reviews received by a user, optionally narrowed to a single target role. */
-  async forUser(userId: string, role?: ReviewRole) {
+  async forUser(userId: string, role?: ReviewRole, locale: Lang = 'en') {
     const list = await this.prisma.review.findMany({
       where: { revieweeId: userId, status: 'visible', ...(role ? { revieweeRole: role } : {}) },
       orderBy: { createdAt: 'desc' },
-      select: REVIEW_PUBLIC_SELECT,
+      select: { ...REVIEW_PUBLIC_SELECT, translations: { where: { locale }, select: { text: true } } },
     });
-    return { ...this.summarize(list), list };
+    const localized = this.foldText(list);
+    return { ...this.summarize(localized), list: localized };
   }
 
   async forProduct(productId: string, locale: Lang = 'en') {
@@ -319,11 +329,7 @@ export class ReviewsService {
       orderBy: { createdAt: 'desc' },
       select: { ...REVIEW_PUBLIC_SELECT, translations: { where: { locale }, select: { text: true } } },
     });
-    // Fold the locale-matched translation over each review's text (English → base).
-    const localized = list.map(({ translations, ...r }) => {
-      const translated = translations[0]?.text;
-      return translated ? { ...r, text: translated } : r;
-    });
+    const localized = this.foldText(list);
     return { ...this.summarize(localized), list: localized };
   }
 
@@ -481,8 +487,8 @@ export class ReviewsController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('subject/:kind/:id')
-  subject(@Param('kind') kind: ReviewKind, @Param('id') id: string) {
-    return this.svc.forSubject(kind, id);
+  subject(@Param('kind') kind: ReviewKind, @Param('id') id: string, @Locale() locale: Lang) {
+    return this.svc.forSubject(kind, id, locale);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
@@ -493,8 +499,8 @@ export class ReviewsController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('user/:id')
-  user(@Param('id') id: string, @Query('role') role?: ReviewRole) {
-    return this.svc.forUser(id, role);
+  user(@Param('id') id: string, @Locale() locale: Lang, @Query('role') role?: ReviewRole) {
+    return this.svc.forUser(id, role, locale);
   }
 
   @ApiBearerAuth()

@@ -68,14 +68,13 @@ export function RfqBasket() {
   const requestQuotes = useMutation({
     mutationFn: async (group: { id: string; name: string; lines: ResolvedLine[] }) => {
       // One requirement per line — `buyerBids.create` describes a single product
-      // need, and quote mode keeps the responses sealed to the buyer.
+      // need. Sellers then bid each other down on it.
       for (const { line, product } of group.lines) {
         const categoryId =
           product.category && typeof product.category === 'object' && 'id' in product.category
             ? (product.category as { id: string }).id
             : undefined;
         await api.buyerBids.create({
-          mode: 'quote',
           title: product.name,
           productName: product.name,
           qtyValue: line.qty,

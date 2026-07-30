@@ -41,6 +41,9 @@ export function AddProductSection({ onNavigate }: { onNavigate: (id: string) => 
   const qc = useQueryClient();
   const [form, setForm] = useState<ProductFormValues>(blankProduct);
   const [err, setErr] = useState('');
+  // See the Inventory modal: an incomplete form goes red on click rather than
+  // leaving the seller with a button that does nothing.
+  const [tried, setTried] = useState(false);
 
   const create = useMutation({
     mutationFn: () => api.products.create(formToPayload(form)),
@@ -57,11 +60,11 @@ export function AddProductSection({ onNavigate }: { onNavigate: (id: string) => 
     <div className="max-w-2xl">
       <SectionHead title={t('console.nav.add')} sub={t('console.seller.addProductSub')} />
       <Card className="space-y-4">
-        <ProductForm value={form} onChange={setForm} error={err} onError={setErr} />
+        <ProductForm value={form} onChange={setForm} error={err} onError={setErr} showErrors={tried} />
         <p className="text-[11px] text-ink-soft">{t('console.seller.addProductNote')}</p>
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="ghost" onClick={() => onNavigate('inventory')}>{t('common:cancel')}</Button>
-          <Button leftIcon={<Icon name="plus" size={16} />} onClick={() => create.mutate()} disabled={create.isPending || !productFormReady(form)}>
+          <Button leftIcon={<Icon name="plus" size={16} />} onClick={() => (productFormReady(form) ? create.mutate() : setTried(true))} disabled={create.isPending}>
             {create.isPending ? t('console.seller.addingProduct') : t('console.seller.addProduct')}
           </Button>
         </div>
@@ -232,11 +235,11 @@ function StartAuctionModal({ onClose }: { onClose: () => void }) {
                 className="h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf"
               >
                 <option value="">{t('console.seller.selectListing')}</option>
-                {eligible.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.price}{unitSuffix(p.unit)} {p.emoji}</option>)}
+                {eligible.map((p) => <option key={p.id} value={p.id}>{p.name} — {p.price}{unitSuffix(p.unit, t)} {p.emoji}</option>)}
               </select>
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Input label={t('console.seller.startingBid')} type="number" placeholder="800" value={startBid} onChange={(e) => setStartBid(e.target.value)} />
+              <Input label={`${t('console.seller.startingBid')} (${products.find((p) => p.id === productId)?.priceCurrency ?? 'USD'})`} type="number" placeholder="800" value={startBid} onChange={(e) => setStartBid(e.target.value)} />
               <Input label={t('console.seller.auctionCloses')} type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
             </div>
             <p className="text-xs text-ink-soft">{t('console.seller.sealedNote')}</p>
@@ -399,7 +402,7 @@ export function SellerOffers() {
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-surface text-xl">{p.emoji ?? '🌾'}</span>
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-ink">{p.name}</div>
-                  <div className="text-xs text-ink-soft">{p.price}{unitSuffix(p.unit)}</div>
+                  <div className="text-xs text-ink-soft">{p.price}{unitSuffix(p.unit, t)}</div>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3">

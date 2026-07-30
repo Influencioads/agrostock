@@ -94,6 +94,7 @@ export function UsersPage() {
             <Input
               label={t('users.createPassword')}
               type="password"
+              passwordLabels={{ show: t('common:showPassword'), hide: t('common:hidePassword') }}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />

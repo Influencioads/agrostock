@@ -6,7 +6,7 @@ import type { ApiMarket } from '@agrotraders/api-client';
 import { api, assetUrl } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
-import { TagInput } from '../components/TagInput';
+import { CityInput, CityTagInput, CountryTagInput } from '../components/GeoInputs';
 
 /**
  * Upload a real profile photo. The server re-encodes it to WebP under
@@ -189,7 +189,15 @@ export function ProfileForm() {
             <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.profileForm.about')}</span>
             <textarea value={f.bio} onChange={set('bio')} rows={2} placeholder={t('page.profileForm.aboutPlaceholder')} className="w-full rounded-md border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand-leaf" />
           </label>
-          <Input label={t('page.profileForm.whereFrom')} placeholder={t('page.profileForm.phLocation')} value={f.location} onChange={set('location')} />
+          {/* Scoped by the account's own country when it has one; otherwise the
+              search spans every country and resolves to "Amritsar, India". */}
+          <CityInput
+            label={t('page.profileForm.whereFrom')}
+            placeholder={t('page.profileForm.phLocation')}
+            country={user?.country || undefined}
+            value={f.location}
+            onChange={(location) => set('location')({ target: { value: location } })}
+          />
           <AvatarUpload
             name={user?.name ?? t('page.profileForm.youFallback')}
             avatarUrl={profile?.avatarUrl}
@@ -236,33 +244,35 @@ export function ProfileForm() {
           </h3>
           <p className="mt-0.5 text-sm text-ink-soft">{t('page.register.opsHint')}</p>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <TagInput
+            <CountryTagInput
               label={t('page.register.operatingCountries')}
               value={ops.operatingCountries}
               onChange={(v) => setOpsField('operatingCountries', v)}
               placeholder={t('page.register.phCountries')}
-              hint={t('page.register.tagHint')}
+              hint={t('page.register.tagHintPick')}
             />
-            <TagInput
+            <CityTagInput
               label={t('page.register.operatingCities')}
+              country={user?.country || undefined}
               value={ops.operatingCities}
               onChange={(v) => setOpsField('operatingCities', v)}
               placeholder={t('page.register.phCities')}
-              hint={t('page.register.tagHint')}
+              hint={t('page.register.tagHintPick')}
             />
-            <TagInput
+            <CountryTagInput
               label={t('page.register.supplyingCountries')}
               value={ops.supplyingCountries}
               onChange={(v) => setOpsField('supplyingCountries', v)}
               placeholder={t('page.register.phCountries')}
-              hint={t('page.register.tagHint')}
+              hint={t('page.register.tagHintPick')}
             />
-            <TagInput
+            <CityTagInput
               label={t('page.register.supplyingCities')}
+              country={user?.country || undefined}
               value={ops.supplyingCities}
               onChange={(v) => setOpsField('supplyingCities', v)}
               placeholder={t('page.register.phPorts')}
-              hint={t('page.register.tagHint')}
+              hint={t('page.register.tagHintPick')}
             />
             {isTransporter && (
               <Input

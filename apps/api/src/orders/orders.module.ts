@@ -39,14 +39,24 @@ const usd = (cents: number) =>
 
 // ── DTOs ─────────────────────────────────────────────────────────
 
-export class PlaceOrderDto {
+/**
+ * Where the buyer wants the goods. Optional so an existing client keeps working;
+ * everything downstream (dispatch, hire prefill, the provider directory filter)
+ * falls back to `buyer.country` when it is absent.
+ */
+class DeliveryFields {
+  @ApiProperty({ required: false, maxLength: 120 }) @IsOptional() @IsString() @MaxLength(120) deliveryCity?: string;
+  @ApiProperty({ required: false, maxLength: 120 }) @IsOptional() @IsString() @MaxLength(120) deliveryCountry?: string;
+}
+
+export class PlaceOrderDto extends DeliveryFields {
   @ApiProperty() @IsString() productSlug!: string;
   @ApiProperty({ minimum: 1, maximum: MAX_QTY }) @IsInt() @Min(1) @Max(MAX_QTY) qty!: number;
   /** F11: optional client idempotency key — a retry with the same key returns the original order. */
   @ApiProperty({ required: false, maxLength: 100 }) @IsOptional() @IsString() @MaxLength(100) idempotencyKey?: string;
 }
 
-export class EnquiryDto {
+export class EnquiryDto extends DeliveryFields {
   @ApiProperty() @IsString() productSlug!: string;
   @ApiProperty({ minimum: 1, maximum: MAX_QTY }) @IsInt() @Min(1) @Max(MAX_QTY) qty!: number;
   @ApiProperty({ required: false, maxLength: 600 }) @IsOptional() @IsString() @MaxLength(600) note?: string;
@@ -158,7 +168,9 @@ const EVENT_FOR_STATUS: Partial<Record<OrderStatus, OrderEventType>> = {
 };
 
 const ORDER_INCLUDE = {
-  product: { select: { id: true, name: true, slug: true, emoji: true, imageUrl: true, unit: true } },
+  // `city`/`country` are the shipment's origin — the clients derive the hire route
+  // and the provider-directory filter from them (see `orderLogistics` in api-client).
+  product: { select: { id: true, name: true, slug: true, emoji: true, imageUrl: true, unit: true, city: true, country: true } },
   buyer: { select: { id: true, name: true, country: true } },
   seller: { select: { id: true, name: true, country: true } },
 } as const;
@@ -296,6 +308,8 @@ export class OrdersService {
           qtyValue: dto.qty,
           qtyUnit: 'MT',
           note: dto.note,
+          deliveryCity: dto.deliveryCity ?? null,
+          deliveryCountry: dto.deliveryCountry ?? null,
           productId: product.id,
           buyerId: buyer.id,
           sellerId: product.sellerId!,
@@ -395,6 +409,8 @@ export class OrdersService {
             unitPriceCents,
             qtyValue: dto.qty,
             qtyUnit: 'MT',
+            deliveryCity: dto.deliveryCity ?? null,
+            deliveryCountry: dto.deliveryCountry ?? null,
             productId: product.id,
             buyerId,
             sellerId: product.sellerId!,
@@ -626,7 +642,11 @@ export class OrdersService {
   async dispatch(id: string, user: AuthUser, dto: DispatchDto) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { product: { select: { name: true } }, buyer: { select: { country: true } }, seller: { select: { country: true } } },
+      include: {
+        product: { select: { name: true, city: true, country: true } },
+        buyer: { select: { country: true } },
+        seller: { select: { country: true } },
+      },
     });
     if (!order) throw new NotFoundException('Order not found');
     if (order.sellerId !== user.id && !isAdmin(user)) throw new ForbiddenException('Only the seller can dispatch this order.');
@@ -635,8 +655,10 @@ export class OrdersService {
     }
     if (order.dispatchedAt) throw new BadRequestException('This order was already dispatched.');
 
-    const fromCity = dto.fromCity ?? order.seller.country ?? 'Origin';
-    const toCity = dto.toCity ?? order.buyer.country ?? 'Destination';
+    // The listing's own city is a far better origin than the seller's country, and
+    // the buyer now names a delivery city at checkout — country stays as the floor.
+    const fromCity = dto.fromCity ?? order.product?.city ?? order.seller.country ?? 'Origin';
+    const toCity = dto.toCity ?? order.deliveryCity ?? order.buyer.country ?? 'Destination';
     const cargo = order.product?.name ?? 'Cargo';
     const pickupOtp = otp();
     const deliveryOtp = otp();

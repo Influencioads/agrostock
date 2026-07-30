@@ -10,6 +10,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Button, Card, Chip, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from '../components/HireModal';
+import { CityField } from '../components/GeoFields';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -120,8 +121,10 @@ export function Directory({ type }: { type: DirectoryType }) {
             ))}
           </ScrollView>
         ) : null}
+        {/* Scoped by the operating-country chips above; unscoped it searches
+            every country, so the filter still works on its own. */}
         {type !== 'sellers' ? (
-          <Input placeholder={t('pubX.dir.operatingCity')} value={operatingCity} onChangeText={setOperatingCity} />
+          <CityField label={t('pubX.dir.operatingCity')} country={operatingCountry || undefined} value={operatingCity} onChange={setOperatingCity} />
         ) : null}
         <Row gap={8}>
           {type === 'transporters' ? (

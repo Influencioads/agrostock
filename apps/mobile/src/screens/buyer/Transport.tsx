@@ -9,6 +9,7 @@ import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Input, ProgressBar, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { OrderDetailSheet, OtpCard, ShipmentFacts, progressOf } from '../components/order-parts';
+import { CityField } from '../components/GeoFields';
 
 interface Req {
   id: string; reference: string; fromCity: string; toCity: string; cargo: string;
@@ -113,8 +114,9 @@ export function BuyerTransport() {
               <Txt variant="title">{t('buyerX.transport.newRequestTitle')}</Txt>
               {!!err && <Txt color={C.error} variant="small">{err}</Txt>}
               <Row gap={10}>
-                <View style={{ flex: 1 }}><Input label={t('buyerX.transport.fieldFrom')} placeholder={t('pubX.ph.cityMundra')} value={form.fromCity} onChangeText={set('fromCity')} /></View>
-                <View style={{ flex: 1 }}><Input label={t('buyerX.transport.fieldTo')} placeholder={t('pubX.ph.cityDubai')} value={form.toCity} onChangeText={set('toCity')} /></View>
+                {/* No country on a request — the pickers search every country. */}
+                <View style={{ flex: 1 }}><CityField label={t('buyerX.transport.fieldFrom')} placeholder={t('pubX.ph.cityMundra')} value={form.fromCity} onChange={set('fromCity')} /></View>
+                <View style={{ flex: 1 }}><CityField label={t('buyerX.transport.fieldTo')} placeholder={t('pubX.ph.cityDubai')} value={form.toCity} onChange={set('toCity')} /></View>
               </Row>
               <Input label={t('buyerX.transport.fieldCargo')} placeholder={t('pubX.ph.cargoBasmati500')} value={form.cargo} onChangeText={set('cargo')} />
               <Input label={t('buyerX.transport.fieldWeight')} keyboardType="numeric" placeholder="500" value={form.weightMt} onChangeText={set('weightMt')} />

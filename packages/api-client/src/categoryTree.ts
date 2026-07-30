@@ -1,4 +1,4 @@
-import { getAttributeFields } from '@agrotraders/types';
+import type { AttrField } from '@agrotraders/types';
 import type { ApiSubcategory } from './index';
 
 /**
@@ -42,29 +42,22 @@ export function findSubcategoryPath(nodes: SubcategoryNode[], id: string): Subca
 }
 
 /**
- * The name to look attribute fields up under, for a selection at any depth.
+ * The attribute fields in force for a selection at any depth.
  *
- * `ATTRIBUTE_SCHEMA` is keyed by (category name, LEVEL-2 subcategory name), but
- * the taxonomy now runs five levels deep. Walking up from the selected node to
- * the nearest ancestor the schema recognises is what lets a buyer who drilled to
- * "Grain › Rice › Basmati › 1121 Steam" still see Rice's facets, instead of the
- * empty field list a direct lookup would return.
+ * Fields are attached to a subcategory by an admin, and a node with none
+ * inherits from its nearest ancestor that has some — that is what lets a buyer
+ * who drilled to "Grain > Rice > Basmati > 1121 Steam" still see Rice's facets
+ * instead of the empty list a direct lookup would return.
  *
- * Pass the path from `findSubcategoryPath` (root-first). Returns `null` when
- * nothing in the chain has a schema entry — callers should then render no
- * attribute fields rather than guessing.
- *
- * Both this and `categoryName` work in CANONICAL ENGLISH (`nameEn`), because
- * that is how the schema is keyed. Passing a translated label matches nothing,
- * which is why every non-English locale used to render an empty detail section.
+ * Pass the path from `findSubcategoryPath` (root-first). Empty means the
+ * selection genuinely has no fields, and callers should render none.
  */
-export function attributeSourceName(path: SubcategoryNode[], categoryName?: string | null): string | null {
-  if (!categoryName) return null;
+export function resolveAttrFields(path: SubcategoryNode[]): AttrField[] {
   for (let i = path.length - 1; i >= 0; i--) {
-    const name = schemaName(path[i]);
-    if (getAttributeFields(categoryName, name).length > 0) return name;
+    const fields = path[i].attrFields;
+    if (fields?.length) return fields;
   }
-  return null;
+  return [];
 }
 
 /** The English name a taxonomy row must be looked up under. */

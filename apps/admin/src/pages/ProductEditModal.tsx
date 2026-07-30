@@ -28,6 +28,8 @@ export function ProductEditModal({ product, onClose }: { product: AdminProduct; 
   const qc = useQueryClient();
   const [form, setForm] = useState<ProductFormValues>(() => productToForm(product));
   const [err, setErr] = useState('');
+  /** Set on a click that could not save — the form then marks the offending fields. */
+  const [tried, setTried] = useState(false);
 
   const save = useMutation({
     // `verified` is admin-only and not part of the shared form; everything the
@@ -51,7 +53,7 @@ export function ProductEditModal({ product, onClose }: { product: AdminProduct; 
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>{t('common:cancel')}</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || !productFormReady(form)}>
+          <Button onClick={() => (productFormReady(form) ? save.mutate() : setTried(true))} disabled={save.isPending}>
             {save.isPending ? t('prodEdit.saving') : t('prodEdit.save')}
           </Button>
         </>
@@ -59,7 +61,7 @@ export function ProductEditModal({ product, onClose }: { product: AdminProduct; 
     >
       {/* No inline "create a market": `POST /markets` is seller-only, and admins
           have the Markets page for it. */}
-      <ProductForm value={form} onChange={setForm} error={err} onError={setErr} api={api} assetUrl={assetUrl} />
+      <ProductForm value={form} onChange={setForm} error={err} onError={setErr} api={api} assetUrl={assetUrl} showErrors={tried} />
     </Modal>
   );
 }

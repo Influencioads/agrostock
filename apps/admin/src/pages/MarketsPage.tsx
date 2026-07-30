@@ -4,6 +4,7 @@ import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import type { ApiMarket } from '@agrotraders/api-client';
 import { ALL_COUNTRIES, countryFlag, countryLabel } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
+import { CityInput } from '../components/GeoInputs';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
 import { errMessage } from '../lib/errors';
@@ -126,7 +127,7 @@ export function MarketsPage() {
               <span className="mb-1 block text-xs font-semibold text-ink-soft">{t('marketsAdmin.fCountry')}</span>
               <select
                 value={form.country}
-                onChange={(e) => setForm((f) => ({ ...f, country: e.target.value, flag: countryFlag(e.target.value) }))}
+                onChange={(e) => setForm((f) => ({ ...f, country: e.target.value, flag: countryFlag(e.target.value), city: '' }))}
                 className={inputCls + ' bg-white'}
               >
                 <option value="">{t('marketsAdmin.phCountry')}</option>
@@ -137,8 +138,17 @@ export function MarketsPage() {
               </select>
             </label>
 
+            {/* City is a picker too, scoped to the country above — market city
+                names are matched against the same reference list on import. */}
+            <CityInput
+              label={t('marketsAdmin.fCity')}
+              country={form.country}
+              value={form.city}
+              onChange={(city) => setForm((f) => ({ ...f, city }))}
+              placeholder={t('marketsAdmin.phCity')}
+            />
+
             {([
-              ['city', 'marketsAdmin.fCity', 'marketsAdmin.phCity'],
               ['region', 'marketsAdmin.fRegion', 'marketsAdmin.phRegion'],
               ['address', 'marketsAdmin.fAddress', 'marketsAdmin.phAddress'],
             ] as const).map(([k, labelKey, phKey]) => (

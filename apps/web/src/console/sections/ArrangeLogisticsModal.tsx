@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Modal } from '@agrotraders/ui';
-import type { ApiHireRequest, ApiOrder } from '@agrotraders/api-client';
+import { orderLogistics, type ApiHireRequest, type ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { HireModal, type HireTarget } from '../../components/site/HireModal';
@@ -32,12 +32,21 @@ interface ProviderRow {
  * individual workers. Every hire is stamped with this order's id, so once a
  * transporter accepts, the minted Trip attaches to the order and the existing
  * dispatch / pickup-OTP / delivery-OTP flow takes over unchanged.
+ *
+ * The order supplies the route: the lists show only providers serving it, and the
+ * hire form opens pre-filled. This used to fetch the first 24 providers on the
+ * platform and hand the seller a blank form.
  */
 export function ArrangeLogisticsModal({ order, onClose }: { order: ApiOrder; onClose: () => void }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('transporter');
   const [hiring, setHiring] = useState<HireTarget | null>(null);
+  // Escape hatch for a route nobody has declared coverage for — otherwise the
+  // seller would be stuck looking at an empty list.
+  const [allAreas, setAllAreas] = useState(false);
+  const logistics = orderLogistics(order);
+  const serves: Partial<typeof logistics.serves> = allAreas ? {} : logistics.serves;
 
   // Hires already raised against this order — the seller shouldn't double-book.
   const { data: hires = [] } = useQuery<ApiHireRequest[]>({
@@ -49,10 +58,10 @@ export function ArrangeLogisticsModal({ order, onClose }: { order: ApiOrder; onC
   // Workers come back in a different shape to sellers/transporters/loadercos,
   // so both are normalised to one row before rendering.
   const { data: providers = [], isLoading } = useQuery<ProviderRow[]>({
-    queryKey: ['directory', tab],
+    queryKey: ['directory', tab, serves.servesCity ?? '', serves.servesCountry ?? ''],
     queryFn: async () => {
       if (tab === 'worker') {
-        const workers = await api.directory.workers();
+        const workers = await api.directory.workers(serves);
         return workers.map((w) => ({
           id: w.id,
           userId: w.user?.id,
@@ -61,7 +70,7 @@ export function ArrangeLogisticsModal({ order, onClose }: { order: ApiOrder; onC
           workerId: w.id,
         }));
       }
-      const list = tab === 'transporter' ? await api.directory.transporters() : await api.directory.loaders();
+      const list = tab === 'transporter' ? await api.directory.transporters(serves) : await api.directory.loaders(serves);
       return list.map((d) => ({
         id: d.id,
         userId: d.id,
@@ -102,6 +111,11 @@ export function ArrangeLogisticsModal({ order, onClose }: { order: ApiOrder; onC
           )}
 
           <section>
+            {logistics.label && (
+              <p className="mb-3 text-xs text-ink-soft">
+                {allAreas ? t('console.hires.allAreas') : t('console.hires.routeNote', { route: logistics.label })}
+              </p>
+            )}
             <div className="mb-3 flex gap-2">
               {(Object.keys(TAB_COPY) as Tab[]).map((tb) => (
                 <button
@@ -120,7 +134,14 @@ export function ArrangeLogisticsModal({ order, onClose }: { order: ApiOrder; onC
             {isLoading ? (
               <p className="py-6 text-center text-ink-soft">{t('common:loading')}</p>
             ) : providers.length === 0 ? (
-              <p className="py-6 text-center text-ink-soft">{t(`console.hires.${TAB_COPY[tab].empty}`)}</p>
+              <div className="space-y-2 py-6 text-center">
+                <p className="text-ink-soft">{t(`console.hires.${TAB_COPY[tab].empty}`)}</p>
+                {!allAreas && logistics.label && (
+                  <Button size="sm" variant="outline" onClick={() => setAllAreas(true)}>
+                    {t('console.hires.showAll')}
+                  </Button>
+                )}
+              </div>
             ) : (
               <div className="max-h-72 space-y-2 overflow-y-auto">
                 {providers.map((p) => {
@@ -155,6 +176,13 @@ export function ArrangeLogisticsModal({ order, onClose }: { order: ApiOrder; onC
         <HireModal
           target={hiring}
           orderId={order.id}
+          initial={{
+            fromCity: logistics.fromCity,
+            toCity: logistics.toCity,
+            cargo: logistics.cargo,
+            // Loading crew work at the pickup point; editable for a destination crew.
+            location: logistics.fromCity,
+          }}
           onClose={() => {
             setHiring(null);
             qc.invalidateQueries({ queryKey: ['order-hires', order.id] });

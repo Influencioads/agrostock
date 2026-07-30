@@ -147,7 +147,7 @@ export function PublicProfilePage() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-sm font-bold text-ink">{prod.name}</span>
-                  <span className="text-xs text-ink-soft">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{unitSuffix(prod.unit)}</span>
+                  <span className="text-xs text-ink-soft">{fmtPrice({ price: prod.price, priceCents: prod.priceCents })}{unitSuffix(prod.unit, t)}</span>
                 </span>
                 <Icon name="chevronRight" size={16} className="text-ink-soft" />
               </Link>

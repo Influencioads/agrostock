@@ -131,21 +131,46 @@ export class GeoService {
  * third-party geocoding call. Files are read lazily and kept in memory once
  * touched (the largest, US, is ~190 KB).
  */
+/**
+ * Former names people still type, mapped to the spelling the dataset actually
+ * carries. Without this, "bangalore" surfaces the two rural/urban districts but
+ * never Bengaluru itself, and the picker looks broken for the city being sought.
+ *
+ * ponytail: a hand-kept short list of the renames that come up in trade, not an
+ * exonym database. If this grows past a screenful, pull a real alternate-names
+ * dataset (GeoNames ships one) instead of extending it.
+ */
+const CITY_ALIASES: Record<string, string> = {
+  bangalore: 'bengaluru',
+  bombay: 'mumbai',
+  calcutta: 'kolkata',
+  madras: 'chennai',
+  poona: 'pune',
+  baroda: 'vadodara',
+  mysore: 'mysuru',
+  trivandrum: 'thiruvananthapuram',
+  saigon: 'ho chi minh',
+  peking: 'beijing',
+  rangoon: 'yangon',
+  constantinople: 'istanbul',
+};
+
 @Injectable()
 export class CityRefService {
   private readonly dataDir = join(__dirname, 'data');
   private codes: Record<string, string> | null = null;
+  private names: Record<string, string> | null = null;
   private readonly cache = new Map<string, string[]>();
+  /** Flat `"City, Country"` index for the country-less search. Built on first use. */
+  private globalIndex: string[] | null = null;
+  private globalBuild: Promise<string[]> | null = null;
 
   private async iso2(country: string): Promise<string | null> {
     this.codes ??= JSON.parse(await readFile(join(this.dataDir, 'country-codes.json'), 'utf8'));
     return this.codes![country.trim().toLowerCase()] ?? null;
   }
 
-  /** City names for a country, optionally filtered by a prefix/substring query. */
-  async cities(country: string, q?: string, limit = 200): Promise<string[]> {
-    const iso = country ? await this.iso2(country) : null;
-    if (!iso) return [];
+  private async citiesOf(iso: string): Promise<string[]> {
     let all = this.cache.get(iso);
     if (!all) {
       try {
@@ -155,15 +180,61 @@ export class CityRefService {
       }
       this.cache.set(iso, all);
     }
+    return all;
+  }
+
+  /**
+   * Every city in the dataset as `"City, Country"`, so a picker with no country
+   * to scope by (freight from/to, a hire's pickup point) still resolves to a
+   * canonical place instead of free text. ~2.3 MB on disk, held once.
+   */
+  private async global(): Promise<string[]> {
+    if (this.globalIndex) return this.globalIndex;
+    // ponytail: one shared build promise, so N concurrent first-hits read the
+    // 192 files once instead of N times. Swap for a prebuilt file if startup
+    // latency ever matters more than the memory.
+    this.globalBuild ??= (async () => {
+      this.names ??= JSON.parse(await readFile(join(this.dataDir, 'country-names.json'), 'utf8'));
+      const out: string[] = [];
+      for (const [iso, country] of Object.entries(this.names!)) {
+        for (const city of await this.citiesOf(iso)) out.push(`${city}, ${country}`);
+      }
+      this.globalIndex = out;
+      return out;
+    })();
+    return this.globalBuild;
+  }
+
+  /**
+   * City names for a country, optionally filtered by a prefix/substring query.
+   *
+   * With no country, searches every country and returns `"City, Country"` — that
+   * form needs a query, since an unscoped "first 200 cities on earth" is noise.
+   */
+  async cities(country: string, q?: string, limit = 200): Promise<string[]> {
     const term = q?.trim().toLowerCase();
+    let all: string[];
+    if (country) {
+      const iso = await this.iso2(country);
+      if (!iso) return [];
+      all = await this.citiesOf(iso);
+    } else {
+      if (!term || term.length < 2) return [];
+      all = await this.global();
+    }
     if (!term) return all.slice(0, limit);
+    // A former name matches its current one too, so "bangalore" finds Bengaluru.
+    const terms = [term];
+    for (const [old, current] of Object.entries(CITY_ALIASES)) {
+      if (old.startsWith(term)) terms.push(current);
+    }
     // Prefix matches first — typing "mum" should surface Mumbai above Kadi-Mumbai.
     const starts: string[] = [];
     const contains: string[] = [];
     for (const name of all) {
       const lower = name.toLowerCase();
-      if (lower.startsWith(term)) starts.push(name);
-      else if (lower.includes(term)) contains.push(name);
+      if (terms.some((x) => lower.startsWith(x))) starts.push(name);
+      else if (terms.some((x) => lower.includes(x))) contains.push(name);
       if (starts.length >= limit) break;
     }
     return [...starts, ...contains].slice(0, limit);

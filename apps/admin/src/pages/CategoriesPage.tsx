@@ -3,11 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import {
   buildSubcategoryTree,
+  findSubcategoryPath,
   flattenSubcategoryTree,
+  resolveAttrFields,
   type ApiCategory,
   type ApiSubcategory,
   type SubcategoryNode,
 } from '@agrotraders/api-client';
+import type { AttrField, AttrFieldType } from '@agrotraders/types';
 import { PageHeader } from '../components/widgets';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
@@ -18,6 +21,7 @@ type CatModal =
   | { kind: 'category-edit'; cat: ApiCategory }
   | { kind: 'sub-new'; cat: ApiCategory; parent?: ApiSubcategory }
   | { kind: 'sub-edit'; cat: ApiCategory; sub: ApiSubcategory; siblings: ApiSubcategory[] }
+  | { kind: 'sub-fields'; cat: ApiCategory; sub: ApiSubcategory; inherited: AttrField[] }
   | null;
 
 export function CategoriesPage() {
@@ -51,7 +55,9 @@ export function CategoriesPage() {
         title={t('page.categories.title')}
         subtitle={t('page.categories.subtitle', {
           categories: categories.length,
-          subcategories: categories.reduce((n, c) => n + (c.subcategories?.length ?? 0), 0),
+          // The full subtree, not the level-2 slice the list endpoint returns —
+          // otherwise the header claims 424 nodes for a 14k taxonomy.
+          subcategories: categories.reduce((n, c) => n + (c._count?.subcategories ?? 0), 0),
         })}
         action={
           <Button onClick={() => setModal({ kind: 'category-new' })} leftIcon={<Icon name="plus" size={16} />}>
@@ -81,7 +87,11 @@ export function CategoriesPage() {
         </div>
       )}
 
-      {modal && <TaxonomyModal modal={modal} onClose={() => setModal(null)} onSaved={invalidate} />}
+      {modal?.kind === 'sub-fields' ? (
+        <FieldsModal modal={modal} onClose={() => setModal(null)} onSaved={invalidate} />
+      ) : (
+        modal && <TaxonomyModal modal={modal} onClose={() => setModal(null)} onSaved={invalidate} />
+      )}
     </div>
   );
 }
@@ -129,6 +139,9 @@ function CategoryCard({
     return flat.filter(({ node }) => node.name.toLowerCase().includes(needle)).slice(0, 100);
   }, [query, flat]);
 
+  /** What this node would show if it defined nothing itself — its ancestors' fields. */
+  const inheritedFor = (node: SubcategoryNode) => resolveAttrFields(findSubcategoryPath(tree, node.id).slice(0, -1));
+
   const row = (node: SubcategoryNode, depth: number) => (
     <div
       key={node.id}
@@ -152,6 +165,14 @@ function CategoryCard({
           leftIcon={<Icon name="plus" size={13} />}
         >
           {t('catAdmin.addChild')}
+        </Button>
+        {/* Available on EVERY node, not just level 2 — that is what makes
+            "attach fields at any depth" real. `n` counts the node's OWN fields;
+            a node with none inherits, which the modal spells out. */}
+        <Button variant="ghost" size="sm" onClick={() => onModal({ kind: 'sub-fields', cat, sub: node, inherited: inheritedFor(node) })}>
+          {node.attrFields?.length
+            ? t('catAdmin.fieldsCount', { count: node.attrFields.length })
+            : t('catAdmin.fields')}
         </Button>
         <Button variant="ghost" size="sm" onClick={() => onModal({ kind: 'sub-edit', cat, sub: node, siblings: subs })}>
           {t('catAdmin.edit')}
@@ -193,7 +214,7 @@ function CategoryCard({
           <div className="truncate font-display font-bold text-ink">{cat.name}</div>
           <div className="text-xs text-ink-soft">
             {t('catAdmin.subStats', {
-              subs: open ? subs.length : (cat.subcategories?.length ?? 0),
+              subs: cat._count?.subcategories ?? subs.length,
               products: cat._count?.products ?? 0,
             })}
           </div>
@@ -222,18 +243,18 @@ function CategoryCard({
           {isLoading ? (
             <p className="text-sm text-ink-soft">{t('common:loading')}</p>
           ) : subs.length === 0 ? (
-            <p className="text-sm text-ink-soft">{t('catAdmin.noSubs', { defaultValue: 'No subcategories yet.' })}</p>
+            <p className="text-sm text-ink-soft">{t('catAdmin.noSubs')}</p>
           ) : (
             <>
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('catAdmin.searchTree', { defaultValue: 'Search this category…' })}
+                placeholder={t('catAdmin.searchTree')}
               />
               <div className="mt-3 space-y-2">
                 {matches
                   ? matches.length === 0
-                    ? <p className="text-sm text-ink-soft">{t('catAdmin.noMatch', { defaultValue: 'Nothing matches.' })}</p>
+                    ? <p className="text-sm text-ink-soft">{t('catAdmin.noMatch')}</p>
                     : matches.map(({ node, depth }) => row(node, Math.min(depth, 2)))
                   : tree.map((node) => renderSubtree(node))}
               </div>
@@ -245,9 +266,226 @@ function CategoryCard({
   );
 }
 
+/* ── Attribute-field editor ───────────────────────────────────────── */
+
+const FIELD_TYPES: AttrFieldType[] = ['select', 'multiselect', 'text', 'number', 'boolean', 'date'];
+
+/** Suggest a storage key from the label, so an admin never has to invent one. */
+const keyFromLabel = (label: string) =>
+  label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/^([0-9])/, 'f$1').slice(0, 60);
+
+const blankField = (): AttrField => ({ key: '', label: '', type: 'select', options: [] });
+
+/**
+ * Edit the attribute fields a subcategory shows on the "Add product" form and
+ * in the buyer facets. Whole-array save: the order here IS the display order.
+ *
+ * Deliberately plain — text inputs, a type dropdown, one option per line, and
+ * up/down buttons. A drag-and-drop chip editor would be a lot of machinery for
+ * a screen an admin opens a few times a year.
+ */
+function FieldsModal({
+  modal,
+  onClose,
+  onSaved,
+}: {
+  modal: Extract<NonNullable<CatModal>, { kind: 'sub-fields' }>;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { t } = useI18n();
+  const [fields, setFields] = useState<AttrField[]>(() =>
+    (modal.sub.attrFields ?? []).map((f) => ({ ...f, options: f.options ? [...f.options] : undefined })),
+  );
+  const [err, setErr] = useState('');
+
+  const patch = (i: number, next: Partial<AttrField>) =>
+    setFields((fs) => fs.map((f, j) => (j === i ? { ...f, ...next } : f)));
+  const move = (i: number, by: number) =>
+    setFields((fs) => {
+      const to = i + by;
+      if (to < 0 || to >= fs.length) return fs;
+      const copy = [...fs];
+      [copy[i], copy[to]] = [copy[to], copy[i]];
+      return copy;
+    });
+
+  const save = useMutation({
+    mutationFn: () => api.admin.updateSubcategoryFields(modal.sub.id, fields),
+    onSuccess: () => {
+      onSaved();
+      onClose();
+    },
+    onError: (e) => setErr(errMessage(e, t('genericError'))),
+  });
+
+  // Mirrors the server's rules so Save is disabled rather than 400-ing.
+  const problem = (() => {
+    const keys = new Set<string>();
+    for (const [i, f] of fields.entries()) {
+      const at = t('catAdmin.fieldAt', { n: i + 1 });
+      if (!/^[a-z][a-z0-9_]{0,59}$/.test(f.key)) return t('catAdmin.errKey', { at });
+      if (keys.has(f.key)) return t('catAdmin.errDupKey', { at, key: f.key });
+      keys.add(f.key);
+      if (!f.label.trim()) return t('catAdmin.errLabel', { at });
+      if ((f.type === 'select' || f.type === 'multiselect') && !f.options?.length) return t('catAdmin.errOptions', { at });
+    }
+    return '';
+  })();
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={t('catAdmin.fieldsTitle', { name: modal.sub.name })}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {t('common:cancel')}
+          </Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !!problem}>
+            {save.isPending ? t('catAdmin.saving') : t('catAdmin.save')}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-xs text-ink-soft">{t('catAdmin.fieldsIntro')}</p>
+        {fields.length === 0 && modal.inherited.length > 0 && (
+          <p className="rounded-md bg-brand-surface px-3 py-2 text-xs text-ink-soft">
+            {t('catAdmin.inheritNote', { list: modal.inherited.map((f) => f.label).join(', ') })}
+          </p>
+        )}
+
+        {fields.map((f, i) => {
+          const hasOptions = f.type === 'select' || f.type === 'multiselect';
+          return (
+            <div key={i} className="space-y-2 rounded-lg border border-surface-border bg-white p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-ink-soft">#{i + 1}</span>
+                <div className="flex-1" />
+                <Button variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0}>
+                  ↑
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => move(i, 1)} disabled={i === fields.length - 1}>
+                  ↓
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setFields((fs) => fs.filter((_, j) => j !== i))}>
+                  {t('catAdmin.delete')}
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Input
+                  label={t('catAdmin.fieldLabel')}
+                  value={f.label}
+                  onChange={(e) => {
+                    const label = e.target.value;
+                    // Only auto-fill the key while it still tracks the label —
+                    // once an admin edits it by hand it is a storage key that
+                    // products already point at, and must stop moving.
+                    const tracking = !f.key || f.key === keyFromLabel(f.label);
+                    patch(i, tracking ? { label, key: keyFromLabel(label) } : { label });
+                  }}
+                />
+                <Input
+                  label={t('catAdmin.fieldKey')}
+                  value={f.key}
+                  onChange={(e) => patch(i, { key: e.target.value })}
+                  hint={t('catAdmin.fieldKeyHint')}
+                />
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-semibold text-ink">{t('catAdmin.fieldType')}</span>
+                  <select
+                    value={f.type}
+                    onChange={(e) => {
+                      const type = e.target.value as AttrFieldType;
+                      const opts = type === 'select' || type === 'multiselect';
+                      patch(i, { type, options: opts ? (f.options ?? []) : undefined });
+                    }}
+                    className="h-10 w-full rounded-md border border-surface-border bg-white px-2.5 text-sm text-ink"
+                  >
+                    {FIELD_TYPES.map((ty) => (
+                      <option key={ty} value={ty}>
+                        {t(`catAdmin.fieldTypes.${ty}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Input
+                  label={t('catAdmin.fieldUnit')}
+                  value={f.unit ?? ''}
+                  onChange={(e) => patch(i, { unit: e.target.value })}
+                  hint={t('catAdmin.fieldUnitHint')}
+                />
+              </div>
+
+              {hasOptions && (
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-semibold text-ink">{t('catAdmin.fieldOptions')}</span>
+                  <textarea
+                    rows={Math.min(10, Math.max(3, (f.options?.length ?? 0) + 1))}
+                    value={(f.options ?? []).join('\n')}
+                    onChange={(e) => patch(i, { options: e.target.value.split('\n').map((o) => o.trimStart()) })}
+                    onBlur={(e) =>
+                      patch(i, { options: e.target.value.split('\n').map((o) => o.trim()).filter(Boolean) })
+                    }
+                    className="w-full rounded-md border border-surface-border bg-white px-2.5 py-2 font-mono text-xs text-ink"
+                  />
+                  <span className="mt-1 block text-[11px] text-ink-soft">{t('catAdmin.fieldOptionsHint')}</span>
+                </label>
+              )}
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Input
+                  label={t('catAdmin.fieldHelp')}
+                  value={f.help ?? ''}
+                  onChange={(e) => patch(i, { help: e.target.value })}
+                />
+                <label className="flex items-center gap-2 self-end pb-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={!!f.required}
+                    onChange={(e) => patch(i, { required: e.target.checked })}
+                    className="h-4 w-4"
+                  />
+                  {t('catAdmin.fieldRequired')}
+                </label>
+              </div>
+            </div>
+          );
+        })}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setFields((fs) => [...fs, blankField()])}
+          leftIcon={<Icon name="plus" size={13} />}
+          disabled={fields.length >= 40}
+        >
+          {t('catAdmin.addField')}
+        </Button>
+
+        <p className="text-[11px] text-ink-soft">{t('catAdmin.renameWarning')}</p>
+        {(problem || err) && <p className="text-xs text-status-error">{problem || err}</p>}
+      </div>
+    </Modal>
+  );
+}
+
 /* ── Create/edit modal for both categories and subcategories ──────── */
 
-function TaxonomyModal({ modal, onClose, onSaved }: { modal: NonNullable<CatModal>; onClose: () => void; onSaved: () => void }) {
+function TaxonomyModal({
+  modal,
+  onClose,
+  onSaved,
+}: {
+  // Everything except `sub-fields`, which has its own modal — stated in the type
+  // so the save `switch` below stays provably exhaustive.
+  modal: Exclude<NonNullable<CatModal>, { kind: 'sub-fields' }>;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const { t } = useI18n();
   const isSub = modal.kind === 'sub-new' || modal.kind === 'sub-edit';
   const initialName = modal.kind === 'category-edit' ? modal.cat.name : modal.kind === 'sub-edit' ? modal.sub.name : '';
@@ -354,16 +592,16 @@ function TaxonomyModal({ modal, onClose, onSaved }: { modal: NonNullable<CatModa
           hint={t('catAdmin.emojiHint')}
         />
         <Input
-          label={t('catAdmin.sortLabel', { defaultValue: 'Sort order' })}
+          label={t('catAdmin.sortLabel')}
           type="number"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          hint={t('catAdmin.sortHint', { defaultValue: 'Lower numbers appear first.' })}
+          hint={t('catAdmin.sortHint')}
         />
         {modal.kind === 'sub-edit' && (
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink">
-              {t('catAdmin.moveLabel', { defaultValue: 'Move under' })}
+              {t('catAdmin.moveLabel')}
             </span>
             <select
               value={parentId}
@@ -371,7 +609,7 @@ function TaxonomyModal({ modal, onClose, onSaved }: { modal: NonNullable<CatModa
               className="h-10 w-full rounded-md border border-surface-border bg-white px-2.5 text-sm text-ink"
             >
               <option value="">
-                {t('catAdmin.moveTopLevel', { defaultValue: 'Top level of' })} {modal.cat.name}
+                {t('catAdmin.moveTopLevel')} {modal.cat.name}
               </option>
               {moveOptions.map(({ node, depth }) => (
                 <option key={node.id} value={node.id}>
@@ -380,7 +618,7 @@ function TaxonomyModal({ modal, onClose, onSaved }: { modal: NonNullable<CatModa
               ))}
             </select>
             <span className="mt-1 block text-[11px] text-ink-soft">
-              {t('catAdmin.moveHint', { defaultValue: 'Moves this node and everything under it.' })}
+              {t('catAdmin.moveHint')}
             </span>
           </label>
         )}

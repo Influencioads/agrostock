@@ -3,8 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiCategory, ApiMarket } from '@agrotraders/api-client';
-import { getFilterFields } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
+import { filterFields, optionLabel, type AttrField } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { countryOptions } from '../../lib/countries';
 import { C, radius, space, type } from '../../theme/tokens';
@@ -80,13 +79,9 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
     staleTime: 3600e3,
   });
 
-  // Attribute facets for the chosen (sub)category. A deep pick resolves to its
-  // nearest schema-bearing ancestor, so facets keep showing past level 2.
-  const attrFields = useMemo(
-    // English name — the schema knows no other language (see CategorySelection).
-    () => getFilterFields(draft.selection.categoryNameEn || draft.selection.categoryName, draft.selection.attrSource),
-    [draft.selection.categoryNameEn, draft.selection.categoryName, draft.selection.attrSource],
-  );
+  // Attribute facets for the chosen (sub)category. The picker already resolved
+  // them along the path, inheritance included, so this is just the filterable subset.
+  const attrFields = useMemo(() => filterFields(draft.selection.attrFields), [draft.selection.attrFields]);
 
   const cityOptions = useMemo(
     () => Array.from(new Set(markets.map((m) => m.city).filter(Boolean))) as string[],
@@ -94,11 +89,6 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
   );
   // Every country, not only the ones the loaded markets cover.
   const countries = countryOptions(lang);
-
-  // Facet labels come from the English schema; only the display is localized —
-  // the value sent to the API stays canonical English.
-  const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
-  const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
 
   const groups: Group[] = [
     { id: 'category', label: t('pubX.filter.groups.category'), count: draft.selection.categoryId ? 1 : 0 },
@@ -108,7 +98,7 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
     ...(cityOptions.length ? [{ id: 'city', label: t('pubX.filter.groups.city'), count: draft.city ? 1 : 0 }] : []),
     { id: 'grade', label: t('pubX.filter.groups.grade'), count: draft.grade ? 1 : 0 },
     ...(markets.length ? [{ id: 'market', label: t('pubX.filter.groups.market'), count: draft.market ? 1 : 0 }] : []),
-    ...attrFields.map((f) => ({ id: f.key, label: aLabel(f.label), count: (draft.attrs[f.key] ?? []).length })),
+    ...attrFields.map((f: AttrField) => ({ id: f.key, label: f.label, count: (draft.attrs[f.key] ?? []).length })),
   ];
 
   // A category change can retire the facet group currently in view.
@@ -245,14 +235,15 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
         );
 
       default: {
-        const field = attrFields.find((f) => f.key === activeGroup);
+        const field = attrFields.find((f: AttrField) => f.key === activeGroup);
         if (!field) return null;
         const selected = draft.attrs[field.key] ?? [];
         // Booleans are a single "yes" checkbox rather than a two-value list.
         const options =
           field.type === 'boolean'
             ? [{ value: 'true', label: t('common:yes') }]
-            : filterOptions(field.options ?? []).map((o) => ({ value: o, label: aOpt(o) }));
+            // Values stay canonical English — they are what the API filters on.
+            : filterOptions(field.options ?? []).map((o) => ({ value: o, label: optionLabel(field, o) }));
         return renderChecks(options, selected, (v) => setDraft((d) => toggleAttr(d, field.key, v)));
       }
     }

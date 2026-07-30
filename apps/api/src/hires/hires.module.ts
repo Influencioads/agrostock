@@ -179,17 +179,35 @@ export class HiresService {
       throw new BadRequestException(`This user is not a ${dto.targetType}.`);
     }
 
-    // Order-linked hire: only that order's seller may source logistics for it,
-    // and we prefill the cargo from the order so the provider sees the context.
-    let order: { id: string; qty: string | null; product: { name: string } | null } | null = null;
+    // Order-linked hire: only that order's seller may source logistics for it, and
+    // the whole job — route, cargo, work site — is derived from the order so nobody
+    // retypes it. The clients prefill the same values into the form (see
+    // `orderLogistics` in api-client) purely so the seller can see and edit them;
+    // deriving here too keeps a stale or field-less client (mobile has no date
+    // input) from posting a routeless hire.
+    let order: { id: string; fromCity: string | null; toCity: string | null; cargo: string | null } | null = null;
     if (dto.orderId) {
       const found = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
-        select: { id: true, sellerId: true, qty: true, product: { select: { name: true } } },
+        select: {
+          id: true,
+          sellerId: true,
+          qty: true,
+          deliveryCity: true,
+          deliveryCountry: true,
+          product: { select: { name: true, city: true, country: true } },
+          seller: { select: { country: true } },
+          buyer: { select: { country: true } },
+        },
       });
       if (!found) throw new NotFoundException('Order not found');
       if (found.sellerId !== requester.id) throw new ForbiddenException('Not your order');
-      order = { id: found.id, qty: found.qty, product: found.product };
+      order = {
+        id: found.id,
+        fromCity: found.product?.city ?? found.product?.country ?? found.seller.country ?? null,
+        toCity: found.deliveryCity ?? found.deliveryCountry ?? found.buyer.country ?? null,
+        cargo: [found.product?.name, found.qty].filter(Boolean).join(' · ') || null,
+      };
     }
 
     let workerId: string | null = null;
@@ -218,10 +236,12 @@ export class HiresService {
             idempotencyKey: idemKey,
             targetType: dto.targetType,
             message: dto.message,
-            fromCity: dto.fromCity,
-            toCity: dto.toCity,
-            cargo: dto.cargo ?? (order ? [order.product?.name, order.qty].filter(Boolean).join(' · ') || null : null),
-            location: dto.location,
+            fromCity: dto.fromCity ?? order?.fromCity ?? null,
+            toCity: dto.toCity ?? order?.toCity ?? null,
+            cargo: dto.cargo ?? order?.cargo ?? null,
+            // Loading/unloading crew work at the pickup point unless the seller says
+            // otherwise — the destination is the buyer's side to staff.
+            location: dto.location ?? order?.fromCity ?? null,
             workersNeeded: dto.workersNeeded,
             neededDate: dto.neededDate ? new Date(dto.neededDate) : null,
             budgetCents: dto.budgetCents,

@@ -44,7 +44,7 @@ export function SellerOffers() {
                 </View>
                 <View>
                   <Txt variant="title">{p.name}</Txt>
-                  <Txt variant="muted">{p.price}{unitSuffix(p.unit)}</Txt>
+                  <Txt variant="muted">{p.price}{unitSuffix(p.unit, t)}</Txt>
                 </View>
               </Row>
               <Row gap={8}>

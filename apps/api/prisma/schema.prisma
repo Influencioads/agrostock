@@ -87,6 +87,10 @@ enum ProductStatus {
   live
   rejected
   hidden
+  /// Seller deleted the listing but it still has orders/bids/reviews hanging off
+  /// it, so the row survives for that history. Off every public surface and
+  /// hidden from the seller's own list — `hidden` stays the admin takedown state.
+  archived
 }
 
 /// Admin decision on a user's request to withdraw wallet funds.
@@ -617,10 +621,18 @@ model Subcategory {
   sort         Int                      @default(0)
   categoryId   String
   parentId     String?
+  /// The product-attribute fields a seller fills in for this node: `AttrField[]`
+  /// from @agrotraders/types, in display order, editable by admins. Labels and
+  /// option values are canonical ENGLISH — product values are stored verbatim
+  /// and the buyer facets match on them, so only the *display* is translated
+  /// (see SubcategoryTranslation.attrFields). Null/empty means "inherit from the
+  /// nearest ancestor that has some" — see CategoriesService.fieldMap().
+  attrFields   Json?
   category     Category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   parent       Subcategory?             @relation("SubcategoryChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children     Subcategory[]            @relation("SubcategoryChildren")
   products     Product[]
+  buyerBids    BuyerBid[]
   translations SubcategoryTranslation[]
 
   @@index([categoryId])
@@ -671,6 +683,10 @@ model Product {
   isOffer       Boolean   @default(false)
   isAuction     Boolean   @default(false)
   startBidCents Int?
+  // The seller's typed starting bid, in cents of THEIR priceCurrency — kept so
+  // the edit form round-trips the exact number; `startBidCents` is the USD
+  // baseline the auction engine compares on.
+  startBidSrcCents Int?
   // Open ascending auction knobs. `bidIncrementCents` is the minimum raise (a
   // sensible fallback is derived when null); `reserveCents` is the hidden floor
   // below which the lot doesn't sell (null = no reserve).
@@ -769,6 +785,14 @@ model Order {
   currency       String  @default("USD")
   note           String?
 
+  /// Where the buyer wants it delivered, captured at checkout. The order had no
+  /// destination at all before this — dispatch and hire both fell back to
+  /// `buyer.country`. The origin side is NOT snapshotted: it is read live off
+  /// `product.city`/`country`, so a seller correcting a listing's location fixes
+  /// the open orders too.
+  deliveryCity    String?
+  deliveryCountry String?
+
   // Dispatch snapshot — populated for both platform and external dispatch.
   dispatchMode     DispatchMode?
   transporterName  String?
@@ -852,6 +876,9 @@ model BuyerBid {
   deadline           DateTime?
   /// Countdown for `mode = auction` only.
   auctionEndsAt      DateTime?
+  /// When the buyer intends to procure — a `PROCURE_WINDOWS` id, or null on the
+  /// requirements posted before the field existed.
+  procureBy          String?
   notes              String?
   /// Buyer-supplied reference photos of the goods wanted. Max 6, first = cover.
   images             String[]  @default([])
@@ -861,6 +888,10 @@ model BuyerBid {
 
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
+  /// The deepest taxonomy node the buyer drilled to — the whole point is a bid
+  /// specific enough for sellers to price ("Rice > Basmati > 1121 Steam").
+  subcategoryId String?
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
   productId  String?
   product    Product?  @relation(fields: [productId], references: [id])
   buyerId    String
@@ -2077,6 +2108,12 @@ model SubcategoryTranslation {
   subcategoryId String
   locale        String
   name          String
+  /// Display text for Subcategory.attrFields, as
+  /// `{ label: { <english>: <translated> }, option: { <english>: <translated> } }`.
+  /// A DICT keyed by the English string, not a parallel field array: the stored
+  /// product values and the facet filters are the English strings, and an admin
+  /// reordering the array would silently misalign a positional overlay.
+  attrFields    Json?
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
 
   @@unique([subcategoryId, locale])

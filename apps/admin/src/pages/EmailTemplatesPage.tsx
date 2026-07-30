@@ -8,17 +8,6 @@ import { api } from '../lib/api';
 import { useI18n } from '../i18n';
 
 const CATEGORY_ORDER = ['auth', 'orders', 'wallet', 'auctions', 'hire', 'loader', 'transport', 'reviews', 'account'];
-const CATEGORY_LABEL: Record<string, string> = {
-  auth: 'Sign-in & account',
-  orders: 'Orders',
-  wallet: 'Wallet & payments',
-  auctions: 'Auctions',
-  hire: 'Hiring',
-  loader: 'Loading jobs',
-  transport: 'Transport',
-  reviews: 'Reviews',
-  account: 'Account & verification',
-};
 
 interface Draft {
   subject: string;
@@ -206,7 +195,7 @@ export function EmailTemplatesPage() {
           {grouped.map(({ category, items }) => (
             <div key={category}>
               <h3 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
-                {CATEGORY_LABEL[category] ?? category}
+                {t(`emailTpl.category.${category}`, { defaultValue: category })}
               </h3>
               <Card padded={false} className="divide-y divide-surface-border">
                 {items.map((tpl) => {

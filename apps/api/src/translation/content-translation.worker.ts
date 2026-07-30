@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
-import { getAttributeFields } from '@agrotraders/types';
 import { PrismaService } from '../prisma/prisma.service';
+import { CategoriesService } from '../catalog/catalog.module';
 import { TranslationService, type AttributeValues } from './translation.service';
 import {
   BUYER_BID_UPSERTED,
@@ -29,6 +29,7 @@ export class ContentTranslationWorker {
   constructor(
     private prisma: PrismaService,
     private translation: TranslationService,
+    private categories: CategoriesService,
   ) {}
 
   private enqueue<T>(work: () => Promise<T>): Promise<T> {
@@ -74,8 +75,6 @@ export class ContentTranslationWorker {
       const p = await this.prisma.product.findUnique({
         where: { id },
         include: {
-          category: { select: { name: true } },
-          subcategory: { select: { name: true } },
           translations: { select: { locale: true } },
         },
       });
@@ -87,7 +86,9 @@ export class ContentTranslationWorker {
       const targets = this.pendingTargets(changed, p.translations);
       if (!targets.length) return;
 
-      const schema = getAttributeFields(p.category?.name, p.subcategory?.name);
+      // English definitions: only `text` fields get machine-translated, and the
+      // decision is made on the field's TYPE, which is locale-independent.
+      const schema = (p.subcategoryId && (await this.categories.fieldMap('en')).get(p.subcategoryId)) || [];
       for (const locale of targets) {
         const tr = await this.translation.translateFields(p, fields, locale);
         const attrs = await this.translation.translateAttributes(p.attributes as AttributeValues, schema, locale);

@@ -92,6 +92,7 @@ export function toCardProduct(p: ApiProduct): Product {
     category: textValue(p.category),
     subcategory: nullableText(p.subcategory) ?? undefined,
     attributes: (p.attributes as Record<string, unknown> | null) ?? undefined,
+    attributeSpecs: p.attributeSpecs,
     stockQty: p.stockQty ?? null,
     marketName: nullableText(p.market?.name) ?? undefined,
     marketSlug: nullableText(p.market?.slug) ?? undefined,

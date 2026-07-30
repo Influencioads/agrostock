@@ -3,8 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import { countryFlag, countryLabel } from '@agrotraders/api-client';
-import { getAttributeFields, isDeliveryOption, unitSuffix } from '@agrotraders/types';
-import { attrKey } from '@agrotraders/i18n';
+import { isDeliveryOption, unitSuffix } from '@agrotraders/types';
 import { api, toCardProduct } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
@@ -15,6 +14,7 @@ import { ProductCard } from '../components/site/ProductCard';
 import { ReviewList } from '../console/components/ReviewList';
 import { resolveProductLoad } from './productResolution';
 import { ErrorState } from '../components/ErrorState';
+import { CityInput, CountryOptions } from '../components/GeoInputs';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const thumbs = ['🌾', '📦', '🚢', '📄', '🏭'];
@@ -28,6 +28,10 @@ export function ProductPage() {
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(50);
   const [notice, setNotice] = useState('');
+  // Where the goods are going. Captured here because the order had no destination
+  // at all before, which left dispatch and every hire guessing at `buyer.country`.
+  // Defaults to the buyer's own registered place, so the common case is one glance.
+  const [delivery, setDelivery] = useState<{ city: string; country: string } | null>(null);
   const [brokenPhotos, setBrokenPhotos] = useState<Set<string>>(() => new Set());
 
   const markBrokenPhoto = (src: string) => {
@@ -52,33 +56,21 @@ export function ProductPage() {
   // E10: per-product <title> so crawlers/tabs/shares distinguish listings.
   useDocumentTitle(product?.name);
 
-  // Real category-specific attributes captured on this listing → labelled rows.
-  const attrRows = (() => {
-    // Schema labels and select/multiselect values are English constants, so they
-    // render through the generated `attrs` catalog; free-text values arrive
-    // already localized from the API. Unknown text falls back to itself.
-    const aLabel = (s: string) => t(`attrs:label.${attrKey(s)}`, { defaultValue: s });
-    const aOpt = (s: string) => t(`attrs:option.${attrKey(s)}`, { defaultValue: s });
-    const cat = apiProduct?.category && typeof apiProduct.category === 'object' ? (apiProduct.category as { name?: string }).name : undefined;
-    const sub = apiProduct?.subcategory && typeof apiProduct.subcategory === 'object' ? (apiProduct.subcategory as { name?: string }).name : undefined;
-    const vals = (apiProduct?.attributes ?? {}) as Record<string, unknown>;
-    return getAttributeFields(cat, sub)
-      .map((f) => {
-        const v = vals[f.key];
-        if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) return null;
-        const value = Array.isArray(v)
-          ? v.map((x) => aOpt(String(x))).join(', ')
-          : f.type === 'boolean'
-            ? v ? t('common:yes') : t('common:no')
-            : f.type === 'select'
-              ? aOpt(String(v))
-              : f.unit
-                ? `${v} ${f.unit}`
-                : String(v);
-        return { label: aLabel(f.label), value };
-      })
-      .filter((r): r is { label: string; value: string } => r !== null);
-  })();
+  // Seeds the delivery fields from the buyer's own place — they can change it per
+  // order, and the value is what routes the shipment and filters the providers.
+  const { data: myProfile } = useQuery({
+    queryKey: ['my-profile'],
+    queryFn: () => api.me.profile(),
+    enabled: !!user,
+    staleTime: 300e3,
+  });
+  const deliverTo =
+    delivery ?? { city: myProfile?.originCity ?? myProfile?.location ?? '', country: myProfile?.originCountry ?? user?.country ?? '' };
+
+  // Category-specific attributes captured on this listing, rendered by the API:
+  // label and value both arrive localized and formatted, because the field
+  // definitions live in the DB and this page has no category tree loaded.
+  const attrRows = apiProduct?.attributeSpecs ?? [];
 
   // Related products: same category (and market when known), excluding this one.
   const { data: related = [] } = useQuery({
@@ -103,7 +95,12 @@ export function ProductPage() {
   const place = useMutation({
     mutationFn: () => {
       if (!product) throw new Error('Product is not available');
-      return api.orders.place({ productSlug: product.id, qty });
+      return api.orders.place({
+        productSlug: product.id,
+        qty,
+        deliveryCity: deliverTo.city || undefined,
+        deliveryCountry: deliverTo.country || undefined,
+      });
     },
     onSuccess: (o) => setNotice(`✓ ${t('page.product.orderPlaced', { ref: (o as { reference: string }).reference })}`),
     onError: () => setNotice(t('page.product.orderError')),
@@ -121,7 +118,12 @@ export function ProductPage() {
         throw new Error('Sign in required');
       }
       if (!product) throw new Error('Product is not available');
-      return api.orders.enquiry({ productSlug: product.id, qty });
+      return api.orders.enquiry({
+        productSlug: product.id,
+        qty,
+        deliveryCity: deliverTo.city || undefined,
+        deliveryCountry: deliverTo.country || undefined,
+      });
     },
     onSuccess: (o) => setNotice(`✓ ${t('page.product.quoteRequested', { ref: (o as { reference: string }).reference })}`),
     onError: (e) => setNotice(e instanceof Error && e.message === 'Sign in required' ? '' : t('page.product.orderError')),
@@ -290,7 +292,7 @@ export function ProductPage() {
               <h3 className="font-display text-lg font-bold text-ink">{t('page.product.specifications')}</h3>
               <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
                 {attrRows.map((r) => (
-                  <div key={r.label} className="flex justify-between border-b border-surface-border py-2 text-sm">
+                  <div key={r.key} className="flex justify-between border-b border-surface-border py-2 text-sm">
                     <dt className="text-ink-soft">{r.label}</dt>
                     <dd className="text-end font-semibold text-ink">{r.value}</dd>
                   </div>
@@ -327,7 +329,7 @@ export function ProductPage() {
           <Card>
             <div className="flex items-end gap-2">
               <span className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{fmtPrice(product)}</span>
-              <span className="text-ink-soft">{unitSuffix(product.unit)}</span>
+              <span className="text-ink-soft">{unitSuffix(product.unit, t)}</span>
             </div>
             <p className="mt-1 text-sm text-ink-soft">
               {t('page.product.deliveryLine', {
@@ -352,6 +354,31 @@ export function ProductPage() {
                 className="h-10 w-full rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
               />
             </label>
+
+            {/* The order's destination. Everything downstream — dispatch, the hire
+                form, the transporter/loader/worker lists — is routed off this. */}
+            {/* Base grid-cols-1: two labelled fields side by side are too tight in
+                this panel on a phone, and a long locale's label wraps out of it. */}
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <CityInput
+                label={t('site.deliverTo')}
+                value={deliverTo.city}
+                country={deliverTo.country || null}
+                onChange={(city) => setDelivery({ ...deliverTo, city })}
+              />
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('common:geo.country')}</span>
+                <select
+                  value={deliverTo.country}
+                  // Cities belong to a country, so changing it invalidates the pick.
+                  onChange={(e) => setDelivery({ city: '', country: e.target.value })}
+                  className="h-10 w-full rounded-md border border-surface-border px-2 text-sm outline-none focus:border-brand-leaf"
+                >
+                  <option value="">{t('common:geo.anyCountry')}</option>
+                  <CountryOptions />
+                </select>
+              </label>
+            </div>
 
             <div className="mt-3 space-y-2">
               <Button fullWidth leftIcon={<Icon name="bag" size={16} />} onClick={onBuy} disabled={place.isPending}>
