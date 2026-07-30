@@ -102,6 +102,11 @@ function hms(end: string | null | undefined) {
   return `${p(Math.floor(s / 3600))}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}`;
 }
 
+export function buyerBidsLoadState(q: { isPending: boolean; isError: boolean }): 'loading' | 'error' | 'ready' {
+  if (q.isError) return 'error';
+  return q.isPending ? 'loading' : 'ready';
+}
+
 /**
  * Buyer posts ONE thing: what they need. Sellers then underbid each other on it
  * and the buyer awards the cheapest — there is no second "mode" to choose.
@@ -172,6 +177,7 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
         subcategoryId: path[path.length - 1] || undefined,
         images,
       }),
+    onMutate: () => setError(''),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-buyer-bids'] }); onClose(); },
     onError: (e) => setError(errMessage(e, t('console.buyer.postError'))),
   });
@@ -357,15 +363,19 @@ export function BuyerBids() {
   const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const { data: buyerBids = [], isLoading } = useQuery<ApiBuyerBid[]>({
+  const buyerBidsQuery = useQuery<ApiBuyerBid[]>({
     queryKey: ['my-buyer-bids'],
     queryFn: () => api.buyerBids.mine(),
+    retry: false,
     refetchInterval: 15000,
   });
   const { data: auctionBids = [] } = useQuery({
     queryKey: ['my-auction-bids'],
     queryFn: () => api.auctions.mine() as Promise<{ id: string; amountCents: number; product?: { name: string; slug?: string; emoji?: string | null; flag?: string | null } }[]>,
+    retry: false,
   });
+  const buyerBids = buyerBidsQuery.data ?? [];
+  const loadState = buyerBidsLoadState(buyerBidsQuery);
 
   // 1s clock so auction-mode requirement countdowns tick between refetches.
   const [, setTick] = useState(0);
@@ -402,8 +412,19 @@ export function BuyerBids() {
         ))}
       </div>
 
-      {isLoading ? (
+      {loadState === 'loading' ? (
         <p className="text-ink-soft">{t('common:loading')}</p>
+      ) : loadState === 'error' ? (
+        <Card className="py-10 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-status-error/10 text-status-error">
+            <Icon name="refresh" size={24} />
+          </div>
+          <h3 className="font-display text-lg font-extrabold text-ink">{t('common:errorTitle', { defaultValue: 'Something went wrong' })}</h3>
+          <p className="mx-auto mt-1 max-w-md text-sm text-ink-soft">
+            {errMessage(buyerBidsQuery.error, t('console.buyer.loadError', { defaultValue: 'Could not load buyer bids. Please try again.' }))}
+          </p>
+          <Button className="mt-4" variant="outline" onClick={() => buyerBidsQuery.refetch()}>{t('common:retry')}</Button>
+        </Card>
       ) : (
         <div className="space-y-6">
           <section>
