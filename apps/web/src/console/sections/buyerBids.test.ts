@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SubcategoryNode } from '@agrotraders/api-client';
-import { buyerBidTitle, levelOptions } from './BuyerBids';
+import { buyerBidTitle, buyerBidsLoadState, levelOptions } from './BuyerBids';
 
 const node = (id: string, children: SubcategoryNode[] = []): SubcategoryNode =>
   ({ id, name: id, slug: id, children }) as SubcategoryNode;
@@ -36,5 +36,13 @@ describe('buyerBidTitle', () => {
     expect(buyerBidTitle(['Nuts'], '  ', 'for Rajesh K.')).toBe('Nuts · for Rajesh K.');
     expect(buyerBidTitle([], 'Dubai')).toBe('Dubai');
     expect(buyerBidTitle([])).toBe('');
+  });
+});
+
+describe('buyerBidsLoadState', () => {
+  it('shows an error instead of staying on the loading view when the owner list fails', () => {
+    expect(buyerBidsLoadState({ isPending: true, isError: false })).toBe('loading');
+    expect(buyerBidsLoadState({ isPending: false, isError: true })).toBe('error');
+    expect(buyerBidsLoadState({ isPending: false, isError: false })).toBe('ready');
   });
 });
