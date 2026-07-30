@@ -185,7 +185,10 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
       title={t('console.buyer.postRequirement')}
       className="max-w-2xl"
       footer={
-        <div className="flex justify-end gap-2">
+        // The failure has to sit NEXT to the button. Down in the scrolling body
+        // it was below the fold, so a rejected post read as a dead button.
+        <div className="flex w-full flex-wrap items-center justify-end gap-2">
+          {error && <p className="me-auto text-sm font-semibold text-status-error">{error}</p>}
           <Button variant="outline" onClick={onClose}>{t('common:cancel')}</Button>
           <Button disabled={!ready || create.isPending} onClick={() => create.mutate()}>
             {create.isPending ? t('console.buyer.posting') : t('console.buyer.postRequirement')}
@@ -282,8 +285,6 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
           <GalleryEditor images={images} onChange={setImages} onError={setError} upload={api.buyerBids.uploadImages} max={MAX_IMAGES} />
           <p className="mt-1.5 text-xs text-ink-soft">{t('console.buyer.photosHint')}</p>
         </div>
-
-        {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       </div>
     </Modal>
   );
