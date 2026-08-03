@@ -76,6 +76,23 @@ export function BuyerBidRoom({ id }: { id: string }) {
   // Quote mode is sealed by design: a non-owner never sees the book.
   const sealed = !bid.isOwner && bid.mode === 'quote';
 
+  // Only what the buyer actually filled in — the web room can afford em-dash
+  // placeholders in a two-column table, a phone list of them is just noise.
+  // `attributeSpecs` arrives rendered and localized by the API.
+  const specs: [string, string][] = [
+    ...(bid.moq != null ? ([[t('buyerX.bids.fieldMinLot'), `${bid.moq} ${bid.qtyUnit}`]] as [string, string][]) : []),
+    ...(bid.procureBy ? ([[t('buyerX.bids.fieldProcure'), t(`enums:procure.${bid.procureBy}`)]] as [string, string][]) : []),
+    [t('sellerX.add.priceType'), t(bid.negotiable ? 'sellerX.add.priceNegotiable' : 'sellerX.add.priceFixed')],
+    [t('sellerX.add.dealType'), t(bid.safeDeal === false ? 'sellerX.add.dealDirect' : 'sellerX.add.dealSafe')],
+    ...(bid.vatExtra ? ([[t('sellerX.add.vatExtra'), t('common:yes')]] as [string, string][]) : []),
+    ...(bid.origin ? ([[t('buyerX.bids.fieldPreferredOrigin'), bid.origin]] as [string, string][]) : []),
+    ...(bid.supplyCountries?.length ? ([[t('buyerX.bids.fieldAcceptFrom'), bid.supplyCountries.join(', ')]] as [string, string][]) : []),
+    ...(bid.delivery ? ([[t('sellerX.add.delivery'), t(`enums:delivery.${bid.delivery}`)]] as [string, string][]) : []),
+    ...(bid.market?.name ? ([[t('sellerX.market.label'), bid.market.name]] as [string, string][]) : []),
+    ...(bid.destinationCountry ? ([[t('buyerX.bids.fieldDestinationCountry'), bid.destinationCountry]] as [string, string][]) : []),
+    ...((bid.attributeSpecs ?? []).map((s) => [s.label, s.value] as [string, string])),
+  ];
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
@@ -132,6 +149,20 @@ export function BuyerBidRoom({ id }: { id: string }) {
           </Row>
           {!!bid.notes && <Txt variant="muted">{bid.notes}</Txt>}
         </View>
+
+        {/* What the buyer actually specified. Without this a seller on mobile is
+            quoting off the title alone, while the web room shows the full sheet. */}
+        {specs.length > 0 && (
+          <Card style={{ gap: 8 }}>
+            <Txt variant="h3">{t('buyerX.room.requirementDetails')}</Txt>
+            {specs.map(([k, v]) => (
+              <Row key={k} style={{ justifyContent: 'space-between', gap: 12 }}>
+                <Txt variant="muted" style={{ flexShrink: 1 }}>{k}</Txt>
+                <Txt style={{ fontWeight: '700', textAlign: 'right', flexShrink: 1 }}>{v}</Txt>
+              </Row>
+            ))}
+          </Card>
+        )}
 
         {/* sealed-mode reassurance — the prototype's amber note */}
         {bid.mode === 'quote' ? (

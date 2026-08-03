@@ -21,10 +21,12 @@ import { Prisma, BuyerBidMode } from '@prisma/client';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsIn,
   IsInt,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -50,8 +52,12 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BUYER_BID_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
 import { Locale, localize } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
-import { CURRENCIES, PROCURE_WINDOWS, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import { CURRENCIES, DELIVERY_OPTIONS, PROCURE_WINDOWS, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { FxModule, FxService } from '../fx/fx.module';
+import { CatalogModule, CategoriesService } from '../catalog/catalog.module';
+// A requirement carries the SAME spec sheet a listing does, so it is trimmed and
+// rendered by the same two functions rather than a second copy that drifts.
+import { buildAttributeSpecs, sanitizeAttributes } from '../products/products.module';
 
 /** Gallery cap on a buyer's requirement photos (mirrors MAX_PRODUCT_IMAGES). */
 export const MAX_BUYER_BID_IMAGES = 6;
@@ -91,6 +97,36 @@ export class CreateBuyerBidDto {
   @ApiProperty({ required: false, enum: CURRENCIES, default: 'USD' })
   @IsOptional() @IsIn(CURRENCIES as unknown as string[]) targetPriceCurrency?: string;
 
+  @ApiProperty({ required: false, description: 'Target price is net of VAT' })
+  @IsOptional() @IsBoolean() vatExtra?: boolean;
+
+  @ApiProperty({ required: false, minimum: 0, maximum: MAX_QTY, description: 'Smallest lot the buyer will take, in `qtyUnit`' })
+  @IsOptional() @IsNumber() @Min(0) @Max(MAX_QTY) moq?: number;
+
+  @ApiProperty({ required: false, description: 'Preferred country of origin' })
+  @IsOptional() @IsString() @MaxLength(80) origin?: string;
+
+  @ApiProperty({ required: false, enum: DELIVERY_OPTIONS })
+  @IsOptional() @IsIn(DELIVERY_OPTIONS as unknown as string[]) delivery?: string;
+
+  @ApiProperty({ required: false, type: [String], description: 'Countries the buyer accepts supply from; empty = anywhere' })
+  @IsOptional() @IsArray() @ArrayMaxSize(250) @IsString({ each: true }) @MaxLength(80, { each: true })
+  supplyCountries?: string[];
+
+  @ApiProperty({ required: false, description: 'Market/mandi to trade this through' })
+  @IsOptional() @IsString() marketId?: string;
+
+  @ApiProperty({ required: false, description: 'Escrow-protected settlement (default) vs. a direct deal' })
+  @IsOptional() @IsBoolean() safeDeal?: boolean;
+
+  @ApiProperty({ required: false, description: 'Buyer will entertain offers away from the target' })
+  @IsOptional() @IsBoolean() negotiable?: boolean;
+
+  /** Subcategory spec values, keyed by field key. Trimmed to the fields that
+   *  subcategory actually defines — see `sanitizeAttributes`. */
+  @ApiProperty({ required: false, type: Object })
+  @IsOptional() @IsObject() attributes?: Record<string, unknown>;
+
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(160) deliveryPlace?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(80) destinationCountry?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsDateString() deadline?: string;
@@ -121,6 +157,7 @@ const BUYER_BID_INCLUDE = {
   category: { select: { id: true, name: true, slug: true, emoji: true } },
   subcategory: { select: { id: true, name: true, slug: true, emoji: true } },
   product: { select: { id: true, name: true, slug: true, emoji: true } },
+  market: { select: { id: true, name: true, city: true, country: true, flag: true } },
 } as const;
 
 const SELLER_BID_INCLUDE = {
@@ -154,7 +191,18 @@ export class BuyerBidsService {
     private notifications: NotificationsService,
     private events: EventEmitter2,
     private fx: FxService,
+    private categories: CategoriesService,
   ) {}
+
+  /**
+   * The buyer's spec payload, trimmed to what the chosen taxonomy node actually
+   * defines. `fieldMap` already resolves inheritance, so a requirement drilled to
+   * "Grain > Rice > Basmati > 1121 Steam" keeps the fields Rice owns.
+   */
+  private async cleanAttributes(subcategoryId: string | null, attributes: Record<string, unknown>) {
+    if (!subcategoryId) return {};
+    return sanitizeAttributes(attributes, (await this.categories.fieldMap('en')).get(subcategoryId) ?? []);
+  }
 
   private async notify(userId: string, type: string, params: NotificationParams | undefined, data?: Record<string, unknown>) {
     // Persist + fan-out (realtime/push/email) is all handled by create(); title/body
@@ -212,6 +260,8 @@ export class BuyerBidsService {
       : 'USD';
     const targetPriceCents =
       dto.targetPriceCents != null ? await this.fx.toUsdCents(dto.targetPriceCents / 100, currency) : undefined;
+    const subcategoryId = dto.subcategoryId || null;
+    const attributes = dto.attributes ? await this.cleanAttributes(subcategoryId, dto.attributes) : null;
     const bid = await this.prisma.buyerBid.create({
       data: {
         reference: ref(),
@@ -223,16 +273,25 @@ export class BuyerBidsService {
         targetPriceCents,
         // What the buyer typed it in; every stored amount stays USD.
         currency,
+        vatExtra: dto.vatExtra ?? false,
+        moq: dto.moq ?? null,
+        origin: dto.origin || null,
+        delivery: dto.delivery || null,
+        supplyCountries: dto.supplyCountries ?? [],
         deliveryPlace: dto.deliveryPlace,
         destinationCountry: dto.destinationCountry,
         deadline: null,
         auctionEndsAt: closesAt ? new Date(closesAt) : null,
         procureBy: dto.procureBy || null,
+        safeDeal: dto.safeDeal ?? true,
+        negotiable: dto.negotiable ?? false,
         notes: dto.notes,
         images: dto.images ?? [],
+        ...(attributes && Object.keys(attributes).length ? { attributes: attributes as Prisma.InputJsonValue } : {}),
         categoryId: dto.categoryId || null,
-        subcategoryId: dto.subcategoryId || null,
+        subcategoryId,
         productId: dto.productId || null,
+        marketId: dto.marketId || null,
         buyerId: buyer.id,
       },
       include: BUYER_BID_INCLUDE,
@@ -541,8 +600,15 @@ export class BuyerBidsService {
       ? null
       : (sellerBids.find((b) => b.status === 'submitted' || b.status === 'awarded')?.priceCents ?? null);
 
+    // Rendered here, not on the client: the bid room has no category tree loaded,
+    // and shipping it one would mean shipping the whole schema again (the same
+    // reason `localizeProductWithSpecs` exists on the product side).
+    const fields = buyerBid.subcategoryId ? (await this.categories.fieldMap(locale)).get(buyerBid.subcategoryId) : undefined;
+    const attributeSpecs = fields?.length ? buildAttributeSpecs(buyerBid.attributes, fields, locale) : [];
+
     return {
       ...buyerBid,
+      ...(attributeSpecs.length ? { attributeSpecs } : {}),
       sellerBids,
       bestPriceCents,
       isOwner: ownerView,
@@ -741,7 +807,7 @@ export class AdminBuyerBidsController {
 }
 
 @Module({
-  imports: [FxModule],
+  imports: [FxModule, CatalogModule],
   controllers: [BuyerBidsController, AdminBuyerBidsController],
   providers: [BuyerBidsService],
   exports: [BuyerBidsService],

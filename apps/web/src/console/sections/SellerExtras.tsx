@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal, type IconName } from '@agrotraders/ui';
-import type { ApiAdCampaign, ApiBuyerBid, ApiOrder, ApiProduct } from '@agrotraders/api-client';
+import type { ApiAdCampaign, ApiAuctionBidRow, ApiBuyerBid, ApiOrder, ApiProduct } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
+import { chatBus } from '../../chat/chatBus';
 import { useI18n } from '../../i18n';
 import { compactUsd, parseAmount, orderLabel, orderTone } from '../lib';
 import { errMessage } from './order-parts';
@@ -251,32 +252,89 @@ function StartAuctionModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** The owner's full bid book for one auction. */
-function BidBookModal({ slug, name, onClose }: { slug: string; name: string; onClose: () => void }) {
+/**
+ * The owner's bid book for one lot: who bid, how much, how long is left, and the
+ * one action that matters — hand the lot to the top bidder.
+ *
+ * The rows carry real names here (the API sends `bidderName`/`bidderId` to the
+ * seller and admin only), so the seller can see who they are dealing with, open
+ * a chat with them, and allocate to them. Everyone else still gets `masked`.
+ */
+function BidBookModal({
+  auction,
+  onClose,
+  onAllocate,
+  allocating,
+}: {
+  auction: SellerAuction;
+  onClose: () => void;
+  onAllocate: () => void;
+  allocating: boolean;
+}) {
   const { t } = useI18n();
-  const { data: bids = [], isLoading } = useQuery({
-    queryKey: ['auction-bids', slug],
-    queryFn: () => api.auctions.bids(slug) as Promise<{ id: string; amountCents: number; createdAt: string; bidder?: { name: string } }[]>,
+  const { data: bids = [], isLoading } = useQuery<ApiAuctionBidRow[]>({
+    queryKey: ['auction-bids', auction.slug],
+    queryFn: () => api.auctions.bids(auction.slug) as Promise<ApiAuctionBidRow[]>,
     refetchInterval: 5000,
   });
+  const ended = auction.auctionEndsAt ? new Date(auction.auctionEndsAt).getTime() <= Date.now() : false;
+  const top = bids[0];
+
   return (
-    <Modal closeLabel={t('common:close')} open onClose={onClose} title={t('console.seller.bidsFor', { name })}>
+    <Modal closeLabel={t('common:close')} open onClose={onClose} title={t('console.seller.bidsFor', { name: auction.name })}>
+      {/* Timer + headline, so the seller decides with the clock in view. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
+        <Badge tone={ended ? 'slate' : 'mango'} icon={<Icon name="clock" size={11} />}>{countdown(auction.auctionEndsAt, t)}</Badge>
+        <span>{t('console.seller.bidCount', { count: auction.bidCount })}</span>
+      </div>
+
       {isLoading ? (
         <p className="py-6 text-center text-ink-soft">{t('common:loading')}</p>
       ) : bids.length === 0 ? (
         <p className="py-6 text-center text-ink-soft">{t('console.seller.noBids')}</p>
       ) : (
         <div className="space-y-2">
-          {bids.map((b, i) => (
-            <div key={b.id} className="flex items-center justify-between rounded-lg border border-surface-border px-3 py-2">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-ink">{b.bidder?.name ?? t('console.seller.bidderFallback')}</span>
-                {i === 0 && <Badge tone="green">{t('console.seller.highest')}</Badge>}
+          {bids.map((b) => (
+            <div key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-surface-border px-3 py-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <span>{b.flag}</span>
+                {/* Only the owner gets a real id, so only they get a profile link. */}
+                {b.bidderId ? (
+                  <Link to={`/u/${b.bidderId}`} className="truncate font-semibold text-ink underline-offset-2 hover:underline">
+                    {b.bidderName ?? b.masked}
+                  </Link>
+                ) : (
+                  <span className="truncate font-semibold text-ink">{b.masked}</span>
+                )}
+                {b.isTop && <Badge tone="green">{t('console.seller.highest')}</Badge>}
               </div>
-              <span className="font-display font-extrabold text-ink">{compactUsd(b.amountCents / 100)}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-display font-extrabold text-ink">{compactUsd(b.amountCents / 100)}{unitSuffix(auction.unit, t)}</span>
+                {b.bidderId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-label={t('site.chatNamed', { name: b.bidderName ?? '' })}
+                    onClick={() => chatBus.openCommunityDm(b.bidderId!, b.bidderName ?? '')}
+                  >
+                    <Icon name="message" size={15} />
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
+      )}
+
+      {/* Allocation IS the close: settling a lot hands it to the highest bid and
+          notifies both sides. Naming the winner on the button makes that the
+          seller is about to give the goods to THIS person explicit. */}
+      {!ended && top && (
+        <Button fullWidth className="mt-4" disabled={allocating} onClick={onAllocate} leftIcon={<Icon name="gavel" size={16} />}>
+          {allocating
+            ? t('console.seller.allocating')
+            : t('console.seller.allocateTo', { name: top.bidderName ?? top.masked, amount: compactUsd(top.amountCents / 100) })}
+        </Button>
       )}
     </Modal>
   );
@@ -351,11 +409,21 @@ export function SellerAuctions() {
                     {p.highBidder && <span className="ms-1 text-xs font-normal text-ink-soft">{t('console.seller.byBidder', { name: p.highBidder })}</span>}
                   </div>
                 </div>
+                {/* The lot page carries the live countdown and the open bid
+                    history — the seller reads their own auction where a buyer
+                    reads it. */}
+                <Link to={`/product/${p.slug}`} className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand hover:underline">
+                  <Icon name="gavel" size={12} /> {t('console.seller.openLot')}
+                </Link>
                 <div className="mt-3 flex gap-2">
                   <Button variant="outline" size="sm" fullWidth onClick={() => setViewing(p)}>{t('console.seller.viewBids')}</Button>
                   {!ended && (
                     <Button size="sm" fullWidth disabled={close.isPending} onClick={() => { setErr(''); close.mutate(p.slug); }}>
-                      {close.isPending ? t('console.seller.closing') : t('console.seller.closeNow')}
+                      {close.isPending
+                        ? t('console.seller.closing')
+                        : p.bidCount > 0
+                          ? t('console.seller.allocateTopBid')
+                          : t('console.seller.closeNow')}
                     </Button>
                   )}
                 </div>
@@ -366,7 +434,14 @@ export function SellerAuctions() {
       )}
 
       {starting && <StartAuctionModal onClose={() => setStarting(false)} />}
-      {viewing && <BidBookModal slug={viewing.slug} name={viewing.name} onClose={() => setViewing(null)} />}
+      {viewing && (
+        <BidBookModal
+          auction={viewing}
+          allocating={close.isPending}
+          onAllocate={() => { setErr(''); close.mutate(viewing.slug, { onSuccess: () => setViewing(null) }); }}
+          onClose={() => setViewing(null)}
+        />
+      )}
     </div>
   );
 }

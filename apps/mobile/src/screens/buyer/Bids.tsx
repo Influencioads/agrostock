@@ -4,16 +4,30 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiBuyerBid } from '@agrotraders/api-client';
-import { PROCURE_WINDOWS, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import type { ApiBuyerBid, ApiCategory } from '@agrotraders/api-client';
+import {
+  buyerBidTitle,
+  CURRENCIES,
+  CURRENCY_SYMBOLS,
+  PROCURE_WINDOWS,
+  PRODUCT_UNITS,
+  suggestProductName,
+  toUnit,
+} from '@agrotraders/types';
 import { api } from '../../lib/api';
+import { countryOptions } from '../../lib/countries';
 import { errMessage } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, Chip, ChipSelect, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space } from '../../theme/tokens';
-import { GalleryEditor } from '../seller/AddProduct';
+// The requirement form offers the SAME controls a seller lists with, rather
+// than a second set that drifts away from it.
+import { AttributeFields, GalleryEditor, MarketPicker, SupplyCountriesPicker } from '../seller/AddProduct';
+import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
+import { PickerField } from '../components/PickerSheet';
+import { CityField } from '../components/GeoFields';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -35,27 +49,79 @@ function hms(end: string | null | undefined) {
  * old quote/auction choice is gone (see the API's `create`).
  */
 function NewRequirementSheet({ onClose }: { onClose: () => void }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const qc = useQueryClient();
   const { currency } = useCurrency();
-  const [f, setF] = useState({ title: '', productName: '', qtyValue: '', qtyUnit: 'MT', targetPrice: '', deliveryPlace: '', notes: '', days: '7', procureBy: 'immediate' });
+  const { user } = useAuth();
+  const [f, setF] = useState({
+    qtyValue: '', qtyUnit: 'MT', moq: '', targetPrice: '', targetCurrency: currency, vatExtra: false,
+    deliveryPlace: '', destinationCountry: '', origin: '', delivery: 'delivery', marketId: '',
+    safeDeal: true, negotiable: false,
+    notes: '', days: '7', procureBy: 'immediate',
+    attributes: {} as Record<string, unknown>,
+    supplyCountries: [] as string[],
+  });
+  // The picker hands back the resolved attribute fields, so the sheet never has
+  // to walk the taxonomy itself.
+  const [taxonomy, setTaxonomy] = useState<CategorySelection>(EMPTY_SELECTION);
+  const [catSheet, setCatSheet] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
-  const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+  const set = <K extends keyof typeof f>(k: K) => (v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }));
+  // Many Android numeric keyboards (ru included) only offer a comma separator;
+  // `Number('840,5')` is NaN, which would block submit forever.
+  const setNum = (k: 'qtyValue' | 'moq' | 'targetPrice' | 'days') => (v: string) => setF((p) => ({ ...p, [k]: v.replace(',', '.') }));
+
+  const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
+  const attrFields = taxonomy.attrFields;
+  const countries = countryOptions(lang);
+
+  // Re-picking the taxonomy invalidates specs the new node has no field for.
+  // The API trims them too — this is so the buyer SEES what was dropped.
+  useEffect(() => {
+    const keys = new Set(attrFields.map((a) => a.key));
+    setF((p) => {
+      const pruned = Object.fromEntries(Object.entries(p.attributes).filter(([k]) => keys.has(k)));
+      return Object.keys(pruned).length === Object.keys(p.attributes).length ? p : { ...p, attributes: pruned };
+    });
+  }, [attrFields]);
+
+  // Composed, never typed — the same title the web form builds, so both boards
+  // list requirements that read alike and stay comparable.
+  const leaf = taxonomy.subcategoryName || taxonomy.categoryName || '';
+  const title = buyerBidTitle(
+    taxonomy.trail.length ? taxonomy.trail : [leaf].filter(Boolean),
+    f.deliveryPlace,
+    user?.name ? t('buyerX.bids.titleFor', { name: user.name }) : '',
+  );
 
   const create = useMutation({
     mutationFn: () => {
       const closes = new Date(Date.now() + Math.max(Number(f.days) || 7, 1) * 864e5).toISOString();
       return api.buyerBids.create({
-        title: f.title,
-        productName: f.productName,
+        title,
+        // The taxonomy leaf IS the product, sharpened by the specs picked —
+        // exactly how the seller form names a listing.
+        productName: suggestProductName(leaf, f.attributes) || leaf || title,
         qtyValue: Number(f.qtyValue),
         qtyUnit: f.qtyUnit,
+        moq: f.moq ? Number(f.moq) : undefined,
         targetPriceCents: f.targetPrice ? Math.round(Number(f.targetPrice) * 100) : undefined,
-        targetPriceCurrency: currency,
+        targetPriceCurrency: f.targetCurrency,
+        vatExtra: f.vatExtra,
+        origin: f.origin || undefined,
+        delivery: f.delivery || undefined,
+        supplyCountries: f.supplyCountries,
+        marketId: f.marketId || undefined,
+        safeDeal: f.safeDeal,
+        negotiable: f.negotiable,
         deliveryPlace: f.deliveryPlace || undefined,
+        destinationCountry: f.destinationCountry || undefined,
         procureBy: f.procureBy,
         notes: f.notes || undefined,
+        categoryId: taxonomy.categoryId || undefined,
+        subcategoryId: taxonomy.subcategoryId || undefined,
+        attributes: Object.keys(f.attributes).length ? f.attributes : undefined,
         images,
         deadline: closes,
       });
@@ -64,7 +130,7 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
     onError: (e) => setError(errMessage(e, t('buyerX.bids.errPost'))),
   });
 
-  const ready = !!f.title.trim() && !!f.productName.trim() && Number(f.qtyValue) > 0;
+  const ready = !!leaf && Number(f.qtyValue) > 0;
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
@@ -79,31 +145,173 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
           <Txt variant="muted">{t('buyerX.bids.modeCopy.auction')}</Txt>
 
           {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
-          <Input label={t('buyerX.bids.fieldTitle')} placeholder={t('pubX.ph.bidTitle')} value={f.title} onChangeText={set('title')} />
-          <Input label={t('buyerX.bids.fieldProduct')} placeholder={t('pubX.ph.productBasmati1121')} value={f.productName} onChangeText={set('productName')} />
+
+          {/* Read-only: composed from the taxonomy below, so every requirement on
+              the board reads the same way and stays comparable. */}
+          <Input label={t('buyerX.bids.fieldTitle')} value={title} editable={false} placeholder={t('buyerX.bids.titleAuto')} />
+
+          <View style={{ gap: 6 }}>
+            <Txt variant="label">{t('sellerX.add.category')}</Txt>
+            <Pressable
+              onPress={() => setCatSheet(true)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: C.border, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 12 }}
+            >
+              <Txt style={{ flex: 1, fontWeight: '700', color: taxonomy.categoryId ? C.ink : C.inkSoft }} numberOfLines={2}>
+                {taxonomy.trail.length ? taxonomy.trail.join('  ›  ') : t('sellerX.add.category')}
+              </Txt>
+              <Ionicons name="chevron-down" size={18} color={C.inkSoft} />
+            </Pressable>
+          </View>
+
+          <CategorySheet
+            visible={catSheet}
+            onClose={() => setCatSheet(false)}
+            categories={categories}
+            selection={taxonomy}
+            onSelect={setTaxonomy}
+          />
+
+          {/* The subcategory's own spec fields — the same grades, sizes and
+              percentages a seller fills in, so a bid is specific enough to price. */}
+          <AttributeFields
+            fields={attrFields}
+            subcategory={taxonomy.subcategoryName || taxonomy.categoryName}
+            value={f.attributes}
+            onChange={set('attributes')}
+          />
+
+          <MarketPicker value={f.marketId} onChange={set('marketId')} label={t('buyerX.bids.whichMarket')} />
+
+          <ChipSelect
+            label={t('buyerX.bids.fieldUnit')}
+            value={toUnit(f.qtyUnit)}
+            options={PRODUCT_UNITS.map((u) => ({ id: u, label: t(`enums:unit.${u}`) }))}
+            onChange={set('qtyUnit')}
+          />
           <Row gap={10}>
-            <View style={{ flex: 1 }}><Input label={t('buyerX.bids.fieldQuantity')} keyboardType="numeric" value={f.qtyValue} onChangeText={set('qtyValue')} /></View>
             <View style={{ flex: 1 }}>
-              <ChipSelect
-                label={t('buyerX.bids.fieldUnit')}
-                value={toUnit(f.qtyUnit)}
-                options={PRODUCT_UNITS.map((u) => ({ id: u, label: t(`enums:unit.${u}`) }))}
-                onChange={set('qtyUnit')}
-              />
+              <Input label={`${t('buyerX.bids.fieldQuantity')} (${toUnit(f.qtyUnit)})`} keyboardType="numeric" value={f.qtyValue} onChangeText={setNum('qtyValue')} />
+            </View>
+            {/* The listing's MOQ read from the other side: the smallest lot this
+                buyer will take, so a seller who cannot fill the whole
+                requirement knows whether a part-load is worth quoting. */}
+            <View style={{ flex: 1 }}>
+              <Input label={`${t('buyerX.bids.fieldMinLot')} (${toUnit(f.qtyUnit)})`} keyboardType="numeric" value={f.moq} onChangeText={setNum('moq')} />
             </View>
           </Row>
-          {/* Quoted in the currency the buyer browses in; the API converts it to
-              the USD baseline every bid is compared against. */}
-          <Input label={t('buyerX.bids.fieldTargetPrice', { unit: f.qtyUnit, currency })} keyboardType="numeric" value={f.targetPrice} onChangeText={set('targetPrice')} />
-          <Input label={t('buyerX.bids.fieldDeliveryPlace')} placeholder={t('pubX.ph.deliveryJebelAli')} value={f.deliveryPlace} onChangeText={set('deliveryPlace')} />
+
+          {/* Quote the target in whatever currency the buyer trades in; the API
+              converts it to the USD baseline every bid is compared against. */}
+          <Row gap={10}>
+            <View style={{ flex: 1 }}>
+              <PickerField
+                label={t('sellerX.add.currency')}
+                value={f.targetCurrency}
+                displayValue={`${CURRENCY_SYMBOLS[f.targetCurrency] ?? ''} ${f.targetCurrency}`.trim()}
+                options={CURRENCIES.map((c) => ({ value: c, label: `${CURRENCY_SYMBOLS[c] ?? ''} ${c}`.trim() }))}
+                onChange={set('targetCurrency')}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input label={t('buyerX.bids.fieldTargetPrice', { unit: f.qtyUnit, currency: f.targetCurrency })} keyboardType="numeric" value={f.targetPrice} onChangeText={setNum('targetPrice')} />
+            </View>
+          </Row>
+          {/* Sits with the price because that is the number it qualifies. */}
+          <Row gap={8}>
+            <Chip label={t('sellerX.add.vatExtra')} active={f.vatExtra} onPress={() => set('vatExtra')(!f.vatExtra)} />
+          </Row>
+
           <ChipSelect
             label={t('buyerX.bids.fieldProcure')}
             value={f.procureBy}
             options={PROCURE_WINDOWS.map((w) => ({ id: w, label: t(`enums:procure.${w}`) }))}
             onChange={set('procureBy')}
           />
-          <Input label={t('buyerX.bids.fieldAuctionDays')} keyboardType="numeric" value={f.days} onChangeText={set('days')} />
-          <Input label={t('buyerX.bids.fieldNotes')} placeholder={t('pubX.ph.notesSortex')} value={f.notes} onChangeText={set('notes')} />
+
+          {/* Where the buyer wants the goods GROWN — the mirror of the listing's
+              origin, off the same country set so both sides match. */}
+          <PickerField
+            label={t('buyerX.bids.fieldPreferredOrigin')}
+            placeholder={t('sellerX.add.searchCountry')}
+            value={f.origin}
+            displayValue={countries.find((o) => o.value === f.origin)?.label}
+            options={countries}
+            onChange={set('origin')}
+            searchPlaceholder={t('sellerX.add.searchCountry')}
+          />
+          {/* Who moves the goods — the only two answers, same as the listing. */}
+          <PickerField
+            label={t('sellerX.add.delivery')}
+            value={f.delivery === 'delivery' ? 'delivery' : 'self_pickup'}
+            displayValue={t(`enums:delivery.${f.delivery === 'delivery' ? 'delivery' : 'self_pickup'}`)}
+            options={[
+              { value: 'delivery', label: t('enums:delivery.delivery') },
+              { value: 'self_pickup', label: t('enums:delivery.self_pickup') },
+            ]}
+            onChange={set('delivery')}
+          />
+
+          {/* Country first — the city belongs to it, so it resets with it. */}
+          <PickerField
+            label={t('buyerX.bids.fieldDestinationCountry')}
+            placeholder={t('sellerX.add.searchCountry')}
+            value={f.destinationCountry}
+            displayValue={countries.find((o) => o.value === f.destinationCountry)?.label}
+            options={countries}
+            onChange={(destinationCountry) => setF((p) => ({ ...p, destinationCountry, deliveryPlace: '' }))}
+            searchPlaceholder={t('sellerX.add.searchCountry')}
+          />
+          <CityField
+            label={t('buyerX.bids.fieldDeliveryPlace')}
+            placeholder={t('sellerX.add.phCity')}
+            country={f.destinationCountry || undefined}
+            value={f.deliveryPlace}
+            onChange={set('deliveryPlace')}
+          />
+
+          {/* The listing's supply-countries picker pointed the other way: which
+              origins this buyer will actually accept offers from. */}
+          <SupplyCountriesPicker
+            value={f.supplyCountries}
+            onChange={set('supplyCountries')}
+            label={t('buyerX.bids.fieldAcceptFrom')}
+            hint={t('buyerX.bids.fieldAcceptFromHint')}
+          />
+
+          {/* Settlement and price posture — the same two-way choices a listing
+              declares, so a seller knows what they are quoting into. */}
+          <PickerField
+            label={t('sellerX.add.dealType')}
+            value={f.safeDeal ? 'safe' : 'direct'}
+            displayValue={f.safeDeal ? t('sellerX.add.dealSafe') : t('sellerX.add.dealDirect')}
+            options={[
+              { value: 'safe', label: t('sellerX.add.dealSafe') },
+              { value: 'direct', label: t('sellerX.add.dealDirect') },
+            ]}
+            onChange={(v) => set('safeDeal')(v === 'safe')}
+          />
+          <PickerField
+            label={t('sellerX.add.priceType')}
+            value={f.negotiable ? 'negotiable' : 'fixed'}
+            displayValue={f.negotiable ? t('sellerX.add.priceNegotiable') : t('sellerX.add.priceFixed')}
+            options={[
+              { value: 'fixed', label: t('sellerX.add.priceFixed') },
+              { value: 'negotiable', label: t('sellerX.add.priceNegotiable') },
+            ]}
+            onChange={(v) => set('negotiable')(v === 'negotiable')}
+          />
+
+          <Input label={t('buyerX.bids.fieldAuctionDays')} keyboardType="numeric" value={f.days} onChangeText={setNum('days')} />
+          {/* Multi-line like the listing's — packing, loading terms, documents. */}
+          <Input
+            label={t('buyerX.bids.fieldNotes')}
+            placeholder={t('pubX.ph.notesSortex')}
+            value={f.notes}
+            onChangeText={set('notes')}
+            multiline
+            maxLength={800}
+            style={{ minHeight: 84, textAlignVertical: 'top' }}
+          />
 
           {/* Buyer's own upload route — the products one is seller-only. */}
           <GalleryEditor images={images} onChange={setImages} onError={setError} upload={api.buyerBids.uploadImages} />

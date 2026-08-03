@@ -1,28 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { SubcategoryNode } from '@agrotraders/api-client';
-import { buyerBidTitle, buyerBidsLoadState, levelOptions } from './BuyerBids';
+import { buyerBidTitle, buyerBidsLoadState } from './BuyerBids';
 
-const node = (id: string, children: SubcategoryNode[] = []): SubcategoryNode =>
-  ({ id, name: id, slug: id, children }) as SubcategoryNode;
-
-/** The requirement form renders one <select> per returned level. */
-describe('levelOptions', () => {
-  const tree = [node('rice', [node('basmati', [node('1121')])]), node('wheat')];
-
-  it('offers only the roots until something is picked', () => {
-    expect(levelOptions(tree, []).map((l) => l.map((n) => n.id))).toEqual([['rice', 'wheat']]);
-  });
-
-  it('opens the next level for each pick, and stops at a leaf', () => {
-    expect(levelOptions(tree, ['rice']).map((l) => l.map((n) => n.id))).toEqual([['rice', 'wheat'], ['basmati']]);
-    expect(levelOptions(tree, ['rice', 'basmati', '1121']).length).toBe(3);
-  });
-
-  it('ignores a path that no longer matches the tree', () => {
-    expect(levelOptions(tree, ['gone']).length).toBe(1);
-    expect(levelOptions([], ['rice'])).toEqual([]);
-  });
-});
+// `levelOptions` and its tests went with the "more specific" drill-down levels:
+// a requirement stops at the subcategory, whose spec fields ask for the rest.
 
 /** Buyers no longer type a title — a half-filled form must still read sanely. */
 describe('buyerBidTitle', () => {

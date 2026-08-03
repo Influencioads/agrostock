@@ -111,6 +111,17 @@ export interface ApiMarket {
   _count?: { products: number; profiles: number };
 }
 
+/**
+ * One attribute value rendered for display — label and value already localized
+ * and formatted by the API. Shared by listings and buyer requirements, which
+ * carry the same spec sheet.
+ */
+export interface ApiAttributeSpec {
+  key: string;
+  label: string;
+  value: string;
+}
+
 export interface ApiProduct {
   id: string;
   slug: string;
@@ -175,7 +186,7 @@ export interface ApiProduct {
    * Read surfaces use this instead of resolving the field definitions
    * themselves — they have no category tree loaded.
    */
-  attributeSpecs?: { key: string; label: string; value: string }[];
+  attributeSpecs?: ApiAttributeSpec[];
   category?: { name: string } | ApiCategory;
   subcategory?: { name: string } | ApiSubcategory | null;
   seller?: { id?: string; name: string; country?: string | null; kycStatus?: string } | null;
@@ -204,6 +215,13 @@ export interface ApiAuctionBidRow {
   isTop: boolean;
   flag: string;
   masked: string;
+  /**
+   * The real bidder — seller/admin view only, `null` for everyone else. This is
+   * what the lot owner chats with and hands the lot to; a public viewer only
+   * ever gets `masked`.
+   */
+  bidderId: string | null;
+  bidderName: string | null;
 }
 
 /**
@@ -1171,15 +1189,31 @@ export interface ApiBuyerBid {
   qtyUnit: string;
   targetPriceCents: number | null;
   currency: string;
+  /** Target price is net of VAT — the seller adds it on top. */
+  vatExtra?: boolean;
+  /** Smallest lot the buyer will take, in `qtyUnit`. Null = the whole quantity. */
+  moq?: number | null;
+  /** Preferred country of origin for the goods. Null = any. */
+  origin?: string | null;
+  /** A `DELIVERY_OPTIONS` id — who is expected to move the goods. */
+  delivery?: string | null;
+  /** Countries the buyer accepts supply from. Empty = anywhere. */
+  supplyCountries?: string[];
   deliveryPlace: string | null;
   destinationCountry: string | null;
   deadline: string | null;
   auctionEndsAt: string | null;
   /** A `PROCURE_WINDOWS` id — when the buyer intends to buy. Null on older rows. */
   procureBy: string | null;
+  /** Escrow-protected settlement vs. a direct deal between the two parties. */
+  safeDeal?: boolean;
+  /** Buyer will entertain offers away from the target price. */
+  negotiable?: boolean;
   notes: string | null;
   /** Buyer-supplied photos of the goods wanted, max 6; the first is the cover. */
   images: string[];
+  /** Subcategory spec values keyed by field key, in canonical English. */
+  attributes?: Record<string, unknown> | null;
   createdAt: string;
   orderId: string | null;
   awardedSellerBidId: string | null;
@@ -1188,6 +1222,7 @@ export interface ApiBuyerBid {
   /** The deepest taxonomy node the buyer drilled to, at any level. */
   subcategory?: { id: string; name: string; slug: string; emoji: string | null } | null;
   product?: { id: string; name: string; slug: string; emoji: string | null } | null;
+  market?: { id: string; name: string; city: string | null; country: string; flag: string | null } | null;
   /** Lowest price so far. Null in sealed quote-mode when the viewer isn't the buyer. */
   bestPriceCents?: number | null;
   _count?: { sellerBids: number };
@@ -1195,6 +1230,9 @@ export interface ApiBuyerBid {
 
 export interface ApiBuyerBidDetail extends ApiBuyerBid {
   sellerBids: ApiSellerBid[];
+  /** Spec rows rendered server-side from the subcategory's attribute fields,
+   *  already localized. Absent when the requirement has no specs. */
+  attributeSpecs?: ApiAttributeSpec[];
   isOwner: boolean;
   /** Distinct sellers who have bid. Safe in both modes — competition without identity. */
   sellerCount: number;
@@ -1771,6 +1809,20 @@ export function createApiClient(opts: ApiClientOptions) {
         /** In minor units of `targetPriceCurrency`; the API stores a USD baseline. */
         targetPriceCents?: number;
         targetPriceCurrency?: string;
+        /** Target price is net of VAT. */
+        vatExtra?: boolean;
+        /** Smallest lot the buyer will take, in `qtyUnit`. */
+        moq?: number;
+        /** Preferred country of origin. */
+        origin?: string;
+        /** A `DELIVERY_OPTIONS` id — who moves the goods. */
+        delivery?: string;
+        /** Countries the buyer accepts supply from; omit for anywhere. */
+        supplyCountries?: string[];
+        marketId?: string;
+        /** Escrow settlement (default true) vs. a direct deal. */
+        safeDeal?: boolean;
+        negotiable?: boolean;
         deliveryPlace?: string;
         destinationCountry?: string;
         /** Bidding closes at this instant. Omit to leave it open until awarded. */
@@ -1779,6 +1831,8 @@ export function createApiClient(opts: ApiClientOptions) {
         notes?: string;
         categoryId?: string;
         subcategoryId?: string;
+        /** Subcategory spec values keyed by field key; trimmed server-side. */
+        attributes?: Record<string, unknown>;
         images?: string[];
       }) => post<ApiBuyerBid>('/buyer-bids', body),
       mine: () => get<ApiBuyerBid[]>('/buyer-bids/mine'),

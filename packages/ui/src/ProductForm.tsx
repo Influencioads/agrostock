@@ -409,7 +409,7 @@ export function CountrySelect({
  * asking about collection when what the buyer actually needs to know is whether
  * they have to hire transport.
  */
-function DeliverySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function DeliverySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { t } = useTranslation([...NS]);
   return (
     <label className="block">
@@ -429,14 +429,18 @@ function DeliverySelect({ value, onChange }: { value: string; onChange: (v: stri
 /* ── Market select, with inline "create a market" ────────────────── */
 
 /** Read-only picker: only admins create markets, so there is nothing to add here. */
-function MarketSelect({
+export function MarketSelect({
   value,
   onChange,
   api,
+  label,
 }: {
   value: string;
   onChange: (id: string) => void;
   api: ProductFormApi;
+  /** Defaults to the listing's plain "Market"; a buyer requirement asks which
+   *  market they trade out of, so it passes the question form. */
+  label?: string;
 }) {
   const { t } = useTranslation([...NS]);
   const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets'], queryFn: () => api.markets.list() });
@@ -455,7 +459,7 @@ function MarketSelect({
 
   return (
     <SearchSelect
-      label={t('web:console.productForm.market')}
+      label={label ?? t('web:console.productForm.market')}
       value={value}
       onChange={onChange}
       options={options}
@@ -471,12 +475,18 @@ function MarketSelect({
  * Toggleable, searchable chip grid for the destinations a seller ships to.
  * Selected countries surface as a summary row above the picker.
  */
-function SupplyCountriesSelect({
+export function SupplyCountriesSelect({
   value,
   onChange,
+  label: labelText,
+  hint,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
+  /** Defaults to the seller wording ("where you ship to"); a buyer requirement
+   *  means the opposite direction and passes its own. */
+  label?: string;
+  hint?: string;
 }) {
   const { t, i18n } = useTranslation([...NS]);
   const [query, setQuery] = useState('');
@@ -496,8 +506,8 @@ function SupplyCountriesSelect({
   return (
     <div>
       <span className="mb-1.5 block text-sm font-semibold text-ink">
-        {t('web:console.productForm.supplyCountries')}{' '}
-        <span className="font-normal text-ink-soft">{t('web:console.productForm.supplyCountriesHint')}</span>
+        {labelText ?? t('web:console.productForm.supplyCountries')}{' '}
+        <span className="font-normal text-ink-soft">{hint ?? t('web:console.productForm.supplyCountriesHint')}</span>
       </span>
 
       {value.length > 0 && (
@@ -560,7 +570,7 @@ function SupplyCountriesSelect({
  * `options` stay canonical English because that is what gets STORED and what the
  * buyer facets match on. `optionLabel` bridges the two.
  */
-function AttributeFields({
+export function AttributeFields({
   fields,
   label,
   subcategory,

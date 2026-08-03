@@ -174,7 +174,15 @@
       "sellerFallback": "Продавец",
       "signInTitle": "Войдите, чтобы публиковать заявки",
       "startAuction": "Запустить аукцион",
-      "subtitle": "Опубликуйте потребность. Продавцы придут к вам."
+      "subtitle": "Опубликуйте потребность. Продавцы придут к вам.",
+      "fieldAcceptFrom": "Принимать поставки из",
+      "fieldAcceptFromHint": "оставьте пустым, чтобы принимать любое происхождение",
+      "fieldDestinationCountry": "Страна назначения",
+      "fieldMinLot": "Минимальная партия",
+      "fieldPreferredOrigin": "Предпочтительное происхождение",
+      "titleAuto": "Формируется из выбранной категории",
+      "titleFor": "для {{name}}",
+      "whichMarket": "С какого вы рынка?"
     },
     "invoices": {
       "emptyBody": "Счета появятся здесь, как только контрагент их выставит.",
@@ -255,7 +263,8 @@
       "targetPrice": "Цель {{price}}/{{unit}}",
       "updateBid": "Снизьте свою ставку",
       "yourCurrent": "Ваша текущая ставка: {{price}}/{{unit}}",
-      "yourOffer": "Ваше предложение"
+      "yourOffer": "Ваше предложение",
+      "requirementDetails": "Детали заявки"
     },
     "safeDeal": {
       "emptyBody": "Оплаченные заказы в ожидании доставки появятся здесь.",
@@ -1492,6 +1501,9 @@
       "totalBids": "Всего ставок"
     },
     "auctions": {
+      "allocateTo": "Отдать {{name}} · {{amount}}",
+      "allocateTopBid": "Отдать лучшей ставке",
+      "allocating": "Передача…",
       "allAuctions": "Каждое объявление уже является аукционом. Добавьте новый товар и отметьте «Аукцион».",
       "bidBookTitle": "Ставки — {{name}}",
       "bidderFallback": "Участник",

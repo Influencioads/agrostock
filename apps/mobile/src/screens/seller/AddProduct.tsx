@@ -58,7 +58,17 @@ const blank = {
  * all with no way to look one up. The searched text carries city and country
  * too, since that is how a seller finds theirs.
  */
-function MarketPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+export function MarketPicker({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  /** Defaults to the listing's plain "Market"; a buyer requirement asks which
+   *  market they trade out of, so it passes the question form. */
+  label?: string;
+}) {
   const { t } = useI18n();
   const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets'], queryFn: () => api.markets.list() });
   const options = [
@@ -71,7 +81,7 @@ function MarketPicker({ value, onChange }: { value: string; onChange: (id: strin
 
   return (
     <PickerField
-      label={t('sellerX.market.label')}
+      label={label ?? t('sellerX.market.label')}
       placeholder={t('sellerX.market.none')}
       value={value}
       displayValue={options.find((o) => o.value === value)?.label}
@@ -209,12 +219,24 @@ function CountryPicker({ value, onChange }: { value: string; onChange: (name: st
 }
 
 /** Searchable multi-select for the countries the seller can supply to. */
-function SupplyCountriesPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
+export function SupplyCountriesPicker({
+  value,
+  onChange,
+  label,
+  hint,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+  /** Defaults to the seller wording ("where you ship to"); a buyer requirement
+   *  means the opposite direction and passes its own. */
+  label?: string;
+  hint?: string;
+}) {
   const { t, lang } = useI18n();
   return (
     <MultiPickerField
-      label={t('sellerX.add.supplyCountries')}
-      hint={t('sellerX.add.supplyCountriesHint')}
+      label={label ?? t('sellerX.add.supplyCountries')}
+      hint={hint ?? t('sellerX.add.supplyCountriesHint')}
       placeholder={t('sellerX.add.searchCountry')}
       values={value}
       options={countryOptions(lang)}
@@ -227,7 +249,7 @@ function SupplyCountriesPicker({ value, onChange }: { value: string[]; onChange:
 /* ── Category/subcategory-specific attribute fields ──────────────── */
 
 /** Dynamic detail inputs for the chosen subcategory, from the shared schema. */
-function AttributeFields({
+export function AttributeFields({
   fields,
   subcategory,
   value,

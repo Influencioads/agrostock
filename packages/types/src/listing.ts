@@ -117,3 +117,15 @@ export function suggestProductName(
   }
   return parts.join(' ');
 }
+
+/**
+ * A buyer requirement's title, composed rather than typed: what it is (the whole
+ * taxonomy path), where it goes, and who wants it. Buyers wrote titles nobody
+ * could search or compare; these three facts are what a seller scans for.
+ *
+ * Lives here beside `suggestProductName` so web and mobile compose the same
+ * title — the two boards list requirements from both.
+ */
+export function buyerBidTitle(taxonomy: string[], city?: string, forWhom?: string): string {
+  return [taxonomy.join(' › '), city?.trim(), forWhom?.trim()].filter(Boolean).join(' · ');
+}

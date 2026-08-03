@@ -528,19 +528,26 @@ export function CommunityWidget() {
 
               {tab === 'mychats' &&
                 (user ? (
-                  ((mine.data as AnyRec[]) ?? []).map((g) => (
-                    <button
-                      key={g.id}
-                      onClick={() => setActiveGroup(g)}
-                      className="mb-2 flex w-full items-center justify-between rounded-xl border border-surface-border p-3 text-start hover:border-brand-leaf"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="text-xl">{g.emoji ?? '💬'}</span>
-                        <span className="font-display font-bold text-ink">{g.name}</span>
-                      </span>
-                      {g.unread > 0 && <Badge tone="error">{g.unread} {s.unread}</Badge>}
-                    </button>
-                  ))
+                  <>
+                    {((mine.data as AnyRec[]) ?? []).map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() =>
+                          c.chatKind === 'dm' ? setActiveDm({ userId: c.userId, name: c.name }) : setActiveGroup(c)
+                        }
+                        className="mb-2 flex w-full items-center justify-between rounded-xl border border-surface-border p-3 text-start hover:border-brand-leaf"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-xl">{c.emoji ?? '💬'}</span>
+                          <span className="font-display font-bold text-ink">{c.name}</span>
+                        </span>
+                        {c.unread > 0 && <Badge tone="error">{c.unread} {s.unread}</Badge>}
+                      </button>
+                    ))}
+                    {Array.isArray(mine.data) && (mine.data as AnyRec[]).length === 0 && (
+                      <p className="mt-8 text-center text-sm text-ink-soft">{s.empty}</p>
+                    )}
+                  </>
                 ) : (
                   <p className="mt-8 text-center text-sm text-ink-soft">{s.signInToPost}</p>
                 ))}

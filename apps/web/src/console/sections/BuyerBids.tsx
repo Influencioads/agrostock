@@ -4,61 +4,43 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Combobox, Icon, Input, Modal } from '@agrotraders/ui';
 import { CountrySelect } from '@agrotraders/ui/ProductForm';
 import { buildSubcategoryTree, type ApiBuyerBid, type ApiCategory, type SubcategoryNode } from '@agrotraders/api-client';
-import { CURRENCIES, CURRENCY_SYMBOLS, PROCURE_WINDOWS, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import { buyerBidTitle, CURRENCIES, CURRENCY_SYMBOLS, PROCURE_WINDOWS, PRODUCT_UNITS, suggestProductName, toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
 import { errMessage } from './order-parts';
-import { GalleryEditor, MAX_IMAGES } from './ProductForm';
+import { AttributeFields, DeliverySelect, GalleryEditor, MarketSelect, MAX_IMAGES, SupplyCountriesSelect } from './ProductForm';
 import { BuyerBidRoom } from './BuyerBidRoom';
 
 const selectCls = 'h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm outline-none focus:border-brand-leaf';
 
-/**
- * One options list per drill-down level: the roots, then the children of
- * whatever is picked at each level, stopping at the first level with nothing
- * selected. Exported for the unit test — the drill-down is the fiddly part.
- */
-export function levelOptions(tree: SubcategoryNode[], path: string[]): SubcategoryNode[][] {
-  const levels: SubcategoryNode[][] = [];
-  let nodes = tree;
-  for (let i = 0; nodes.length > 0; i++) {
-    levels.push(nodes);
-    const picked = nodes.find((n) => n.id === path[i]);
-    if (!picked) break;
-    nodes = picked.children;
-  }
-  return levels;
-}
+// Composed in `@agrotraders/types` so the mobile requirement sheet builds the
+// identical title; re-exported here because the section's test imports it.
+export { buyerBidTitle };
 
 /**
- * The requirement's title, composed rather than typed: what it is (the whole
- * taxonomy path), where it goes, and who wants it. Buyers wrote titles nobody
- * could search or compare; these three facts are what a seller scans for.
- */
-export function buyerBidTitle(taxonomy: string[], city?: string, forWhom?: string): string {
-  return [taxonomy.join(' › '), city?.trim(), forWhom?.trim()].filter(Boolean).join(' · ');
-}
-
-/**
- * Category → subcategory → … as far as the taxonomy goes, so a requirement is
- * specific enough for a seller to price it. Presentational: the modal owns the
- * queries because it composes the title out of the SAME names.
+ * Category → subcategory, and no deeper.
+ *
+ * A seller drills to the exact leaf because they are describing goods they hold;
+ * a buyer is describing goods they WANT, and every subcategory carries its own
+ * spec fields — so picking "Almond" already asks for variety, size and
+ * processing. The extra "more specific" levels below it only re-asked, in
+ * dropdown form, what the detail fields ask properly.
  */
 function TaxonomyPicker({
   categories,
-  levels,
+  subcategories,
   categoryId,
-  path,
+  subcategoryId,
   onChange,
 }: {
   categories: ApiCategory[];
-  levels: SubcategoryNode[][];
+  subcategories: SubcategoryNode[];
   categoryId: string;
-  path: string[];
-  onChange: (categoryId: string, path: string[]) => void;
+  subcategoryId: string;
+  onChange: (categoryId: string, subcategoryId: string) => void;
 }) {
   const { t } = useI18n();
 
@@ -66,27 +48,23 @@ function TaxonomyPicker({
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <label className="block">
         <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.category')}</span>
-        <select className={selectCls} value={categoryId} onChange={(e) => onChange(e.target.value, [])}>
+        <select className={selectCls} value={categoryId} onChange={(e) => onChange(e.target.value, '')}>
           <option value="">{t('console.buyer.any')}</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name} {c.emoji}</option>)}
         </select>
       </label>
-      {levels.map((options, i) => (
-        <label className="block" key={i}>
-          <span className="mb-1.5 block text-sm font-semibold text-ink">
-            {i === 0 ? t('console.buyer.subcategory') : t('console.buyer.narrower')}
-          </span>
-          <select
-            className={selectCls}
-            value={path[i] ?? ''}
-            // Picking at a level drops everything chosen below it.
-            onChange={(e) => onChange(categoryId, e.target.value ? [...path.slice(0, i), e.target.value] : path.slice(0, i))}
-          >
-            <option value="">{t('console.buyer.any')}</option>
-            {options.map((n) => <option key={n.id} value={n.id}>{n.name}{n.emoji ? ` ${n.emoji}` : ''}</option>)}
-          </select>
-        </label>
-      ))}
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.subcategory')}</span>
+        <select
+          className={selectCls}
+          value={subcategoryId}
+          disabled={subcategories.length === 0}
+          onChange={(e) => onChange(categoryId, e.target.value)}
+        >
+          <option value="">{t('console.buyer.any')}</option>
+          {subcategories.map((n) => <option key={n.id} value={n.id}>{n.name}{n.emoji ? ` ${n.emoji}` : ''}</option>)}
+        </select>
+      </label>
     </div>
   );
 }
@@ -118,13 +96,17 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
   // Default the quote currency to whatever the buyer is already browsing in.
   const { currency } = useCurrency();
   const [f, setF] = useState({
-    qtyValue: '', qtyUnit: 'MT', targetPrice: '', targetCurrency: currency,
-    deliveryPlace: '', destinationCountry: '', deadline: '', procureBy: 'immediate', notes: '', categoryId: '',
+    qtyValue: '', qtyUnit: 'MT', moq: '', targetPrice: '', targetCurrency: currency, vatExtra: false,
+    deliveryPlace: '', destinationCountry: '', origin: '', delivery: 'delivery', marketId: '',
+    safeDeal: true, negotiable: false,
+    deadline: '', procureBy: 'immediate', notes: '', categoryId: '', subcategoryId: '',
   });
-  const [path, setPath] = useState<string[]>([]);
+  const [supplyCountries, setSupplyCountries] = useState<string[]>([]);
+  // Same shape a listing stores: field key → canonical English value.
+  const [attributes, setAttributes] = useState<Record<string, unknown>>({});
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
-  const set = <K extends keyof typeof f>(k: K) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+  const set = <K extends keyof typeof f>(k: K) => (v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }));
 
   const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const { data: subs } = useQuery({
@@ -133,18 +115,34 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
     enabled: Boolean(f.categoryId),
     staleTime: 5 * 60 * 1000,
   });
-  const levels = useMemo(() => levelOptions(buildSubcategoryTree(subs ?? []), path), [subs, path]);
-  // Category name + the name picked at each level — the title's backbone, and
-  // the last of them is what the requirement is FOR (the old "product" field).
+  // Only the top level: the deeper nodes exist for sellers, and everything they
+  // would pin down is asked properly by the spec fields below.
+  const subcategories = useMemo(() => buildSubcategoryTree(subs ?? []), [subs]);
+  const pickedNode = subcategories.find((n) => n.id === f.subcategoryId);
+  // Category + subcategory names — the title's backbone, and the subcategory is
+  // what the requirement is FOR (the old "product" field).
   const taxonomy = useMemo(
-    () =>
-      [
-        categories.find((c) => c.id === f.categoryId)?.name,
-        ...levels.map((options, i) => options.find((n) => n.id === path[i])?.name),
-      ].filter((name): name is string => !!name),
-    [categories, f.categoryId, levels, path],
+    () => [categories.find((c) => c.id === f.categoryId)?.name, pickedNode?.name]
+      .filter((name): name is string => !!name),
+    [categories, f.categoryId, pickedNode],
   );
   const title = buyerBidTitle(taxonomy, f.deliveryPlace, user?.name ? t('console.buyer.titleFor', { name: user.name }) : '');
+
+  // The chosen subcategory's own spec fields — the SAME set a seller fills in on
+  // the listing form, so the two sides describe goods identically.
+  // Memoised on the node: the prune effect below keys on this, and a fresh `[]`
+  // every render would re-run it every render.
+  const attrFields = useMemo(() => pickedNode?.attrFields ?? [], [pickedNode]);
+  const attrLabel = pickedNode?.name ?? taxonomy[taxonomy.length - 1] ?? null;
+
+  // Re-picking the taxonomy invalidates specs that the new node has no field for
+  // (the API trims them too — this is so the buyer SEES what was dropped).
+  useEffect(() => {
+    const keys = new Set(attrFields.map((a) => a.key));
+    const pruned = Object.fromEntries(Object.entries(attributes).filter(([k]) => keys.has(k)));
+    if (Object.keys(pruned).length !== Object.keys(attributes).length) setAttributes(pruned);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attrFields]);
 
   // City suggestions come from the API per destination country, same as the
   // product form — the dataset is far too big to ship in the bundle.
@@ -162,19 +160,29 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
         title,
         // No separate "product" box any more: the leaf of the taxonomy IS the
         // product, and it stays a column because every seller-facing list reads it.
-        productName: taxonomy[taxonomy.length - 1] ?? title,
+        // Sharpened by the specs the buyer picked, exactly as the seller form
+        // names a listing ("Basmati 1121 Steam" rather than bare "Basmati").
+        productName: suggestProductName(taxonomy[taxonomy.length - 1], attributes) || taxonomy[taxonomy.length - 1] || title,
         qtyValue: Number(f.qtyValue),
         qtyUnit: f.qtyUnit,
+        moq: f.moq ? Number(f.moq) : undefined,
         targetPriceCents: f.targetPrice ? Math.round(Number(f.targetPrice) * 100) : undefined,
         targetPriceCurrency: f.targetCurrency,
+        vatExtra: f.vatExtra,
+        origin: f.origin || undefined,
+        delivery: f.delivery || undefined,
+        supplyCountries,
+        marketId: f.marketId || undefined,
+        safeDeal: f.safeDeal,
+        negotiable: f.negotiable,
         deliveryPlace: f.deliveryPlace || undefined,
         destinationCountry: f.destinationCountry || undefined,
         deadline: f.deadline ? new Date(f.deadline).toISOString() : undefined,
         procureBy: f.procureBy || undefined,
         notes: f.notes || undefined,
         categoryId: f.categoryId || undefined,
-        // The deepest node picked; the API stores it as-is at any level.
-        subcategoryId: path[path.length - 1] || undefined,
+        subcategoryId: f.subcategoryId || undefined,
+        attributes: Object.keys(attributes).length ? attributes : undefined,
         images,
       }),
     onMutate: () => setError(''),
@@ -217,14 +225,19 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
 
         <TaxonomyPicker
           categories={categories}
-          levels={levels}
+          subcategories={subcategories}
           categoryId={f.categoryId}
-          path={path}
-          onChange={(categoryId, next) => { setF((p) => ({ ...p, categoryId })); setPath(next); }}
+          subcategoryId={f.subcategoryId}
+          onChange={(categoryId, subcategoryId) => setF((p) => ({ ...p, categoryId, subcategoryId }))}
         />
 
+        {/* The subcategory's own spec fields — the same grades, sizes and
+            percentages a seller fills in, so a bid is specific enough to price. */}
+        <AttributeFields fields={attrFields} label={attrLabel} value={attributes} onChange={setAttributes} />
+
+        <MarketSelect value={f.marketId} onChange={set('marketId')} api={api} label={t('console.buyer.whichMarket')} />
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label={t('console.buyer.quantity')} type="number" value={f.qtyValue} onChange={(e) => set('qtyValue')(e.target.value)} />
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.unit')}</span>
             <select value={toUnit(f.qtyUnit)} onChange={(e) => set('qtyUnit')(e.target.value)} className={selectCls}>
@@ -233,6 +246,26 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
               ))}
             </select>
           </label>
+          <Input
+            label={`${t('console.buyer.quantity')} (${toUnit(f.qtyUnit)})`}
+            type="number"
+            min={0}
+            step="any"
+            value={f.qtyValue}
+            onChange={(e) => set('qtyValue')(e.target.value)}
+          />
+          {/* The seller form's MOQ, read from the other side: the smallest lot
+              this buyer will take, so a seller who cannot fill the whole
+              requirement still knows whether a part-load is worth quoting. */}
+          <Input
+            label={`${t('console.buyer.minLot')} (${toUnit(f.qtyUnit)})`}
+            type="number"
+            min={0}
+            step="any"
+            placeholder={t('console.buyer.phMinLot')}
+            value={f.moq}
+            onChange={(e) => set('moq')(e.target.value)}
+          />
           {/* Quote the target in whatever currency the buyer trades in — the API
               converts it to the USD baseline every bid is compared against. */}
           <label className="block">
@@ -257,6 +290,11 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
                 className={selectCls + ' min-w-0'}
               />
             </div>
+            {/* Sits with the price because that is the number it qualifies. */}
+            <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+              <input type="checkbox" checked={f.vatExtra} onChange={(e) => set('vatExtra')(e.target.checked)} className="accent-[#249653]" />
+              {t('console.productForm.vatExtra')}
+            </label>
           </label>
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.buyer.procureBy')}</span>
@@ -266,6 +304,15 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
               ))}
             </select>
           </label>
+          {/* Where the buyer wants the goods GROWN — the mirror of the listing's
+              origin, and the same picker so both sides match on one country set. */}
+          <CountrySelect
+            label={t('console.buyer.preferredOrigin')}
+            placeholder={t('console.buyer.any')}
+            value={f.origin}
+            onChange={set('origin')}
+          />
+          <DeliverySelect value={f.delivery} onChange={set('delivery')} />
           {/* Country first — cities are fetched per country, so the city resets with it. */}
           <CountrySelect
             label={t('console.buyer.destinationCountry')}
@@ -284,7 +331,54 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
           />
           <Input label={t('console.buyer.bidDeadline')} type="datetime-local" value={f.deadline} onChange={(e) => set('deadline')(e.target.value)} />
         </div>
-        <Input label={t('console.buyer.notes')} placeholder={t('console.buyer.phNotes')} value={f.notes} onChange={(e) => set('notes')(e.target.value)} />
+
+        {/* The listing's supply-countries chip grid, pointed the other way:
+            which origins this buyer will actually accept offers from. */}
+        <SupplyCountriesSelect
+          value={supplyCountries}
+          onChange={setSupplyCountries}
+          label={t('console.buyer.acceptFrom')}
+          hint={t('console.buyer.acceptFromHint')}
+        />
+
+        {/* Settlement and price posture — the same two-way choices a listing
+            declares, so a seller knows what they are quoting into. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.dealType')}</span>
+            <select value={f.safeDeal ? 'safe' : 'direct'} onChange={(e) => set('safeDeal')(e.target.value === 'safe')} className={selectCls}>
+              <option value="safe">{t('console.productForm.dealSafe')}</option>
+              <option value="direct">{t('console.productForm.dealDirect')}</option>
+            </select>
+            <p className="mt-1 text-xs text-ink-soft">
+              {f.safeDeal ? t('console.productForm.dealSafeHint') : t('console.productForm.dealDirectHint')}
+            </p>
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.priceType')}</span>
+            <select value={f.negotiable ? 'negotiable' : 'fixed'} onChange={(e) => set('negotiable')(e.target.value === 'negotiable')} className={selectCls}>
+              <option value="fixed">{t('console.productForm.priceFixed')}</option>
+              <option value="negotiable">{t('console.productForm.priceNegotiable')}</option>
+            </select>
+          </label>
+        </div>
+
+        {/* Multi-line like the listing's: packing, loading terms, documents —
+            a one-line box was too small for what buyers actually specify. */}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-ink">
+            {t('console.buyer.notes')}{' '}
+            <span className="font-normal text-ink-soft">{t('console.productForm.notesHint')}</span>
+          </span>
+          <textarea
+            rows={3}
+            maxLength={800}
+            value={f.notes}
+            onChange={(e) => set('notes')(e.target.value)}
+            placeholder={t('console.buyer.phNotes')}
+            className="w-full rounded-md border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-brand-leaf"
+          />
+        </label>
 
         {/* Buyer's own upload route — the products one is seller-only. */}
         <div>

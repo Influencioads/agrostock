@@ -191,7 +191,7 @@ export function localizeProductWithSpecs<
  * enforced here either. Free text/number/date pass through as the seller typed
  * them — those have no closed value set to check against.
  */
-function sanitizeAttributes(input: Record<string, unknown>, fields: AttrField[]): Record<string, unknown> {
+export function sanitizeAttributes(input: Record<string, unknown>, fields: AttrField[]): Record<string, unknown> {
   const byKey = new Map(fields.map((f) => [f.key, f]));
   const out: Record<string, unknown> = {};
   for (const [key, v] of Object.entries(input)) {

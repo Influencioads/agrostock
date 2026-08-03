@@ -556,6 +556,9 @@
       "dispatchError": "Could not dispatch this order."
     },
     "auctions": {
+      "allocateTo": "Allocate to {{name}} · {{amount}}",
+      "allocateTopBid": "Allocate top bid",
+      "allocating": "Allocating…",
       "open": "Open",
       "ended": "Ended",
       "title": "Auctions",
@@ -864,7 +867,8 @@
       "fieldQty": "Qty you can supply ({{unit}})",
       "fieldEta": "ETA (days)",
       "fieldMessage": "Message (optional)",
-      "sealedBanner": "Sealed mode. Seller names and photos are masked until you accept a quote. Quotes can't see each other."
+      "sealedBanner": "Sealed mode. Seller names and photos are masked until you accept a quote. Quotes can't see each other.",
+      "requirementDetails": "Requirement details"
     },
     "bids": {
       "auction": "Auction",
@@ -917,7 +921,15 @@
       "sellerFallback": "Seller",
       "signInTitle": "Sign in to post requirements",
       "startAuction": "Start auction",
-      "subtitle": "Post what you need. Sellers come to you."
+      "subtitle": "Post what you need. Sellers come to you.",
+      "fieldAcceptFrom": "Accept supply from",
+      "fieldAcceptFromHint": "leave empty to accept any origin",
+      "fieldDestinationCountry": "Destination country",
+      "fieldMinLot": "Minimum lot",
+      "fieldPreferredOrigin": "Preferred origin",
+      "titleAuto": "Built from the category you pick",
+      "titleFor": "for {{name}}",
+      "whichMarket": "Which market are you from?"
     },
     "transport": {
       "screenTitle": "Transport",

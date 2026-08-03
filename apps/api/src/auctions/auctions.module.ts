@@ -222,6 +222,12 @@ export class AuctionsService {
         isTop: i === 0,
         flag: flagFor(b.bidderId),
         masked: ownerView ? b.bidder.name : isYou ? 'You' : maskName(b.bidder.name),
+        // The seller/admin gets the real counterparty: they have to be able to
+        // open a chat with whoever they are about to hand the lot to. NEVER in a
+        // public payload (API-05) — a bidder id resolves to a full name through
+        // the public /directory/profile/:id endpoint, defeating the masking.
+        bidderId: ownerView ? b.bidderId : null,
+        bidderName: ownerView ? b.bidder.name : null,
       };
     });
   }

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiAuctionBid, ApiAuctionListing, ApiProduct } from '@agrotraders/api-client';
+import type { ApiAuctionBidRow, ApiAuctionListing, ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -92,15 +92,34 @@ function StartAuctionSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** The owner's full bid book for one auction. */
-function BidBookSheet({ slug, name, onClose }: { slug: string; name: string; onClose: () => void }) {
+/**
+ * The owner's bid book for one lot: who bid, how much, how long is left, and the
+ * one action that matters — hand the lot to the top bidder.
+ *
+ * Rows carry real names here (the API sends `bidderName`/`bidderId` to the seller
+ * and admin only), so the seller can see their counterparty and chat with them.
+ */
+function BidBookSheet({
+  auction,
+  onClose,
+  onAllocate,
+  allocating,
+}: {
+  auction: ApiAuctionListing;
+  onClose: () => void;
+  onAllocate: () => void;
+  allocating: boolean;
+}) {
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
-  const { data: bids = [], isLoading } = useQuery<ApiAuctionBid[]>({
-    queryKey: ['auction-bids', slug],
-    queryFn: () => api.auctions.bids(slug) as Promise<ApiAuctionBid[]>,
+  const nav = useNavigation<Nav>();
+  const { data: bids = [], isLoading } = useQuery<ApiAuctionBidRow[]>({
+    queryKey: ['auction-bids', auction.slug],
+    queryFn: () => api.auctions.bids(auction.slug) as Promise<ApiAuctionBidRow[]>,
     refetchInterval: 5000,
   });
+  const ended = auction.auctionEndsAt ? new Date(auction.auctionEndsAt).getTime() <= Date.now() : false;
+  const top = bids[0];
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
@@ -108,26 +127,55 @@ function BidBookSheet({ slug, name, onClose }: { slug: string; name: string; onC
       <View style={{ backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '80%' }}>
         <ScrollView contentContainerStyle={{ padding: space.lg, gap: 12 }}>
           <Row style={{ justifyContent: 'space-between' }}>
-            <Txt variant="h3" style={{ flexShrink: 1 }}>{t('sellerX.auctions.bidBookTitle', { name })}</Txt>
+            <Txt variant="h3" style={{ flexShrink: 1 }}>{t('sellerX.auctions.bidBookTitle', { name: auction.name })}</Txt>
             <Pressable onPress={onClose} hitSlop={10}><Ionicons name="close" size={22} color={C.inkSoft} /></Pressable>
+          </Row>
+          {/* Timer, so the seller decides with the clock in view. */}
+          <Row gap={8}>
+            <Badge label={countdown(auction.auctionEndsAt, t)} tone={ended ? 'slate' : 'mango'} />
+            <Txt variant="muted">{t('sellerX.auctions.bids', { count: auction.bidCount })}</Txt>
           </Row>
           {isLoading ? (
             <SkeletonRows />
           ) : bids.length === 0 ? (
             <Txt variant="muted">{t('sellerX.auctions.noBids')}</Txt>
           ) : (
-            bids.map((b, i) => (
+            bids.map((b) => (
               <Card key={b.id}>
                 <Row style={{ justifyContent: 'space-between' }}>
-                  <Row gap={6}>
-                    <Txt variant="title">{b.bidder?.name ?? t('sellerX.auctions.bidderFallback')}</Txt>
-                    {i === 0 && <Badge label={t('sellerX.auctions.highest')} tone="green" />}
+                  <Row gap={6} style={{ flexShrink: 1 }}>
+                    <Txt variant="title" numberOfLines={1}>{b.bidderName ?? b.masked}</Txt>
+                    {b.isTop ? <Badge label={t('sellerX.auctions.highest')} tone="green" /> : null}
                   </Row>
-                  <Txt variant="title">{fmtCents(b.amountCents)}</Txt>
+                  <Row gap={8}>
+                    <Txt variant="title">{fmtCents(b.amountCents)}</Txt>
+                    {b.bidderId ? (
+                      <Button
+                        title=""
+                        icon="chatbubbles-outline"
+                        variant="outline"
+                        size="sm"
+                        onPress={() => nav.navigate('Community', { dmUserId: b.bidderId!, dmName: b.bidderName ?? '' })}
+                      />
+                    ) : null}
+                  </Row>
                 </Row>
               </Card>
             ))
           )}
+          {/* Allocation IS the close: settling hands the lot to the highest bid
+              and notifies both sides. Naming the winner makes that explicit. */}
+          {!ended && top ? (
+            <Button
+              title={allocating
+                ? t('sellerX.auctions.allocating')
+                : t('sellerX.auctions.allocateTo', { name: top.bidderName ?? top.masked, amount: fmtCents(top.amountCents) })}
+              icon="hammer-outline"
+              full
+              disabled={allocating}
+              onPress={onAllocate}
+            />
+          ) : null}
         </ScrollView>
       </View>
     </Modal>
@@ -204,7 +252,11 @@ export function SellerAuctions() {
                 {!ended && (
                   <View style={{ flex: 1 }}>
                     <Button
-                      title={close.isPending ? t('sellerX.auctions.closing') : t('sellerX.auctions.closeNow')}
+                      title={close.isPending
+                        ? t('sellerX.auctions.closing')
+                        : p.bidCount > 0
+                          ? t('sellerX.auctions.allocateTopBid')
+                          : t('sellerX.auctions.closeNow')}
                       size="sm"
                       full
                       disabled={close.isPending}
@@ -220,7 +272,14 @@ export function SellerAuctions() {
       )}
 
       {starting && <StartAuctionSheet onClose={() => setStarting(false)} />}
-      {viewing && <BidBookSheet slug={viewing.slug} name={viewing.name} onClose={() => setViewing(null)} />}
+      {viewing && (
+        <BidBookSheet
+          auction={viewing}
+          allocating={close.isPending}
+          onAllocate={() => { setError(''); close.mutate(viewing.slug, { onSuccess: () => setViewing(null) }); }}
+          onClose={() => setViewing(null)}
+        />
+      )}
     </Screen>
   );
 }

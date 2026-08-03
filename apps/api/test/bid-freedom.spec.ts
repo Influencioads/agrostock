@@ -53,6 +53,36 @@ describe('forward auction accepts any offer', () => {
   });
 });
 
+describe('bid book identities', () => {
+  function booksFor() {
+    const prisma = {
+      product: { findUnique: vi.fn(async () => lot) },
+      auctionBid: {
+        findMany: vi.fn(async () => [
+          { id: 'x1', bidderId: 'b7', amountCents: 90_000, createdAt: new Date(), auto: false, bidder: { id: 'b7', name: 'Karim Trading' } },
+        ]),
+      },
+    };
+    return new AuctionsService(prisma as never, { create: vi.fn() } as never);
+  }
+
+  it('gives the lot owner the real bidder, so they can chat and allocate', async () => {
+    const [row] = await booksFor().bids('wheat', { id: 's1', role: 'seller' } as never);
+
+    expect(row.bidderId).toBe('b7');
+    expect(row.bidderName).toBe('Karim Trading');
+    expect(row.masked).toBe('Karim Trading');
+  });
+
+  it('never leaks the bidder id to anyone else — an id resolves to a full name', async () => {
+    const [row] = await booksFor().bids('wheat', { id: 'stranger', role: 'buyer' } as never);
+
+    expect(row.bidderId).toBeNull();
+    expect(row.bidderName).toBeNull();
+    expect(row.masked).not.toBe('Karim Trading');
+  });
+});
+
 describe('reverse (buyer) auction accepts any quote', () => {
   function buyerBidsFor(bestCents: number) {
     const notify = vi.fn(async () => ({}));

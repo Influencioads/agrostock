@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
 import type { ApiBuyerBidDetail, ApiBuyerBidRow } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
+import { chatBus } from '../../chat/chatBus';
 import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
@@ -175,8 +176,23 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
     // What the buyer drilled to, so a seller can price the exact grade.
     [t('console.buyer.subcategory'), buyerBid.subcategory?.name || buyerBid.category?.name || '—'],
     [t('console.buyer.quantity'), `${buyerBid.qtyValue} ${buyerBid.qtyUnit}`],
+    // Omitted when the buyer wants the lot whole — an empty row reads as if a
+    // part-load were on the table.
+    ...(buyerBid.moq != null ? ([[t('console.buyer.minLot'), `${buyerBid.moq} ${buyerBid.qtyUnit}`]] as [string, string][]) : []),
     [t('console.buyer.procureBy'), buyerBid.procureBy ? t(`enums:procure.${buyerBid.procureBy}`) : '—'],
-    [t('console.buyerBidRoom.targetPriceShort'), buyerBid.targetPriceCents != null ? `${usd(buyerBid.targetPriceCents)}/${buyerBid.qtyUnit}` : '—'],
+    [
+      t('console.buyerBidRoom.targetPriceShort'),
+      buyerBid.targetPriceCents != null
+        ? `${usd(buyerBid.targetPriceCents)}/${buyerBid.qtyUnit}${buyerBid.vatExtra ? ` (${t('console.productForm.vatExtra')})` : ''}`
+        : '—',
+    ],
+    [t('console.productForm.priceType'), t(buyerBid.negotiable ? 'console.productForm.priceNegotiable' : 'console.productForm.priceFixed')],
+    [t('console.productForm.dealType'), t(buyerBid.safeDeal === false ? 'console.productForm.dealDirect' : 'console.productForm.dealSafe')],
+    // The listing fields that tell a seller whether they can even serve this.
+    [t('console.buyer.preferredOrigin'), buyerBid.origin || t('console.buyer.any')],
+    [t('console.buyer.acceptFrom'), buyerBid.supplyCountries?.length ? buyerBid.supplyCountries.join(', ') : t('console.buyer.any')],
+    [t('console.productForm.delivery'), buyerBid.delivery ? t(`enums:delivery.${buyerBid.delivery}`) : '—'],
+    [t('console.productForm.market'), buyerBid.market?.name || '—'],
     [t('console.buyer.deliveryPlace'), buyerBid.deliveryPlace || '—'],
     [t('console.buyer.destinationCountry'), buyerBid.destinationCountry || '—'],
     [
@@ -185,6 +201,9 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
         ? new Date((isAuction ? buyerBid.auctionEndsAt : buyerBid.deadline)!).toLocaleString()
         : '—',
     ],
+    // The subcategory's own fields, rendered and localized by the API — the same
+    // spec rows a product page shows, so both sides read one description.
+    ...((buyerBid.attributeSpecs ?? []).map((s) => [s.label, s.value] as [string, string])),
   ];
 
   return (
@@ -353,10 +372,22 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
                   {b.message ? ` · “${b.message}”` : ''}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <div className="font-numeric font-bold text-ink">
                   {usd(b.priceCents)}<span className="text-xs font-normal text-ink-soft">/{buyerBid.qtyUnit}</span>
                 </div>
+                {/* Only the owner gets a real id, so only they can open the chat
+                    — masked rows have nobody to talk to. */}
+                {b.sellerId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-label={t('site.chatNamed', { name: b.masked })}
+                    onClick={() => chatBus.openCommunityDm(b.sellerId!, b.masked)}
+                  >
+                    <Icon name="message" size={15} />
+                  </Button>
+                )}
                 {buyerBid.isOwner && buyerBid.status === 'open' && b.status === 'submitted' && (
                   <Button size="sm" disabled={award.isPending} onClick={() => award.mutate(b.id)}>
                     {award.isPending ? t('console.buyer.awarding') : t('console.buyer.award')}

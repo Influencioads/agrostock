@@ -96,7 +96,7 @@ export class CommunityController {
   @UseGuards(JwtAuthGuard)
   @Get('my/groups')
   myGroups(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
-    return this.community.myGroups(user.id, locale);
+    return this.community.myChats(user.id, locale);
   }
 
   @ApiBearerAuth()

@@ -624,7 +624,7 @@ export function Community() {
             contentContainerStyle={{ padding: space.lg, gap: 10 }}
             ListEmptyComponent={mine.isLoading ? <SkeletonRows /> : <EmptyState icon="chatbubbles-outline" title={s.noGroups} />}
             renderItem={({ item: g }) => (
-              <Card onPress={() => setActiveGroup(g)}>
+              <Card onPress={() => (g.chatKind === 'dm' ? setActiveDm({ userId: g.userId, name: g.name }) : setActiveGroup(g))}>
                 <Row style={{ justifyContent: 'space-between' }}>
                   <Row gap={10}>
                     <Txt style={{ fontSize: 22 }}>{g.emoji ?? '💬'}</Txt>

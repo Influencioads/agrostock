@@ -260,22 +260,73 @@ export class CommunityService {
     return this.localizeGroups(groups, locale);
   }
 
-  async myGroups(userId: string, locale: Lang = 'en') {
-    const memberships = await this.prisma.communityGroupMember.findMany({
-      where: { user: { id: userId }, group: { deletedAt: null } },
-      include: {
-        group: {
-          include: {
-            _count: { select: { members: true } },
-            translations: { where: { locale }, select: { name: true, description: true } },
+  /**
+   * "My Chats" — conversations the user is actually in: DM threads they started
+   * or received, plus joined groups that have messages, newest activity first.
+   * Empty groups (seeded defaults, post auto-joins) belong on the Groups tab.
+   */
+  async myChats(userId: string, locale: Lang = 'en') {
+    const hasMessages = { some: { deletedAt: null } };
+    const [memberships, threads, blocked] = await Promise.all([
+      this.prisma.communityGroupMember.findMany({
+        where: { userId, group: { deletedAt: null, messages: hasMessages } },
+        include: {
+          group: {
+            include: {
+              _count: { select: { members: true } },
+              translations: { where: { locale }, select: { name: true, description: true } },
+              messages: {
+                where: { deletedAt: null },
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                select: { createdAt: true },
+              },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.communityDirectThread.findMany({
+        where: { OR: [{ aId: userId }, { bId: userId }], messages: hasMessages },
+        include: { a: { select: { id: true, name: true } }, b: { select: { id: true, name: true } } },
+      }),
+      this.blockedIds(userId),
+    ]);
+
+    const [groupUnread, dmUnread] = await Promise.all([
+      this.unreadByGroup(userId, memberships),
+      this.unreadByThread(userId, threads),
+    ]);
+
+    const groups = await this.localizeGroups(
+      memberships.map(({ group: { messages, ...group }, groupId, role }) => ({
+        ...group,
+        chatKind: 'group' as const,
+        membershipRole: role,
+        unread: groupUnread.get(groupId) ?? 0,
+        lastMessageAt: messages[0]?.createdAt ?? null,
+      })),
+      locale,
+    );
+
+    const dms = threads.flatMap((t) => {
+      const peer = t.aId === userId ? t.b : t.a;
+      if (blocked.includes(peer.id)) return [];
+      return [
+        {
+          chatKind: 'dm' as const,
+          id: t.id,
+          userId: peer.id,
+          name: peer.name,
+          emoji: '💬',
+          unread: dmUnread.get(t.id) ?? 0,
+          lastMessageAt: t.lastMessageAt,
+        },
+      ];
     });
-    const unread = await this.unreadByGroup(userId, memberships);
-    const result = memberships.map((m) => ({ ...m.group, membershipRole: m.role, unread: unread.get(m.groupId) ?? 0 }));
-    return this.localizeGroups(result, locale);
+
+    return [...groups, ...dms].sort(
+      (x, y) => (y.lastMessageAt?.getTime() ?? 0) - (x.lastMessageAt?.getTime() ?? 0),
+    );
   }
 
   async getGroup(user: AuthUser | undefined, id: string, locale: Lang = 'en') {

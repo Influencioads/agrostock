@@ -17,6 +17,12 @@ export {
   productFormReady,
   productToForm,
   type ProductFormValues,
+  // Re-exported so the buyer's requirement form offers the SAME controls a
+  // seller lists with, instead of a second set that drifts.
+  AttributeFields,
+  DeliverySelect,
+  MarketSelect,
+  SupplyCountriesSelect,
 } from '@agrotraders/ui/ProductForm';
 
 type GalleryProps = Omit<React.ComponentProps<typeof BaseGalleryEditor>, 'assetUrl' | 'upload'> & {

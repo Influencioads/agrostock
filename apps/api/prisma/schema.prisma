@@ -414,6 +414,7 @@ model Market {
 
   profiles     Profile[]
   products     Product[]
+  buyerBids    BuyerBid[]
   translations MarketTranslation[]
 
   @@index([status])
@@ -876,6 +877,16 @@ model BuyerBid {
   qtyUnit            String    @default("MT")
   targetPriceCents   Int?
   currency           String    @default("USD")
+  /// Target price is net of VAT — mirrors `Product.vatExtra`.
+  vatExtra           Boolean   @default(false)
+  /// Smallest lot the buyer will take, in `qtyUnit`. Null = the whole quantity only.
+  moq                Float?
+  /// Country the buyer wants the goods to originate from ("" / null = any).
+  origin             String?
+  /// Who moves the goods: a `DELIVERY_OPTIONS` id, same set as `Product.delivery`.
+  delivery           String?
+  /// Countries the buyer will accept supply from. Empty = anywhere.
+  supplyCountries    String[]  @default([])
   deliveryPlace      String?
   destinationCountry String?
   deadline           DateTime?
@@ -884,9 +895,17 @@ model BuyerBid {
   /// When the buyer intends to procure — a `PROCURE_WINDOWS` id, or null on the
   /// requirements posted before the field existed.
   procureBy          String?
+  /// Escrow-protected settlement vs. a direct deal — mirrors `Product.safeDeal`.
+  safeDeal           Boolean   @default(true)
+  /// Buyer will entertain offers away from the target price.
+  negotiable         Boolean   @default(false)
   notes              String?
   /// Buyer-supplied reference photos of the goods wanted. Max 6, first = cover.
   images             String[]  @default([])
+  /// Subcategory-specific spec values (grade, moisture, packing…), keyed by the
+  /// field key and stored in canonical English — the exact shape `Product.attributes`
+  /// holds, so a seller reads the same spec sheet on both sides of the trade.
+  attributes         Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -899,6 +918,9 @@ model BuyerBid {
   subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
   productId  String?
   product    Product?  @relation(fields: [productId], references: [id])
+  /// Market/mandi the buyer wants to trade this through, when they have one.
+  marketId   String?
+  market     Market?   @relation(fields: [marketId], references: [id])
   buyerId    String
   buyer      User      @relation("BuyerBidBuyer", fields: [buyerId], references: [id])
 
