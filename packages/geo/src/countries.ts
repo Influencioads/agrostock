@@ -114,10 +114,21 @@ export const ALL_COUNTRIES: Country[] = [
 
 const byLowerName = new Map(ALL_COUNTRIES.map((c) => [c.name.toLowerCase(), c]));
 
-/** Resolve a stored country name to its entry, tolerating case differences. */
+/**
+ * Resolve a stored country name to its entry, tolerating case differences and a
+ * flag prefix.
+ *
+ * Most `User.country` rows hold the display form the old sign-up wrote —
+ * `'🇮🇳 India'`, not `'India'` — so an exact lookup missed them and every
+ * consumer degraded quietly: no flag, an unlocalized label, and a country picker
+ * that showed "Any country" over a perfectly good value. Only the regional
+ * indicator characters are stripped, so a name that legitimately contains
+ * punctuation ("Bonaire, Sint Eustatius and Saba") still matches exactly.
+ */
 export function findCountry(name?: string | null): Country | undefined {
   if (!name) return undefined;
-  return byLowerName.get(name.trim().toLowerCase());
+  const bare = name.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').trim().toLowerCase();
+  return byLowerName.get(bare);
 }
 
 /** Look up a country's flag by its stored name (empty string when unknown). */

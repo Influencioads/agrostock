@@ -7,7 +7,9 @@ import { filterFields, optionLabel, type AttrField } from '@agrotraders/types';
 import { ProductCard } from '../components/site/ProductCard';
 import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
-import { ALL_COUNTRIES, buildSubcategoryTree, countryLabel, findSubcategoryPath, flattenSubcategoryTree, resolveAttrFields, type SubcategoryNode } from '@agrotraders/api-client';
+import { buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, resolveAttrFields, type SubcategoryNode } from '@agrotraders/api-client';
+import { CountrySelect } from '@agrotraders/ui/ProductForm';
+import { CityInput } from '../components/GeoInputs';
 import { useI18n } from '../i18n';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -31,7 +33,7 @@ const toggleParam: Record<(typeof toggleKeys)[number], string> = {
 const PAGE_SIZE = 24;
 
 export function MarketPage() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   useDocumentTitle(t('page.market.title'));
   const [params, setParams] = useSearchParams();
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -252,13 +254,6 @@ export function MarketPage() {
         trail: findSubcategoryPath(subOptions, node.id).map((n) => n.name).join(' › '),
       }));
   }, [subQuery, flatSubOptions, subOptions]);
-  const cities = useMemo(
-    () => Array.from(new Set(markets.map((m) => m.city).filter(Boolean))) as string[],
-    [markets],
-  );
-  // The whole world, not just the countries the loaded markets cover.
-  const countries = ALL_COUNTRIES;
-
   const marketName = (slug: string) => markets.find((m) => m.slug === slug)?.name ?? slug;
   const inputCls = 'mt-2 h-9 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink';
 
@@ -503,27 +498,29 @@ export function MarketPage() {
             </select>
           </div>
 
-          {/* country — always ahead of city, which narrows within it */}
+          {/* Country first, then city inside it — both TYPEABLE, not just
+              dropdowns. The plain selects only jumped to the letter you pressed,
+              which is unusable at 200 countries, and the city list was limited to
+              the cities the loaded markets happened to cover. */}
           <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.country')}</p>
-            <select value={country} onChange={(e) => setParam('country', e.target.value || null)} className={inputCls}>
-              <option value="">{t('page.market.allCountries')}</option>
-              {/* The stored string stays the filter VALUE; only the label localizes. */}
-              {countries.map((c) => (
-                <option key={c.iso2} value={c.name}>{c.flag} {countryLabel(c.name, lang)}</option>
-              ))}
-            </select>
+            <CountrySelect
+              label={t('page.market.country')}
+              value={country}
+              placeholder={t('page.market.allCountries')}
+              // A city belongs to its country, so changing it invalidates the pick.
+              onChange={(next) => { setParam('country', next || null); setParam('city', null); }}
+            />
           </div>
 
-          {/* city */}
           <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.city')}</p>
-            <select value={city} onChange={(e) => setParam('city', e.target.value || null)} className={inputCls}>
-              <option value="">{t('page.market.allCities')}</option>
-              {cities.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            <CityInput
+              label={t('page.market.city')}
+              value={city}
+              country={country || null}
+              // Debounced through the URL like every other filter; typing a place
+              // that isn't in the dataset still searches for it verbatim.
+              onChange={(next) => setParam('city', next || null)}
+            />
           </div>
 
           {/* price range (whole dollars) */}

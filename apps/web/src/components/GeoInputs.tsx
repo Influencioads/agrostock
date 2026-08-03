@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Combobox } from '@agrotraders/ui';
-import { ALL_COUNTRIES, countryLabel } from '@agrotraders/api-client';
+import { ALL_COUNTRIES } from '@agrotraders/api-client';
 import { useCityOptions } from '../lib/geo';
 import { TagInput } from './TagInput';
 
@@ -77,7 +77,6 @@ export function CityInput({
     />
   );
 }
-
 /**
  * Multi-value twin of `CityInput` — operating / supplying city lists. The draft
  * the user is typing drives the search.
@@ -137,28 +136,5 @@ export function CountryTagInput({
       placeholder={placeholder}
       hint={hint}
     />
-  );
-}
-
-/**
- * Country dropdown as a plain `<select>`, for the compact filter bars and admin
- * rows where the full `CountrySelect` (searchable, label-sized) is too heavy.
- * Options are localized; the stored value stays the English name.
- */
-export function CountryOptions() {
-  const { i18n } = useTranslation();
-  const lang = i18n.language;
-  const options = useMemo(
-    () => ALL_COUNTRIES.map((c) => ({ value: c.name, label: `${c.flag} ${countryLabel(c.name, lang)}` })),
-    [lang],
-  );
-  return (
-    <>
-      {options.map((c) => (
-        <option key={c.value} value={c.value}>
-          {c.label}
-        </option>
-      ))}
-    </>
   );
 }

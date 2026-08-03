@@ -1,19 +1,21 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiOrder, ApiProduct } from '@agrotraders/api-client';
+import { GMT_OFFSETS, normalizeGmt } from '@agrotraders/geo';
 import { api } from '../../lib/api';
 import { parseAmount } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { BarChart } from '../../ui/charts';
-import { ProgressBar, Row, Txt } from '../../ui';
+import { Button, Input, ProgressBar, Row, Txt } from '../../ui';
 import { DashHeader, DashSection, StatCards } from '../components/dash-parts';
+import { PickerField } from '../components/PickerSheet';
 import { C, radius, space, type } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -95,6 +97,8 @@ export function SellerDashboard() {
           )}
         </DashSection>
 
+        <AvailabilitySection />
+
         <DashSection title={t('dash.actionNeeded')}>
           <View style={{ backgroundColor: C.mangoSoft, borderRadius: radius.card, padding: space.md }}>
             <Txt>
@@ -111,6 +115,69 @@ export function SellerDashboard() {
         </DashSection>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * When buyers can reach this seller. Writes the same `availableFrom` /
+ * `availableTo` / `timezone` the profile has always carried — the public profile
+ * and the directory already render them — but from the dashboard, where a seller
+ * actually is, instead of a form buried under More.
+ */
+function AvailabilitySection() {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const { data: profile } = useQuery({ queryKey: ['my-profile'], queryFn: () => api.me.profile() });
+  const [f, setF] = useState({ availableFrom: '', availableTo: '', timezone: '' });
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!profile) return;
+    setF({
+      availableFrom: profile.availableFrom ?? '',
+      availableTo: profile.availableTo ?? '',
+      timezone: normalizeGmt(profile.timezone),
+    });
+  }, [profile]);
+
+  const save = useMutation({
+    mutationFn: () => {
+      // Both ends or neither: a half-open window renders as a broken range
+      // everywhere it is shown.
+      if (!!f.availableFrom !== !!f.availableTo) throw new Error('range');
+      return api.me.updateProfile(f);
+    },
+    onSuccess: () => { setError(''); qc.invalidateQueries({ queryKey: ['my-profile'] }); },
+    onError: (e) => setError(e instanceof Error && e.message === 'range' ? t('dash.availabilityRange') : t('compX.profile.saveError')),
+  });
+
+  const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  return (
+    <DashSection title={t('dash.availability')}>
+      <Txt variant="muted">{t('dash.availabilitySub')}</Txt>
+      <Row gap={10}>
+        <View style={{ flex: 1 }}>
+          <Input label={t('compX.profile.availableFrom')} placeholder="08:00" value={f.availableFrom} onChangeText={set('availableFrom')} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Input label={t('compX.profile.until')} placeholder="20:00" value={f.availableTo} onChangeText={set('availableTo')} />
+        </View>
+      </Row>
+      <PickerField
+        label={t('compX.profile.timezone')}
+        placeholder="GMT+5:30"
+        value={normalizeGmt(f.timezone)}
+        options={GMT_OFFSETS.map((o) => ({ value: o.value, label: o.label }))}
+        onChange={set('timezone')}
+      />
+      {error ? <Txt variant="small" color={C.error}>{error}</Txt> : null}
+      <Button
+        title={save.isPending ? t('dash.saving') : t('common:save')}
+        disabled={save.isPending}
+        onPress={() => save.mutate()}
+      />
+    </DashSection>
   );
 }
 

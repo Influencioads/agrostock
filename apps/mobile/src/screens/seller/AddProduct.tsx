@@ -41,7 +41,8 @@ const bareNumber = (s?: string | null) => (s ?? '').replace(/[^\d.]/g, '');
 const withUnit = (amount: string, unit: string) => (amount.trim() ? `${amount.trim()} ${toUnit(unit)}` : '');
 
 const blank = {
-  name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', unit: 'MT', qty: '', moq: '',
+  name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', vatExtra: false, unit: 'MT', qty: '', moq: '',
+  notes: '',
   emoji: '🌾', origin: '', city: '', country: '', delivery: 'delivery', isOffer: false, isAuction: false,
   safeDeal: true, negotiable: false,
   marketId: '', startBid: '', auctionDays: '7',
@@ -370,6 +371,7 @@ export function SellerAddProduct() {
       setForm((f) => ({
         ...f,
         name: canon('name', p.name) ?? '', price: bareNumber(p.price), priceCurrency: p.priceCurrency ?? 'USD', unit: toUnit(p.unit),
+        vatExtra: !!p.vatExtra, notes: p.notes ?? '',
         qty: bareNumber(canon('qty', p.qty)), moq: bareNumber(canon('moq', p.moq)), emoji: p.emoji ?? '🌾',
         origin: canon('origin', p.origin) ?? '', city: p.city ?? '', country: p.country ?? '',
         subcategoryId: (p.subcategory && typeof p.subcategory === 'object' ? (p.subcategory as { id?: string }).id : '') ?? '',
@@ -532,6 +534,14 @@ export function SellerAddProduct() {
           </View>
           <View style={{ flex: 1 }}><Input label={t('sellerX.add.price')} keyboardType="numeric" placeholder="840" value={form.price} error={bad('price') ? required : undefined} onChangeText={setNum('price')} /></View>
         </Row>
+        {/* Sits with the price because that is the number it qualifies. */}
+        <Row gap={8}>
+          <Chip
+            label={t('sellerX.add.vatExtra')}
+            active={form.vatExtra}
+            onPress={() => setForm((f) => ({ ...f, vatExtra: !f.vatExtra }))}
+          />
+        </Row>
         {/* One metric drives quantity and MOQ — sellers were typing "500 MT",
             "500mt" and "500 tons" into free-text boxes. */}
         <PickerField
@@ -575,6 +585,18 @@ export function SellerAddProduct() {
         <CountryPicker value={form.country} onChange={(country) => setForm((f) => ({ ...f, country, city: '' }))} />
         <CityField label={t('sellerX.add.city')} placeholder={t('sellerX.add.phCity')} country={form.country || undefined} value={form.city} onChange={set('city')} />
         <SupplyCountriesPicker value={form.supplyCountries} onChange={(supplyCountries) => setForm((f) => ({ ...f, supplyCountries }))} />
+
+        {/* Free-text remarks the structured fields have no box for. Shown
+            verbatim on the listing. */}
+        <Input
+          label={t('sellerX.add.notes')}
+          placeholder={t('sellerX.add.phNotes')}
+          value={form.notes}
+          onChangeText={set('notes')}
+          multiline
+          maxLength={2000}
+          style={{ minHeight: 84, textAlignVertical: 'top' }}
+        />
 
         {/* How the deal is settled and priced — both directions are explicit, so
             a buyer never has to infer "direct deal" from a missing badge. */}

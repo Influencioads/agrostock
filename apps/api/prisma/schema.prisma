@@ -670,6 +670,11 @@ model Product {
   /// comparable across listings; this is what we echo back into the edit form.
   priceCurrency String    @default("USD")
   unit          String    @default("/MT")
+  /// The quoted price excludes VAT — the buyer sees "VAT extra" under it.
+  vatExtra      Boolean   @default(false)
+  /// Free-text seller notes on the listing (packing, loading terms, remarks).
+  /// Not translated: it is unconstrained prose the seller may want verbatim.
+  notes         String?
   // Legacy display rating (string). Kept in sync with `ratingAvg` when the
   // product has real reviews, otherwise retains its cosmetic default.
   rating        String    @default("4.8")

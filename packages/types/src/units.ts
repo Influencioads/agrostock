@@ -67,6 +67,36 @@ export function toUnit(raw?: string | null): ProductUnit {
 }
 
 /**
+ * Mass of one unit, in kilograms. BAG and PIECE are counts with no fixed mass,
+ * so they are deliberately absent — a quantity in them converts to nothing else.
+ * TON is the short ton (the alias table already routes `tonne` to MT).
+ */
+const UNIT_KG: Partial<Record<ProductUnit, number>> = {
+  KG: 1,
+  QUINTAL: 100,
+  MT: 1000,
+  TON: 907.18474,
+};
+
+/**
+ * Restate `qty` from one unit in another — 50 TON → 45.359 MT. `undefined` when
+ * the two aren't comparable (anything involving BAG/PIECE), so callers reject
+ * the entry rather than silently pricing a count as a mass.
+ */
+export function convertQty(qty: number, from: ProductUnit, to: ProductUnit): number | undefined {
+  if (from === to) return qty;
+  const a = UNIT_KG[from];
+  const b = UNIT_KG[to];
+  return a && b ? (qty * a) / b : undefined;
+}
+
+/** Every unit a quantity in `unit` can be restated in — always includes itself. */
+export function comparableUnits(unit: ProductUnit): ProductUnit[] {
+  if (!UNIT_KG[unit]) return [unit];
+  return PRODUCT_UNITS.filter((u) => !!UNIT_KG[u]);
+}
+
+/**
  * Price suffix form — `unitSuffix('KG')` → `'/KG'`. Legacy `'/MT'` stays `'/MT'`.
  *
  * Pass the caller's `t` to localize the code (`'/кг'` in Russian). It stays

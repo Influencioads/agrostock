@@ -46,4 +46,21 @@ describe('ProductsService filters', () => {
       select: { id: true, parentId: true },
     });
   });
+
+  it('matches a place against the listing itself OR its market, and keeps the search OR intact', async () => {
+    const { svc, prisma } = serviceForProducts();
+
+    await svc.findAll({ country: 'India', city: 'Kandla', search: 'rice' });
+
+    const { where } = prisma.product.findMany.mock.calls[0][0] as { where: Record<string, unknown> };
+    // A listing with no market attached must still be findable by its own place.
+    expect(where.AND).toEqual([
+      { OR: [{ city: { equals: 'Kandla', mode: 'insensitive' } }, { market: { is: { city: { equals: 'Kandla', mode: 'insensitive' } } } }] },
+      { OR: [{ country: { equals: 'India', mode: 'insensitive' } }, { market: { is: { country: { equals: 'India', mode: 'insensitive' } } } }] },
+    ]);
+    // The place filters live under AND precisely so they cannot swallow this.
+    expect(where.OR).toEqual(
+      expect.arrayContaining([{ name: { contains: 'rice', mode: 'insensitive' } }]),
+    );
+  });
 });

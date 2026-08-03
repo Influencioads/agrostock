@@ -6,7 +6,7 @@ import { useI18n } from '../../i18n';
 import { useWishlist } from '../../lib/useWishlist';
 import { chatBus } from '../../chat/chatBus';
 import { countryFlag, countryLabel } from '@agrotraders/api-client';
-import { isDeliveryOption, unitSuffix } from '@agrotraders/types';
+import { isDeliveryOption, toUnit, unitSuffix } from '@agrotraders/types';
 
 const cardText = (value: unknown, fallback = ''): string => {
   if (typeof value === 'string') return value;
@@ -59,7 +59,8 @@ export function ProductCard({ p }: { p: Product }) {
   const stockLabel =
     typeof p.stockQty === 'number'
       ? p.stockQty > 0
-        ? t('site.stockCount', { count: p.stockQty, unit: cardText(p.unit) })
+        // Canonical, or a legacy row would read "12 /MT in stock".
+        ? t('site.stockCount', { count: p.stockQty, unit: toUnit(cardText(p.unit)) })
         : t('site.outOfStock')
       : t('site.inStock');
 
@@ -156,7 +157,9 @@ export function ProductCard({ p }: { p: Product }) {
           {p.marketName && (
             <div className="truncate" title={p.marketName}>🏪 {p.marketName}</div>
           )}
-          <div>{stockLabel}</div>
+          {/* Availability is the only bold line under the name — it is what a
+              buyer scanning a grid of cards is actually comparing. */}
+          <div className="font-bold text-ink">{stockLabel}</div>
           <div className="truncate">{t('site.availableLine', { qty, moq, delivery })}</div>
         </div>
 

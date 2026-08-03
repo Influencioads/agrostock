@@ -51,6 +51,16 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
   const { data: bids = [] } = useQuery<ApiAuctionBidRow[]>({
     queryKey: ['auction-bids', slug], queryFn: () => api.auctions.bids(slug), refetchInterval: 4000,
   });
+  // Shares its cache key with the standard listing page, so moving between a
+  // seller's lots and their listings costs one request.
+  const { data: sellerProfile } = useQuery({
+    queryKey: ['public-profile', product.sellerId],
+    queryFn: () => api.directory.profile(product.sellerId!),
+    enabled: !!product.sellerId,
+    staleTime: 300e3,
+    retry: 0,
+  });
+  const sellerHours = sellerProfile?.profile;
   const timer = useCountdown(auction?.auctionEndsAt ?? null);
 
   const photos = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
@@ -220,6 +230,18 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
                   <Icon name="shield" size={15} className="text-brand-leaf" />
                 </div>
                 <div className="mt-0.5 truncate text-xs text-brand-mint/80">{product.flag} · {t('auction.sellerTrades')}</div>
+                {/* Same reachable window the standard listing shows — a lot page
+                    is one of this seller's product pages too. */}
+                {sellerHours?.availableFrom && sellerHours?.availableTo && (
+                  <div className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-brand-mint/80">
+                    <Icon name="clock" size={12} />
+                    {t('page.product.sellerHours', {
+                      from: sellerHours.availableFrom,
+                      to: sellerHours.availableTo,
+                      tz: sellerHours.timezone ?? '',
+                    })}
+                  </div>
+                )}
               </div>
               <div className="flex shrink-0 gap-2">
                 {product.sellerId && (

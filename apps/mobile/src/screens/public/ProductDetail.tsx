@@ -5,15 +5,15 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, countryLabel, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
-import { unitSuffix } from '@agrotraders/types';
+import { comparableUnits, convertQty, toUnit, unitSuffix } from '@agrotraders/types';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { Accordion, Avatar, Badge, Button, Divider, ErrorState, KeyValue, Loading, ProgressBar, RatingStars, Row, SectionHeader, SkeletonRows, Txt } from '../../ui';
-import { C, radius, space, type } from '../../theme/tokens';
+import { C, font, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { AuctionRoom } from './AuctionRoom';
-import { ProductCard } from '../components';
+import { ProductCard, stockLabel } from '../components';
 import { useOrderInvalidation } from '../components/order-parts';
 import { useBasket } from '../../basket/BasketContext';
 import { useI18n } from '../../i18n';
@@ -77,6 +77,9 @@ export function ProductDetail() {
   const { t, lang } = useI18n();
   const basket = useBasket();
   const [qty, setQty] = useState(1);
+  // The metric the BUYER counts in. Empty = the listing's own; the API converts,
+  // so the price always stays per the unit the seller quoted.
+  const [qtyUnit, setQtyUnit] = useState('');
   const { data: p, isLoading, isError, refetch } = useQuery<ApiProduct>({ queryKey: ['product', params.slug], queryFn: () => api.products.get(params.slug) });
   const categoryName = p?.category && 'name' in p.category ? p.category.name : undefined;
   const { data: related = [] } = useQuery<ApiProduct[]>({
@@ -84,6 +87,17 @@ export function ProductDetail() {
     queryFn: async () => (await api.products.list({ category: categoryName })).filter((x) => x.slug !== params.slug).slice(0, 6),
     enabled: !!p,
   });
+  // When this seller is reachable — shown on every listing of theirs, because
+  // "will anyone answer if I message now?" is asked here, not on the profile
+  // screen. Cached per seller, so browsing their catalogue costs one request.
+  const { data: sellerProfile } = useQuery({
+    queryKey: ['public-profile', p?.seller?.id],
+    queryFn: () => api.directory.profile(p!.seller!.id!),
+    enabled: !!p?.seller?.id,
+    staleTime: 300e3,
+    retry: 0,
+  });
+  const sellerHours = sellerProfile?.profile;
   const { data: reviews, isLoading: reviewsLoading } = useQuery<ApiReviewSummary>({
     queryKey: ['product-reviews', p?.id],
     queryFn: () => api.reviews.forProduct(p!.id),
@@ -91,7 +105,7 @@ export function ProductDetail() {
   });
   const invalidateOrders = useOrderInvalidation();
   const buy = useMutation({
-    mutationFn: () => api.orders.place({ productSlug: params.slug, qty }),
+    mutationFn: () => api.orders.place({ productSlug: params.slug, qty, unit: qtyUnit || undefined }),
     onSuccess: () => {
       // MOB-02: refresh the Orders tab so the new order actually appears —
       // previously nothing invalidated it and (with refetchOnWindowFocus off and
@@ -127,6 +141,15 @@ export function ProductDetail() {
   // this screen has no category tree loaded.
   const subName = p.subcategory && typeof p.subcategory === 'object' && 'name' in p.subcategory ? p.subcategory.name : undefined;
   const attrRows = p.attributeSpecs ?? [];
+
+  // Metrics the buyer may count in: every mass unit for a listing priced by
+  // mass, only its own for one sold by the bag or the piece.
+  const listingUnit = toUnit(p.unit);
+  const unitChoices = comparableUnits(listingUnit);
+  const buyerUnit = qtyUnit ? toUnit(qtyUnit) : listingUnit;
+  const convertedQty = convertQty(qty, buyerUnit, listingUnit);
+  const equivalent =
+    buyerUnit !== listingUnit && convertedQty !== undefined ? Math.round(convertedQty * 1000) / 1000 : undefined;
 
   const addToRfq = () => {
     basket.add(p, qty);
@@ -168,6 +191,10 @@ export function ProductDetail() {
                 {unitSuffix(p.unit, t)}{p.moq ? ` · ${t('pubX.pd.moq')} ${p.moq}` : ''}
               </Text>
             </View>
+            {/* VAT sits directly under the price it qualifies. */}
+            {p.vatExtra ? <Text style={s.vatNote}>{t('pubX.pd.vatExtra')}</Text> : null}
+            {/* Bold: stock is what a buyer scans this card for. */}
+            <Text style={s.stockNote}>{stockLabel(p, t)}</Text>
             <View style={s.priceTerms}>
               {[
                 { label: t('pubX.pd.available'), value: p.qty ?? '—' },
@@ -212,6 +239,33 @@ export function ProductDetail() {
                 <Button full title={t('pubX.pd.buyNow')} variant="primaryOutline" loading={buy.isPending} onPress={onBuy} />
               </View>
             </View>
+            {/* Count in whatever metric the buyer works in. Only shown when the
+                listing HAS alternatives — a per-piece lot has none. */}
+            {unitChoices.length > 1 ? (
+              <View style={{ gap: 6 }}>
+                <Row gap={6} style={{ flexWrap: 'wrap' }}>
+                  {unitChoices.map((u) => {
+                    const on = u === buyerUnit;
+                    return (
+                      <Pressable
+                        key={u}
+                        onPress={() => setQtyUnit(u)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: on }}
+                        style={[s.unitChip, on && s.unitChipOn]}
+                      >
+                        <Text style={[s.unitChipText, on && s.unitChipTextOn]}>{t(`enums:unitShort.${u}`)}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </Row>
+                {equivalent !== undefined ? (
+                  <Txt variant="muted">
+                    {t('pubX.pd.unitEquivalent', { qty: equivalent, unit: t(`enums:unitShort.${listingUnit}`) })}
+                  </Txt>
+                ) : null}
+              </View>
+            ) : null}
             {p.safeDeal !== false ? (
               <View style={s.escrowRow}>
                 <Ionicons name="shield-checkmark-outline" size={15} color={C.green} />
@@ -236,6 +290,20 @@ export function ProductDetail() {
                   {p.seller.country ? `${countryFlag(p.seller.country)} ${countryLabel(p.seller.country, lang)}` : ''}
                   {p.seller.kycStatus === 'verified' ? ` · ${t('pubX.pd.verified')}` : ''}
                 </Txt>
+                {/* Sits with the chat button it qualifies: message outside these
+                    hours and you are waiting until tomorrow. */}
+                {sellerHours?.availableFrom && sellerHours?.availableTo ? (
+                  <Row gap={5}>
+                    <Ionicons name="time-outline" size={13} color={C.inkSoft} />
+                    <Txt variant="muted">
+                      {t('pubX.pd.sellerHours', {
+                        from: sellerHours.availableFrom,
+                        to: sellerHours.availableTo,
+                        tz: sellerHours.timezone ?? '',
+                      })}
+                    </Txt>
+                  </Row>
+                ) : null}
               </View>
               <Ionicons name={forwardChevron()} size={18} color={C.inkSoft} />
             </Row>
@@ -279,6 +347,13 @@ export function ProductDetail() {
             {p.origin ? <KeyValue label={t('pubX.pd.origin')} value={p.origin} /> : null}
             {p.delivery ? <KeyValue label={t('pubX.pd.delivery')} value={p.delivery} /> : null}
           </Accordion>
+
+          {/* Seller's own remarks, verbatim — prose they wrote, not a field. */}
+          {p.notes ? (
+            <Accordion title={t('pubX.pd.notes')} defaultOpen>
+              <Txt variant="muted">{p.notes}</Txt>
+            </Accordion>
+          ) : null}
 
           {p.supplyCountries && p.supplyCountries.length > 0 ? (
             <Accordion title={t('pubX.pd.suppliesTo')} count={p.supplyCountries.length}>
@@ -395,6 +470,13 @@ const s = StyleSheet.create({
   escrowRow: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.hairline },
   escrowText: { ...type.caption, color: C.inkSoft },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  // Per-weight family, never fontWeight — that double-bolds on Android.
+  vatNote: { ...type.caption, fontFamily: font.bodyBold, color: C.ink },
+  stockNote: { ...type.caption, fontFamily: font.bodyBold, color: C.ink },
+  unitChip: { borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, paddingHorizontal: 12, paddingVertical: 6 },
+  unitChipOn: { backgroundColor: C.green, borderColor: C.green },
+  unitChipText: { ...type.caption, color: C.ink },
+  unitChipTextOn: { color: C.white },
 
   specGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   specCard: { width: '47%', flexGrow: 1, backgroundColor: C.page, borderRadius: radius.input, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },

@@ -83,10 +83,18 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
   // them along the path, inheritance included, so this is just the filterable subset.
   const attrFields = useMemo(() => filterFields(draft.selection.attrFields), [draft.selection.attrFields]);
 
-  const cityOptions = useMemo(
-    () => Array.from(new Set(markets.map((m) => m.city).filter(Boolean))) as string[],
-    [markets],
-  );
+  // Cities come from the geo dataset (~134k, server-side search), scoped to the
+  // country picked above. They used to be only the cities the loaded markets
+  // happened to cover, so a listing outside one could not be filtered to at all.
+  const cityTerm = optionSearch.trim();
+  const { data: cityOptions = [], isFetching: citiesLoading } = useQuery({
+    queryKey: ['geo-cities', draft.country, cityTerm],
+    queryFn: () => api.geo.cities(draft.country, cityTerm || undefined),
+    // Without a country there is nothing to browse — the search needs a term.
+    enabled: visible && (Boolean(draft.country) || cityTerm.length >= 2),
+    staleTime: 3600e3,
+    retry: 1,
+  });
   // Every country, not only the ones the loaded markets cover.
   const countries = countryOptions(lang);
 
@@ -95,7 +103,7 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
     { id: 'dealType', label: t('pubX.filter.groups.dealType'), count: FLAG_IDS.filter((f) => draft.flags[f]).length },
     { id: 'price', label: t('pubX.filter.groups.price'), count: draft.minPrice || draft.maxPrice ? 1 : 0 },
     { id: 'country', label: t('pubX.filter.groups.country'), count: draft.country ? 1 : 0 },
-    ...(cityOptions.length ? [{ id: 'city', label: t('pubX.filter.groups.city'), count: draft.city ? 1 : 0 }] : []),
+    { id: 'city', label: t('pubX.filter.groups.city'), count: draft.city ? 1 : 0 },
     { id: 'grade', label: t('pubX.filter.groups.grade'), count: draft.grade ? 1 : 0 },
     ...(markets.length ? [{ id: 'market', label: t('pubX.filter.groups.market'), count: draft.market ? 1 : 0 }] : []),
     ...attrFields.map((f: AttrField) => ({ id: f.key, label: f.label, count: (draft.attrs[f.key] ?? []).length })),
@@ -115,10 +123,21 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
     return needle ? opts.filter((o) => o.toLowerCase().includes(needle)) : opts;
   };
 
-  /** A single-choice option list — picking the active value clears it. */
-  const renderRadio = (options: { value: string; label: string }[], current: string, onPick: (v: string) => void, searchable = false) => (
+  /**
+   * A single-choice option list — picking the active value clears it.
+   *
+   * `remote` marks a list the API searches (cities): its box is always shown,
+   * because an empty result must still be typeable into.
+   */
+  const renderRadio = (
+    options: { value: string; label: string }[],
+    current: string,
+    onPick: (v: string) => void,
+    searchable = false,
+    remote?: { loading: boolean; empty: string },
+  ) => (
     <>
-      {searchable && options.length > 8 ? (
+      {searchable && (remote || options.length > 8) ? (
         <View style={s.optionSearch}>
           <Ionicons name="search" size={15} color={C.inkSoft} />
           <TextInput
@@ -129,6 +148,9 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
             style={{ flex: 1, ...type.body, color: C.ink, paddingVertical: 0 }}
           />
         </View>
+      ) : null}
+      {remote && options.length === 0 ? (
+        <Text style={s.remoteHint}>{remote.loading ? t('common:loading') : remote.empty}</Text>
       ) : null}
       {options.map((o) => {
         const on = current === o.value;
@@ -207,16 +229,23 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
         return renderRadio(
           countries.filter((c) => c.label.toLowerCase().includes(optionSearch.trim().toLowerCase())),
           draft.country,
-          (v) => setDraft((d) => ({ ...d, country: v })),
+          // A city belongs to its country, so changing it invalidates the pick.
+          (v) => setDraft((d) => ({ ...d, country: v, city: '' })),
           true,
         );
 
       case 'city':
+        // Already filtered by the API — filtering again locally would hide the
+        // tail of a long result page.
         return renderRadio(
-          filterOptions(cityOptions).map((c) => ({ value: c, label: c })),
+          cityOptions.map((c) => ({ value: c, label: c })),
           draft.city,
           (v) => setDraft((d) => ({ ...d, city: v })),
           true,
+          {
+            loading: citiesLoading,
+            empty: draft.country || cityTerm.length >= 2 ? t('common:geo.noCities') : t('common:geo.typeToSearch'),
+          },
         );
 
       case 'grade':
@@ -407,6 +436,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     height: 38,
   },
+  remoteHint: { ...type.caption, color: C.inkMuted, marginHorizontal: space.lg, marginBottom: space.sm },
   catTrigger: {
     flexDirection: 'row',
     alignItems: 'center',

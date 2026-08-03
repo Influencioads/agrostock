@@ -37,6 +37,8 @@ npm-debug.log*
 pnpm-debug.log*
 tatus
 backups/
+agrostock-local.dump
+agrostock-*-uploads.tgz
 tmp.mjs
 apps/mobile.zip
 

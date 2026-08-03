@@ -3,7 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, type ApiProduct } from '@agrotraders/api-client';
 import { toUnit, unitSuffix } from '@agrotraders/types';
-import { C, radius, space, type } from '../theme/tokens';
+import { C, font, radius, space, type } from '../theme/tokens';
 import { microLabel } from '../theme/casing';
 import { assetUrl } from '../lib/api';
 import { useCurrency } from '../currency/CurrencyContext';
@@ -163,7 +163,9 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
         {supply ? <Text numberOfLines={1} style={s.meta}>{supply}</Text> : null}
         {place ? <Text numberOfLines={1} style={s.meta}>{place}</Text> : null}
         {product.market?.name ? <Text numberOfLines={1} style={s.meta}>🏪 {product.market.name}</Text> : null}
-        <Text numberOfLines={1} style={s.meta}>{stockLabel(product, t)}</Text>
+        {/* Availability is the only bold line under the name — it is what a
+            buyer scanning a grid of cards is actually comparing. */}
+        <Text numberOfLines={1} style={[s.meta, s.metaStrong]}>{stockLabel(product, t)}</Text>
       </View>
     </Pressable>
   );
@@ -238,6 +240,8 @@ const s = StyleSheet.create({
   price: { ...type.numeric, color: C.ink, marginTop: 2 },
   unit: { ...type.caption, color: C.inkMuted },
   meta: { ...type.caption, fontSize: 11, color: C.inkMuted },
+  // Per-weight family, never fontWeight — that double-bolds on Android.
+  metaStrong: { fontFamily: font.bodyBold, color: C.ink },
   row: { flexDirection: 'row', gap: space.md, backgroundColor: C.white, padding: space.md, alignItems: 'center' },
   rowCover: { width: 76, height: 95, borderRadius: radius.card, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

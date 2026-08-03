@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Badge, Card, Icon, Stat, Stagger, StaggerItem } from '@agrotraders/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Badge, Button, Card, Icon, Input, Stat, Stagger, StaggerItem } from '@agrotraders/ui';
 import type { ApiOrder, ApiProduct } from '@agrotraders/api-client';
+import { GMT_OFFSETS, normalizeGmt } from '@agrotraders/geo';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { compactNum, compactUsd, parseAmount, orderLabel, orderTone } from '../lib';
@@ -162,7 +163,82 @@ export function SellerDashboard({ name, onNavigate }: { name: string; onNavigate
             </button>
           </div>
         </Card>
+
+        <AvailabilityCard />
       </div>
     </div>
+  );
+}
+
+/**
+ * When buyers can reach this seller. Writes the same `availableFrom` /
+ * `availableTo` / `timezone` the profile has always carried — the public profile
+ * and the provider directory already render them — but from the dashboard, where
+ * a seller actually is, instead of a form three clicks away.
+ *
+ * One window, not a per-day grid: sellers publish trading hours, and the loader
+ * companies' weekday grid exists because crews are booked by the slot.
+ */
+function AvailabilityCard() {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const { data: profile } = useQuery({ queryKey: ['my-profile'], queryFn: () => api.me.profile() });
+  const [f, setF] = useState({ availableFrom: '', availableTo: '', timezone: '' });
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!profile) return;
+    setF({
+      availableFrom: profile.availableFrom ?? '',
+      availableTo: profile.availableTo ?? '',
+      timezone: normalizeGmt(profile.timezone),
+    });
+  }, [profile]);
+
+  const save = useMutation({
+    mutationFn: () => {
+      // Both ends or neither: a half-open window renders as a broken range
+      // everywhere it is shown.
+      if (!!f.availableFrom !== !!f.availableTo) throw new Error('range');
+      return api.me.updateProfile(f);
+    },
+    onSuccess: () => { setError(''); qc.invalidateQueries({ queryKey: ['my-profile'] }); },
+    onError: (e) =>
+      setError(e instanceof Error && e.message === 'range' ? t('console.dash.availabilityRange') : t('page.profileForm.saveError')),
+  });
+
+  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((p) => ({ ...p, [k]: e.target.value }));
+
+  return (
+    <Card>
+      <h3 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
+        <Icon name="clock" size={18} /> {t('console.dash.availability')}
+      </h3>
+      <p className="mt-0.5 text-sm text-ink-soft">{t('console.dash.availabilitySub')}</p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Input label={t('page.profileForm.availableFrom')} type="time" value={f.availableFrom} onChange={set('availableFrom')} />
+        <Input label={t('page.profileForm.until')} type="time" value={f.availableTo} onChange={set('availableTo')} />
+      </div>
+      <label className="mt-3 block">
+        <span className="mb-1.5 block text-sm font-semibold text-ink">{t('page.profileForm.timezone')}</span>
+        <select
+          value={f.timezone}
+          onChange={set('timezone')}
+          className="h-11 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
+        >
+          <option value="">{t('page.profileForm.pickTimezone')}</option>
+          {GMT_OFFSETS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </label>
+      <div className="mt-3 flex items-center gap-3">
+        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? t('console.dash.saving') : t('common:save')}
+        </Button>
+        {save.isSuccess && !error && <span className="text-xs font-semibold text-status-success">{t('page.profileForm.saved')}</span>}
+        {error && <span className="text-xs font-semibold text-status-error">{error}</span>}
+      </div>
+    </Card>
   );
 }

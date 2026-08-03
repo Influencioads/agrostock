@@ -209,6 +209,9 @@
     "you": "You"
   },
   "dash": {
+    "availabilitySub": "The hours buyers can reach you. Shown on your public profile.",
+    "availabilityRange": "Set both a start and an end time.",
+    "saving": "Saving…",
     "welcome": "Welcome back, {{name}}",
     "nameFallback": "there",
     "perMonth": "$ / month",
@@ -469,6 +472,9 @@
       "sizeHint": "Stored as 1080×1080 squares. At least 1080px on the longest side."
     },
     "add": {
+      "notes": "Additional notes",
+      "phNotes": "Packing, loading terms, payment terms, anything else buyers ask you.",
+      "vatExtra": "Price excludes VAT",
       "editTitle": "Edit Product",
       "addTitle": "Add Product",
       "subtitle": "List a product for buyers to discover and order.",
@@ -1035,6 +1041,10 @@
       "viewBid": "View bid & offer"
     },
     "pd": {
+      "sellerHours": "Replies {{from}}–{{to}} {{tz}}",
+      "notes": "Seller's notes",
+      "unitEquivalent": "= {{qty}} {{unit}}, the metric this listing is priced in",
+      "vatExtra": "+ VAT extra",
       "orderPlacedTitle": "Order placed",
       "orderPlacedBody": "Your order is in escrow under Safe Deal.",
       "orderFailTitle": "Could not place order",

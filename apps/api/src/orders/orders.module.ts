@@ -14,7 +14,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { DispatchMode, OrderEventType, OrderStatus, Prisma } from '@prisma/client';
-import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { comparableUnits, convertQty, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
@@ -29,6 +30,28 @@ import type { Lang } from '@agrotraders/i18n';
 import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
 const ref = () => secureReference('AG');
+
+/**
+ * The buyer's quantity restated in the listing's own metric — the one the price
+ * is quoted per, so every number downstream (amount, stock reservation, the
+ * seller's requote) stays in one unit. Rejects an incomparable pair rather than
+ * charging per-MT money for a count of bags.
+ *
+ * Rounded to 3 decimals: 500 KG → 0.5 MT is exact, but plenty of pairs (TON→MT)
+ * are not, and an unrounded float leaks into the display string.
+ */
+function qtyInProductUnit(qty: number, buyerUnit: string | undefined, productUnit: string): number {
+  const targetUnit = toUnit(productUnit);
+  const sourceUnit = buyerUnit ? toUnit(buyerUnit) : targetUnit;
+  const converted = convertQty(qty, sourceUnit, targetUnit);
+  if (converted === undefined) {
+    throw new BadRequestException(`Quantity in ${sourceUnit} cannot be converted to ${targetUnit}.`);
+  }
+  if (comparableUnits(targetUnit).length === 1 && !Number.isInteger(converted)) {
+    throw new BadRequestException(`Quantity in ${targetUnit} must be a whole number.`);
+  }
+  return Math.round(converted * 1000) / 1000;
+}
 const otp = () => secureOtp();
 /** F36: wrong dispatch-OTP guesses allowed before the code locks. */
 const DISPATCH_OTP_MAX_ATTEMPTS = 5;
@@ -49,16 +72,27 @@ class DeliveryFields {
   @ApiProperty({ required: false, maxLength: 120 }) @IsOptional() @IsString() @MaxLength(120) deliveryCountry?: string;
 }
 
-export class PlaceOrderDto extends DeliveryFields {
+/**
+ * The buyer's quantity, in whatever metric they picked on the listing. `unit`
+ * is optional and defaults to the listing's own — an older client that only
+ * ever sent a bare number keeps meaning exactly what it always did.
+ *
+ * Fractional, because 500 KG of a product priced per MT is 0.5 MT and an
+ * integer-only field could only round that to a wrong price.
+ */
+class QuantityFields extends DeliveryFields {
+  @ApiProperty({ minimum: 0.01, maximum: MAX_QTY }) @IsNumber() @Min(0.01) @Max(MAX_QTY) qty!: number;
+  @ApiProperty({ required: false, enum: PRODUCT_UNITS }) @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) unit?: string;
+}
+
+export class PlaceOrderDto extends QuantityFields {
   @ApiProperty() @IsString() productSlug!: string;
-  @ApiProperty({ minimum: 1, maximum: MAX_QTY }) @IsInt() @Min(1) @Max(MAX_QTY) qty!: number;
   /** F11: optional client idempotency key — a retry with the same key returns the original order. */
   @ApiProperty({ required: false, maxLength: 100 }) @IsOptional() @IsString() @MaxLength(100) idempotencyKey?: string;
 }
 
-export class EnquiryDto extends DeliveryFields {
+export class EnquiryDto extends QuantityFields {
   @ApiProperty() @IsString() productSlug!: string;
-  @ApiProperty({ minimum: 1, maximum: MAX_QTY }) @IsInt() @Min(1) @Max(MAX_QTY) qty!: number;
   @ApiProperty({ required: false, maxLength: 600 }) @IsOptional() @IsString() @MaxLength(600) note?: string;
 }
 
@@ -294,7 +328,12 @@ export class OrdersService {
     // own-listing guards in auctions.place / buyer-bids.submitBid).
     if (product.sellerId === buyer.id) throw new BadRequestException('You cannot order your own listing.');
     const unitPriceCents = resolveUnitPriceCents(product);
-    const amountCents = unitPriceCents * dto.qty;
+    // The unit was hardcoded 'MT' here and in place() no matter what the listing
+    // was priced per, so a per-KG listing quoted a per-KG price against an "MT"
+    // quantity. Everything is the LISTING's unit now.
+    const qty = qtyInProductUnit(dto.qty, dto.unit, product.unit);
+    const unit = toUnit(product.unit);
+    const amountCents = Math.round(unitPriceCents * qty);
 
     const order = await this.prisma.$transaction(async (tx) => {
       const created = await tx.order.create({
@@ -302,11 +341,11 @@ export class OrdersService {
           reference: ref(),
           status: 'enquiry',
           amount: usd(amountCents),
-          qty: `${dto.qty} MT`,
+          qty: `${qty} ${unit}`,
           amountCents,
           unitPriceCents,
-          qtyValue: dto.qty,
-          qtyUnit: 'MT',
+          qtyValue: qty,
+          qtyUnit: unit,
           note: dto.note,
           deliveryCity: dto.deliveryCity ?? null,
           deliveryCountry: dto.deliveryCountry ?? null,
@@ -377,7 +416,13 @@ export class OrdersService {
     // BL-15: block self-trade (a seller may also hold a buyer role).
     if (product.sellerId === buyerId) throw new BadRequestException('You cannot order your own listing.');
     const unitPriceCents = resolveUnitPriceCents(product);
-    const amountCents = unitPriceCents * dto.qty;
+    const qty = qtyInProductUnit(dto.qty, dto.unit, product.unit);
+    const unit = toUnit(product.unit);
+    const amountCents = Math.round(unitPriceCents * qty);
+    // Stock is counted in whole units, so a fractional order holds the whole one
+    // it eats into. Ceil, never round: rounding 0.4 down reserves nothing and
+    // lets the same stock be sold twice.
+    const reserveQty = Math.ceil(qty);
 
     let order;
     try {
@@ -392,10 +437,10 @@ export class OrdersService {
         if (product.stockQty !== null) {
           const reserved = await tx.$executeRaw`
             UPDATE "Product"
-            SET "reservedQty" = "reservedQty" + ${dto.qty}
+            SET "reservedQty" = "reservedQty" + ${reserveQty}
             WHERE "id" = ${product.id}
               AND "stockQty" IS NOT NULL
-              AND "stockQty" - "reservedQty" >= ${dto.qty}`;
+              AND "stockQty" - "reservedQty" >= ${reserveQty}`;
           if (reserved === 0) throw new BadRequestException('Not enough stock available for this quantity.');
         }
         const created = await tx.order.create({
@@ -403,12 +448,12 @@ export class OrdersService {
             reference: ref(),
             idempotencyKey: dto.idempotencyKey ?? null,
             amount: usd(amountCents),
-            qty: `${dto.qty} MT`,
+            qty: `${qty} ${unit}`,
             status: 'processing',
             amountCents,
             unitPriceCents,
-            qtyValue: dto.qty,
-            qtyUnit: 'MT',
+            qtyValue: qty,
+            qtyUnit: unit,
             deliveryCity: dto.deliveryCity ?? null,
             deliveryCountry: dto.deliveryCountry ?? null,
             productId: product.id,
@@ -519,7 +564,9 @@ export class OrdersService {
    */
   private async settleReservation(order: { productId: string | null; qtyValue: number | null }, capture: boolean) {
     if (!order.productId) return;
-    const qty = Math.max(0, Math.round(order.qtyValue ?? 0));
+    // Ceil, matching what place() reserved — rounding a 0.4-unit order down here
+    // would release nothing and strand the unit it is holding forever.
+    const qty = Math.max(0, Math.ceil(order.qtyValue ?? 0));
     if (qty <= 0) return;
     if (capture) {
       await this.prisma.$executeRaw`
@@ -587,12 +634,15 @@ export class OrdersService {
     if (status === 'processing' && order.status === 'quote' && order.productId && (order.qtyValue ?? 0) > 0) {
       const product = await this.prisma.product.findUnique({ where: { id: order.productId }, select: { stockQty: true } });
       if (product && product.stockQty !== null) {
+        // Whole units, same as place() and settleReservation() — an enquiry can
+        // now carry a fractional quantity (500 KG of a per-MT listing).
+        const reserveQty = Math.ceil(order.qtyValue ?? 0);
         const reserved = await this.prisma.$executeRaw`
           UPDATE "Product"
-          SET "reservedQty" = "reservedQty" + ${order.qtyValue}
+          SET "reservedQty" = "reservedQty" + ${reserveQty}
           WHERE "id" = ${order.productId}
             AND "stockQty" IS NOT NULL
-            AND "stockQty" - "reservedQty" >= ${order.qtyValue}`;
+            AND "stockQty" - "reservedQty" >= ${reserveQty}`;
         if (reserved === 0) throw new BadRequestException('Not enough stock available for this quantity.');
       }
     }

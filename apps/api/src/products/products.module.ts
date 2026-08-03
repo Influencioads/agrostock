@@ -21,7 +21,7 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiTags, PartialType } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, toUnit, type AttrField } from '@agrotraders/types';
 import { commonWord } from '@agrotraders/i18n/notifications';
@@ -238,6 +238,10 @@ export class CreateProductDto {
   /** Currency the seller quoted `price` in. `priceCents` is derived in USD. */
   @IsOptional() @IsIn(CURRENCIES as unknown as string[]) priceCurrency?: string;
   @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) unit?: string;
+  /** The listed price is net of VAT; buyers see "VAT extra" beside it. */
+  @IsOptional() @IsBoolean() vatExtra?: boolean;
+  /** Seller's own remarks on the listing (packing, loading terms, …). */
+  @IsOptional() @IsString() @MaxLength(2000) notes?: string;
   @IsOptional() @IsString() grade?: string;
   @IsOptional() @IsString() qty?: string;
   @IsOptional() @IsString() moq?: string;
@@ -394,23 +398,34 @@ export class ProductsService {
     // Russian copy lives in ProductTranslation, and the base name is always
     // English. Deliberately NOT constrained to the request locale — someone
     // browsing in English may still type Russian, and vice versa.
+    // The place is part of the search too: buyers look for "Mumbai" or "Turkey"
+    // in the same box, and typing one used to return nothing because only the
+    // dropdowns could filter on it.
     if (q.search) {
       const contains = { contains: q.search, mode: 'insensitive' } as const;
       where.OR = [
         { name: contains },
         { translations: { some: { name: contains } } },
+        { city: contains },
+        { country: contains },
+        { market: { is: { city: contains } } },
+        { market: { is: { country: contains } } },
       ];
     }
     // Buyers can narrow to products a seller ships to their country.
     if (q.supplyCountry) where.supplyCountries = { has: q.supplyCountry };
 
-    // City/country/market all target the related Market row. Merge them into a
-    // single `market` filter so combining, say, ?city= and ?market= still ANDs.
-    const market: Prisma.MarketWhereInput = {};
-    if (q.market) market.slug = q.market;
-    if (q.city) market.city = { equals: q.city, mode: 'insensitive' };
-    if (q.country) market.country = { equals: q.country, mode: 'insensitive' };
-    if (Object.keys(market).length) where.market = market;
+    // The market filter targets the related Market row. City/country do NOT:
+    // a listing carries its own structured place (that is what the cards and the
+    // product page display), and matching only the market hid every listing whose
+    // seller never attached one. Either side matching is a hit.
+    if (q.market) where.market = { slug: q.market };
+    const placeConds: Prisma.ProductWhereInput[] = [];
+    for (const [field, value] of [['city', q.city], ['country', q.country]] as const) {
+      if (!value) continue;
+      const equals = { equals: value, mode: 'insensitive' } as const;
+      placeConds.push({ OR: [{ [field]: equals }, { market: { is: { [field]: equals } } }] });
+    }
 
     // priceCents is the only reliably numeric price column; range-filter on it.
     const priceCents: Prisma.IntFilter = {};
@@ -444,7 +459,10 @@ export class ProductsService {
       });
       attrConds.push(ors.length === 1 ? ors[0] : { OR: ors });
     }
-    if (attrConds.length) where.AND = attrConds;
+    // One AND bucket for both: each place filter is itself an OR, so they cannot
+    // live at the top level next to the search OR without swallowing it.
+    const and = [...placeConds, ...attrConds];
+    if (and.length) where.AND = and;
 
     const orderBy: Prisma.ProductOrderByWithRelationInput =
       q.sort === 'price_asc'
@@ -577,6 +595,8 @@ export class ProductsService {
         ...price,
         // Legacy rows hold the display form ('/MT'); new writes are canonical.
         unit: toUnit(dto.unit),
+        vatExtra: dto.vatExtra ?? false,
+        notes: dto.notes,
         grade: dto.grade,
         qty: dto.qty,
         moq: dto.moq,

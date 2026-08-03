@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
-import { countryFlag, countryLabel } from '@agrotraders/api-client';
-import { isDeliveryOption, unitSuffix } from '@agrotraders/types';
+import { countryFlag, countryLabel, findCountry } from '@agrotraders/api-client';
+import { comparableUnits, convertQty, isDeliveryOption, toUnit, unitSuffix } from '@agrotraders/types';
 import { api, toCardProduct } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
@@ -14,7 +14,8 @@ import { ProductCard } from '../components/site/ProductCard';
 import { ReviewList } from '../console/components/ReviewList';
 import { resolveProductLoad } from './productResolution';
 import { ErrorState } from '../components/ErrorState';
-import { CityInput, CountryOptions } from '../components/GeoInputs';
+import { CountrySelect } from '@agrotraders/ui/ProductForm';
+import { CityInput } from '../components/GeoInputs';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const thumbs = ['🌾', '📦', '🚢', '📄', '🏭'];
@@ -27,6 +28,10 @@ export function ProductPage() {
   const { fmtPrice } = useCurrency();
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(50);
+  // The metric the BUYER types in. Empty until they pick one, which means "the
+  // listing's own unit" — the API converts, so the price is always per the unit
+  // the seller quoted no matter which one is typed here.
+  const [qtyUnit, setQtyUnit] = useState('');
   const [notice, setNotice] = useState('');
   // Where the goods are going. Captured here because the order had no destination
   // at all before, which left dispatch and every hire guessing at `buyer.country`.
@@ -64,8 +69,12 @@ export function ProductPage() {
     enabled: !!user,
     staleTime: 300e3,
   });
+  // The account's own country is often the legacy "🇮🇳 India" display form; the
+  // order stores a country and the city lookup is scoped by one, so seed the
+  // canonical name rather than a decorated string nothing downstream matches.
+  const ownCountry = myProfile?.originCountry ?? user?.country ?? '';
   const deliverTo =
-    delivery ?? { city: myProfile?.originCity ?? myProfile?.location ?? '', country: myProfile?.originCountry ?? user?.country ?? '' };
+    delivery ?? { city: myProfile?.originCity ?? myProfile?.location ?? '', country: findCountry(ownCountry)?.name ?? ownCountry };
 
   // Category-specific attributes captured on this listing, rendered by the API:
   // label and value both arrive localized and formatted, because the field
@@ -85,6 +94,19 @@ export function ProductPage() {
     enabled: load.state === 'ready',
   });
 
+  // When this seller is reachable. Every listing of theirs shows it, because the
+  // question "will anyone answer if I message now?" is asked at the listing, not
+  // on the profile page a buyer has to go looking for. Cached per seller, so
+  // browsing their catalogue costs one request.
+  const { data: sellerProfile } = useQuery({
+    queryKey: ['public-profile', product?.sellerId],
+    queryFn: () => api.directory.profile(product!.sellerId!),
+    enabled: !!product?.sellerId,
+    staleTime: 300e3,
+    retry: 0,
+  });
+  const sellerHours = sellerProfile?.profile;
+
   // Live product reviews (keyed by the real product id, not the slug).
   const { data: reviewSummary } = useQuery({
     queryKey: ['reviews', 'product', apiProduct?.id],
@@ -98,6 +120,7 @@ export function ProductPage() {
       return api.orders.place({
         productSlug: product.id,
         qty,
+        unit: qtyUnit || undefined,
         deliveryCity: deliverTo.city || undefined,
         deliveryCountry: deliverTo.country || undefined,
       });
@@ -121,6 +144,7 @@ export function ProductPage() {
       return api.orders.enquiry({
         productSlug: product.id,
         qty,
+        unit: qtyUnit || undefined,
         deliveryCity: deliverTo.city || undefined,
         deliveryCountry: deliverTo.country || undefined,
       });
@@ -162,6 +186,17 @@ export function ProductPage() {
 
   // Live auctions get the bespoke bidding room (big countdown, open bid history).
   if (product.auction) return <AuctionRoom slug={id!} product={product} />;
+
+  // Metrics the buyer may type their quantity in: every mass unit for a listing
+  // priced by mass, and only its own for one sold by the bag or the piece —
+  // there is no honest conversion from a count to a weight.
+  const listingUnit = toUnit(product.unit);
+  const unitChoices = comparableUnits(listingUnit);
+  const countBased = unitChoices.length === 1;
+  const buyerUnit = qtyUnit ? toUnit(qtyUnit) : listingUnit;
+  const converted = convertQty(qty, buyerUnit, listingUnit);
+  const equivalent =
+    buyerUnit !== listingUnit && converted !== undefined ? Math.round(converted * 1000) / 1000 : undefined;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
@@ -248,7 +283,10 @@ export function ProductPage() {
             </div>
             <h1 className="mt-3 min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{product.name}</h1>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 text-ink-soft">
-              {product.flag} {product.seller} · {t('page.product.availLine', { qty: product.qty, moq: product.moq })}
+              {product.flag} {product.seller} ·{' '}
+              {/* Availability is the one thing bold under the name — a buyer
+                  scanning the page is looking for how much there is. */}
+              <b className="font-bold text-ink">{t('page.product.availLine', { qty: product.qty, moq: product.moq })}</b>
               {product.sellerId && (
                 <button
                   onClick={() => chatBus.openCommunityDm(product.sellerId!, product.seller)}
@@ -258,6 +296,18 @@ export function ProductPage() {
                 </button>
               )}
             </p>
+            {/* Sits with the chat button it qualifies: message outside these
+                hours and you are waiting until tomorrow. */}
+            {sellerHours?.availableFrom && sellerHours?.availableTo && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
+                <Icon name="clock" size={13} />
+                {t('page.product.sellerHours', {
+                  from: sellerHours.availableFrom,
+                  to: sellerHours.availableTo,
+                  tz: sellerHours.timezone ?? '',
+                })}
+              </p>
+            )}
             {product.marketName && (
               <Link
                 to={`/market?market=${product.marketSlug}`}
@@ -301,6 +351,15 @@ export function ProductPage() {
             </Card>
           )}
 
+          {/* Seller's own remarks. Rendered verbatim (whitespace kept) — it is
+              prose they wrote, not a formatted field. */}
+          {apiProduct?.notes && (
+            <Card className="mt-4">
+              <h3 className="font-display text-lg font-bold text-ink">{t('page.product.notes')}</h3>
+              <p className="mt-2 whitespace-pre-line text-sm text-ink-soft">{apiProduct.notes}</p>
+            </Card>
+          )}
+
           {/* No illustrative specs fallback: it rendered invented values (an Indian
               port/certification on every listing) that could not be honestly localized.
               Specs come only from real listing attributes, above. */}
@@ -331,53 +390,81 @@ export function ProductPage() {
               <span className="min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{fmtPrice(product)}</span>
               <span className="text-ink-soft">{unitSuffix(product.unit, t)}</span>
             </div>
+            {/* VAT sits directly under the price it qualifies. */}
+            {apiProduct?.vatExtra && <p className="mt-1 text-sm font-bold text-ink">{t('page.product.vatExtra')}</p>}
             <p className="mt-1 text-sm text-ink-soft">
               {t('page.product.deliveryLine', {
                 delivery: isDeliveryOption(product.delivery) ? t(`enums:delivery.${product.delivery}`) : product.delivery,
               })}
             </p>
-            <p className="mt-1 text-sm text-ink-soft">
+            {/* Bold: stock is the one line on this panel a buyer scans for. */}
+            <p className="mt-1 text-sm font-bold text-ink">
               {typeof product.stockQty === 'number'
                 ? product.stockQty > 0
-                  ? t('site.stockCount', { count: product.stockQty, unit: product.unit })
+                  ? t('site.stockCount', { count: product.stockQty, unit: toUnit(product.unit) })
                   : t('site.outOfStock')
                 : t('site.inStock')}
             </p>
 
-            <label className="mt-4 block">
-              <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.quantityMt')}</span>
-              <input
-                type="number"
-                min={1}
-                value={qty}
-                onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-                className="h-10 w-full rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
-              />
-            </label>
+            {/* Quantity in whatever metric the buyer works in. The price stays
+                quoted per the seller's unit, so the equivalent is spelled out
+                rather than left for the buyer to do in their head. */}
+            <div className="mt-4">
+              <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.quantity')}</span>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={countBased ? 1 : 0.01}
+                  step={countBased ? 1 : 'any'}
+                  value={qty}
+                  onChange={(e) => {
+                    const nextQty = Number(e.target.value);
+                    setQty(countBased ? Math.max(1, Math.trunc(nextQty)) : Math.max(0.01, nextQty));
+                  }}
+                  className="h-10 w-full min-w-0 rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
+                />
+                <select
+                  value={buyerUnit}
+                  onChange={(e) => setQtyUnit(e.target.value)}
+                  aria-label={t('page.product.quantityUnit')}
+                  className="h-10 w-28 shrink-0 rounded-md border border-surface-border px-2 text-sm outline-none focus:border-brand-leaf"
+                >
+                  {unitChoices.map((u) => (
+                    <option key={u} value={u}>{t(`enums:unit.${u}`)}</option>
+                  ))}
+                </select>
+              </div>
+              {equivalent !== undefined && (
+                <p className="mt-1 text-xs text-ink-soft">
+                  {t('page.product.unitEquivalent', {
+                    qty: equivalent,
+                    unit: t(`enums:unitShort.${listingUnit}`),
+                  })}
+                </p>
+              )}
+            </div>
 
             {/* The order's destination. Everything downstream — dispatch, the hire
                 form, the transporter/loader/worker lists — is routed off this. */}
             {/* Base grid-cols-1: two labelled fields side by side are too tight in
                 this panel on a phone, and a long locale's label wraps out of it. */}
+            {/* Country first, then the city inside it — and both are typeable.
+                The country was a native <select>, which only jumps to the letter
+                you press: unusable at 200 entries. */}
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <CountrySelect
+                label={t('common:geo.country')}
+                value={deliverTo.country}
+                placeholder={t('common:geo.anyCountry')}
+                // A city belongs to its country, so changing it clears the pick.
+                onChange={(country) => setDelivery({ city: '', country })}
+              />
               <CityInput
                 label={t('site.deliverTo')}
                 value={deliverTo.city}
                 country={deliverTo.country || null}
                 onChange={(city) => setDelivery({ ...deliverTo, city })}
               />
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('common:geo.country')}</span>
-                <select
-                  value={deliverTo.country}
-                  // Cities belong to a country, so changing it invalidates the pick.
-                  onChange={(e) => setDelivery({ city: '', country: e.target.value })}
-                  className="h-10 w-full rounded-md border border-surface-border px-2 text-sm outline-none focus:border-brand-leaf"
-                >
-                  <option value="">{t('common:geo.anyCountry')}</option>
-                  <CountryOptions />
-                </select>
-              </label>
             </div>
 
             <div className="mt-3 space-y-2">

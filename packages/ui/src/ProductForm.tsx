@@ -7,6 +7,7 @@ import {
   buildSubcategoryTree,
   countryFlag,
   countryLabel,
+  findCountry,
   findSubcategoryPath,
   resolveAttrFields,
 } from '@agrotraders/api-client';
@@ -62,6 +63,8 @@ export interface ProductFormValues {
   price: string;
   /** Currency the seller quotes in — converted to a USD baseline by the API. */
   priceCurrency: string;
+  /** Price is net of VAT; the buyer sees "VAT extra" under it. */
+  vatExtra: boolean;
   /** Bare number; the metric comes from `unit`. */
   qty: string;
   /** Quantity unit (`PRODUCT_UNITS`) — applies to quantity, MOQ and stock alike. */
@@ -89,13 +92,15 @@ export interface ProductFormValues {
   stock: string;
   /** Category/subcategory-specific attribute values, keyed by field key. */
   attributes: Record<string, unknown>;
+  /** Anything else the buyer should know — packing, loading terms, remarks. */
+  notes: string;
   /** Ordered gallery; `images[0]` becomes the cover. */
   images: string[];
 }
 
 export const blankProduct: ProductFormValues = {
-  name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', qty: '', unit: 'MT', moq: '',
-  flag: '🌾',
+  name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', vatExtra: false, qty: '', unit: 'MT', moq: '',
+  flag: '🌾', notes: '',
   origin: '', city: '', country: '', supplyCountries: [], delivery: 'delivery', marketId: '',
   isOffer: false, isAuction: false, safeDeal: true, negotiable: false, startBid: '', auctionEndsAt: '', stock: '',
   attributes: {},
@@ -113,6 +118,8 @@ export interface EditableProduct {
   subcategory?: { id?: string } | string | null;
   price?: string | null;
   priceCurrency?: string | null;
+  vatExtra?: boolean | null;
+  notes?: string | null;
   qty?: string | null;
   unit?: string | null;
   moq?: string | null;
@@ -158,6 +165,8 @@ export function productToForm(p: EditableProduct | ApiProduct): ProductFormValue
     // The API stores the display string ("₹70,000"); the form edits the bare number.
     price: bareNumber(q.price),
     priceCurrency: q.priceCurrency ?? 'USD',
+    vatExtra: !!q.vatExtra,
+    notes: q.notes ?? '',
     qty: bareNumber(src.qty ?? q.qty),
     // Listings created before units were a picker stored the display form ('/MT').
     unit: toUnit(q.unit),
@@ -196,6 +205,9 @@ export function formToPayload(f: ProductFormValues) {
     ...(f.subcategoryId ? { subcategoryId: f.subcategoryId } : {}),
     price: f.price,
     priceCurrency: f.priceCurrency || 'USD',
+    vatExtra: f.vatExtra,
+    // Sent even when blank, so clearing the box actually clears the note.
+    notes: f.notes.trim(),
     // Quantity/MOQ are stored with their metric so every render reads "500 MT"
     // without the seller ever typing the unit.
     ...(f.qty ? { qty: withUnit(f.qty, f.unit) } : {}),
@@ -356,11 +368,15 @@ export function CountrySelect({
   value,
   onChange,
   error,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (name: string) => void;
   error?: string;
+  /** Empty-state text, and the row that clears the choice. Filter bars want
+   *  "Any country" where a listing form wants "Select…". */
+  placeholder?: string;
 }) {
   const { t, i18n } = useTranslation([...NS]);
   // The English name stays the stored VALUE — only the label is localized, and
@@ -372,10 +388,13 @@ export function CountrySelect({
   return (
     <SearchSelect
       label={label}
-      value={value}
+      // Stored values are not always the bare name — most user rows hold the
+      // legacy "🇮🇳 India" display form. Resolve before matching an option, or a
+      // perfectly good country renders as an empty picker.
+      value={findCountry(value)?.name ?? value}
       onChange={onChange}
       options={options}
-      placeholder={t('web:console.productForm.select')}
+      placeholder={placeholder ?? t('web:console.productForm.select')}
       searchPlaceholder={t('web:console.productForm.searchCountry')}
       emptyLabel={t('web:console.productForm.noCountry')}
       error={error}
@@ -830,6 +849,12 @@ export function ProductForm({
             />
           </div>
           {missing.has('price') && <span className="mt-1 block text-xs text-status-error">{required}</span>}
+          {/* Sits with the price because that is the number it qualifies — the
+              buyer reads "VAT extra" directly under it on the listing. */}
+          <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={value.vatExtra} onChange={(e) => set('vatExtra')(e.target.checked)} className="accent-[#249653]" />
+            {t('web:console.productForm.vatExtra')}
+          </label>
         </label>
         {/* One metric drives quantity, MOQ and stock — sellers were typing
             "500 MT" / "500mt" / "500 tons" into free-text boxes. */}
@@ -900,6 +925,23 @@ export function ProductForm({
       </div>
 
       <SupplyCountriesSelect value={value.supplyCountries} onChange={set('supplyCountries')} />
+
+      {/* Free-text remarks — packing, loading terms, anything the structured
+          fields have no box for. Shown verbatim on the listing. */}
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-semibold text-ink">
+          {t('web:console.productForm.notes')}{' '}
+          <span className="font-normal text-ink-soft">{t('web:console.productForm.notesHint')}</span>
+        </span>
+        <textarea
+          rows={3}
+          maxLength={2000}
+          value={value.notes}
+          onChange={(e) => set('notes')(e.target.value)}
+          placeholder={t('web:console.productForm.phNotes')}
+          className="w-full rounded-md border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-brand-leaf"
+        />
+      </label>
 
       {/* How the deal is settled and priced. Both are explicit two-way choices —
           "direct deal" and "fixed price" are as visible as their opposites, so a

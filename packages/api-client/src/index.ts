@@ -136,6 +136,10 @@ export interface ApiProduct {
   /** Currency the seller quoted in — `price` is already rendered in it. */
   priceCurrency?: string;
   unit: string;
+  /** The listed price is net of VAT — shown as "VAT extra" beside the price. */
+  vatExtra?: boolean;
+  /** Seller's own remarks on the listing (packing, loading terms, …). */
+  notes?: string | null;
   /** Seller will entertain offers on the listed price. */
   negotiable?: boolean;
   /**
@@ -1733,10 +1737,11 @@ export function createApiClient(opts: ApiClientOptions) {
        * duplicate order, the exact case the key exists to absorb. Callers may pass
        * their own key to make a specific checkout attempt replay-safe.
        */
-      place: (body: { productSlug: string; qty: number; deliveryCity?: string; deliveryCountry?: string; idempotencyKey?: string }) =>
+      /** `unit` is the metric the buyer typed in; omit it to mean the listing's own. */
+      place: (body: { productSlug: string; qty: number; unit?: string; deliveryCity?: string; deliveryCountry?: string; idempotencyKey?: string }) =>
         post<ApiOrder>('/orders', { ...body, idempotencyKey: body.idempotencyKey ?? newIdempotencyKey() }),
       /** Step 1 of the lifecycle: ask the seller for terms. */
-      enquiry: (body: { productSlug: string; qty: number; note?: string; deliveryCity?: string; deliveryCountry?: string }) =>
+      enquiry: (body: { productSlug: string; qty: number; unit?: string; note?: string; deliveryCity?: string; deliveryCountry?: string }) =>
         post<ApiOrder>('/orders/enquiry', body),
       /** Step 2: seller answers with a price. */
       respond: (id: string, body: { unitPriceCents?: number; amountCents?: number; note?: string }) =>
