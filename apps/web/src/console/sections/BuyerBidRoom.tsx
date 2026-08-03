@@ -33,7 +33,12 @@ function ago(iso: string, locale: string) {
 
 /* ── Seller's submit panel ───────────────────────────────────────── */
 
-/** Seller offers a price. In auction mode it must undercut the current best. */
+/**
+ * Seller offers a price — any price. A reverse auction used to reject anything
+ * that did not undercut the standing best; now the book simply ranks offers
+ * cheapest-first and the buyer awards it, so the floor is shown as information,
+ * not as a rule to clear.
+ */
 function SellerSubmitPanel({ buyerBid }: { buyerBid: ApiBuyerBidDetail }) {
   const { t } = useI18n();
   const qc = useQueryClient();
@@ -80,7 +85,7 @@ function SellerSubmitPanel({ buyerBid }: { buyerBid: ApiBuyerBidDetail }) {
       {isAuction && (
         <p className="mt-3 rounded-lg bg-mango-soft px-3 py-2 text-sm text-ink-soft">
           {buyerBid.bestPriceCents != null
-            ? t('console.buyerBidRoom.mustBeat', { price: usd(buyerBid.bestPriceCents), unit: buyerBid.qtyUnit })
+            ? t('console.buyerBidRoom.lowestSoFar', { price: usd(buyerBid.bestPriceCents), unit: buyerBid.qtyUnit })
             : t('console.buyerBidRoom.noBidsOpening')}
         </p>
       )}

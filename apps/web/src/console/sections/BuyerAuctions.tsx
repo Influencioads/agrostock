@@ -16,7 +16,6 @@ interface AuctionRow {
   flag: string | null;
   startBidCents: number | null;
   highestCents: number | null;
-  bidIncrementCents: number;
   hasReserve: boolean;
   reserveMet: boolean;
   auctionEndsAt: string | null;

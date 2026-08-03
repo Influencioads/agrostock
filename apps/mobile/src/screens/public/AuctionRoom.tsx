@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiAuctionBidRow, ApiAuctionDetail, ApiProduct } from '@agrotraders/api-client';
+import { toUnit } from '@agrotraders/types';
 import { api, assetUrl } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Card, Row, Txt } from '../../ui';
@@ -79,7 +80,9 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
           <Txt variant="h2">{product.name}</Txt>
           <Txt variant="muted">{product.flag} {product.seller?.name} · {t('auction.biddersN', { count: auction?.bidCount ?? 0 })}</Txt>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-            <Badge label={t('auction.minIncrement', { amount: fmtCents(auction?.bidIncrementCents ?? 0) })} tone="slate" />
+            {/* The metric the price is quoted in — the old "min increment"
+                badge went with the rule that any offer is now accepted. */}
+            <Badge label={t('auction.pricePerUnit', { unit: t(`enums:unitShort.${toUnit(product.unit)}`) })} tone="slate" />
             {auction?.hasReserve ? <Badge label={auction.reserveMet ? t('auction.reserveMet') : t('auction.reserveNotMet')} tone={auction.reserveMet ? 'green' : 'error'} /> : null}
           </Row>
         </View>

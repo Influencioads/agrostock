@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -53,14 +52,20 @@ const liveOnly = (): Prisma.ProductWhereInput => ({
 });
 
 /**
- * The minimum raise for a lot. Sellers may pin `bidIncrementCents`; otherwise it
- * scales to ~1% of the current price, clamped to $50–$1,000 and rounded to $50.
+ * The step the PROXY engine raises by when bidding on someone's behalf. It is no
+ * longer a minimum a human has to clear — a bidder may offer whatever they like,
+ * above or below the current top, and the highest offer wins at close. This only
+ * decides how much an auto-bid moves per round: sellers may pin
+ * `bidIncrementCents`, otherwise ~1% of the current price, floored at a cent.
+ *
+ * Keeping a real step matters here (not 1 cent) because two proxies raise each
+ * other one step at a time — a cent-sized step would never converge inside the
+ * bounded loop in `resolveAutoBids`.
  */
-function effectiveIncrement(product: Pick<Product, 'bidIncrementCents' | 'startBidCents'>, highestCents: number | null): number {
+function proxyStep(product: Pick<Product, 'bidIncrementCents' | 'startBidCents'>, highestCents: number | null): number {
   if (product.bidIncrementCents && product.bidIncrementCents > 0) return product.bidIncrementCents;
   const base = highestCents ?? product.startBidCents ?? 100_000;
-  const raw = Math.round((base * 0.01) / 5_000) * 5_000;
-  return Math.min(100_000, Math.max(5_000, raw));
+  return Math.max(1, Math.round(base * 0.01));
 }
 
 @Injectable()
@@ -86,8 +91,6 @@ export class AuctionsService {
       this.prisma.auctionBid.count({ where: { productId: product.id } }),
     ]);
     const highestCents = top?.amountCents ?? null;
-    const bidIncrementCents = effectiveIncrement(product, highestCents);
-    const base = highestCents ?? product.startBidCents ?? 0;
     const reserveMet = product.reserveCents == null ? true : (highestCents ?? 0) >= product.reserveCents;
     return {
       bidCount: count,
@@ -101,8 +104,6 @@ export class AuctionsService {
       // Real identity only for the seller/admin — never in the public payload.
       highBidder: ownerView ? top?.bidder.name ?? null : null,
       startBidCents: product.startBidCents ?? null,
-      bidIncrementCents,
-      minNextCents: base + bidIncrementCents,
       reserveCents: ownerView ? product.reserveCents ?? null : null,
       hasReserve: product.reserveCents != null,
       reserveMet,
@@ -244,30 +245,12 @@ export class AuctionsService {
       select: { bidderId: true },
     });
 
-    // Serializable so two simultaneous bids can't both clear the same floor: the
-    // floor is re-read and the bid inserted atomically; the loser gets a retry.
-    try {
-      await this.prisma.$transaction(
-        async (tx) => {
-          const top = await tx.auctionBid.findFirst({
-            where: { productId: product.id },
-            orderBy: { amountCents: 'desc' },
-            select: { amountCents: true },
-          });
-          const floor = top?.amountCents ?? product.startBidCents ?? 0;
-          const minNext = floor + effectiveIncrement(product, top?.amountCents ?? null);
-          if (amountCents < minNext) {
-            // Open auction: it's safe (and clearer) to tell the bidder the minimum.
-            throw AppException.badRequest('auctions.bid_too_low', `The minimum next bid is $${(minNext / 100).toLocaleString()}.`);
-          }
-          await tx.auctionBid.create({ data: { productId: product.id, bidderId: bidder.id, amountCents } });
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-      );
-    } catch (err) {
-      if (err instanceof BadRequestException) throw err;
-      throw AppException.badRequest('auctions.bid_race', 'Another bid landed first — please try again with a higher amount.');
-    }
+    // Any offer is accepted — above or below the current top — and the highest
+    // one wins at close. There is no floor to clear, so there is nothing for two
+    // simultaneous bids to race on: the serializable transaction (and its
+    // "another bid landed first, try higher" retry) that guarded the old minimum
+    // is gone with it, and this is a plain insert.
+    await this.prisma.auctionBid.create({ data: { productId: product.id, bidderId: bidder.id, amountCents } });
     // Let the proxy engine answer on behalf of anyone this bid outbid.
     await this.resolveAutoBids(product.id);
     await this.notifyOutbid(product, prevTop?.bidderId ?? null, bidder.id);
@@ -316,7 +299,7 @@ export class AuctionsService {
         orderBy: { amountCents: 'desc' },
         select: { amountCents: true, bidderId: true },
       });
-      const need = (top?.amountCents ?? product.startBidCents ?? 0) + effectiveIncrement(product, top?.amountCents ?? null);
+      const need = (top?.amountCents ?? product.startBidCents ?? 0) + proxyStep(product, top?.amountCents ?? null);
       const auto = await this.prisma.auctionAutoBid.findFirst({
         where: { productId, maxCents: { gte: need }, ...(top ? { NOT: { bidderId: top.bidderId } } : {}) },
         orderBy: [{ maxCents: 'desc' }, { updatedAt: 'asc' }],
@@ -338,11 +321,8 @@ export class AuctionsService {
       throw AppException.badRequest('auctions.own_auction', 'You cannot bid on your own auction.');
     }
     const maxCents = Math.round(maxDollars * 100);
-    const top = await this.prisma.auctionBid.findFirst({ where: { productId: product.id }, orderBy: { amountCents: 'desc' }, select: { amountCents: true } });
-    const minNext = (top?.amountCents ?? product.startBidCents ?? 0) + effectiveIncrement(product, top?.amountCents ?? null);
-    if (maxCents < minNext) {
-      throw AppException.badRequest('auctions.autobid_too_low', `Your max must be at least $${(minNext / 100).toLocaleString()}.`);
-    }
+    // No floor here either: a ceiling below the current top is simply a proxy
+    // that never fires until the price comes back down to it.
     await this.prisma.auctionAutoBid.upsert({
       where: { productId_bidderId: { productId: product.id, bidderId: buyer.id } },
       create: { productId: product.id, bidderId: buyer.id, maxCents },

@@ -457,11 +457,12 @@ export class BuyerBidsService {
   }
 
   /**
-   * Submit a seller bid.
-   *   quote mode   → any price; the buyer compares.
-   *   auction mode → a *reverse* auction, so the price must undercut the
-   *                  current best. Serializable so two simultaneous bids can't
-   *                  both clear the same floor (mirrors AuctionsService.place).
+   * Submit a seller bid — any price, in either mode. A reverse auction used to
+   * reject anything that did not undercut the standing best; it no longer does,
+   * so a seller can quote above the current leader (their real number, take it
+   * or leave it) exactly as they can in quote mode. What decides the outcome is
+   * unchanged: the book ranks cheapest-first and the lowest offer is the one the
+   * buyer is shown as best.
    */
   async submitBid(buyerBidId: string, seller: AuthUser, dto: SubmitSellerBidDto) {
     const buyerBid = await this.prisma.buyerBid.findUnique({ where: { id: buyerBidId } });
@@ -471,42 +472,27 @@ export class BuyerBidsService {
     if (buyerBid.deadline && buyerBid.deadline.getTime() < Date.now()) throw new BadRequestException('The bidding deadline has passed.');
     if (buyerBid.auctionEndsAt && buyerBid.auctionEndsAt.getTime() < Date.now()) throw new BadRequestException('This auction has ended.');
 
-    if (buyerBid.mode === 'quote') {
-      await this.prisma.sellerBid.create({
-        data: { buyerBidId, sellerId: seller.id, priceCents: dto.priceCents, qtyValue: dto.qtyValue, etaDays: dto.etaDays, message: dto.message },
-      });
-      await this.notify(buyerBid.buyerId, 'buyer_bid.new_seller_bid', { amount: usd(dto.priceCents), unit: buyerBid.qtyUnit, reference: buyerBid.reference }, { buyerBidId });
-      return this.detail(buyerBidId, seller);
-    }
-
-    let previousBestSellerId: string | null = null;
-    try {
-      await this.prisma.$transaction(
-        async (tx) => {
-          const best = await tx.sellerBid.findFirst({
+    // Who leads before this offer — only so the person losing the lead hears
+    // about it. Auction mode publishes the book, quote mode is sealed, but the
+    // price itself is accepted the same way in both.
+    const best =
+      buyerBid.mode === 'auction'
+        ? await this.prisma.sellerBid.findFirst({
             where: { buyerBidId, status: 'submitted' },
             orderBy: { priceCents: 'asc' },
             select: { priceCents: true, sellerId: true },
-          });
-          if (best && dto.priceCents >= best.priceCents) {
-            // Reverse auction: the floor is public, so naming it is safe and useful.
-            throw new BadRequestException(`Your price must be below the current best of ${usd(best.priceCents)} per ${buyerBid.qtyUnit}.`);
-          }
-          previousBestSellerId = best?.sellerId ?? null;
-          await tx.sellerBid.create({
-            data: { buyerBidId, sellerId: seller.id, priceCents: dto.priceCents, qtyValue: dto.qtyValue, etaDays: dto.etaDays, message: dto.message },
-          });
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-      );
-    } catch (err) {
-      if (err instanceof BadRequestException) throw err;
-      throw new BadRequestException('Another bid landed first — please try again with a lower price.');
-    }
+          })
+        : null;
+
+    await this.prisma.sellerBid.create({
+      data: { buyerBidId, sellerId: seller.id, priceCents: dto.priceCents, qtyValue: dto.qtyValue, etaDays: dto.etaDays, message: dto.message },
+    });
 
     await this.notify(buyerBid.buyerId, 'buyer_bid.new_seller_bid', { amount: usd(dto.priceCents), unit: buyerBid.qtyUnit, reference: buyerBid.reference }, { buyerBidId });
-    if (previousBestSellerId && previousBestSellerId !== seller.id) {
-      await this.notify(previousBestSellerId, 'buyer_bid.outbid', { reference: buyerBid.reference }, { buyerBidId });
+    // Only when this offer actually took the lead — a seller quoting ABOVE the
+    // standing best must not tell the leader they were undercut.
+    if (best && best.sellerId !== seller.id && dto.priceCents < best.priceCents) {
+      await this.notify(best.sellerId, 'buyer_bid.outbid', { reference: buyerBid.reference }, { buyerBidId });
     }
     return this.detail(buyerBidId, seller);
   }

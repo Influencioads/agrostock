@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiAuctionDetail } from '@agrotraders/api-client';
+import { toUnit, unitSuffix } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useApiError } from '../../lib/useApiError';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -16,9 +17,12 @@ import { useI18n } from '../../i18n';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /**
- * Open ascending auction bidding card — current highest bid, the viewer's
- * standing, a min-increment stepper with quick raises, and a proxy auto-bid
- * toggle. Bids are public; identities stay masked in the history.
+ * Open auction bidding card — current highest bid, the viewer's standing, a
+ * free offer field and a proxy auto-bid toggle. Bids are public; identities stay
+ * masked in the history.
+ *
+ * No minimum raise: the bidder names their own price and the highest offer takes
+ * the lot at close, so the old quick-raise chips are gone with it.
  */
 export function BidPanel({ slug }: { slug: string }) {
   const { t } = useI18n();
@@ -36,9 +40,13 @@ export function BidPanel({ slug }: { slug: string }) {
     queryKey: ['auction', slug], queryFn: () => api.auctions.detail(slug), refetchInterval: 4000,
   });
 
-  const increment = (auction?.bidIncrementCents ?? 0) / 100;
-  const minNext = (auction?.minNextCents ?? 0) / 100;
-  const value = amount ?? minNext;
+  // No minimum raise: any offer is accepted, above or below the current top, and
+  // the highest one wins at close. The field opens at whatever the lot stands at
+  // and the ± buttons nudge by 1% of it — nothing enforces that step.
+  const currentCents = auction?.highestCents ?? auction?.startBidCents ?? 0;
+  const value = amount ?? currentCents / 100;
+  const nudge = Math.max(0.01, Math.round(currentCents * 0.01) / 100);
+  const unit = unitSuffix(auction?.unit, t);
   const isOwner = auction?.isOwner ?? false;
   const standing = auction?.standing;
   const autoMaxCents = standing?.autoMaxCents ?? null;
@@ -69,7 +77,7 @@ export function BidPanel({ slug }: { slug: string }) {
     onError: (e) => setError(apiError(e, t('compX.bid.placeError'))),
   });
 
-  const step = (dir: 1 | -1) => setAmount(Math.max(minNext, Math.round(value + dir * (increment || 1))));
+  const step = (dir: 1 | -1) => setAmount(Math.max(0.01, Math.round((value + dir * nudge) * 100) / 100));
   const onBid = () => { if (requireBuyer()) place.mutate(); };
   const onSaveAuto = () => { if (requireBuyer() && Number(autoMax) > 0) saveAuto.mutate(false); };
   const onToggleAuto = () => {
@@ -84,7 +92,8 @@ export function BidPanel({ slug }: { slug: string }) {
         <View>
           <Txt variant="muted">{t('compX.bid.currentHighest')}</Txt>
           <Txt style={{ fontSize: 30, fontWeight: '800', color: C.dark }}>
-            {fmtCents(auction?.highestCents ?? auction?.startBidCents ?? 0)}
+            {fmtCents(currentCents)}
+            <Txt variant="muted" style={{ fontSize: 14 }}>{unit}</Txt>
           </Txt>
         </View>
         <Badge label={t('compX.bid.bidsN', { count: auction?.bidCount ?? 0 })} tone="green" />
@@ -106,15 +115,16 @@ export function BidPanel({ slug }: { slug: string }) {
         <Txt variant="small" color={C.inkSoft}>{t('compX.bid.ownerNote')}</Txt>
       ) : (
         <>
-          {/* stepper */}
+          {/* offer field — any amount, priced per the lot's own metric */}
           <View style={{ gap: 6 }}>
-            <Txt variant="muted">{t('compX.bid.minNext', { amount: fmtCents((auction?.minNextCents ?? 0)) })}</Txt>
+            <Txt variant="muted">{t('auction.pricePerUnit', { unit: t(`enums:unitShort.${toUnit(auction?.unit)}`) })}</Txt>
             <Row style={{ borderWidth: 2, borderColor: C.leaf, borderRadius: radius.md, overflow: 'hidden' }}>
               <Pressable onPress={() => step(-1)} style={{ width: 46, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
                 <Txt style={{ fontSize: 22, color: C.dark }}>−</Txt>
               </Pressable>
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Txt style={{ fontSize: 22, fontWeight: '800' }}>${Math.round(value).toLocaleString()}</Txt>
+                {/* Cents matter now that a lot can be priced per KG. */}
+                <Txt style={{ fontSize: 22, fontWeight: '800' }}>${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}</Txt>
               </View>
               <Pressable onPress={() => step(1)} style={{ width: 46, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
                 <Txt style={{ fontSize: 22, color: C.dark }}>+</Txt>
@@ -122,20 +132,14 @@ export function BidPanel({ slug }: { slug: string }) {
             </Row>
           </View>
 
-          {/* quick raises */}
-          <Row style={{ gap: 8 }}>
-            {[1, 2, 5].map((mult) => {
-              const total = minNext + increment * (mult - 1);
-              return (
-                <Pressable key={mult} onPress={() => setAmount(total)} style={{ flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: radius.sm, paddingVertical: 8, alignItems: 'center' }}>
-                  <Txt style={{ fontSize: 12, fontWeight: '700', color: C.dark }}>+${Math.round(increment * mult).toLocaleString()}</Txt>
-                  <Txt style={{ fontSize: 10, color: C.inkSoft }}>${Math.round(total).toLocaleString()}</Txt>
-                </Pressable>
-              );
-            })}
-          </Row>
-
-          <Button title={t('compX.bid.placeAmount', { amount: `$${Math.round(value).toLocaleString()}` })} variant="primary" icon="hammer" full disabled={place.isPending || value < minNext} onPress={onBid} />
+          <Button
+            title={t('compX.bid.placeAmount', { amount: `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}${unit}` })}
+            variant="primary"
+            icon="hammer"
+            full
+            disabled={place.isPending || !(value > 0)}
+            onPress={onBid}
+          />
           {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
 
           {/* auto-bid */}

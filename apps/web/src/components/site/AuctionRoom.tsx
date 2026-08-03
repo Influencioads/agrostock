@@ -8,7 +8,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { chatBus } from '../../chat/chatBus';
 import { BidPanel } from './BidPanel';
-import { unitSuffix } from '@agrotraders/types';
+import { toUnit, unitSuffix } from '@agrotraders/types';
 
 interface CardProduct {
   id: string; name: string; emoji?: string | null; flag?: string | null;
@@ -109,7 +109,12 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-lg border border-brand-leaf/30 bg-brand-leaf/10 px-2.5 py-1.5 text-xs font-bold text-brand-leaf">{t('auction.biddersN', { count: auction?.bidCount ?? 0 })}</span>
-              <span className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold">{t('auction.minIncrement', { amount: fmtCents(auction?.bidIncrementCents ?? 0) })}</span>
+              {/* The "min increment $50" badge is gone with the rule: any offer
+                  is accepted and the highest one wins. What a bidder needs to
+                  see here is the metric the price is quoted in. */}
+              <span className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold">
+                {t('auction.pricePerUnit', { unit: t(`enums:unitShort.${toUnit(product.unit)}`) })}
+              </span>
               {auction?.hasReserve && (
                 <span className={'rounded-lg border px-2.5 py-1.5 text-xs font-bold ' + (auction.reserveMet ? 'border-brand-leaf/30 bg-brand-leaf/10 text-brand-leaf' : 'border-status-error/40 bg-status-error/20 text-white')}>
                   {auction.reserveMet ? t('auction.reserveMet') : t('auction.reserveNotMet')}

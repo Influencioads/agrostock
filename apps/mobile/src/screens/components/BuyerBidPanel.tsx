@@ -81,7 +81,7 @@ function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
       {bid.mode === 'auction' ? (
         <Txt variant="muted" color={C.dark}>
           {bid.bestPriceCents != null
-            ? t('buyerX.room.mustBeat', { price: fmtCents(bid.bestPriceCents), unit: bid.qtyUnit })
+            ? t('buyerX.room.lowestSoFar', { price: fmtCents(bid.bestPriceCents), unit: bid.qtyUnit })
             : t('buyerX.room.noBidsOpening')}
         </Txt>
       ) : null}

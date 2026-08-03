@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiAuctionListing } from '@agrotraders/api-client';
+import { toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Button, Card, EmptyState, Row, SkeletonRows, Txt } from '../../ui';
@@ -78,7 +79,7 @@ export function AuctionsBoard() {
                 </View>
               </Row>
               <Row style={{ gap: 6, flexWrap: 'wrap' }}>
-                <Badge label={t('auction.minIncrement', { amount: fmtCents(a.bidIncrementCents ?? 0) })} tone="slate" />
+                <Badge label={t('auction.pricePerUnit', { unit: t(`enums:unitShort.${toUnit(a.unit)}`) })} tone="slate" />
                 {a.hasReserve ? <Badge label={a.reserveMet ? t('auction.reserveMet') : t('auction.reserveNotMet')} tone={a.reserveMet ? 'green' : 'error'} /> : null}
               </Row>
               <Button title={ended ? t('pubX.auc.ended') : t('pubX.auc.placeBid')} icon="hammer-outline" full disabled={ended} onPress={() => nav.navigate('ProductDetail', { slug: a.slug })} />

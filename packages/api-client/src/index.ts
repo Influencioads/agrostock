@@ -206,7 +206,13 @@ export interface ApiAuctionBidRow {
   masked: string;
 }
 
-/** Public snapshot fields shared by the auction list + detail payloads. */
+/**
+ * Public snapshot fields shared by the auction list + detail payloads.
+ *
+ * There is deliberately no minimum-next / increment here any more: a bidder may
+ * offer any amount, above or below the current top, and the highest offer wins
+ * at close. The proxy engine's raise step is a server-side detail.
+ */
 export interface ApiAuctionPublic {
   bidCount: number;
   /** PUBLIC in an open auction — the current highest bid (null when none yet). */
@@ -215,9 +221,6 @@ export interface ApiAuctionPublic {
   highBidderId: string | null;
   /** Real winner name — owner/admin only, else null. */
   highBidder: string | null;
-  bidIncrementCents: number;
-  /** Lowest bid that would currently lead: `highest + increment`. */
-  minNextCents: number;
   /** Reserve price — owner/admin only. */
   reserveCents: number | null;
   hasReserve: boolean;
