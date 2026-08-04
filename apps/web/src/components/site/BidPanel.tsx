@@ -34,7 +34,7 @@ function countdown(end: string | null) {
  */
 export function BidPanel({ slug }: { slug: string }) {
   const { t } = useI18n();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { fmtCents } = useCurrency();
@@ -80,7 +80,8 @@ export function BidPanel({ slug }: { slug: string }) {
   const requireBuyer = () => {
     setError('');
     if (!user) { navigate('/login', { state: { from: `/product/${slug}` } }); return false; }
-    if (user.role !== 'buyer') { setError(t('site.onlyBuyers')); return false; }
+    // Effective roles, not the primary one — a seller granted `buyer` may bid.
+    if (!roles.includes('buyer')) { setError(t('site.onlyBuyers')); return false; }
     return true;
   };
 

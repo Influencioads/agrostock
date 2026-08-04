@@ -50,6 +50,19 @@ describe('AdminService role approval provisioning', () => {
     expect(prisma.worker.upsert).not.toHaveBeenCalled();
   });
 
+  it('adds the approved role without replacing the primary one', async () => {
+    // The console role switcher is driven by {role} ∪ roles — approving `seller`
+    // for a buyer must grant a second dashboard, not migrate them off buyer.
+    const { svc, prisma } = serviceFor('seller');
+
+    await svc.decideRoleRequest('rr1', 'approved', 'admin1');
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'u1' },
+      data: { roles: { push: 'seller' } },
+    });
+  });
+
   it('rejects already-decided requests', async () => {
     const { svc, prisma } = serviceFor('worker');
     prisma.roleRequest.findUnique.mockResolvedValueOnce({ id: 'rr1', status: 'approved' });

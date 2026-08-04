@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrotraders/api-client';
 import { api } from '../lib/api';
 
@@ -67,6 +67,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [user],
   );
+
+  // `user` is the snapshot the login response returned, but an admin can approve
+  // (or revoke) a role long after sign-in. Without this the granted dashboard
+  // stayed invisible until the user logged out and back in. Re-read the account
+  // on mount and whenever the tab regains focus.
+  useEffect(() => {
+    if (!token) return;
+    const sync = async () => {
+      try {
+        const fresh = await api.auth.me();
+        localStorage.setItem('user', JSON.stringify(fresh));
+        setState((s) => (s.token && JSON.stringify(s.user) !== JSON.stringify(fresh) ? { ...s, user: fresh } : s));
+      } catch {
+        /* offline or expired session — the api client already handles 401s */
+      }
+    };
+    void sync();
+    window.addEventListener('focus', sync);
+    return () => window.removeEventListener('focus', sync);
+  }, [token]);
+
+  // A revoked role must not leave the console stuck on a dashboard it lost.
+  useEffect(() => {
+    if (user && !roles.includes(activeRole)) {
+      localStorage.setItem('activeRole', user.role);
+      setActiveRoleState(user.role);
+    }
+  }, [user, roles, activeRole]);
 
   const persist = useCallback((u: ApiUser, accessToken: string, _refreshToken: string) => {
     // F38: the refresh token is delivered as an HttpOnly cookie by the API and

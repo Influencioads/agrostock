@@ -28,7 +28,7 @@ export function BidPanel({ slug }: { slug: string }) {
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
   const apiError = useApiError();
-  const { user, role } = useAuth();
+  const { user, roles } = useAuth();
   const nav = useNavigation<Nav>();
   const qc = useQueryClient();
   const [amount, setAmount] = useState<number | null>(null); // dollars; null = track min
@@ -59,7 +59,8 @@ export function BidPanel({ slug }: { slug: string }) {
   const requireBuyer = () => {
     setError('');
     if (!user) { nav.navigate('SignIn', { reason: 'bid' }); return false; }
-    if (role !== 'buyer') { setError(t('compX.bid.onlyBuyers')); return false; }
+    // Effective roles, not the viewed one — a seller granted `buyer` may bid.
+    if (!roles.includes('buyer')) { setError(t('compX.bid.onlyBuyers')); return false; }
     return true;
   };
 

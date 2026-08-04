@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrotraders/api-client';
 import { api, setApiActiveRole, setApiToken, setApiRefreshToken, setAuthFailureListener, TOKEN_KEY, REFRESH_KEY } from '../lib/api';
 import { storage } from '../lib/storage';
@@ -104,6 +105,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [user],
   );
+
+  // The cached user is the login-time snapshot, but an admin can approve (or
+  // revoke) a role long after sign-in — the granted dashboard used to stay
+  // invisible until a re-login. Re-read the account on boot and on foreground.
+  useEffect(() => {
+    if (!user) return;
+    const sync = async () => {
+      try {
+        const fresh = await api.auth.me();
+        await storage.set(USER_KEY, JSON.stringify(fresh));
+        setUser((u) => (u && JSON.stringify(u) !== JSON.stringify(fresh) ? fresh : u));
+      } catch {
+        /* offline or expired — terminal 401s go through setAuthFailureListener */
+      }
+    };
+    void sync();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') void sync();
+    });
+    return () => sub.remove();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A revoked role must not leave the tab navigator on a dashboard it lost.
+  useEffect(() => {
+    if (user && activeRole && !roles.includes(activeRole)) setActiveRole(user.role);
+  }, [user, activeRole, roles, setActiveRole]);
 
   const persist = useCallback(async (u: ApiUser, token: string, refresh: string) => {
     // MOB-03: drop any cached queries from a PREVIOUS account before this one's

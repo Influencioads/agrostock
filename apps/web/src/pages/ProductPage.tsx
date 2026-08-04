@@ -25,7 +25,7 @@ export function ProductPage() {
   const { t, lang } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { fmtPrice } = useCurrency();
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(50);
@@ -188,7 +188,8 @@ export function ProductPage() {
   const onBuy = () => {
     setNotice('');
     if (!user) return navigate('/login', { state: { from: `/product/${id}` } });
-    if (user.role !== 'buyer') return setNotice(t('page.product.onlyBuyers'));
+    // Effective roles, not the primary one — a seller granted `buyer` may order.
+    if (!roles.includes('buyer')) return setNotice(t('page.product.onlyBuyers'));
     if (!product) return setNotice(t('page.product.orderError'));
     place.mutate();
   };
