@@ -1461,6 +1461,15 @@ export interface ProductListResult {
   total: number;
   page: number;
   pageSize: number;
+  /**
+   * Present only when a subcategory drill-down matched NOTHING: the listings
+   * from the nearest ancestor that has any, with every other filter still
+   * applied. Sellers list at whatever depth suits them, so an exact meeting at
+   * level 5 is luck — this is what to show instead of a blank grid.
+   */
+  similar?: ApiProduct[];
+  /** The ancestor `similar` was taken from, for the "showing X instead" line. */
+  similarFrom?: { id: string; name: string };
 }
 
 /** Serialize a ProductQuery into the flat string query params `GET /products` expects. */

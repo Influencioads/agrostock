@@ -36,12 +36,16 @@ function OwnerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
   );
 }
 
-/** Seller offers a price. In auction mode it must undercut the current best. */
+/**
+ * Seller offers a price — any price, under the buyer's target or over it. One
+ * account holds one offer, so submitting again revises it and the field opens at
+ * the seller's standing price.
+ */
 function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
   const qc = useQueryClient();
-  const [price, setPrice] = useState('');
+  const [price, setPrice] = useState(bid.yourBestPriceCents != null ? String(bid.yourBestPriceCents / 100) : '');
   const [qty, setQty] = useState(String(bid.qtyValue));
   const [eta, setEta] = useState('');
   const [message, setMessage] = useState('');
@@ -60,7 +64,8 @@ function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
       qc.invalidateQueries({ queryKey: ['seller-bids', 'mine'] });
       qc.invalidateQueries({ queryKey: ['buyer-bid-detail', bid.id] });
       qc.invalidateQueries({ queryKey: ['buyer-bid-book', bid.id] });
-      setPrice(''); setEta(''); setMessage(''); setError('');
+      // The price stays: it is now this seller's standing offer, ready to revise.
+      setError('');
     },
     onError: (e) => setError(errMessage(e, t('buyerX.room.errSubmit'))),
   });

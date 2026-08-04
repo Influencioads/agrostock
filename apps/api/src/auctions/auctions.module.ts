@@ -52,6 +52,15 @@ const liveOnly = (): Prisma.ProductWhereInput => ({
 });
 
 /**
+ * Highest offer first, and — now that one account holds exactly one revisable
+ * offer, so two bidders can sit on the same number — the earliest of two equal
+ * offers leads. Every "who is winning" read uses this, so the book, the outbid
+ * notification and the settlement can never disagree on the winner. (Mirrors the
+ * cheapest-first tie-break the reverse-auction book already applies.)
+ */
+const TOP_FIRST: Prisma.AuctionBidOrderByWithRelationInput[] = [{ amountCents: 'desc' }, { createdAt: 'asc' }];
+
+/**
  * The step the PROXY engine raises by when bidding on someone's behalf. It is no
  * longer a minimum a human has to clear — a bidder may offer whatever they like,
  * above or below the current top, and the highest offer wins at close. This only
@@ -85,7 +94,7 @@ export class AuctionsService {
     const [top, count] = await Promise.all([
       this.prisma.auctionBid.findFirst({
         where: { productId: product.id },
-        orderBy: { amountCents: 'desc' },
+        orderBy: TOP_FIRST,
         include: { bidder: { select: { id: true, name: true } } },
       }),
       this.prisma.auctionBid.count({ where: { productId: product.id } }),
@@ -207,7 +216,7 @@ export class AuctionsService {
     const ownerView = isAdmin(viewer) || (!!viewer && product.sellerId === viewer.id);
     const rows = await this.prisma.auctionBid.findMany({
       where: { productId: product.id },
-      orderBy: { amountCents: 'desc' },
+      orderBy: TOP_FIRST,
       take: 24,
       include: { bidder: { select: { id: true, name: true } } },
     });
@@ -247,7 +256,7 @@ export class AuctionsService {
     // proxy engine has settled the new top.
     const prevTop = await this.prisma.auctionBid.findFirst({
       where: { productId: product.id },
-      orderBy: { amountCents: 'desc' },
+      orderBy: TOP_FIRST,
       select: { bidderId: true },
     });
 
@@ -255,8 +264,17 @@ export class AuctionsService {
     // one wins at close. There is no floor to clear, so there is nothing for two
     // simultaneous bids to race on: the serializable transaction (and its
     // "another bid landed first, try higher" retry) that guarded the old minimum
-    // is gone with it, and this is a plain insert.
-    await this.prisma.auctionBid.create({ data: { productId: product.id, bidderId: bidder.id, amountCents } });
+    // is gone with it.
+    //
+    // One account holds ONE offer per lot: bidding again revises it (up or down)
+    // until the lot closes, rather than stacking another row on the book. The
+    // timestamp moves with the amount — the row is "what this bidder offers now",
+    // and the tie-break in `bids()` ranks the earliest of two equal offers first.
+    await this.prisma.auctionBid.upsert({
+      where: { productId_bidderId: { productId: product.id, bidderId: bidder.id } },
+      create: { productId: product.id, bidderId: bidder.id, amountCents },
+      update: { amountCents, auto: false, createdAt: new Date() },
+    });
     // Let the proxy engine answer on behalf of anyone this bid outbid.
     await this.resolveAutoBids(product.id);
     await this.notifyOutbid(product, prevTop?.bidderId ?? null, bidder.id);
@@ -271,7 +289,7 @@ export class AuctionsService {
   private async notifyOutbid(product: Product, prevTopBidderId: string | null, placedById: string) {
     const newTop = await this.prisma.auctionBid.findFirst({
       where: { productId: product.id },
-      orderBy: { amountCents: 'desc' },
+      orderBy: TOP_FIRST,
       select: { bidderId: true, amountCents: true },
     });
     if (!newTop) return;
@@ -302,7 +320,7 @@ export class AuctionsService {
     for (let i = 0; i < 40; i++) {
       const top = await this.prisma.auctionBid.findFirst({
         where: { productId },
-        orderBy: { amountCents: 'desc' },
+        orderBy: TOP_FIRST,
         select: { amountCents: true, bidderId: true },
       });
       const need = (top?.amountCents ?? product.startBidCents ?? 0) + proxyStep(product, top?.amountCents ?? null);
@@ -311,8 +329,12 @@ export class AuctionsService {
         orderBy: [{ maxCents: 'desc' }, { updatedAt: 'asc' }],
       });
       if (!auto) break;
-      await this.prisma.auctionBid.create({
-        data: { productId, bidderId: auto.bidderId, amountCents: Math.min(auto.maxCents, need), auto: true },
+      const amountCents = Math.min(auto.maxCents, need);
+      // Same one-offer-per-account rule: the proxy revises its owner's row.
+      await this.prisma.auctionBid.upsert({
+        where: { productId_bidderId: { productId, bidderId: auto.bidderId } },
+        create: { productId, bidderId: auto.bidderId, amountCents, auto: true },
+        update: { amountCents, auto: true, createdAt: new Date() },
       });
     }
   }
@@ -398,7 +420,7 @@ export class AuctionsService {
 
     const top = await this.prisma.auctionBid.findFirst({
       where: { productId: product.id },
-      orderBy: { amountCents: 'desc' },
+      orderBy: TOP_FIRST,
       include: { bidder: { select: { id: true, name: true } } },
     });
     // BL-09: a reserve that wasn't met means the lot did NOT sell — treat as no winner.

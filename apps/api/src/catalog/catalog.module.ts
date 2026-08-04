@@ -17,7 +17,7 @@ import {
 import { ApiBearerAuth, ApiTags, PartialType } from '@nestjs/swagger';
 import { ArrayMaxSize, IsArray, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 import { FALLBACK_LNG, type Lang } from '@agrotraders/i18n';
-import type { AttrField, AttrFieldType } from '@agrotraders/types';
+import { fieldsNotOnPath, type AttrField, type AttrFieldType } from '@agrotraders/types';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { Locale, localize } from '../common/locale';
@@ -212,6 +212,7 @@ export class CategoriesService {
     const rows = await this.prisma.subcategory.findMany({
       select: {
         id: true,
+        name: true,
         parentId: true,
         attrFields: true,
         translations: { where: { locale }, select: { attrFields: true } },
@@ -226,7 +227,11 @@ export class CategoriesService {
 
     for (const row of rows) {
       let node: (typeof rows)[number] | undefined = row;
+      // Names from `row` up to (and including) the owner — the part of the path
+      // that can already have answered one of the owner's fields.
+      const chain: string[] = [];
       for (let hops = 0; node && hops <= MAX_TAXONOMY_DEPTH; hops++) {
+        chain.push(node.name);
         const fields = node.attrFields as AttrField[] | null;
         if (fields?.length) {
           const at = node;
@@ -235,7 +240,9 @@ export class CategoriesService {
             localized = localizeFields(fields, at.translations[0]?.attrFields as AttrDict | null);
             owned.set(at.id, localized);
           }
-          out.set(row.id, localized);
+          // `name` is the canonical English base row, which is what the options
+          // are — so this matches identically in every locale.
+          out.set(row.id, fieldsNotOnPath(localized, chain));
           break;
         }
         node = node.parentId ? byId.get(node.parentId) : undefined;

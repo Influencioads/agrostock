@@ -1432,6 +1432,7 @@
       "verificationSent": "Ссылка отправлена — проверьте свою почту."
     },
     "market": {
+      "allCategories": "Все категории",
       "allCities": "Все города",
       "allCountries": "Все страны",
       "allMarkets": "Все рынки",
@@ -1464,6 +1465,8 @@
       "noChildCategories": "Дочерние категории больше не доступны.",
       "noMatch": "Нет товаров по этим фильтрам.",
       "noSubcategoryMatch": "Ничего не найдено.",
+      "notAvailable": "Искомый товар недоступен",
+      "notAvailableAt": "Сейчас в разделе «{{name}}» ничего не размещено.",
       "offline": "офлайн (демо)",
       "pageOf": "Страница {{page}} из {{total}}",
       "prev": "Предыдущий",
@@ -1474,6 +1477,7 @@
       "rating": "Рейтинг",
       "searchPlaceholder": "Поиск товаров…",
       "searchSubcategories": "Поиск по всем подкатегориям…",
+      "similarHeading": "Похожие товары из раздела «{{name}}»",
       "sortRelevance": "Сортировка: по релевантности",
       "subcategory": "Подкатегория",
       "summary": "{{count}} проверенных товаров · Защита Safe Deal",

@@ -13,7 +13,7 @@ import { useI18n } from '../../i18n';
 import { safeSteps } from '../../mock/data';
 import { ProductCard } from './ProductCard';
 import { api, assetUrl, toCardProduct } from '../../lib/api';
-import { buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, resolveAttrFields, type SubcategoryNode } from '@agrotraders/api-client';
+import { browseAttrFields, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
 
 /* ── helpers ───────────────────────────────────────────────────── */
 
@@ -276,8 +276,12 @@ function CategoryMegaMenu() {
    * A deep leaf now surfaces its parent's facets instead of dropping the buyer
    * straight into unfiltered results — the old lookup could only see level-2
    * nodes, so it returned nothing for anything deeper.
+   *
+   * Minus whatever the path or the node's own children already ask, so column 3
+   * never re-offers as chips the choices column 2 is already listing as nodes.
    */
-  const facetsOf = (node: SubcategoryNode) => filterFields(resolveAttrFields(findSubcategoryPath(subTree, node.id)));
+  const facetsOf = (node: SubcategoryNode) =>
+    filterFields(browseAttrFields(findSubcategoryPath(subTree, node.id), node.children));
   const leadField = selectedSub && selectedSubIsLeaf ? facetsOf(selectedSub)[0] : undefined;
   const toggle = () => {
     // Reset the drill-down each time the panel is (re)opened.
@@ -355,6 +359,15 @@ function CategoryMegaMenu() {
             <div className="flex min-h-0 flex-col border-b border-surface-border sm:border-b-0 sm:border-e">
               <div className={colHead}>{t('hero.colCategory', { defaultValue: 'Categories' })}</div>
               <div className="flex-1 overflow-y-auto p-1.5">
+                {/* "Any" leads every level, the specific choices sit under it. */}
+                <button
+                  type="button"
+                  onClick={() => { setOpen(false); navigate('/market'); }}
+                  className={colBtn + ' mb-1 font-semibold text-brand-dark hover:bg-brand-surface/60'}
+                >
+                  <Icon name="check" size={14} />
+                  <span className="flex-1 truncate">{t('page.market.allCategories', { defaultValue: 'All categories' })}</span>
+                </button>
                 {menuCategories.map((c) => {
                   const active = c.id === catId;
                   return (
@@ -404,7 +417,9 @@ function CategoryMegaMenu() {
                     <span className="flex-1 truncate">{t('hero.allOf', { defaultValue: 'All' })} {selectedSub ? selectedSub.name : activeCat.name}</span>
                   </button>
                   {visibleSubs.length === 0 ? (
-                    <p className={placeholder}>{t('hero.pickCategory', { defaultValue: 'Pick a category to see its subcategories' })}</p>
+                    // A leaf has nothing below it — saying "pick a category" here
+                    // was answering a question the buyer had already answered twice.
+                    <p className={placeholder}>{t('page.market.noChildCategories', { defaultValue: 'No more child categories' })}</p>
                   ) : visibleSubs.map((node) => {
                     const active = node.id === subId;
                     const hasOptions = facetsOf(node).length > 0;

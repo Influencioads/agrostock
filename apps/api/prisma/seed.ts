@@ -625,10 +625,16 @@ async function main() {
       },
     });
     // A short public ladder so the masked history + "current highest bid" render.
+    // One account holds ONE offer, so the two demo bidders take turns raising
+    // their own row — four rounds of bidding, two rows on the book.
     let amt = startCents;
     for (const bidder of [buyer2Id, buyerId, buyer2Id, buyerId]) {
       amt += incCents;
-      await prisma.auctionBid.create({ data: { productId: prod.id, bidderId: bidder, amountCents: amt } });
+      await prisma.auctionBid.upsert({
+        where: { productId_bidderId: { productId: prod.id, bidderId: bidder } },
+        create: { productId: prod.id, bidderId: bidder, amountCents: amt },
+        update: { amountCents: amt, createdAt: new Date() },
+      });
     }
   }
 

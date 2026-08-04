@@ -953,6 +953,9 @@ model SellerBid {
   sellerId   String
   seller     User     @relation("SellerBidSeller", fields: [sellerId], references: [id])
 
+  /// Mirror of `AuctionBid`: one account, one standing offer per requirement,
+  /// revisable at any price until the buyer closes it.
+  @@unique([buyerBidId, sellerId])
   @@index([buyerBidId, priceCents])
   @@index([sellerId])
 }
@@ -1033,6 +1036,10 @@ model AuctionBid {
   bidderId    String
   bidder      User     @relation(fields: [bidderId], references: [id])
 
+  /// One account, one standing offer per lot. Bidding again REPLACES it (up or
+  /// down) until the lot closes, so the book is a leaderboard of bidders rather
+  /// than a log of every keystroke.
+  @@unique([productId, bidderId])
   @@index([productId, amountCents])
 }
 

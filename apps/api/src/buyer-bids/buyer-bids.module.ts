@@ -522,6 +522,12 @@ export class BuyerBidsService {
    * or leave it) exactly as they can in quote mode. What decides the outcome is
    * unchanged: the book ranks cheapest-first and the lowest offer is the one the
    * buyer is shown as best.
+   *
+   * One account holds ONE offer per requirement. Submitting again REVISES it, at
+   * whatever price the seller now wants — under the buyer's target, over it, up
+   * from their own last number or down — until the buyer closes the requirement.
+   * Without this the book kept every attempt and ranked the seller by the
+   * cheapest row they ever typed, so a revision upwards silently did nothing.
    */
   async submitBid(buyerBidId: string, seller: AuthUser, dto: SubmitSellerBidDto) {
     const buyerBid = await this.prisma.buyerBid.findUnique({ where: { id: buyerBidId } });
@@ -543,8 +549,13 @@ export class BuyerBidsService {
           })
         : null;
 
-    await this.prisma.sellerBid.create({
-      data: { buyerBidId, sellerId: seller.id, priceCents: dto.priceCents, qtyValue: dto.qtyValue, etaDays: dto.etaDays, message: dto.message },
+    await this.prisma.sellerBid.upsert({
+      where: { buyerBidId_sellerId: { buyerBidId, sellerId: seller.id } },
+      create: { buyerBidId, sellerId: seller.id, priceCents: dto.priceCents, qtyValue: dto.qtyValue, etaDays: dto.etaDays, message: dto.message },
+      // `status` back to submitted so a withdrawn offer returns to the book when
+      // its seller re-quotes; awarded/rejected only happen once the requirement
+      // is closed, which the guards above already refuse.
+      update: { priceCents: dto.priceCents, qtyValue: dto.qtyValue, etaDays: dto.etaDays ?? null, message: dto.message ?? null, status: 'submitted' },
     });
 
     await this.notify(buyerBid.buyerId, 'buyer_bid.new_seller_bid', { amount: usd(dto.priceCents), unit: buyerBid.qtyUnit, reference: buyerBid.reference }, { buyerBidId });
@@ -645,9 +656,12 @@ export class BuyerBidsService {
         ...(sealed && viewer ? { sellerId: viewer.id } : {}),
       },
       // Tie-break on time so the ranking is stable and the earliest of two
-      // equal prices wins. Matches `bestPriceCents`'s status filter, so the
-      // book and the headline price can never disagree.
-      orderBy: [{ priceCents: 'asc' }, { createdAt: 'asc' }],
+      // equal prices wins. `updatedAt`, not `createdAt`: a seller revising down
+      // onto someone else's number must not inherit their own first-quote
+      // timestamp and jump the seller who got there first. Matches
+      // `bestPriceCents`'s status filter, so the book and the headline price can
+      // never disagree.
+      orderBy: [{ priceCents: 'asc' }, { updatedAt: 'asc' }],
       take: 24,
       include: { seller: { select: { id: true, name: true } } },
     });

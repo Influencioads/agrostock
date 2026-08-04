@@ -28,6 +28,9 @@ function countdown(end: string | null) {
  * above or below the standing top, and the highest offer takes it at close. The
  * old "+$50 / +$100 / +$250" quick raises and the "min. next" floor are gone
  * with the rule they enforced.
+ *
+ * One account holds one offer. Bidding again revises it — the book shows a
+ * single row per bidder, not a log of every attempt — until the lot closes.
  */
 export function BidPanel({ slug }: { slug: string }) {
   const { t } = useI18n();
@@ -56,7 +59,9 @@ export function BidPanel({ slug }: { slug: string }) {
   const isOwner = auction?.isOwner ?? false;
   // The field opens at whatever the lot stands at; the bidder edits it freely.
   const currentCents = auction?.highestCents ?? auction?.startBidCents ?? 0;
-  const value = amount ?? currentCents / 100;
+  // One account, one offer: once you have bid the field opens at YOUR standing
+  // offer, because placing again revises it rather than adding a second row.
+  const value = amount ?? (auction?.standing?.yourMaxCents ?? currentCents) / 100;
   // Nudge size for the ± buttons only — 1% of the current price, so it is
   // useful at $8/KG and at $6,400/MT alike. Nothing enforces it.
   const nudge = Math.max(0.01, Math.round(currentCents * 0.01) / 100);

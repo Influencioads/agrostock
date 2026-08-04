@@ -1371,6 +1371,7 @@
       "verificationSent": "Link sent — check your inbox"
     },
     "market": {
+      "allCategories": "All categories",
       "allCities": "All cities",
       "allCountries": "All countries",
       "allMarkets": "All markets",
@@ -1402,6 +1403,8 @@
       "noChildCategories": "No more child categories",
       "noMatch": "No products match these filters.",
       "noSubcategoryMatch": "Nothing matches that.",
+      "notAvailable": "Your searched product is not available",
+      "notAvailableAt": "Nothing is listed under \"{{name}}\" right now.",
       "offline": "offline (mock)",
       "pageOf": "Page {{page}} of {{total}}",
       "prev": "Previous",
@@ -1412,6 +1415,7 @@
       "rating": "Rating",
       "searchPlaceholder": "Search products…",
       "searchSubcategories": "Search all subcategories…",
+      "similarHeading": "Similar products from {{name}}",
       "sortRelevance": "Sort: Relevance",
       "subcategory": "Subcategory",
       "summary": "{{count}} verified products · Safe-Deal protected",

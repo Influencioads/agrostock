@@ -7,7 +7,7 @@ import { filterFields, optionLabel, type AttrField } from '@agrotraders/types';
 import { ProductCard } from '../components/site/ProductCard';
 import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
-import { buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, resolveAttrFields, type SubcategoryNode } from '@agrotraders/api-client';
+import { browseAttrFields, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
 import { CountrySelect } from '@agrotraders/ui/ProductForm';
 import { CityInput } from '../components/GeoInputs';
 import { useI18n } from '../i18n';
@@ -187,6 +187,10 @@ export function MarketPage() {
   const items = useMemo(() => (data?.items ?? []).map(toCardProduct), [data]);
   const total = data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // Only present when the taxonomy drill-down matched nothing — the API relaxes
+  // one level at a time and hands back the nearest ancestor that has listings.
+  const similar = useMemo(() => (data?.similar ?? []).map(toCardProduct), [data]);
+  const similarFrom = data?.similarFrom;
 
   // Flag every promoted listing so the card shows a "Sponsored" disclosure, and
   // on the default view (no explicit sort) float those paid placements first.
@@ -236,11 +240,13 @@ export function MarketPage() {
   // Attribute facets for the current selection. Fields are attached to whichever
   // node owns them and inherited downward, so a deep pick resolves along its
   // path — otherwise drilling past the owning level would wipe the facet list.
+  // Anything the path (or the drill-down list right above) already asks is left
+  // out, so the same choice never appears as both a node and a chip.
   // Labels arrive localized from the API; option VALUES stay English because
   // they are what the `attr_*` query params carry and what products store.
   const attrFields = useMemo(
-    () => filterFields(resolveAttrFields(selectedSubcategoryPath)),
-    [selectedSubcategoryPath],
+    () => filterFields(browseAttrFields(selectedSubcategoryPath, visibleSubOptions)),
+    [selectedSubcategoryPath, visibleSubOptions],
   );
 
   const subMatches = useMemo(() => {
@@ -312,6 +318,20 @@ export function MarketPage() {
           <div className="mt-4">
             <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.category')}</p>
             <div className="mt-2 space-y-1.5">
+              {/* "Any" leads every level of the drill-down, category included —
+                  the specific choices sit under it. */}
+              <button
+                type="button"
+                onClick={() => setCategory(null)}
+                aria-current={!selectedCategory}
+                className={
+                  'flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition ' +
+                  (!selectedCategory ? 'bg-brand-surface font-bold text-brand-dark' : 'text-ink hover:bg-brand-surface/60')
+                }
+              >
+                <Icon name="check" size={14} className={selectedCategory ? 'opacity-0' : ''} />
+                <span className="min-w-0 flex-1 truncate">{t('page.market.allCategories')}</span>
+              </button>
               {catData.map((c) => {
                 const active = selectedCategory?.id === c.id;
                 return (
@@ -689,14 +709,42 @@ export function MarketPage() {
               ))}
             </div>
           ) : list.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-surface-border p-12 text-center text-ink-soft">
-              {t('page.market.noMatch')}
-              <div className="mt-3">
-                <Button variant="outline" size="sm" onClick={clearAll}>
-                  {t('page.market.clearFilters')}
-                </Button>
+            <>
+              <div className="rounded-lg border border-dashed border-surface-border p-8 text-center text-ink-soft sm:p-12">
+                <p className="font-semibold text-ink">{t('page.market.notAvailable')}</p>
+                <p className="mt-1 text-sm">
+                  {similarFrom ? t('page.market.notAvailableAt', { name: selectedSubcategory?.name ?? '' }) : t('page.market.noMatch')}
+                </p>
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  {parentSubcategory && (
+                    <Button variant="outline" size="sm" onClick={goUpSubcategory}>
+                      {t('hero.allOf')} {parentSubcategory.name}
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={clearAll}>
+                    {t('page.market.clearFilters')}
+                  </Button>
+                </div>
               </div>
-            </div>
+
+              {/* The drill-down found nothing, but the branch above it did. Show
+                  that rather than a dead end — a seller who listed at "Almond"
+                  is still the right answer for a buyer who drilled to a count. */}
+              {similar.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="mb-4 font-display text-lg font-extrabold text-ink">
+                    {t('page.market.similarHeading', { name: similarFrom?.name ?? '' })}
+                  </h2>
+                  <div className={view === 'grid' ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'}>
+                    {similar.map((p, i) => (
+                      <Reveal key={p.id} delay={(i % 6) * 0.05}>
+                        <ProductCard p={p} />
+                      </Reveal>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <>
               <div className={view === 'grid' ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4'}>

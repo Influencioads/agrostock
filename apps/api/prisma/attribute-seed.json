@@ -1513,9 +1513,9 @@
       "type": "select",
       "options": [
        "Baby (<40 mm)",
-       "40-60 mm",
+       "30-60 mm",
        "60-90 mm",
-       ">90 mm"
+       "90-120 mm"
       ]
      },
      {
@@ -2887,7 +2887,7 @@
        "Star Ruby",
        "Rio Red",
        "Marsh (white)",
-       "Oro Blanco",
+       "Oroblanco",
        "Flame"
       ],
       "required": true
@@ -3101,7 +3101,7 @@
        "Monthong",
        "Musang King (Mao Shan Wang)",
        "D24",
-       "Kanyao",
+       "Kan Yao",
        "Chanee",
        "Red Prawn (Ang Heh)"
       ],
@@ -10419,18 +10419,19 @@
      },
      {
       "key": "caliber_count",
-      "label": "Calibre / count per oz (Kabuli)",
+      "label": "Calibre (mm)",
       "type": "select",
       "options": [
-       "6-7 mm",
-       "7-8 mm",
-       "8-9 mm",
-       "9-10 mm",
-       "10-11 mm",
-       "11-12 mm",
-       "12 mm+"
+       "5 mm",
+       "6 mm",
+       "7 mm",
+       "8 mm",
+       "9 mm",
+       "10 mm",
+       "11 mm",
+       "12 mm"
       ],
-      "help": "Larger = premium; often quoted as count/oz"
+      "help": "Screen size the lot is graded on"
      },
      {
       "key": "moisture_pct",
@@ -10532,7 +10533,7 @@
        "Oil-type seed (black)",
        "Confectionery / striped seed",
        "Hulled kernels",
-       "Bird / feed seed"
+       "Birdfeed"
       ],
       "required": true
      },
@@ -12114,7 +12115,7 @@
      },
      {
       "key": "count_per_oz",
-      "label": "Size / caliber (count per oz)",
+      "label": "Kernel size (count per oz)",
       "type": "select",
       "options": [
        "18/20",
@@ -12126,8 +12127,18 @@
        "32/34",
        "34/36"
       ],
-      "required": true,
-      "help": "Kernels per ounce; lower = larger"
+      "help": "Kernels per ounce; lower = larger. Kernel lots only — in-shell is sized in mm."
+     },
+     {
+      "key": "shell_size_mm",
+      "label": "In-shell size (mm)",
+      "type": "select",
+      "options": [
+       "30/32 mm",
+       "32/34 mm",
+       "34 mm and above"
+      ],
+      "help": "Shell diameter. In-shell lots only — kernels are sized by count per oz."
      },
      {
       "key": "processing",
@@ -12456,7 +12467,7 @@
        "Akbari",
        "Ahmad Aghaei",
        "Fandoghi (Round)",
-       "Kalleh Ghouchi (Jumbo)",
+       "Kaleh Ghouchi (Jumbo)",
        "Antep (Turkish)"
       ]
      },
@@ -12990,7 +13001,7 @@
        "Moulded pulp",
        "Bagasse",
        "Corrugated",
-       "Wood veneer (punnet)"
+       "Wooden veneer"
       ],
       "required": true
      },
@@ -13552,7 +13563,7 @@
       "options": [
        "HDPE plastic",
        "PP plastic",
-       "Wood",
+       "Wooden",
        "Metal / wire",
        "Corrugated"
       ],
@@ -13764,14 +13775,14 @@
       "label": "Vitamin",
       "type": "select",
       "options": [
-       "A",
-       "D3",
-       "E",
-       "K3",
-       "B1",
-       "B2",
-       "B6",
-       "B12",
+       "Vitamin A",
+       "Vitamin D3",
+       "Vitamin E",
+       "Vitamin K3",
+       "Vitamin B1",
+       "Vitamin B2",
+       "Vitamin B6",
+       "Vitamin B12",
        "Niacin",
        "Biotin",
        "Folic acid",
@@ -14927,8 +14938,8 @@
       "options": [
        "Whole carcass",
        "Half carcass",
-       "Fore-quarter",
-       "Hind-quarter",
+       "Forequarter",
+       "Hindquarter",
        "Leg",
        "Shoulder",
        "Rack / rib",
@@ -15004,8 +15015,8 @@
       "options": [
        "Whole carcass",
        "Compensated quarter",
-       "Fore-quarter",
-       "Hind-quarter",
+       "Forequarter",
+       "Hindquarter",
        "Chuck / blade",
        "Rib",
        "Striploin",
@@ -15839,10 +15850,10 @@
       "label": "Size band",
       "type": "select",
       "options": [
-       "<1 kg",
-       "1-1.4 kg",
-       "1.4-1.8 kg",
-       ">1.8 kg"
+       "<0.8 kg",
+       "0.8-1.2 kg",
+       "1.2-1.8 kg",
+       "1.8 kg and above"
       ],
       "help": "Whole-fish weight"
      },
@@ -16700,7 +16711,7 @@
        "Cod",
        "Blue whiting",
        "Tilapia",
-       "Mixed white fish",
+       "Mixed whitefish",
        "Salmon"
       ],
       "required": true
@@ -16828,11 +16839,11 @@
       "label": "Size band",
       "type": "select",
       "options": [
-       "<0.3 kg",
-       "0.3-1 kg",
+       "200-300 g",
+       "300-500 g",
        "1-2 kg",
-       "2-4 kg",
-       ">4 kg"
+       "2-3 kg",
+       "3 kg and above"
       ],
       "help": "Whole-fish weight"
      },
@@ -19045,7 +19056,7 @@
       "options": [
        "Bare-root",
        "Container (potted)",
-       "Root-ball (B&B)",
+       "Root-balled (B&B)",
        "Air-pot"
       ],
       "required": true
@@ -19431,7 +19442,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Pre-inoculated",
+       "Inoculated",
        "Inoculant included"
       ],
       "help": "N-fixing legume"
@@ -19507,7 +19518,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Insecticide-treated",
        "Inoculated (Rhizobium)"
       ]
@@ -19614,7 +19625,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Primed",
        "Coated / pelleted"
       ]
@@ -19684,7 +19695,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Insecticide-treated",
        "Fungicide + insecticide"
       ]
@@ -19745,7 +19756,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Primed",
        "Coated / pelleted",
        "Film-coated"
@@ -19857,7 +19868,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Pre-inoculated",
+       "Inoculated",
        "Inoculant included"
       ]
      },
@@ -19922,7 +19933,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated (dressed)"
+       "Fungicide-dressed"
       ]
      },
      {
@@ -19977,7 +19988,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Primed",
        "Coated / pelleted"
       ]
@@ -20036,7 +20047,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Insecticide-treated",
        "Fungicide + insecticide"
       ]
@@ -20099,7 +20110,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated (dressed)",
+       "Fungicide-dressed",
        "Fungicide + insecticide"
       ]
      },
@@ -20169,7 +20180,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Insecticide-treated",
        "Fungicide + insecticide"
       ]
@@ -20270,7 +20281,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Coated / pelleted"
       ]
      },
@@ -20441,7 +20452,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Fungicide + insecticide",
        "Film-coated"
       ]
@@ -20512,7 +20523,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Pre-inoculated",
+       "Inoculated",
        "Inoculant included"
       ]
      },
@@ -20522,7 +20533,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Fungicide + insecticide"
       ]
      }
@@ -20623,7 +20634,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated (dressed)"
+       "Fungicide-dressed"
       ]
      },
      {
@@ -20688,7 +20699,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Primed"
       ]
      },
@@ -20758,7 +20769,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Insecticide-treated",
        "Inoculated (Rhizobium)"
       ]
@@ -20812,7 +20823,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Pre-inoculated",
+       "Inoculated",
        "Inoculant included"
       ]
      }
@@ -20856,7 +20867,7 @@
       "type": "select",
       "options": [
        "Untreated",
-       "Fungicide-treated",
+       "Fungicide-dressed",
        "Coated / pelleted"
       ]
      }
@@ -24288,7 +24299,7 @@
        "Conveyor chain",
        "Sieve / grid",
        "Blades / knives",
-       "Hydraulic part",
+       "Hydraulics",
        "Bearing / bushing"
       ],
       "required": true
@@ -24430,7 +24441,7 @@
        "Metering unit / roller",
        "Chain & sprocket",
        "Pneumatic fan / hose",
-       "Row unit parts"
+       "Row units"
       ],
       "required": true
      },
@@ -24575,7 +24586,7 @@
        "Rake",
        "Round baler",
        "Square baler",
-       "Baler-wrapper combi",
+       "Baler-wrapper combination",
        "Self-propelled forage harvester",
        "Pull-type forage harvester",
        "Bale wrapper",
@@ -25293,7 +25304,7 @@
        "Meat grinder / mincer",
        "Bowl cutter",
        "Mixer / blender",
-       "Bandsaw",
+       "Band saw",
        "Slicer",
        "Sausage filler / stuffer",
        "Clipper / linker",
@@ -25760,7 +25771,7 @@
        "Pallet racking",
        "Weighbridge / scale",
        "Bagging & palletizing",
-       "Dock leveler",
+       "Dock leveller",
        "Cold room / chiller",
        "Grain silo",
        "Ventilation / aeration"

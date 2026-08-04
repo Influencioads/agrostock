@@ -42,9 +42,10 @@ export function BidPanel({ slug }: { slug: string }) {
 
   // No minimum raise: any offer is accepted, above or below the current top, and
   // the highest one wins at close. The field opens at whatever the lot stands at
-  // and the ± buttons nudge by 1% of it — nothing enforces that step.
+  // — or at YOUR standing offer once you have one, since one account holds a
+  // single revisable offer — and the ± buttons nudge by 1% of the lot price.
   const currentCents = auction?.highestCents ?? auction?.startBidCents ?? 0;
-  const value = amount ?? currentCents / 100;
+  const value = amount ?? (auction?.standing?.yourMaxCents ?? currentCents) / 100;
   const nudge = Math.max(0.01, Math.round(currentCents * 0.01) / 100);
   const unit = unitSuffix(auction?.unit, t);
   const isOwner = auction?.isOwner ?? false;

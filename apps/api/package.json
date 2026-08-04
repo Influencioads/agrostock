@@ -25,6 +25,7 @@
     "backfill:email-verified": "ts-node prisma/backfill-email-verified.ts",
     "prewarm:text": "ts-node prisma/prewarm-text.ts",
     "backfill:taxonomy": "ts-node prisma/backfill-taxonomy.ts",
+    "backfill:product-leaf": "ts-node prisma/backfill-product-leaf.ts",
     "import:ru-markets": "ts-node prisma/import-ru-markets.ts"
   },
   "dependencies": {

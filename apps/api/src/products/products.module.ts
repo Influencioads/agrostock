@@ -26,7 +26,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, toUnit, type AttrField } from '@agrotraders/types';
 import { commonWord } from '@agrotraders/i18n/notifications';
 import { FxModule, FxService } from '../fx/fx.module';
-import { CatalogModule, CategoriesService } from '../catalog/catalog.module';
+import { CatalogModule, CategoriesService, MAX_TAXONOMY_DEPTH } from '../catalog/catalog.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -464,14 +464,20 @@ export class ProductsService {
     const and = [...placeConds, ...attrConds];
     if (and.length) where.AND = and;
 
-    const orderBy: Prisma.ProductOrderByWithRelationInput =
+    // Every sort key here has ties — a batch import shares a `createdAt` to the
+    // millisecond, and price/rating repeat constantly. Postgres does not promise
+    // a stable order within a tie, so page 2 could re-serve a row from page 1 and
+    // silently drop another. `id` breaks every tie and makes paging total.
+    const orderBy: Prisma.ProductOrderByWithRelationInput[] = [
       q.sort === 'price_asc'
         ? { priceCents: 'asc' }
         : q.sort === 'price_desc'
           ? { priceCents: 'desc' }
           : q.sort === 'rating'
             ? { ratingAvg: 'desc' }
-            : { createdAt: 'desc' };
+            : { createdAt: 'desc' },
+      { id: 'desc' },
+    ];
 
     // Pagination: default 24/page, hard-capped at 60 so a rogue pageSize can't
     // ask Postgres for the entire table.
@@ -494,12 +500,76 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
     const fields = await this.categories.fieldMap(locale);
+    const similar = total === 0 && page === 1 ? await this.similarTo(q, where, locale, fields) : null;
     return {
       items: items.map((p) => localizeProductWithSpecs(p, fields, locale)),
       total,
       page,
       pageSize,
+      ...(similar ?? {}),
     };
+  }
+
+  /**
+   * What to show when a drill-down comes back empty.
+   *
+   * Sellers list at whatever depth describes their goods — often level 2 or 3 —
+   * while a buyer can drill to level 5. Those two meeting on the exact same node
+   * is the lucky case, not the normal one, and the unlucky case used to be a
+   * blank grid. So: climb the selected node's ancestors until one has listings,
+   * and hand those back as `similar`, labelled with how far up we had to go.
+   *
+   * Every other filter in the query is kept — a "similar" result the buyer
+   * excluded on price or country is not similar, it is noise. Only the taxonomy
+   * narrowing is relaxed, one level at a time, closest match first.
+   */
+  private async similarTo(
+    q: Record<string, string | undefined>,
+    where: Prisma.ProductWhereInput,
+    locale: Lang,
+    fields: Map<string, AttrField[]>,
+  ) {
+    const node = await this.findSubcategory(q);
+    if (!node) return null;
+
+    // Ancestors, nearest first. Bounded by the depth cap.
+    let cursor: { id: string; name: string; parentId: string | null } | null = node;
+    const chain: { id: string; name: string; parentId: string | null }[] = [];
+    for (let hop = 0; cursor?.parentId && hop < MAX_TAXONOMY_DEPTH; hop++) {
+      cursor = await this.prisma.subcategory.findUnique({
+        where: { id: cursor.parentId },
+        select: { id: true, name: true, parentId: true },
+      });
+      if (cursor) chain.push(cursor);
+    }
+
+    for (const ancestor of chain) {
+      const relaxed: Prisma.ProductWhereInput = {
+        ...where,
+        subcategoryId: { in: await this.subcategoryBranchIds(ancestor.id, node.categoryId) },
+      };
+      const items = await this.prisma.product.findMany({
+        where: relaxed,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: 12,
+        include: {
+          ...productTaxonInclude(locale),
+          seller: { select: { id: true, name: true } },
+          market: { select: { id: true, slug: true, name: true, city: true, country: true, flag: true } },
+          translations: { where: { locale } },
+        },
+      });
+      if (!items.length) continue;
+      const label = await this.prisma.subcategory.findUnique({
+        where: { id: ancestor.id },
+        select: { name: true, translations: { where: { locale }, select: { name: true } } },
+      });
+      return {
+        similar: items.map((p) => localizeProductWithSpecs(p, fields, locale)),
+        similarFrom: { id: ancestor.id, name: label?.translations[0]?.name ?? label?.name ?? ancestor.name },
+      };
+    }
+    return null;
   }
 
   async findOne(slug: string, locale: Lang = 'en') {

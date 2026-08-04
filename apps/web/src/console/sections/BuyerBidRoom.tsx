@@ -38,12 +38,16 @@ function ago(iso: string, locale: string) {
  * Seller offers a price — any price. A reverse auction used to reject anything
  * that did not undercut the standing best; now the book simply ranks offers
  * cheapest-first and the buyer awards it, so the floor is shown as information,
- * not as a rule to clear.
+ * not as a rule to clear. Under the buyer's target, over it, either way: the
+ * number typed here is the number stored.
+ *
+ * One account holds one offer, so submitting again REVISES it — the field opens
+ * at the seller's standing price rather than empty.
  */
 function SellerSubmitPanel({ buyerBid }: { buyerBid: ApiBuyerBidDetail }) {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [price, setPrice] = useState('');
+  const [price, setPrice] = useState(buyerBid.yourBestPriceCents != null ? String(buyerBid.yourBestPriceCents / 100) : '');
   const [qty, setQty] = useState(String(buyerBid.qtyValue));
   const [eta, setEta] = useState('');
   const [message, setMessage] = useState('');
@@ -62,7 +66,8 @@ function SellerSubmitPanel({ buyerBid }: { buyerBid: ApiBuyerBidDetail }) {
       qc.invalidateQueries({ queryKey: ['my-seller-bids'] });
       qc.invalidateQueries({ queryKey: ['buyer-bid-detail', buyerBid.id] });
       qc.invalidateQueries({ queryKey: ['buyer-bid-book', buyerBid.id] });
-      setPrice(''); setEta(''); setMessage(''); setError('');
+      // The price stays: it is now this seller's standing offer, ready to revise.
+      setError('');
     },
     onError: (e) => setError(errMessage(e, t('console.seller.submitQuoteError'))),
   });
