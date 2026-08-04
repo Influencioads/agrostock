@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
-import { countryFlag, countryLabel, findCountry } from '@agrotraders/api-client';
-import { comparableUnits, convertQty, isDeliveryOption, toUnit, unitSuffix } from '@agrotraders/types';
+import { countryFlag, countryLabel, findCountry, type OrderDelivery } from '@agrotraders/api-client';
+import { comparableUnits, convertQty, isDeliveryOption, parseQtyIn, toUnit, unitSuffix } from '@agrotraders/types';
 import { api, toCardProduct } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
@@ -12,6 +12,7 @@ import { chatBus } from '../chat/chatBus';
 import { AuctionRoom } from '../components/site/AuctionRoom';
 import { ProductCard } from '../components/site/ProductCard';
 import { ReviewList } from '../console/components/ReviewList';
+import { errMessage } from '../console/sections/order-parts';
 import { resolveProductLoad } from './productResolution';
 import { ErrorState } from '../components/ErrorState';
 import { CountrySelect } from '@agrotraders/ui/ProductForm';
@@ -37,6 +38,9 @@ export function ProductPage() {
   // at all before, which left dispatch and every hire guessing at `buyer.country`.
   // Defaults to the buyer's own registered place, so the common case is one glance.
   const [delivery, setDelivery] = useState<{ city: string; country: string } | null>(null);
+  // Street + postcode, typed per order — a buyer's warehouse is not their profile
+  // address, so there is nothing to seed this from.
+  const [address, setAddress] = useState({ line: '', postcode: '' });
   const [brokenPhotos, setBrokenPhotos] = useState<Set<string>>(() => new Set());
 
   const markBrokenPhoto = (src: string) => {
@@ -76,6 +80,25 @@ export function ProductPage() {
   const deliverTo =
     delivery ?? { city: myProfile?.originCity ?? myProfile?.location ?? '', country: findCountry(ownCountry)?.name ?? ownCountry };
 
+  // Metrics the buyer may type their quantity in: every mass unit for a listing
+  // priced by mass, and only its own for one sold by the bag or the piece —
+  // there is no honest conversion from a count to a weight.
+  const listingUnit = toUnit(product?.unit);
+  const unitChoices = comparableUnits(listingUnit);
+  const countBased = unitChoices.length === 1;
+  const buyerUnit = qtyUnit ? toUnit(qtyUnit) : listingUnit;
+  const converted = convertQty(qty, buyerUnit, listingUnit);
+  const equivalent =
+    buyerUnit !== listingUnit && converted !== undefined ? Math.round(converted * 1000) / 1000 : undefined;
+  // The listing's minimum order, restated in the metric the buyer is typing in.
+  // The API rejects anything under it, so the field never offers a quantity that
+  // cannot be ordered — it used to be printed next to the price and nothing else.
+  const minQty = Math.max(
+    Math.round((convertQty(parseQtyIn(product?.moq, listingUnit) ?? 0, listingUnit, buyerUnit) ?? 0) * 1000) / 1000,
+    countBased ? 1 : 0.01,
+  );
+  useEffect(() => setQty((q) => Math.max(q, minQty)), [minQty]);
+
   // Category-specific attributes captured on this listing, rendered by the API:
   // label and value both arrive localized and formatted, because the field
   // definitions live in the DB and this page has no category tree loaded.
@@ -114,6 +137,14 @@ export function ProductPage() {
     enabled: !!apiProduct?.id,
   });
 
+  // Where the goods go — the same shape for a purchase and for an enquiry.
+  const destination: OrderDelivery = {
+    deliveryCity: deliverTo.city || undefined,
+    deliveryCountry: deliverTo.country || undefined,
+    deliveryAddress: address.line.trim() || undefined,
+    deliveryPostcode: address.postcode.trim() || undefined,
+  };
+
   const place = useMutation({
     mutationFn: () => {
       if (!product) throw new Error('Product is not available');
@@ -121,12 +152,13 @@ export function ProductPage() {
         productSlug: product.id,
         qty,
         unit: qtyUnit || undefined,
-        deliveryCity: deliverTo.city || undefined,
-        deliveryCountry: deliverTo.country || undefined,
+        ...destination,
       });
     },
     onSuccess: (o) => setNotice(`✓ ${t('page.product.orderPlaced', { ref: (o as { reference: string }).reference })}`),
-    onError: () => setNotice(t('page.product.orderError')),
+    // Show WHY it failed — a rejection the buyer can act on (under the minimum
+    // order, not enough stock) was flattened into one generic sentence.
+    onError: (e) => setNotice(errMessage(e, t('page.product.orderError'))),
   });
 
   /**
@@ -145,12 +177,12 @@ export function ProductPage() {
         productSlug: product.id,
         qty,
         unit: qtyUnit || undefined,
-        deliveryCity: deliverTo.city || undefined,
-        deliveryCountry: deliverTo.country || undefined,
+        ...destination,
       });
     },
     onSuccess: (o) => setNotice(`✓ ${t('page.product.quoteRequested', { ref: (o as { reference: string }).reference })}`),
-    onError: (e) => setNotice(e instanceof Error && e.message === 'Sign in required' ? '' : t('page.product.orderError')),
+    onError: (e) =>
+      setNotice(e instanceof Error && e.message === 'Sign in required' ? '' : errMessage(e, t('page.product.orderError'))),
   });
 
   const onBuy = () => {
@@ -186,17 +218,6 @@ export function ProductPage() {
 
   // Live auctions get the bespoke bidding room (big countdown, open bid history).
   if (product.auction) return <AuctionRoom slug={id!} product={product} />;
-
-  // Metrics the buyer may type their quantity in: every mass unit for a listing
-  // priced by mass, and only its own for one sold by the bag or the piece —
-  // there is no honest conversion from a count to a weight.
-  const listingUnit = toUnit(product.unit);
-  const unitChoices = comparableUnits(listingUnit);
-  const countBased = unitChoices.length === 1;
-  const buyerUnit = qtyUnit ? toUnit(qtyUnit) : listingUnit;
-  const converted = convertQty(qty, buyerUnit, listingUnit);
-  const equivalent =
-    buyerUnit !== listingUnit && converted !== undefined ? Math.round(converted * 1000) / 1000 : undefined;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
@@ -414,12 +435,12 @@ export function ProductPage() {
               <div className="flex gap-2">
                 <input
                   type="number"
-                  min={countBased ? 1 : 0.01}
+                  min={minQty}
                   step={countBased ? 1 : 'any'}
                   value={qty}
                   onChange={(e) => {
                     const nextQty = Number(e.target.value);
-                    setQty(countBased ? Math.max(1, Math.trunc(nextQty)) : Math.max(0.01, nextQty));
+                    setQty(Math.max(minQty, countBased ? Math.trunc(nextQty) : nextQty));
                   }}
                   className="h-10 w-full min-w-0 rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
                 />
@@ -465,6 +486,31 @@ export function ProductPage() {
                 country={deliverTo.country || null}
                 onChange={(city) => setDelivery({ ...deliverTo, city })}
               />
+            </div>
+
+            {/* The street. A town name routes a shipment to the right city and
+                leaves the driver to find the gate — dispatch needs a line it can
+                deliver against. Kept per order: a trader's warehouse changes. */}
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.deliveryAddress')}</span>
+                <input
+                  value={address.line}
+                  onChange={(e) => setAddress({ ...address, line: e.target.value })}
+                  placeholder={t('page.product.deliveryAddressPh')}
+                  maxLength={240}
+                  className="h-10 w-full min-w-0 rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.postcode')}</span>
+                <input
+                  value={address.postcode}
+                  onChange={(e) => setAddress({ ...address, postcode: e.target.value })}
+                  maxLength={24}
+                  className="h-10 w-full min-w-0 rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
+                />
+              </label>
             </div>
 
             <div className="mt-3 space-y-2">

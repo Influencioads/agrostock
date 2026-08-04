@@ -9,6 +9,7 @@ import { orderLabel, orderTone } from '../lib';
 import { OrderDrawer, OrderStepper, errMessage, useOrderInvalidation } from './order-parts';
 import { OrderReviewButtons } from '../components/OrderReviewButtons';
 import { ErrorState } from '../../components/ErrorState';
+import { chatBus } from '../../chat/chatBus';
 
 export function BuyerOrders() {
   const { t } = useI18n();
@@ -83,6 +84,19 @@ export function BuyerOrders() {
                   <Button variant="outline" size="sm" onClick={() => setOpenId(o.id)}>
                     {t('console.order.details')} {o.status === 'in_transit' || o.status === 'dispatched' ? t('console.order.otpSuffix') : ''}
                   </Button>
+                  {/* Confirming details, chasing an invoice, agreeing a delivery
+                      slot — all of it happened off-platform because the order had
+                      no way through to the seller. The reference rides in on the
+                      draft, since a DM thread is per pair and not per order. */}
+                  {o.seller?.id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => chatBus.openCommunityDm(o.seller!.id!, o.seller!.name ?? '', t('console.order.chatDraft', { ref: o.reference }))}
+                    >
+                      {t('console.order.messageSeller')}
+                    </Button>
+                  )}
                   {o.status === 'delivered' && <OrderReviewButtons orderId={o.id} roles={['seller', 'product']} />}
                   {disputable && (
                     <Button

@@ -986,6 +986,9 @@ export interface ApiOrder {
   /** Destination, named by the buyer at checkout. See `orderLogistics`. */
   deliveryCity?: string | null;
   deliveryCountry?: string | null;
+  /** The street the carrier delivers to — a town name is not an address. */
+  deliveryAddress?: string | null;
+  deliveryPostcode?: string | null;
   dispatchMode?: ApiDispatchMode | null;
   transporterName?: string | null;
   transporterPhone?: string | null;
@@ -1035,6 +1038,23 @@ export function orderLogistics(o: ApiOrder) {
       servesCountry: [...new Set([fromCountry, toCountry].filter(Boolean))].join(','),
     },
   };
+}
+
+/** What a buyer names at checkout, and what every order-creating call accepts. */
+export interface OrderDelivery {
+  deliveryCity?: string;
+  deliveryCountry?: string;
+  deliveryAddress?: string;
+  deliveryPostcode?: string;
+}
+
+/**
+ * The destination as one human line — street, city, postcode, country. Empty
+ * when the order predates address capture (the field is optional, and the
+ * enquiry path can be raised without one).
+ */
+export function deliveryAddressLine(o: ApiOrder): string {
+  return [o.deliveryAddress, o.deliveryCity, o.deliveryPostcode, o.deliveryCountry].filter(Boolean).join(', ');
 }
 
 /** The happy path, in order — drives the progress steppers on web and mobile. */
@@ -1788,10 +1808,10 @@ export function createApiClient(opts: ApiClientOptions) {
        * their own key to make a specific checkout attempt replay-safe.
        */
       /** `unit` is the metric the buyer typed in; omit it to mean the listing's own. */
-      place: (body: { productSlug: string; qty: number; unit?: string; deliveryCity?: string; deliveryCountry?: string; idempotencyKey?: string }) =>
+      place: (body: { productSlug: string; qty: number; unit?: string; idempotencyKey?: string } & OrderDelivery) =>
         post<ApiOrder>('/orders', { ...body, idempotencyKey: body.idempotencyKey ?? newIdempotencyKey() }),
       /** Step 1 of the lifecycle: ask the seller for terms. */
-      enquiry: (body: { productSlug: string; qty: number; unit?: string; note?: string; deliveryCity?: string; deliveryCountry?: string }) =>
+      enquiry: (body: { productSlug: string; qty: number; unit?: string; note?: string } & OrderDelivery) =>
         post<ApiOrder>('/orders/enquiry', body),
       /** Step 2: seller answers with a price. */
       respond: (id: string, body: { unitPriceCents?: number; amountCents?: number; note?: string }) =>

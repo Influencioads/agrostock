@@ -226,12 +226,14 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
 }
 
 /* ── Direct message (1:1) room ────────────────────────────────────── */
-function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: string }; socket: Socket | null; onBack: () => void; s: S }) {
+function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: string; draft?: string }; socket: Socket | null; onBack: () => void; s: S }) {
   const { t, lang } = useI18n();
   const { user } = useAuth();
   const [messages, setMessages] = useState<AnyRec[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [text, setText] = useState('');
+  // Seeded from the opener (an order card passes "About order #…"), so the
+  // subject rides in with the first message — the thread itself has no context.
+  const [text, setText] = useState(peer.draft ?? '');
   const listRef = useRef<FlatList<AnyRec>>(null);
 
   useEffect(() => {
@@ -453,7 +455,7 @@ export function Community() {
   const goBack = () => (nav.canGoBack() ? nav.goBack() : nav.navigate('App'));
   const [tab, setTab] = useState<Tab>('feed');
   const [activeGroup, setActiveGroup] = useState<AnyRec | null>(null);
-  const [activeDm, setActiveDm] = useState<{ userId: string; name: string } | null>(null);
+  const [activeDm, setActiveDm] = useState<{ userId: string; name: string; draft?: string } | null>(null);
   const [creatingReq, setCreatingReq] = useState(false);
   const { socket } = useChatSocket('/community', !!user);
 
@@ -461,12 +463,12 @@ export function Community() {
   useEffect(() => {
     if (route.params?.dmUserId) {
       setActiveGroup(null);
-      setActiveDm({ userId: route.params.dmUserId, name: route.params.dmName ?? s.chat });
+      setActiveDm({ userId: route.params.dmUserId, name: route.params.dmName ?? s.chat, draft: route.params.dmDraft });
     }
     // Only route-param changes should re-open the DM; `s.chat` is a static
     // fallback label and must not re-trigger this effect on a locale switch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.params?.dmUserId, route.params?.dmName]);
+  }, [route.params?.dmUserId, route.params?.dmName, route.params?.dmDraft]);
 
   const feed = useQuery({ queryKey: ['community-feed', lang], queryFn: () => api.community.feed(), enabled: tab === 'feed' });
   const groups = useQuery({ queryKey: ['community-groups', lang], queryFn: () => api.community.groups(), enabled: tab === 'groups' });
@@ -489,7 +491,8 @@ export function Community() {
     [s],
   );
 
-  if (activeDm) return <DmRoom peer={activeDm} socket={socket} onBack={() => setActiveDm(null)} s={s} />;
+  // Keyed: switching peers must remount, or the draft would carry over.
+  if (activeDm) return <DmRoom key={activeDm.userId} peer={activeDm} socket={socket} onBack={() => setActiveDm(null)} s={s} />;
   if (activeGroup) return <Room group={activeGroup} socket={socket} onBack={() => setActiveGroup(null)} s={s} />;
   if (creatingReq) return <RequirementForm onDone={() => setCreatingReq(false)} s={s} />;
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -6,9 +6,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiProduct } from '@agrotraders/api-client';
-import { unitSuffix } from '@agrotraders/types';
+import { parseQtyIn, toUnit, unitSuffix } from '@agrotraders/types';
 import { api } from '../../lib/api';
-import { AppBar, Button, KeyValue, SkeletonRows, Txt } from '../../ui';
+import { errMessage } from '../../lib/format';
+import { AppBar, Button, Input, KeyValue, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -27,13 +28,17 @@ export function Checkout() {
   const { t, lang } = useI18n();
   const { fmtPrice } = useCurrency();
   const slug = params?.slug;
-  const [qty, setQty] = useState(1);
+  // Seeded from the listing screen's stepper — the buyer already picked both.
+  const [qty, setQty] = useState(params?.qty ?? 1);
   const { data: p, isLoading } = useQuery<ApiProduct>({ queryKey: ['product', slug], queryFn: () => api.products.get(slug!), enabled: !!slug });
 
   // Where the goods are going. The order had no destination at all before, which
   // left dispatch and every hire guessing at the buyer's country. Seeded from the
   // buyer's own registered place, so the usual case needs no input.
   const [delivery, setDelivery] = useState<{ city: string; country: string } | null>(null);
+  // Street + postcode, typed per order — a buyer's warehouse is not their
+  // profile address, so there is nothing to seed these from.
+  const [address, setAddress] = useState({ line: '', postcode: '' });
   const [citySearch, setCitySearch] = useState('');
   const { data: myProfile } = useQuery({ queryKey: ['my-profile'], queryFn: () => api.me.profile(), staleTime: 300e3 });
   const to =
@@ -53,12 +58,22 @@ export function Checkout() {
       api.orders.place({
         productSlug: slug!,
         qty,
+        unit: params?.unit,
         deliveryCity: to.city || undefined,
         deliveryCountry: to.country || undefined,
+        deliveryAddress: address.line.trim() || undefined,
+        deliveryPostcode: address.postcode.trim() || undefined,
       }),
     onSuccess: () => { Alert.alert(t('pubX.checkout.placedTitle'), t('pubX.checkout.placedBody')); nav.navigate('App'); },
-    onError: () => Alert.alert(t('pubX.checkout.failTitle'), t('pubX.checkout.failBody')),
+    // Show WHY it failed — under the listing's minimum order, out of stock — not
+    // one generic sentence for every rejection.
+    onError: (e) => Alert.alert(t('pubX.checkout.failTitle'), errMessage(e, t('pubX.checkout.failBody'))),
   });
+
+  // The quantity goes up in the listing's own unit (no unit picker here), so the
+  // listing's minimum order is the floor for the stepper.
+  const minQty = Math.max(parseQtyIn(p?.moq, toUnit(p?.unit)) ?? 0, 1);
+  useEffect(() => setQty((q) => Math.max(q, minQty)), [minQty]);
 
   const body = () => {
     if (!slug) return <Txt variant="muted" style={{ padding: space.lg }}>{t('pubX.checkout.nothing')}</Txt>;
@@ -70,7 +85,7 @@ export function Checkout() {
             product={p}
             right={
               <View style={s.stepper}>
-                <Pressable onPress={() => setQty((q) => Math.max(1, q - 1))} hitSlop={6} style={s.stepBtn}>
+                <Pressable onPress={() => setQty((q) => Math.max(minQty, q - 1))} hitSlop={6} style={s.stepBtn}>
                   <Ionicons name="remove" size={15} color={C.ink} />
                 </Pressable>
                 <Text style={s.stepValue}>{qty}</Text>
@@ -106,6 +121,21 @@ export function Checkout() {
               loading={citiesLoading}
               disabled={!to.country}
               emptyLabel={t('auth.signUp.noCities')}
+            />
+            {/* The street. A town name routes the shipment to the right city and
+                leaves the driver to find the gate. */}
+            <Input
+              label={t('pubX.checkout.deliveryAddress')}
+              placeholder={t('pubX.checkout.deliveryAddressPh')}
+              value={address.line}
+              onChangeText={(line) => setAddress({ ...address, line })}
+              maxLength={240}
+            />
+            <Input
+              label={t('pubX.checkout.postcode')}
+              value={address.postcode}
+              onChangeText={(postcode) => setAddress({ ...address, postcode })}
+              maxLength={24}
             />
           </View>
         </View>

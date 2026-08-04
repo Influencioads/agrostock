@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Input, Modal } from '@agrotraders/ui';
-import { nextStatusFor, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
+import { canCancel, nextStatusFor, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { orderLabel, orderTone } from '../lib';
@@ -155,6 +155,11 @@ export function SellerOrders() {
                   const canInvoice = ['dispatched', 'in_transit', 'delivered'].includes(o.status);
                   // Source transport/crew any time before the order is dispatched.
                   const canArrange = ['processing', 'paid', 'packed'].includes(o.status);
+                  // The seller could only ever move an order FORWARD: the API has
+                  // allowed them to cancel an enquiry/quote/processing order all
+                  // along (releasing stock and refunding escrow), the console just
+                  // never offered it. `nextStatusFor` filters the exit paths out.
+                  const cancellable = canCancel(o.status, 'seller');
                   return (
                     <tr key={o.id} className="border-b border-surface-border/70 last:border-0">
                       <td className="px-5 py-3">
@@ -189,8 +194,20 @@ export function SellerOrders() {
                             </Button>
                           )}
                           {canInvoice && <Button variant="outline" size="sm" onClick={() => setInvoiceFor(o)}>{t('console.order.invoice')}</Button>}
+                          {cancellable && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={advance.isPending}
+                              onClick={() => {
+                                if (window.confirm(t('console.order.confirmCancel'))) advance.mutate({ id: o.id, status: 'cancelled' });
+                              }}
+                            >
+                              {t('console.order.cancelOrder')}
+                            </Button>
+                          )}
                           {o.status === 'delivered' && <OrderReviewButtons orderId={o.id} roles={['buyer']} />}
-                          {!next && !canArrange && !canInvoice && o.status !== 'enquiry' && (
+                          {!next && !canArrange && !canInvoice && !cancellable && o.status !== 'enquiry' && (
                             <span className="text-xs text-ink-soft">—</span>
                           )}
                         </div>

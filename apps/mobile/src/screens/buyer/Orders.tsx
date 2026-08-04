@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { canCancel, canDispute, nextStatusFor, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
@@ -8,12 +10,14 @@ import { Badge, Button, Card, EmptyState, ErrorState, Row, Screen, SkeletonRows,
 import { C } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
+import type { RootStackParamList } from '../../navigation/types';
 import { OrderDetailSheet, OrderSteps, useOrderInvalidation } from '../components/order-parts';
 import { OrderReviewButton } from '../components/ReviewSheet';
 
 export function BuyerOrders() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [openId, setOpenId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const invalidate = useOrderInvalidation();
@@ -90,6 +94,24 @@ export function BuyerOrders() {
                   variant="outline"
                   onPress={() => setOpenId(o.id)}
                 />
+                {/* Confirming details, chasing an invoice, agreeing a delivery
+                    slot — all of it happened off-platform because the order had
+                    no way through to the seller. The reference rides in on the
+                    draft, since a DM thread is per pair and not per order. */}
+                {!!o.seller?.id && (
+                  <Button
+                    title={t('buyerX.orders.messageSeller')}
+                    size="sm"
+                    variant="outline"
+                    onPress={() =>
+                      nav.navigate('Community', {
+                        dmUserId: o.seller!.id!,
+                        dmName: o.seller!.name ?? '',
+                        dmDraft: t('buyerX.orders.chatDraft', { ref: o.reference }),
+                      })
+                    }
+                  />
+                )}
                 {disputable && (
                   <Button
                     title={t('buyerX.orders.openDispute')}

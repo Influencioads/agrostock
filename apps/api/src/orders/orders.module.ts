@@ -15,7 +15,7 @@ import {
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { DispatchMode, OrderEventType, OrderStatus, Prisma } from '@prisma/client';
 import { IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { comparableUnits, convertQty, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
+import { comparableUnits, convertQty, parseQtyIn, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
@@ -39,8 +39,18 @@ const ref = () => secureReference('AG');
  *
  * Rounded to 3 decimals: 500 KG → 0.5 MT is exact, but plenty of pairs (TON→MT)
  * are not, and an unrounded float leaks into the display string.
+ *
+ * Also the one place the listing's minimum order is enforced. `moq` was shown to
+ * the buyer on every surface and checked on none, so any smaller quantity was
+ * accepted and priced. Both order-creating paths (enquiry and buy-now) come
+ * through here, so one guard covers them.
  */
-function qtyInProductUnit(qty: number, buyerUnit: string | undefined, productUnit: string): number {
+function qtyInProductUnit(
+  qty: number,
+  buyerUnit: string | undefined,
+  productUnit: string,
+  moq?: string | null,
+): number {
   const targetUnit = toUnit(productUnit);
   const sourceUnit = buyerUnit ? toUnit(buyerUnit) : targetUnit;
   const converted = convertQty(qty, sourceUnit, targetUnit);
@@ -50,7 +60,14 @@ function qtyInProductUnit(qty: number, buyerUnit: string | undefined, productUni
   if (comparableUnits(targetUnit).length === 1 && !Number.isInteger(converted)) {
     throw new BadRequestException(`Quantity in ${targetUnit} must be a whole number.`);
   }
-  return Math.round(converted * 1000) / 1000;
+  // Compare the rounded value, so a quantity that lands exactly on the minimum
+  // after conversion (1 MT typed as 1.102 TON) is not rejected by float dust.
+  const rounded = Math.round(converted * 1000) / 1000;
+  const min = parseQtyIn(moq, targetUnit);
+  if (min !== undefined && rounded < min) {
+    throw new BadRequestException(`This listing has a minimum order of ${min} ${targetUnit}.`);
+  }
+  return rounded;
 }
 const otp = () => secureOtp();
 /** F36: wrong dispatch-OTP guesses allowed before the code locks. */
@@ -70,7 +87,18 @@ const usd = (cents: number) =>
 class DeliveryFields {
   @ApiProperty({ required: false, maxLength: 120 }) @IsOptional() @IsString() @MaxLength(120) deliveryCity?: string;
   @ApiProperty({ required: false, maxLength: 120 }) @IsOptional() @IsString() @MaxLength(120) deliveryCountry?: string;
+  /** The street the carrier delivers to — a town name is not an address. */
+  @ApiProperty({ required: false, maxLength: 240 }) @IsOptional() @IsString() @MaxLength(240) deliveryAddress?: string;
+  @ApiProperty({ required: false, maxLength: 24 }) @IsOptional() @IsString() @MaxLength(24) deliveryPostcode?: string;
 }
+
+/** The destination as stored — every order-creating path writes the same shape. */
+const deliveryOf = (dto: DeliveryFields) => ({
+  deliveryCity: dto.deliveryCity ?? null,
+  deliveryCountry: dto.deliveryCountry ?? null,
+  deliveryAddress: dto.deliveryAddress ?? null,
+  deliveryPostcode: dto.deliveryPostcode ?? null,
+});
 
 /**
  * The buyer's quantity, in whatever metric they picked on the listing. `unit`
@@ -331,7 +359,7 @@ export class OrdersService {
     // The unit was hardcoded 'MT' here and in place() no matter what the listing
     // was priced per, so a per-KG listing quoted a per-KG price against an "MT"
     // quantity. Everything is the LISTING's unit now.
-    const qty = qtyInProductUnit(dto.qty, dto.unit, product.unit);
+    const qty = qtyInProductUnit(dto.qty, dto.unit, product.unit, product.moq);
     const unit = toUnit(product.unit);
     const amountCents = Math.round(unitPriceCents * qty);
 
@@ -347,8 +375,7 @@ export class OrdersService {
           qtyValue: qty,
           qtyUnit: unit,
           note: dto.note,
-          deliveryCity: dto.deliveryCity ?? null,
-          deliveryCountry: dto.deliveryCountry ?? null,
+          ...deliveryOf(dto),
           productId: product.id,
           buyerId: buyer.id,
           sellerId: product.sellerId!,
@@ -416,7 +443,7 @@ export class OrdersService {
     // BL-15: block self-trade (a seller may also hold a buyer role).
     if (product.sellerId === buyerId) throw new BadRequestException('You cannot order your own listing.');
     const unitPriceCents = resolveUnitPriceCents(product);
-    const qty = qtyInProductUnit(dto.qty, dto.unit, product.unit);
+    const qty = qtyInProductUnit(dto.qty, dto.unit, product.unit, product.moq);
     const unit = toUnit(product.unit);
     const amountCents = Math.round(unitPriceCents * qty);
     // Stock is counted in whole units, so a fractional order holds the whole one
@@ -454,8 +481,7 @@ export class OrdersService {
             unitPriceCents,
             qtyValue: qty,
             qtyUnit: unit,
-            deliveryCity: dto.deliveryCity ?? null,
-            deliveryCountry: dto.deliveryCountry ?? null,
+            ...deliveryOf(dto),
             productId: product.id,
             buyerId,
             sellerId: product.sellerId!,

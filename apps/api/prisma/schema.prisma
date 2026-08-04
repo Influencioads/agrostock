@@ -798,6 +798,12 @@ model Order {
   /// the open orders too.
   deliveryCity    String?
   deliveryCountry String?
+  /// The street the goods actually go to. City and country alone route a
+  /// shipment to the right town and leave the driver to find the gate, so
+  /// dispatch never had a line it could deliver against. Free text like
+  /// `Market.address`: postal formats differ per country and nothing parses it.
+  deliveryAddress  String?
+  deliveryPostcode String?
 
   // Dispatch snapshot — populated for both platform and external dispatch.
   dispatchMode     DispatchMode?

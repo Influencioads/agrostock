@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import {
+  deliveryAddressLine,
   ORDER_STEPS,
   orderLogistics,
   type ApiDirectoryEntry,
@@ -279,6 +280,9 @@ export function DispatchModal({ order, open, onClose }: { order: ApiOrderDetail;
 export function ShipmentFacts({ order }: { order: ApiOrderDetail }) {
   const { t } = useI18n();
   const rows: [string, string | null | undefined][] = [
+    // First: whoever reads this panel — buyer, seller, dispatcher — is looking
+    // for where the goods actually go. It was captured and never shown.
+    [t('console.order.destination'), deliveryAddressLine(order) || null],
     [t('console.order.carrier'), order.transporterName],
     [t('console.order.phone'), order.transporterPhone],
     [t('console.order.vehicle'), order.vehiclePlate],
@@ -296,7 +300,9 @@ export function ShipmentFacts({ order }: { order: ApiOrderDetail }) {
       {shown.map(([k, v]) => (
         <div key={k} className="flex justify-between gap-3 border-b border-surface-border/60 py-1 text-sm">
           <dt className="text-ink-soft">{k}</dt>
-          <dd className="truncate font-semibold text-ink">{v}</dd>
+          {/* Wraps rather than truncates: an address is the one value here that
+              is a sentence, and half of it is worse than two lines. */}
+          <dd className="min-w-0 break-words text-end font-semibold text-ink">{v}</dd>
         </div>
       ))}
     </dl>

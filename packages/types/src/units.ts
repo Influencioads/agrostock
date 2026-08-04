@@ -90,6 +90,24 @@ export function convertQty(qty: number, from: ProductUnit, to: ProductUnit): num
   return a && b ? (qty * a) / b : undefined;
 }
 
+/**
+ * The number inside a stored quantity string (`'25 MT'`, `'1,000 kg'`, `'25'`),
+ * restated in `targetUnit`. `Product.moq` and `Product.qty` are free text, so
+ * the unit is read back out of the string and only falls back to `targetUnit`
+ * when it is absent or unrecognised — the seller forms write
+ * `<number> <listing unit>`, but seeded and hand-edited rows carry anything.
+ *
+ * Digits are extracted the same way the seller form's `bareNumber` strips them,
+ * so a value survives a write/read round trip. `undefined` when there is no
+ * usable number, or when the two units don't convert (a count against a mass).
+ */
+export function parseQtyIn(raw: string | null | undefined, targetUnit: ProductUnit): number | undefined {
+  if (!raw) return undefined;
+  const value = Number(String(raw).replace(/[^\d.]/g, ''));
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  return convertQty(value, normalizeUnit(raw) ?? targetUnit, targetUnit);
+}
+
 /** Every unit a quantity in `unit` can be restated in — always includes itself. */
 export function comparableUnits(unit: ProductUnit): ProductUnit[] {
   if (!UNIT_KG[unit]) return [unit];

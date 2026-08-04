@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, countryLabel, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
-import { comparableUnits, convertQty, toUnit, unitSuffix } from '@agrotraders/types';
+import { comparableUnits, convertQty, parseQtyIn, toUnit, unitSuffix } from '@agrotraders/types';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -14,7 +14,6 @@ import { C, font, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { AuctionRoom } from './AuctionRoom';
 import { ProductCard, stockLabel } from '../components';
-import { useOrderInvalidation } from '../components/order-parts';
 import { useBasket } from '../../basket/BasketContext';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
@@ -103,18 +102,19 @@ export function ProductDetail() {
     queryFn: () => api.reviews.forProduct(p!.id),
     enabled: !!p?.id,
   });
-  const invalidateOrders = useOrderInvalidation();
-  const buy = useMutation({
-    mutationFn: () => api.orders.place({ productSlug: params.slug, qty, unit: qtyUnit || undefined }),
-    onSuccess: () => {
-      // MOB-02: refresh the Orders tab so the new order actually appears —
-      // previously nothing invalidated it and (with refetchOnWindowFocus off and
-      // no pull-to-refresh) a placed order never showed until an app restart.
-      invalidateOrders();
-      Alert.alert(t('pubX.pd.orderPlacedTitle'), t('pubX.pd.orderPlacedBody'));
-    },
-    onError: () => Alert.alert(t('pubX.pd.orderFailTitle'), t('pubX.pd.orderFailBody')),
-  });
+  // Metrics the buyer may count in: every mass unit for a listing priced by
+  // mass, only its own for one sold by the bag or the piece.
+  const listingUnit = toUnit(p?.unit);
+  const unitChoices = comparableUnits(listingUnit);
+  const buyerUnit = qtyUnit ? toUnit(qtyUnit) : listingUnit;
+  // The listing's minimum order, in the metric the buyer is counting in. The API
+  // rejects anything under it, so the stepper never offers a quantity that
+  // cannot be ordered — this used to be printed beside the price and nowhere else.
+  const minQty = Math.max(
+    Math.round((convertQty(parseQtyIn(p?.moq, listingUnit) ?? 0, listingUnit, buyerUnit) ?? 0) * 1000) / 1000,
+    1,
+  );
+  useEffect(() => setQty((q) => Math.max(q, minQty)), [minQty]);
 
   // F28: a failed load shows a retryable error instead of a spinner that never
   // clears (isLoading is false once the request settles, error or not).
@@ -130,7 +130,11 @@ export function ProductDetail() {
   // Live auctions get the bespoke bidding room (countdown, open bid history).
   if (p.isAuction) return <AuctionRoom slug={params.slug} product={p} />;
 
-  const onBuy = () => (user ? buy.mutate() : nav.navigate('SignIn', { reason: 'buy' }));
+  // Buy now placed the order straight from here, so it never asked where the
+  // goods should go — the Checkout screen existed but nothing navigated to it.
+  // It now collects the destination (street included) and places the order.
+  const onBuy = () =>
+    user ? nav.navigate('Checkout', { slug: params.slug, qty, unit: qtyUnit || undefined }) : nav.navigate('SignIn', { reason: 'buy' });
   const sellerId = p.seller?.id;
   // Older rows may predate the gallery; fall back to the single cover image.
   const photos = p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [];
@@ -142,11 +146,6 @@ export function ProductDetail() {
   const subName = p.subcategory && typeof p.subcategory === 'object' && 'name' in p.subcategory ? p.subcategory.name : undefined;
   const attrRows = p.attributeSpecs ?? [];
 
-  // Metrics the buyer may count in: every mass unit for a listing priced by
-  // mass, only its own for one sold by the bag or the piece.
-  const listingUnit = toUnit(p.unit);
-  const unitChoices = comparableUnits(listingUnit);
-  const buyerUnit = qtyUnit ? toUnit(qtyUnit) : listingUnit;
   const convertedQty = convertQty(qty, buyerUnit, listingUnit);
   const equivalent =
     buyerUnit !== listingUnit && convertedQty !== undefined ? Math.round(convertedQty * 1000) / 1000 : undefined;
@@ -214,13 +213,13 @@ export function ProductDetail() {
               <View style={s.stepper}>
                 {/* F34: icon-only steppers need explicit labels for screen readers. */}
                 <Pressable
-                  onPress={() => setQty((q) => Math.max(1, q - 1))}
+                  onPress={() => setQty((q) => Math.max(minQty, q - 1))}
                   hitSlop={12}
                   style={s.stepBtn}
                   accessibilityRole="button"
                   accessibilityLabel={t('pubX.pd.decreaseQty')}
-                  disabled={qty <= 1}
-                  accessibilityState={{ disabled: qty <= 1 }}
+                  disabled={qty <= minQty}
+                  accessibilityState={{ disabled: qty <= minQty }}
                 >
                   <Ionicons name="remove" size={18} color={C.ink} />
                 </Pressable>
@@ -236,7 +235,7 @@ export function ProductDetail() {
                 </Pressable>
               </View>
               <View style={{ flex: 1 }}>
-                <Button full title={t('pubX.pd.buyNow')} variant="primaryOutline" loading={buy.isPending} onPress={onBuy} />
+                <Button full title={t('pubX.pd.buyNow')} variant="primaryOutline" onPress={onBuy} />
               </View>
             </View>
             {/* Count in whatever metric the buyer works in. Only shown when the

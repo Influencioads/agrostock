@@ -11,7 +11,7 @@ import { OrdersService } from '../src/orders/orders.module';
 /** A live listing priced per MT at $10.00, with `stockQty` units on hand. */
 const listing = (stockQty: number | null) => ({
   id: 'p1', slug: 'x', status: 'live', approved: true, sellerId: 's1',
-  isAuction: false, priceCents: 1000, unit: 'MT', stockQty,
+  isAuction: false, priceCents: 1000, unit: 'MT', stockQty, moq: null as string | null,
 });
 
 function serviceFor(product: ReturnType<typeof listing>) {
@@ -76,5 +76,29 @@ describe('order quantity units', () => {
     const { svc } = serviceFor({ ...listing(null), unit: 'BAG' });
 
     await expect(svc.place('b1', { productSlug: 'x', qty: 0.5, unit: 'BAG' })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('refuses a quantity below the listing minimum, in whatever metric it is typed', async () => {
+    const { svc } = serviceFor({ ...listing(null), moq: '25 MT' });
+
+    await expect(svc.place('b1', { productSlug: 'x', qty: 10 })).rejects.toBeInstanceOf(BadRequestException);
+    // 10,000 KG = 10 MT — under the minimum once restated in the listing's unit.
+    await expect(svc.place('b1', { productSlug: 'x', qty: 10_000, unit: 'KG' })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('accepts a quantity exactly at the minimum', async () => {
+    const { svc, create } = serviceFor({ ...listing(null), moq: '25 MT' });
+
+    await svc.place('b1', { productSlug: 'x', qty: 25 });
+
+    expect((create.mock.calls[0][0] as { data: { qtyValue: number } }).data.qtyValue).toBe(25);
+  });
+
+  it('reads the minimum in the listing unit when the stored string carries none', async () => {
+    // A per-KG listing with a bare "500" means 500 KG, not 500 MT.
+    const { svc } = serviceFor({ ...listing(null), unit: 'KG', moq: '500' });
+
+    await expect(svc.place('b1', { productSlug: 'x', qty: 100 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(svc.place('b1', { productSlug: 'x', qty: 1, unit: 'MT' })).resolves.toBeTruthy();
   });
 });

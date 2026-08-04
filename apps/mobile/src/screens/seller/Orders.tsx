@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { nextStatusFor, orderLogistics, type ApiDirectoryEntry, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
+import { canCancel, nextStatusFor, orderLogistics, type ApiDirectoryEntry, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
@@ -171,6 +171,13 @@ export function SellerOrders() {
     onError: (e) => setError(errMessage(e, t('sellerX.orders.invoiceError'))),
   });
 
+  // Cancelling releases the stock and refunds the buyer's escrow — confirm first.
+  const confirmCancel = (id: string) =>
+    Alert.alert(t('sellerX.orders.cancelOrder'), t('sellerX.orders.confirmCancel'), [
+      { text: t('common:cancel'), style: 'cancel' },
+      { text: t('sellerX.orders.cancelOrder'), style: 'destructive', onPress: () => advance.mutate({ id, status: 'cancelled' }) },
+    ]);
+
   return (
     <Screen edges={['top']}>
       <Txt variant="h2">{t('sellerX.orders.title')}</Txt>
@@ -206,6 +213,12 @@ export function SellerOrders() {
                   )}
                   {o.status === 'packed' && <Button title={t('sellerX.orders.dispatch')} size="sm" onPress={() => setDispatchOrder(o)} />}
                   {canInvoice && <Button title={t('sellerX.orders.invoice')} size="sm" variant="outline" loading={invoice.isPending} onPress={() => invoice.mutate(o.id)} />}
+                  {/* The seller could only ever move an order forward here. The API
+                      has always allowed them this exit (releasing stock, refunding
+                      escrow); `nextStatusFor` filters it out, so it needs its own button. */}
+                  {canCancel(o.status, 'seller') && (
+                    <Button title={t('sellerX.orders.cancelOrder')} size="sm" variant="outline" disabled={advance.isPending} onPress={() => confirmCancel(o.id)} />
+                  )}
                 </Row>
               </Row>
               {o.status === 'delivered' && <OrderReviewButton orderId={o.id} />}

@@ -78,10 +78,17 @@ export class UpdateInvoiceStatusDto {
   @ApiProperty({ enum: ['paid', 'void'] }) @IsIn(['paid', 'void']) status!: 'paid' | 'void';
 }
 
+/**
+ * Parties carry a name and a country, never an address book. `email` used to be
+ * selected here, which handed the seller their buyer's real email on every
+ * invoice they raised (and printed it in the PDF) — the one place buyer contact
+ * details escaped the platform, since the directory masks them and the orders
+ * module never selects them. Counterparties talk through chat.
+ */
 const INVOICE_INCLUDE = {
   lines: { orderBy: { sort: 'asc' as const } },
-  issuer: { select: { id: true, name: true, email: true, country: true } },
-  recipient: { select: { id: true, name: true, email: true, country: true } },
+  issuer: { select: { id: true, name: true, country: true } },
+  recipient: { select: { id: true, name: true, country: true } },
   order: { select: { id: true, reference: true, product: { select: { name: true } } } },
 } as const;
 
@@ -424,11 +431,12 @@ export class InvoicesService {
     const top = doc.y;
     doc.fontSize(9).fillColor('#6b7280').text('FROM', 50, top);
     doc.fontSize(11).fillColor('#111827').text(invoice.issuer.name, 50, top + 12);
-    doc.fontSize(9).fillColor('#6b7280').text(invoice.issuer.email, 50, top + 27);
+    // Country, not email: this PDF is handed to the counterparty.
+    doc.fontSize(9).fillColor('#6b7280').text(invoice.issuer.country ?? '', 50, top + 27);
 
     doc.fontSize(9).fillColor('#6b7280').text('BILL TO', 320, top);
     doc.fontSize(11).fillColor('#111827').text(invoice.recipient.name, 320, top + 12);
-    doc.fontSize(9).fillColor('#6b7280').text(invoice.recipient.email, 320, top + 27);
+    doc.fontSize(9).fillColor('#6b7280').text(invoice.recipient.country ?? '', 320, top + 27);
     doc.moveDown(3);
 
     // line-item table

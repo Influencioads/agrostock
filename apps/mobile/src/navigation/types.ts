@@ -4,7 +4,8 @@ export type RootStackParamList = {
   ProductDetail: { slug: string };
   Search: { q?: string; category?: string; title?: string } | undefined;
   Cart: undefined;
-  Checkout: { slug?: string } | undefined;
+  /** `qty`/`unit` carry the buyer's pick from the listing into the review screen. */
+  Checkout: { slug?: string; qty?: number; unit?: string } | undefined;
   SignIn: { reason?: string } | undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
@@ -16,7 +17,9 @@ export type RootStackParamList = {
   Kyc: undefined;
   LiveTracking: { reference?: string; fromCity?: string; toCity?: string; cargo?: string; status?: string } | undefined;
   RolesAccess: undefined;
-  Community: { dmUserId?: string; dmName?: string } | undefined;
+  /** `dmDraft` seeds the composer — a thread is per user pair, so context (an
+   *  order reference) has to ride in on the message itself. */
+  Community: { dmUserId?: string; dmName?: string; dmDraft?: string } | undefined;
   Support: undefined;
   Directory: { type: 'sellers' | 'transporters' | 'loaders' | 'workers'; title: string };
   PublicProfile: { userId: string };

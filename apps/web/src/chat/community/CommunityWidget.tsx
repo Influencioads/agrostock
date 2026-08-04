@@ -204,7 +204,9 @@ function DmRoom({ peer, socket, onBack, s }: { peer: OpenDmEvent; socket: Socket
   const { lang } = useI18n();
   const [messages, setMessages] = useState<AnyRec[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [text, setText] = useState('');
+  // Seeded from the opener (an order card passes "About order #…"), so the
+  // subject rides in with the first message — the thread itself has no context.
+  const [text, setText] = useState(peer.draft ?? '');
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -432,8 +434,10 @@ export function CommunityWidget() {
           </>
         }
       >
+        {/* DmRoom is keyed: switching peers must remount, or the seeded draft
+            would carry over from the previous thread. */}
         {activeDm ? (
-          <DmRoom peer={activeDm} socket={socket} onBack={() => setActiveDm(null)} s={s} />
+          <DmRoom key={activeDm.userId} peer={activeDm} socket={socket} onBack={() => setActiveDm(null)} s={s} />
         ) : activeGroup ? (
           <Room group={activeGroup} socket={socket} onBack={() => setActiveGroup(null)} s={s} />
         ) : creatingReq ? (
