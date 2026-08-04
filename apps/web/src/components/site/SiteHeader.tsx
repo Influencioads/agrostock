@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, BrandMark, Button, Icon } from '@agrotraders/ui';
 import { useI18n, LanguageSelect } from '../../i18n';
 import { useAuth } from '../../auth/AuthContext';
+import { useCart } from '../../cart/CartContext';
 import { useBranding } from '../../branding/BrandingProvider';
 import { CurrencySelect } from '../../currency/CurrencyContext';
 import { PrimaryNav } from './PrimaryNav';
@@ -11,6 +12,7 @@ export function SiteHeader() {
   const { t } = useI18n();
   const { user, logout } = useAuth();
   const { logoSrc } = useBranding();
+  const { count } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -65,6 +67,22 @@ export function SiteHeader() {
           <CurrencySelect className="hidden sm:block" />
           {/* language */}
           <LanguageSelect className="hidden sm:block" />
+
+          {/* Cart. Icon-only at every width — the row already has to fit the
+              logo, the hamburger and the auth actions on a 360px phone. */}
+          <Link
+            to="/checkout"
+            aria-label={t('page.checkout.title')}
+            title={t('page.checkout.title')}
+            className="relative inline-flex min-h-9 shrink-0 items-center justify-center rounded-md border border-surface-border px-2 text-ink transition hover:border-brand-leaf hover:text-brand"
+          >
+            <Icon name="bag" size={18} />
+            {count > 0 && (
+              <span className="absolute -end-1.5 -top-1.5 min-w-[18px] rounded-pill bg-brand px-1 text-[11px] font-bold leading-[18px] text-white">
+                {count}
+              </span>
+            )}
+          </Link>
 
           {user ? (
             <>

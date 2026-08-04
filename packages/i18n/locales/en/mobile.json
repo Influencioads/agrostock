@@ -503,7 +503,7 @@
       "saveError": "Could not save the product. Check the fields.",
       "subcategory": "Subcategory",
       "attrSectionTitle": "{{name}} details",
-      "phName": "Premium Basmati Rice 1121",
+      "phAutoName": "Pick a category and the name builds itself",
       "phUnit": "/MT",
       "phCity": "Kandla",
       "currency": "Currency",
@@ -1216,7 +1216,27 @@
       "deliveryAddressPh": "Street, building, warehouse gate",
       "postcode": "Postcode",
       "protected": "🛡 Protected by Safe Deal escrow",
-      "placeOrder": "Place order"
+      "placeOrder": "Place order",
+      "contactHeading": "Who receives the goods",
+      "contactName": "Full name",
+      "contactPhone": "Phone number",
+      "contactEmail": "Email",
+      "market": "Market",
+      "marketPh": "Wholesale market or terminal",
+      "location": "Location / area",
+      "locationPh": "Zone, industrial estate, landmark",
+      "quantityUnit": "Unit",
+      "required": "Required",
+      "needFields": "Fill in the highlighted fields before you continue.",
+      "summary": "Summary",
+      "estTotal": "Estimated total",
+      "splitLine": "{{orders}} orders to {{sellers}} sellers — each is placed, shipped and paid separately.",
+      "placed": "order {{ref}} placed",
+      "quoted": "quote {{ref}} requested",
+      "emptyTitle": "Your basket is empty",
+      "emptyBody": "Add listings and they will all check out to one destination.",
+      "signInTitle": "Sign in to check out",
+      "signInBody": "Orders are placed from an account, so the seller knows who is buying."
     },
     "home": {
       "searchHint": "Search grains, pulses, oils…",
@@ -1461,7 +1481,8 @@
       "lineCount": "{{count}} items",
       "noteFromBasket": "Sent from the quote basket to {{supplier}}.",
       "footNote": "Each supplier receives its own request. Quotes stay private to you.",
-      "escrow": "Escrow"
+      "escrow": "Escrow",
+      "checkout": "Check out instead"
     }
   },
   "auction": {
@@ -1546,6 +1567,7 @@
       "confirm": "Confirm",
       "facts": {
         "destination": "Destination",
+        "consignee": "Consignee",
         "carrier": "Carrier",
         "phone": "Phone",
         "vehicle": "Vehicle",

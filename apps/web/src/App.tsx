@@ -8,6 +8,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import { SiteLayout } from './layouts/SiteLayout';
 
 import { ChatWidgets } from './chat/ChatWidgets';
+import { CartProvider } from './cart/CartContext';
 import { CurrencyProvider } from './currency/CurrencyContext';
 import { ScrollToTop } from './lib/ScrollToTop';
 
@@ -16,6 +17,7 @@ import { ScrollToTop } from './lib/ScrollToTop';
 const WebsitePage = lazy(() => import('./pages/WebsitePage').then((m) => ({ default: m.WebsitePage })));
 const MarketPage = lazy(() => import('./pages/MarketPage').then((m) => ({ default: m.MarketPage })));
 const ProductPage = lazy(() => import('./pages/ProductPage').then((m) => ({ default: m.ProductPage })));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage').then((m) => ({ default: m.CheckoutPage })));
 const OfficesPage = lazy(() => import('./pages/OfficesPage').then((m) => ({ default: m.OfficesPage })));
 const DirectoryPage = lazy(() => import('./pages/DirectoryPage').then((m) => ({ default: m.DirectoryPage })));
 const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
@@ -50,6 +52,7 @@ export function App() {
     <I18nProvider>
       <AuthProvider>
         <CurrencyProvider>
+        <CartProvider>
         <MotionConfig reducedMotion="user">
         <ScrollToTop />
         <Suspense fallback={<div className="py-24 text-center text-ink-soft">Loading…</div>}>
@@ -59,6 +62,16 @@ export function App() {
             <Route path="/" element={<WebsitePage />} />
             <Route path="/market" element={<MarketPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
+            {/* No guest checkout: a cart line can only be added by a signed-in
+                buyer, so the page it leads to demands the same. */}
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/offices" element={<OfficesPage />} />
             {/* directories + marketplace surfaces (hero quick-access) */}
             <Route path="/sellers" element={<DirectoryPage type="sellers" />} />
@@ -130,6 +143,7 @@ export function App() {
         {/* Foreground toasts for live in-app + push notifications. */}
         <Toaster position="top-right" richColors closeButton />
         </MotionConfig>
+        </CartProvider>
         </CurrencyProvider>
       </AuthProvider>
     </I18nProvider>

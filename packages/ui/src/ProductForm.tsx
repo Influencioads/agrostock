@@ -766,17 +766,15 @@ export function ProductForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attrFields]);
 
-  // The title is composed from the taxonomy leaf + the attributes the seller
-  // picked ("Almond Nonpareil Roasted 20/22"), and keeps tracking their choices
-  // until they type in the field themselves. Seeded from `value.name` so Edit
-  // mode — which opens with a name the seller already chose — never overwrites.
-  const [nameTouched, setNameTouched] = useState(() => !!value.name.trim());
+  // Composed, never typed: the taxonomy leaf + the attributes the seller picked
+  // ("Almond Nonpareil Roasted 20/22"). Hand-typed names made two identical lots
+  // read as different goods, so the name follows the picks — on Edit too.
   const suggestion = suggestProductName(subcategoryLabel, value.attributes);
   useEffect(() => {
-    if (nameTouched || !suggestion || suggestion === value.name) return;
+    if (!suggestion || suggestion === value.name) return;
     onChange({ ...value, name: suggestion });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggestion, nameTouched]);
+  }, [suggestion]);
 
   return (
     <div className="space-y-4">
@@ -787,11 +785,11 @@ export function ProductForm({
 
       <Input
         label={t('web:console.productForm.productName')}
-        placeholder={t('web:console.productForm.phName')}
+        placeholder={t('web:console.productForm.phAutoName')}
         value={value.name}
-        onChange={(e) => { setNameTouched(true); set('name')(e.target.value); }}
+        readOnly
         error={missing.has('name') ? required : undefined}
-        hint={suggestion && suggestion !== value.name ? t('web:console.productForm.nameAuto', { name: suggestion }) : undefined}
+        hint={t('web:console.productForm.nameHint')}
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

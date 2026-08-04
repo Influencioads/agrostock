@@ -108,6 +108,22 @@ export function parseQtyIn(raw: string | null | undefined, targetUnit: ProductUn
   return convertQty(value, normalizeUnit(raw) ?? targetUnit, targetUnit);
 }
 
+/**
+ * The listing's minimum order, restated in the metric the buyer is typing in.
+ * The API rejects anything under it, so a quantity field seeded from this never
+ * offers a number that cannot be ordered. Count-based units floor at 1 — half a
+ * bag is not a thing.
+ */
+export function minOrderQty(
+  moq: string | null | undefined,
+  listingUnit: ProductUnit,
+  buyerUnit: ProductUnit,
+): number {
+  const inBuyerUnit = convertQty(parseQtyIn(moq, listingUnit) ?? 0, listingUnit, buyerUnit) ?? 0;
+  const floor = comparableUnits(listingUnit).length === 1 ? 1 : 0.01;
+  return Math.max(Math.round(inBuyerUnit * 1000) / 1000, floor);
+}
+
 /** Every unit a quantity in `unit` can be restated in — always includes itself. */
 export function comparableUnits(unit: ProductUnit): ProductUnit[] {
   if (!UNIT_KG[unit]) return [unit];

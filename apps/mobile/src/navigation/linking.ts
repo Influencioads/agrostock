@@ -33,7 +33,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
       ProductDetail: 'product/:slug',
       Search: 'search',
       Cart: 'cart',
-      Checkout: 'checkout/:slug?',
+      Checkout: 'checkout',
       SignIn: 'signin',
       SignUp: 'signup',
       ForgotPassword: 'forgot-password',

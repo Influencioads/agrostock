@@ -242,6 +242,7 @@ export function PickerField({
   title,
   emptyLabel,
   searchPlaceholder,
+  error,
 }: {
   label: string;
   placeholder?: string;
@@ -256,12 +257,14 @@ export function PickerField({
   title?: string;
   emptyLabel?: string;
   searchPlaceholder?: string;
+  /** Validation message, shown under the field — matches `Input`. */
+  error?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <View style={{ gap: 6 }}>
       <Txt variant="label">{label}</Txt>
-      <Pressable onPress={() => !disabled && setOpen(true)} style={[s.field, disabled && { opacity: 0.55 }]}>
+      <Pressable onPress={() => !disabled && setOpen(true)} style={[s.field, disabled && { opacity: 0.55 }, error ? { borderColor: C.error } : null]}>
         <Text style={[s.fieldText, { color: value ? C.ink : C.inkMuted }]} numberOfLines={1}>
           {(value && (displayValue ?? value)) || placeholder || ''}
         </Text>
@@ -279,6 +282,7 @@ export function PickerField({
         emptyLabel={emptyLabel}
         searchPlaceholder={searchPlaceholder}
       />
+      {error ? <Txt variant="small" color={C.error}>{error}</Txt> : null}
     </View>
   );
 }

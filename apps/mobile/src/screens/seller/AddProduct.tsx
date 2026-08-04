@@ -383,8 +383,6 @@ export function SellerAddProduct() {
     if (!editingId) return;
     const p = mine.find((x) => x.id === editingId);
     if (p) {
-      // Editing an existing listing: its name is the seller's, not ours to regenerate.
-      setNameTouched(true);
       // The list is localized for reading; the form must edit the canonical
       // English or Save writes the translation back over the source row.
       const src = (p as { source?: Record<string, unknown> }).source ?? {};
@@ -424,9 +422,8 @@ export function SellerAddProduct() {
     });
   }, [attrFields]);
 
-  // Title composed from the taxonomy leaf + picked attributes, tracking the
-  // seller's choices until they type in the field themselves. See the web form.
-  const [nameTouched, setNameTouched] = useState(false);
+  // Composed from the taxonomy leaf + picked attributes, never typed. See the
+  // web form.
   // The generated title reads in the seller's own language, so it uses the
   // localized labels — not the English names the schema is keyed by.
   const suggestion = suggestProductName(
@@ -434,9 +431,9 @@ export function SellerAddProduct() {
     form.attributes,
   );
   useEffect(() => {
-    if (nameTouched || !suggestion) return;
+    if (!suggestion) return;
     setForm((f) => (f.name === suggestion ? f : { ...f, name: suggestion }));
-  }, [suggestion, nameTouched]);
+  }, [suggestion]);
 
   const save = useMutation({
     mutationFn: () => {
@@ -500,10 +497,10 @@ export function SellerAddProduct() {
 
         <Input
           label={t('sellerX.add.name')}
-          placeholder={t('sellerX.add.phName')}
+          placeholder={t('sellerX.add.phAutoName')}
           value={form.name}
+          editable={false}
           error={bad('name') ? required : undefined}
-          onChangeText={(v) => { setNameTouched(true); set('name')(v); }}
         />
         {/* One cascading picker instead of two chip strips — the taxonomy is five
             levels deep, which no chip strip can represent. */}

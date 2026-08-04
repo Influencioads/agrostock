@@ -130,11 +130,14 @@ export function ProductDetail() {
   // Live auctions get the bespoke bidding room (countdown, open bid history).
   if (p.isAuction) return <AuctionRoom slug={params.slug} product={p} />;
 
-  // Buy now placed the order straight from here, so it never asked where the
-  // goods should go — the Checkout screen existed but nothing navigated to it.
-  // It now collects the destination (street included) and places the order.
-  const onBuy = () =>
-    user ? nav.navigate('Checkout', { slug: params.slug, qty, unit: qtyUnit || undefined }) : nav.navigate('SignIn', { reason: 'buy' });
+  // Buy adds the lot to the basket and moves on: checkout is the whole basket,
+  // so a buyer taking three lots from two sellers names the destination once
+  // instead of once per listing.
+  const onBuy = () => {
+    if (!user) return nav.navigate('SignIn', { reason: 'buy' });
+    basket.add(p, qty, qtyUnit || undefined);
+    nav.navigate('Checkout', { intent: 'buy' });
+  };
   const sellerId = p.seller?.id;
   // Older rows may predate the gallery; fall back to the single cover image.
   const photos = p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [];
@@ -150,8 +153,11 @@ export function ProductDetail() {
   const equivalent =
     buyerUnit !== listingUnit && convertedQty !== undefined ? Math.round(convertedQty * 1000) / 1000 : undefined;
 
+  // No guest basket, same rule as Buy above: an account comes first, so nobody
+  // fills a basket and only then learns they need one.
   const addToRfq = () => {
-    basket.add(p, qty);
+    if (!user) return nav.navigate('SignIn', { reason: 'buy' });
+    basket.add(p, qty, qtyUnit || undefined);
     Alert.alert(t('pubX.rfq.addedTitle'), t('pubX.rfq.addedBody', { name: p.name }));
   };
 

@@ -989,6 +989,12 @@ export interface ApiOrder {
   /** The street the carrier delivers to — a town name is not an address. */
   deliveryAddress?: string | null;
   deliveryPostcode?: string | null;
+  deliveryMarket?: string | null;
+  deliveryLocation?: string | null;
+  /** The consignee — see `deliveryContactLine`. */
+  deliveryName?: string | null;
+  deliveryPhone?: string | null;
+  deliveryEmail?: string | null;
   dispatchMode?: ApiDispatchMode | null;
   transporterName?: string | null;
   transporterPhone?: string | null;
@@ -1046,15 +1052,32 @@ export interface OrderDelivery {
   deliveryCountry?: string;
   deliveryAddress?: string;
   deliveryPostcode?: string;
+  deliveryMarket?: string;
+  deliveryLocation?: string;
+  deliveryName?: string;
+  deliveryPhone?: string;
+  deliveryEmail?: string;
 }
 
 /**
- * The destination as one human line — street, city, postcode, country. Empty
- * when the order predates address capture (the field is optional, and the
- * enquiry path can be raised without one).
+ * The destination as one human line — market, street, area, city, postcode,
+ * country, widest-last so it reads the way an address is written. Empty when the
+ * order predates address capture (the fields are optional, and the enquiry path
+ * can be raised without one).
  */
 export function deliveryAddressLine(o: ApiOrder): string {
-  return [o.deliveryAddress, o.deliveryCity, o.deliveryPostcode, o.deliveryCountry].filter(Boolean).join(', ');
+  return [o.deliveryMarket, o.deliveryAddress, o.deliveryLocation, o.deliveryCity, o.deliveryPostcode, o.deliveryCountry]
+    .filter(Boolean)
+    .join(', ');
+}
+
+/**
+ * Who the carrier hands the goods to — name, phone, email. Separate from the
+ * address line because dispatch reads it for a different reason: the address
+ * gets the truck to the gate, this is who opens it.
+ */
+export function deliveryContactLine(o: ApiOrder): string {
+  return [o.deliveryName, o.deliveryPhone, o.deliveryEmail].filter(Boolean).join(' · ');
 }
 
 /** The happy path, in order — drives the progress steppers on web and mobile. */

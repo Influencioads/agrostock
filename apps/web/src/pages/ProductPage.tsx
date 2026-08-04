@@ -1,22 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
-import { countryFlag, countryLabel, findCountry, type OrderDelivery } from '@agrotraders/api-client';
-import { comparableUnits, convertQty, isDeliveryOption, parseQtyIn, toUnit, unitSuffix } from '@agrotraders/types';
+import { countryFlag, countryLabel } from '@agrotraders/api-client';
+import { comparableUnits, convertQty, isDeliveryOption, minOrderQty, toUnit, unitSuffix } from '@agrotraders/types';
 import { api, toCardProduct } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
+import { useCart } from '../cart/CartContext';
 import { useCurrency } from '../currency/CurrencyContext';
 import { useI18n } from '../i18n';
 import { chatBus } from '../chat/chatBus';
 import { AuctionRoom } from '../components/site/AuctionRoom';
 import { ProductCard } from '../components/site/ProductCard';
 import { ReviewList } from '../console/components/ReviewList';
-import { errMessage } from '../console/sections/order-parts';
 import { resolveProductLoad } from './productResolution';
 import { ErrorState } from '../components/ErrorState';
-import { CountrySelect } from '@agrotraders/ui/ProductForm';
-import { CityInput } from '../components/GeoInputs';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const thumbs = ['🌾', '📦', '🚢', '📄', '🏭'];
@@ -25,8 +23,9 @@ export function ProductPage() {
   const { t, lang } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, roles } = useAuth();
+  const { user } = useAuth();
   const { fmtPrice } = useCurrency();
+  const cart = useCart();
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(50);
   // The metric the BUYER types in. Empty until they pick one, which means "the
@@ -34,13 +33,6 @@ export function ProductPage() {
   // the seller quoted no matter which one is typed here.
   const [qtyUnit, setQtyUnit] = useState('');
   const [notice, setNotice] = useState('');
-  // Where the goods are going. Captured here because the order had no destination
-  // at all before, which left dispatch and every hire guessing at `buyer.country`.
-  // Defaults to the buyer's own registered place, so the common case is one glance.
-  const [delivery, setDelivery] = useState<{ city: string; country: string } | null>(null);
-  // Street + postcode, typed per order — a buyer's warehouse is not their profile
-  // address, so there is nothing to seed this from.
-  const [address, setAddress] = useState({ line: '', postcode: '' });
   const [brokenPhotos, setBrokenPhotos] = useState<Set<string>>(() => new Set());
 
   const markBrokenPhoto = (src: string) => {
@@ -65,21 +57,6 @@ export function ProductPage() {
   // E10: per-product <title> so crawlers/tabs/shares distinguish listings.
   useDocumentTitle(product?.name);
 
-  // Seeds the delivery fields from the buyer's own place — they can change it per
-  // order, and the value is what routes the shipment and filters the providers.
-  const { data: myProfile } = useQuery({
-    queryKey: ['my-profile'],
-    queryFn: () => api.me.profile(),
-    enabled: !!user,
-    staleTime: 300e3,
-  });
-  // The account's own country is often the legacy "🇮🇳 India" display form; the
-  // order stores a country and the city lookup is scoped by one, so seed the
-  // canonical name rather than a decorated string nothing downstream matches.
-  const ownCountry = myProfile?.originCountry ?? user?.country ?? '';
-  const deliverTo =
-    delivery ?? { city: myProfile?.originCity ?? myProfile?.location ?? '', country: findCountry(ownCountry)?.name ?? ownCountry };
-
   // Metrics the buyer may type their quantity in: every mass unit for a listing
   // priced by mass, and only its own for one sold by the bag or the piece —
   // there is no honest conversion from a count to a weight.
@@ -90,13 +67,7 @@ export function ProductPage() {
   const converted = convertQty(qty, buyerUnit, listingUnit);
   const equivalent =
     buyerUnit !== listingUnit && converted !== undefined ? Math.round(converted * 1000) / 1000 : undefined;
-  // The listing's minimum order, restated in the metric the buyer is typing in.
-  // The API rejects anything under it, so the field never offers a quantity that
-  // cannot be ordered — it used to be printed next to the price and nothing else.
-  const minQty = Math.max(
-    Math.round((convertQty(parseQtyIn(product?.moq, listingUnit) ?? 0, listingUnit, buyerUnit) ?? 0) * 1000) / 1000,
-    countBased ? 1 : 0.01,
-  );
+  const minQty = minOrderQty(product?.moq, listingUnit, buyerUnit);
   useEffect(() => setQty((q) => Math.max(q, minQty)), [minQty]);
 
   // Category-specific attributes captured on this listing, rendered by the API:
@@ -137,61 +108,25 @@ export function ProductPage() {
     enabled: !!apiProduct?.id,
   });
 
-  // Where the goods go — the same shape for a purchase and for an enquiry.
-  const destination: OrderDelivery = {
-    deliveryCity: deliverTo.city || undefined,
-    deliveryCountry: deliverTo.country || undefined,
-    deliveryAddress: address.line.trim() || undefined,
-    deliveryPostcode: address.postcode.trim() || undefined,
-  };
-
-  const place = useMutation({
-    mutationFn: () => {
-      if (!product) throw new Error('Product is not available');
-      return api.orders.place({
-        productSlug: product.id,
-        qty,
-        unit: qtyUnit || undefined,
-        ...destination,
-      });
-    },
-    onSuccess: (o) => setNotice(`✓ ${t('page.product.orderPlaced', { ref: (o as { reference: string }).reference })}`),
-    // Show WHY it failed — a rejection the buyer can act on (under the minimum
-    // order, not enough stock) was flattened into one generic sentence.
-    onError: (e) => setNotice(errMessage(e, t('page.product.orderError'))),
-  });
-
   /**
-   * WEB-04: "Request Quote" now raises a real enquiry (the seller answers with a
-   * price, which the buyer then accepts) instead of being an inert button. Uses
-   * the same guards as Buy now.
+   * The listing sells; /checkout collects. Ordering used to happen right here,
+   * which meant the destination was asked for on every listing page and a buyer
+   * taking three products from two sellers filled the same address three times.
+   *
+   * Buy now / Request quote go straight on to checkout — they carry their intent
+   * so that page leads with the action the buyer actually asked for. Add to cart
+   * stays put, so the buyer can keep shopping.
+   *
+   * No guest cart: an anonymous visitor is sent to sign in before a line is
+   * stored at all. Deferring it to checkout meant a visitor filled a cart, chose
+   * a destination and only then discovered they needed an account.
    */
-  const enquire = useMutation({
-    mutationFn: () => {
-      if (!user) {
-        navigate('/login', { state: { from: `/product/${id}` } });
-        throw new Error('Sign in required');
-      }
-      if (!product) throw new Error('Product is not available');
-      return api.orders.enquiry({
-        productSlug: product.id,
-        qty,
-        unit: qtyUnit || undefined,
-        ...destination,
-      });
-    },
-    onSuccess: (o) => setNotice(`✓ ${t('page.product.quoteRequested', { ref: (o as { reference: string }).reference })}`),
-    onError: (e) =>
-      setNotice(e instanceof Error && e.message === 'Sign in required' ? '' : errMessage(e, t('page.product.orderError'))),
-  });
-
-  const onBuy = () => {
-    setNotice('');
+  const addToCart = (intent?: 'buy' | 'quote') => {
     if (!user) return navigate('/login', { state: { from: `/product/${id}` } });
-    // Effective roles, not the primary one — a seller granted `buyer` may order.
-    if (!roles.includes('buyer')) return setNotice(t('page.product.onlyBuyers'));
     if (!product) return setNotice(t('page.product.orderError'));
-    place.mutate();
+    cart.add({ slug: product.id, qty, unit: qtyUnit || undefined });
+    if (intent) return navigate('/checkout', { state: { intent } });
+    setNotice(`✓ ${t('page.product.addedToCart')}`);
   };
 
   if (load.state === 'loading') {
@@ -466,70 +401,19 @@ export function ProductPage() {
               )}
             </div>
 
-            {/* The order's destination. Everything downstream — dispatch, the hire
-                form, the transporter/loader/worker lists — is routed off this. */}
-            {/* Base grid-cols-1: two labelled fields side by side are too tight in
-                this panel on a phone, and a long locale's label wraps out of it. */}
-            {/* Country first, then the city inside it — and both are typeable.
-                The country was a native <select>, which only jumps to the letter
-                you press: unusable at 200 entries. */}
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <CountrySelect
-                label={t('common:geo.country')}
-                value={deliverTo.country}
-                placeholder={t('common:geo.anyCountry')}
-                // A city belongs to its country, so changing it clears the pick.
-                onChange={(country) => setDelivery({ city: '', country })}
-              />
-              <CityInput
-                label={t('site.deliverTo')}
-                value={deliverTo.city}
-                country={deliverTo.country || null}
-                onChange={(city) => setDelivery({ ...deliverTo, city })}
-              />
-            </div>
-
-            {/* The street. A town name routes a shipment to the right city and
-                leaves the driver to find the gate — dispatch needs a line it can
-                deliver against. Kept per order: a trader's warehouse changes. */}
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.deliveryAddress')}</span>
-                <input
-                  value={address.line}
-                  onChange={(e) => setAddress({ ...address, line: e.target.value })}
-                  placeholder={t('page.product.deliveryAddressPh')}
-                  maxLength={240}
-                  className="h-10 w-full min-w-0 rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.postcode')}</span>
-                <input
-                  value={address.postcode}
-                  onChange={(e) => setAddress({ ...address, postcode: e.target.value })}
-                  maxLength={24}
-                  className="h-10 w-full min-w-0 rounded-md border border-surface-border px-3 text-sm outline-none focus:border-brand-leaf"
-                />
-              </label>
-            </div>
-
+            {/* Buy now and Request quote both land on /checkout — that is where
+                the destination is asked for, once, for the whole cart. */}
             <div className="mt-3 space-y-2">
-              <Button fullWidth leftIcon={<Icon name="bag" size={16} />} onClick={onBuy} disabled={place.isPending}>
-                {place.isPending ? t('page.product.placing') : t('page.product.buyNow')}
+              <Button fullWidth leftIcon={<Icon name="bag" size={16} />} onClick={() => addToCart('buy')}>
+                {t('page.product.buyNow')}
+              </Button>
+              <Button fullWidth variant="outline" onClick={() => addToCart()}>
+                {t('page.product.addToCart')}
               </Button>
               {notice && (
                 <p className={'text-xs ' + (notice.startsWith('✓') ? 'text-status-success' : 'text-status-error')}>{notice}</p>
               )}
-              {/* WEB-04: these three CTAs had no onClick at all — prominent dead
-                  controls on the transactional panel. Quote raises a real enquiry;
-                  the logistics buttons go to the matching directories. */}
-              <Button
-                fullWidth
-                variant="outline"
-                disabled={enquire.isPending}
-                onClick={() => enquire.mutate()}
-              >
+              <Button fullWidth variant="outline" onClick={() => addToCart('quote')}>
                 {t('page.product.requestQuote')}
               </Button>
               <div className="grid grid-cols-2 gap-2">

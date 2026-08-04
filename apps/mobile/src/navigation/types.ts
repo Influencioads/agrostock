@@ -5,7 +5,8 @@ export type RootStackParamList = {
   Search: { q?: string; category?: string; title?: string } | undefined;
   Cart: undefined;
   /** `qty`/`unit` carry the buyer's pick from the listing into the review screen. */
-  Checkout: { slug?: string; qty?: number; unit?: string } | undefined;
+  /** The basket is the subject; `intent` only decides which button leads. */
+  Checkout: { intent?: 'buy' | 'quote' } | undefined;
   SignIn: { reason?: string } | undefined;
   SignUp: undefined;
   ForgotPassword: undefined;

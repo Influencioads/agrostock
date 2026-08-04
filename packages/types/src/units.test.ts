@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { comparableUnits, convertQty } from './units';
+import { comparableUnits, convertQty, minOrderQty } from './units';
 
 describe('convertQty', () => {
   it('restates a mass in any other mass unit', () => {
@@ -24,5 +24,17 @@ describe('comparableUnits', () => {
   it('offers every mass unit for a mass, and only itself for a count', () => {
     expect(comparableUnits('MT')).toEqual(['KG', 'MT', 'QUINTAL', 'TON']);
     expect(comparableUnits('BAG')).toEqual(['BAG']);
+  });
+});
+
+describe('minOrderQty', () => {
+  it('restates the listing MOQ in the metric the buyer types in', () => {
+    expect(minOrderQty('5 MT', 'MT', 'KG')).toBe(5000);
+    expect(minOrderQty('500 KG', 'MT', 'MT')).toBe(0.5);
+  });
+
+  it('floors at a sane minimum when the listing has no MOQ', () => {
+    expect(minOrderQty(null, 'MT', 'MT')).toBe(0.01);
+    expect(minOrderQty(null, 'BAG', 'BAG')).toBe(1);
   });
 });

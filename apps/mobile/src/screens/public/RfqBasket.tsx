@@ -154,7 +154,10 @@ export function RfqBasket() {
                         <Ionicons name="close" size={17} color={C.inkSoft} />
                       </Pressable>
                       <View style={s.stepper}>
-                        <Pressable onPress={() => basket.setQty(line.slug, line.qty - 1)} hitSlop={6} style={s.stepBtn}>
+                        {/* Floor of 1 lives here, not in the store: checkout
+                            works in the listing's own metric, where half a
+                            tonne is a perfectly good quantity. */}
+                        <Pressable onPress={() => basket.setQty(line.slug, Math.max(1, line.qty - 1))} hitSlop={6} style={s.stepBtn}>
                           <Ionicons name="remove" size={15} color={C.ink} />
                         </Pressable>
                         <Text style={s.stepValue}>{line.qty}</Text>
@@ -179,6 +182,17 @@ export function RfqBasket() {
               </View>
             </View>
           ))}
+
+          {/* The other way out of the basket: order it outright (or ask each
+              seller for a price) instead of posting a public requirement. */}
+          <View style={{ paddingHorizontal: space.lg }}>
+            <Button
+              full
+              variant="outline"
+              title={t('pubX.rfq.checkout')}
+              onPress={() => nav.navigate('Checkout', {})}
+            />
+          </View>
 
           <View style={s.noteCard}>
             <Ionicons name="pricetag-outline" size={17} color={C.gold} />

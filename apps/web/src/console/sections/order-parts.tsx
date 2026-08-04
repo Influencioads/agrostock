@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import {
   deliveryAddressLine,
+  deliveryContactLine,
   ORDER_STEPS,
   orderLogistics,
   type ApiDirectoryEntry,
@@ -283,6 +284,9 @@ export function ShipmentFacts({ order }: { order: ApiOrderDetail }) {
     // First: whoever reads this panel — buyer, seller, dispatcher — is looking
     // for where the goods actually go. It was captured and never shown.
     [t('console.order.destination'), deliveryAddressLine(order) || null],
+    // Who signs for it at that address — the buyer's account is the company,
+    // not the person at the gate.
+    [t('console.order.consignee'), deliveryContactLine(order) || null],
     [t('console.order.carrier'), order.transporterName],
     [t('console.order.phone'), order.transporterPhone],
     [t('console.order.vehicle'), order.vehiclePlate],

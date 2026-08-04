@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { DispatchMode, OrderEventType, OrderStatus, Prisma } from '@prisma/client';
-import { IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { comparableUnits, convertQty, parseQtyIn, PRODUCT_UNITS, toUnit } from '@agrotraders/types';
 import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
@@ -90,6 +90,13 @@ class DeliveryFields {
   /** The street the carrier delivers to — a town name is not an address. */
   @ApiProperty({ required: false, maxLength: 240 }) @IsOptional() @IsString() @MaxLength(240) deliveryAddress?: string;
   @ApiProperty({ required: false, maxLength: 24 }) @IsOptional() @IsString() @MaxLength(24) deliveryPostcode?: string;
+  /** Destination market and the locality inside the city — both free text. */
+  @ApiProperty({ required: false, maxLength: 160 }) @IsOptional() @IsString() @MaxLength(160) deliveryMarket?: string;
+  @ApiProperty({ required: false, maxLength: 160 }) @IsOptional() @IsString() @MaxLength(160) deliveryLocation?: string;
+  /** The consignee: who the carrier hands the goods to, and how to reach them. */
+  @ApiProperty({ required: false, maxLength: 120 }) @IsOptional() @IsString() @MaxLength(120) deliveryName?: string;
+  @ApiProperty({ required: false, maxLength: 40 }) @IsOptional() @IsString() @MaxLength(40) deliveryPhone?: string;
+  @ApiProperty({ required: false, maxLength: 160 }) @IsOptional() @IsEmail() @MaxLength(160) deliveryEmail?: string;
 }
 
 /** The destination as stored — every order-creating path writes the same shape. */
@@ -98,6 +105,11 @@ const deliveryOf = (dto: DeliveryFields) => ({
   deliveryCountry: dto.deliveryCountry ?? null,
   deliveryAddress: dto.deliveryAddress ?? null,
   deliveryPostcode: dto.deliveryPostcode ?? null,
+  deliveryMarket: dto.deliveryMarket ?? null,
+  deliveryLocation: dto.deliveryLocation ?? null,
+  deliveryName: dto.deliveryName ?? null,
+  deliveryPhone: dto.deliveryPhone ?? null,
+  deliveryEmail: dto.deliveryEmail ?? null,
 });
 
 /**

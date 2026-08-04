@@ -804,6 +804,17 @@ model Order {
   /// `Market.address`: postal formats differ per country and nothing parses it.
   deliveryAddress  String?
   deliveryPostcode String?
+  /// The wholesale market the goods are delivered into, and the locality/area
+  /// inside the city. Both free text: a destination market is often not one the
+  /// platform lists, and "area" has no consistent meaning across countries.
+  deliveryMarket   String?
+  deliveryLocation String?
+  /// Who receives the goods. The buyer's account is not the person at the gate —
+  /// a trading company orders, a warehouse manager signs for it — so the
+  /// consignee is captured per order instead of read off the account.
+  deliveryName  String?
+  deliveryPhone String?
+  deliveryEmail String?
 
   // Dispatch snapshot — populated for both platform and external dispatch.
   dispatchMode     DispatchMode?

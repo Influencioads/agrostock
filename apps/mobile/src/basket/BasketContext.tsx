@@ -18,6 +18,8 @@ import { storage } from '../lib/storage';
 export interface BasketLine {
   slug: string;
   qty: number;
+  /** The metric the buyer typed in; omitted means the listing's own unit. */
+  unit?: string;
   /** Denormalised only so the basket can group by supplier before its fetches land. */
   sellerId: string | null;
   sellerName: string | null;
@@ -27,8 +29,8 @@ interface BasketValue {
   lines: BasketLine[];
   /** Total number of lines — drives the header badge. */
   count: number;
-  add: (product: ApiProduct, qty: number) => void;
-  setQty: (slug: string, qty: number) => void;
+  add: (product: ApiProduct, qty: number, unit?: string) => void;
+  setQty: (slug: string, qty: number, unit?: string) => void;
   remove: (slug: string) => void;
   clear: () => void;
   /** False until the stored basket has been read back, so the badge doesn't flash. */
@@ -72,39 +74,50 @@ export function BasketProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  /** Single writer: state and storage never diverge. */
-  const commit = useCallback((next: BasketLine[]) => {
-    setLines(next);
-    void storage.set(KEY, JSON.stringify(next)).catch(() => {});
+  /**
+   * Single writer: state and storage never diverge.
+   *
+   * Takes an updater, never a value. Checkout removes each placed line in a
+   * loop, and a value-based writer computed every one of those from the same
+   * render's `lines` — so a run of removals collapsed into whichever ran last,
+   * leaving paid-for lines in the basket.
+   */
+  const commit = useCallback((update: (prev: BasketLine[]) => BasketLine[]) => {
+    setLines((prev) => {
+      const next = update(prev);
+      void storage.set(KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
   }, []);
 
   const value = useMemo<BasketValue>(() => {
-    const add = (product: ApiProduct, qty: number) => {
-      const existing = lines.find((l) => l.slug === product.slug);
-      // Re-adding a listing tops up its quantity rather than duplicating the line.
-      const next = existing
-        ? lines.map((l) => (l.slug === product.slug ? { ...l, qty: l.qty + qty } : l))
-        : [
-            ...lines,
-            {
-              slug: product.slug,
-              qty,
-              sellerId: product.seller?.id ?? null,
-              sellerName: product.seller?.name ?? null,
-            },
-          ].slice(-MAX_LINES);
-      commit(next);
-    };
+    const add = (product: ApiProduct, qty: number, unit?: string) =>
+      // Re-adding a listing replaces its quantity rather than topping it up: the
+      // buyer is looking at the listing and just said how much they want.
+      commit((prev) =>
+        prev.some((l) => l.slug === product.slug)
+          ? prev.map((l) => (l.slug === product.slug ? { ...l, qty, unit } : l))
+          : [
+              ...prev,
+              {
+                slug: product.slug,
+                qty,
+                unit,
+                sellerId: product.seller?.id ?? null,
+                sellerName: product.seller?.name ?? null,
+              },
+            ].slice(-MAX_LINES),
+      );
 
     return {
       lines,
       count: lines.length,
       ready,
       add,
-      setQty: (slug, qty) =>
-        commit(lines.map((l) => (l.slug === slug ? { ...l, qty: Math.max(1, qty) } : l))),
-      remove: (slug) => commit(lines.filter((l) => l.slug !== slug)),
-      clear: () => commit([]),
+      setQty: (slug, qty, unit) =>
+        commit((prev) => prev.map((l) => (l.slug === slug ? { ...l, qty, ...(unit === undefined ? {} : { unit }) } : l))),
+      remove: (slug) => commit((prev) => prev.filter((l) => l.slug !== slug)),
+      clear: () => commit(() => []),
     };
   }, [lines, ready, commit]);
 

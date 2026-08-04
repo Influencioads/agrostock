@@ -3,7 +3,7 @@ import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'r
 import * as Clipboard from 'expo-clipboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { deliveryAddressLine, ORDER_STEPS, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
+import { deliveryAddressLine, deliveryContactLine, ORDER_STEPS, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { Badge, Button, Card, Input, ProgressBar, Row, SkeletonRows, Txt } from '../../ui';
@@ -151,6 +151,9 @@ export function ShipmentFacts({ order }: { order: ApiOrderDetail }) {
     // First: whoever reads this — buyer, seller, dispatcher — is looking for
     // where the goods actually go. It was captured and never shown.
     [t('compX.order.facts.destination'), deliveryAddressLine(order) || null],
+    // Who signs for it at that address — the buyer's account is the company,
+    // not the person at the gate.
+    [t('compX.order.facts.consignee'), deliveryContactLine(order) || null],
     [t('compX.order.facts.carrier'), order.transporterName],
     [t('compX.order.facts.phone'), order.transporterPhone],
     [t('compX.order.facts.vehicle'), order.vehiclePlate],
