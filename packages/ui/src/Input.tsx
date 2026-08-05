@@ -21,7 +21,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 ) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
-  const inputType = isPassword && showPassword ? 'text' : type;
+  // Native number inputs add spinner buttons and arrow-key increment/decrement.
+  // All numeric fields use plain text entry with a numeric keyboard instead.
+  const isNumeric = type === 'number';
+  const inputType = isPassword && showPassword ? 'text' : isNumeric ? 'text' : type;
 
   return (
     <label className="block" htmlFor={id}>
@@ -38,6 +41,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           id={id}
           className={cn('h-11 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft', className)}
           type={inputType}
+          inputMode={isNumeric ? rest.step === 1 ? 'numeric' : 'decimal' : rest.inputMode}
           {...rest}
         />
         {isPassword && (

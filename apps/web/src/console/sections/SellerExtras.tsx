@@ -6,7 +6,7 @@ import type { ApiAdCampaign, ApiAuctionBidRow, ApiBuyerBid, ApiOrder, ApiProduct
 import { api, assetUrl } from '../../lib/api';
 import { chatBus } from '../../chat/chatBus';
 import { useI18n } from '../../i18n';
-import { compactUsd, parseAmount, orderLabel, orderTone } from '../lib';
+import { compactUsd, exactUsd, parseAmount, orderLabel, orderTone } from '../lib';
 import { errMessage } from './order-parts';
 import { ProductForm, blankProduct, formToPayload, productFormReady, type ProductFormValues } from './ProductForm';
 import { BuyerBidRoom } from './BuyerBidRoom';
@@ -178,8 +178,8 @@ function countdown(end: string | null | undefined, t: (k: string) => string) {
   return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h ${m}m`;
 }
 
-/** Turn one of the seller's existing listings into an auction. */
-function StartAuctionModal({ onClose }: { onClose: () => void }) {
+/** Full-page flow for turning one of the seller's listings into an auction. */
+function StartAuctionPage({ onBack }: { onBack: () => void }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const [productId, setProductId] = useState('');
@@ -204,26 +204,18 @@ function StartAuctionModal({ onClose }: { onClose: () => void }) {
       qc.invalidateQueries({ queryKey: ['my-products'] });
       qc.invalidateQueries({ queryKey: ['my-auctions'] });
       qc.invalidateQueries({ queryKey: ['live-auctions'] });
-      onClose();
+      onBack();
     },
     onError: (e) => setErr(errMessage(e, t('console.seller.startAuctionError'))),
   });
 
   return (
-    <Modal closeLabel={t('common:close')}
-      open
-      onClose={onClose}
-      title={t('console.seller.startAuction')}
-      footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>{t('common:cancel')}</Button>
-          <Button disabled={!productId || !Number(startBid) || !endsAt || start.isPending} onClick={() => start.mutate()}>
-            {start.isPending ? t('console.seller.starting') : t('console.seller.startAuctionBtn')}
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-3">
+    <div className="mx-auto w-full max-w-3xl">
+      <Button variant="ghost" size="sm" className="mb-3" onClick={onBack} leftIcon={<Icon name="chevronLeft" size={15} />}>
+        {t('common:back')}
+      </Button>
+      <SectionHead title={t('console.seller.startAuction')} sub={t('console.seller.auctionsSub')} />
+      <Card className="space-y-5 p-4 sm:p-6">
         {eligible.length === 0 ? (
           <p className="text-sm text-ink-soft">{t('console.seller.allAuctions')}</p>
         ) : (
@@ -247,8 +239,14 @@ function StartAuctionModal({ onClose }: { onClose: () => void }) {
           </>
         )}
         {err && <p className="text-sm font-semibold text-status-error">{err}</p>}
-      </div>
-    </Modal>
+        <div className="flex flex-col-reverse gap-2 border-t border-surface-border pt-4 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={onBack}>{t('common:cancel')}</Button>
+          <Button disabled={!productId || !Number(startBid) || !endsAt || start.isPending} onClick={() => start.mutate()}>
+            {start.isPending ? t('console.seller.starting') : t('console.seller.startAuctionBtn')}
+          </Button>
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -272,6 +270,7 @@ function BidBookModal({
   allocating: boolean;
 }) {
   const { t } = useI18n();
+  const [confirming, setConfirming] = useState(false);
   const { data: bids = [], isLoading } = useQuery<ApiAuctionBidRow[]>({
     queryKey: ['auction-bids', auction.slug],
     queryFn: () => api.auctions.bids(auction.slug) as Promise<ApiAuctionBidRow[]>,
@@ -309,7 +308,7 @@ function BidBookModal({
                 {b.isTop && <Badge tone="green">{t('console.seller.highest')}</Badge>}
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-display font-extrabold text-ink">{compactUsd(b.amountCents / 100)}{unitSuffix(auction.unit, t)}</span>
+                <span className="font-display font-extrabold text-ink">{exactUsd(b.amountCents / 100)}{unitSuffix(auction.unit, t)}</span>
                 {b.bidderId && (
                   <Button
                     size="sm"
@@ -329,12 +328,29 @@ function BidBookModal({
       {/* Allocation IS the close: settling a lot hands it to the highest bid and
           notifies both sides. Naming the winner on the button makes that the
           seller is about to give the goods to THIS person explicit. */}
-      {!ended && top && (
-        <Button fullWidth className="mt-4" disabled={allocating} onClick={onAllocate} leftIcon={<Icon name="gavel" size={16} />}>
-          {allocating
-            ? t('console.seller.allocating')
-            : t('console.seller.allocateTo', { name: top.bidderName ?? top.masked, amount: compactUsd(top.amountCents / 100) })}
+      {!ended && top && !confirming && (
+        <Button fullWidth className="mt-4" disabled={allocating} onClick={() => setConfirming(true)} leftIcon={<Icon name="gavel" size={16} />}>
+          {t('console.seller.allocateTo', { name: top.bidderName ?? top.masked, amount: exactUsd(top.amountCents / 100) })}
         </Button>
+      )}
+      {!ended && top && confirming && (
+        <div role="alert" className="mt-4 rounded-lg border border-brand-mango bg-brand-mango/10 p-3">
+          <div className="font-display font-bold text-ink">{t('console.seller.confirmAllocation')}</div>
+          <p className="mt-1 text-sm text-ink-soft">
+            {t('console.seller.confirmAllocationWarning', {
+              name: top.bidderName ?? top.masked,
+              amount: exactUsd(top.amountCents / 100),
+            })}
+          </p>
+          <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" disabled={allocating} onClick={() => setConfirming(false)}>
+              {t('common:cancel')}
+            </Button>
+            <Button disabled={allocating} onClick={onAllocate} leftIcon={<Icon name="gavel" size={16} />}>
+              {allocating ? t('console.seller.allocating') : t('console.seller.confirmAllocateTo', { name: top.bidderName ?? top.masked })}
+            </Button>
+          </div>
+        </div>
       )}
     </Modal>
   );
@@ -369,6 +385,8 @@ export function SellerAuctions() {
     onError: (e) => setErr(errMessage(e, t('console.seller.closeAuctionError'))),
   });
 
+  if (starting) return <StartAuctionPage onBack={() => setStarting(false)} />;
+
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -399,13 +417,13 @@ export function SellerAuctions() {
                 </div>
                 <div className="mt-2 font-display font-bold text-ink">{p.name}</div>
                 <div className="text-xs text-ink-soft">
-                  {t('console.seller.startPrice', { price: p.startBidCents != null ? compactUsd(p.startBidCents / 100) : p.price })}
+                  {t('console.seller.startPrice', { price: p.startBidCents != null ? exactUsd(p.startBidCents / 100) : p.price })}
                   {' · '}{t('console.seller.bidCount', { count: p.bidCount })}
                 </div>
                 <div className="mt-2">
                   <div className="text-xs text-ink-soft">{t('console.seller.highestBid')}</div>
                   <div className="font-display text-lg font-extrabold text-ink">
-                    {p.highestCents != null ? compactUsd(p.highestCents / 100) : '—'}
+                    {p.highestCents != null ? exactUsd(p.highestCents / 100) : '—'}
                     {p.highBidder && <span className="ms-1 text-xs font-normal text-ink-soft">{t('console.seller.byBidder', { name: p.highBidder })}</span>}
                   </div>
                 </div>
@@ -418,7 +436,11 @@ export function SellerAuctions() {
                 <div className="mt-3 flex gap-2">
                   <Button variant="outline" size="sm" fullWidth onClick={() => setViewing(p)}>{t('console.seller.viewBids')}</Button>
                   {!ended && (
-                    <Button size="sm" fullWidth disabled={close.isPending} onClick={() => { setErr(''); close.mutate(p.slug); }}>
+                    <Button size="sm" fullWidth disabled={close.isPending} onClick={() => {
+                      setErr('');
+                      if (p.bidCount > 0) setViewing(p);
+                      else close.mutate(p.slug);
+                    }}>
                       {close.isPending
                         ? t('console.seller.closing')
                         : p.bidCount > 0
@@ -433,7 +455,6 @@ export function SellerAuctions() {
         </div>
       )}
 
-      {starting && <StartAuctionModal onClose={() => setStarting(false)} />}
       {viewing && (
         <BidBookModal
           auction={viewing}

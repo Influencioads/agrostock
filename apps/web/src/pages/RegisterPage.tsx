@@ -352,7 +352,8 @@ export function RegisterPage() {
                   {form.role === 'transporter' && (
                     <Input
                       label={t('page.register.minDistanceKm')}
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       min={0}
                       placeholder="50"
                       value={ops.minDistanceKm}
@@ -362,7 +363,8 @@ export function RegisterPage() {
                   {(form.role === 'loaderco' || form.role === 'worker') && (
                     <Input
                       label={t('page.register.minWorkHours')}
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       min={0}
                       placeholder="4"
                       value={ops.minWorkHours}
@@ -372,7 +374,8 @@ export function RegisterPage() {
                   {form.role === 'loaderco' && (
                     <Input
                       label={t('page.register.minLoaders')}
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       min={0}
                       placeholder="5"
                       value={ops.minLoaders}

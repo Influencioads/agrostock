@@ -6,7 +6,9 @@ import { ORDER_LABELS, nextStatusFor, type ApiOrderStatus } from '@agrotraders/a
  * `useCurrency().fmtCents`, which respects the user's display currency.
  */
 export const usd = (cents: number | null | undefined) =>
-  cents == null ? '—' : '$' + (cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  cents == null
+    ? '—'
+    : '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 /** Parse an API amount/price string like "$48,200" into a plain number. */
 export const parseAmount = (a: string | null | undefined): number => {
@@ -18,6 +20,10 @@ export const parseAmount = (a: string | null | undefined): number => {
 /** Compact dollar label, e.g. 284000 → "$284K". `n` is dollars. */
 export const compactUsd = (n: number): string =>
   n >= 1000 ? '$' + (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'K' : '$' + Math.round(n).toLocaleString();
+
+/** Exact dollar amount for transactional values such as bids. */
+export const exactUsd = (n: number): string =>
+  '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 /** Compact plain number, e.g. 24100 → "24.1K". */
 export const compactNum = (n: number): string =>

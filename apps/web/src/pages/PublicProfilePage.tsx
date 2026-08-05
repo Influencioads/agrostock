@@ -11,6 +11,13 @@ import { HireModal, type HireTarget } from '../components/site/HireModal';
 import { ReviewList } from '../console/components/ReviewList';
 import { unitSuffix } from '@agrotraders/types';
 
+function locationLabel(city: string | null | undefined, country: string | null | undefined): string {
+  const place = city?.trim();
+  const nation = country?.trim();
+  if (place && nation && place.toLocaleLowerCase().includes(nation.toLocaleLowerCase())) return place;
+  return [place, nation].filter(Boolean).join(', ');
+}
+
 /**
  * Public profile. Contact details are intentionally masked — the API never
  * sends them; users connect via chat instead (privacy rule: admin-only).
@@ -48,6 +55,18 @@ export function PublicProfilePage() {
         : null;
   const counts = p._count ?? {};
   const isMe = me?.id === p.id;
+  const homeLocation = locationLabel(
+    p.workerProfile?.originCity ?? p.profile?.originCity ?? p.profile?.location,
+    p.workerProfile?.originCountry ?? p.profile?.originCountry ?? p.country,
+  );
+  const operatingAreas = [
+    ...(p.workerProfile?.operatingCities ?? p.profile?.operatingCities ?? []),
+    ...(p.workerProfile?.operatingCountries ?? p.profile?.operatingCountries ?? []),
+  ];
+  const supplyingAreas = [
+    ...(p.profile?.supplyingCities ?? []),
+    ...(p.profile?.supplyingCountries ?? []),
+  ];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 lg:px-6">
@@ -71,8 +90,8 @@ export function PublicProfilePage() {
           </div>
           {p.profile?.bio && <p className="mt-2 text-sm text-ink-soft">{p.profile.bio}</p>}
           <div className="mt-3 grid grid-cols-1 gap-x-8 gap-y-1.5 text-sm text-ink-soft sm:grid-cols-2">
-            {(p.profile?.location || p.country) && (
-              <span className="flex items-center gap-1.5"><Icon name="mapPin" size={14} /> {p.profile?.location ?? p.country}</span>
+            {homeLocation && (
+              <span className="flex items-center gap-1.5"><Icon name="mapPin" size={14} /> {homeLocation}</span>
             )}
             {p.profile?.availableFrom && p.profile?.availableTo && (
               <span className="flex items-center gap-1.5"><Icon name="clock" size={14} /> {t('page.profile.available', { from: p.profile.availableFrom, to: p.profile.availableTo, tz: p.profile.timezone ?? '' })}</span>
@@ -86,6 +105,18 @@ export function PublicProfilePage() {
               </span>
             )}
           </div>
+          {(operatingAreas.length > 0 || supplyingAreas.length > 0) && (
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+              {operatingAreas.length > 0 && (
+                <Badge tone="slate" icon={<Icon name="mapPin" size={10} />}>
+                  {t('page.directory.operatesIn', { areas: operatingAreas.join(', ') })}
+                </Badge>
+              )}
+              {supplyingAreas.length > 0 && (
+                <Badge tone="info">{t('page.directory.suppliesTo', { areas: supplyingAreas.join(', ') })}</Badge>
+              )}
+            </div>
+          )}
         </div>
         {!isMe && (
           <div className="flex shrink-0 gap-2 sm:flex-col">

@@ -593,7 +593,8 @@ function TaxonomyModal({
         />
         <Input
           label={t('catAdmin.sortLabel')}
-          type="number"
+          type="text"
+          inputMode="decimal"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
           hint={t('catAdmin.sortHint')}

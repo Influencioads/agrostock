@@ -30,6 +30,13 @@ const HIRE_TYPE: Record<DirectoryType, HireTarget['targetType'] | null> = {
 
 type Entry = (ApiDirectoryEntry | ApiWorkerEntry) & { userId?: string };
 
+function locationLabel(city: string | null | undefined, country: string | null | undefined): string {
+  const place = city?.trim();
+  const nation = country?.trim();
+  if (place && nation && place.toLocaleLowerCase().includes(nation.toLocaleLowerCase())) return place;
+  return [place, nation].filter(Boolean).join(', ') || '—';
+}
+
 function normalize(type: DirectoryType, raw: (ApiDirectoryEntry | ApiWorkerEntry)[]): Entry[] {
   if (type !== 'workers') return raw as Entry[];
   return (raw as ApiWorkerEntry[]).map((w) => ({ ...w, userId: w.user?.id }));
@@ -198,7 +205,8 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
         )}
         {type === 'transporters' && (
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             min={0}
             value={minDistanceKm}
             onChange={(e) => setParam('minDistanceKm', e.target.value || null)}
@@ -208,7 +216,8 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
         )}
         {(type === 'loaders' || type === 'workers') && (
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             min={0}
             value={minWorkHours}
             onChange={(e) => setParam('minWorkHours', e.target.value || null)}
@@ -218,7 +227,8 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
         )}
         {type === 'loaders' && (
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             min={0}
             value={minLoaders}
             onChange={(e) => setParam('minLoaders', e.target.value || null)}
@@ -250,6 +260,13 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
             const d = e as ApiDirectoryEntry;
             const profile = isWorker ? w.user?.profile : d.profile;
             const entryCountry = isWorker ? w.user?.country : d.country;
+            const entryCity = isWorker
+              ? w.originCity ?? profile?.originCity ?? profile?.location
+              : profile?.originCity ?? profile?.location;
+            const locationCountry = isWorker
+              ? w.originCountry ?? profile?.originCountry ?? entryCountry
+              : profile?.originCountry ?? entryCountry;
+            const entryLocation = locationLabel(entryCity, locationCountry);
             const kyc = isWorker ? w.user?.kycStatus : d.kycStatus;
             const chatUserId = isWorker ? w.user?.id : d.id;
             const hireType = HIRE_TYPE[type];
@@ -268,7 +285,9 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
                     ) : (
                       <span className="block truncate font-display font-bold text-ink">{e.name}</span>
                     )}
-                    <div className="text-xs text-ink-soft">{entryCountry ?? '—'}</div>
+                    <div className="flex items-center gap-1 text-xs text-ink-soft">
+                      <Icon name="mapPin" size={11} /> {entryLocation}
+                    </div>
                   </div>
                   {kyc === 'verified' && (
                     <Badge tone="green" icon={<Icon name="shield" size={11} />}>{t('page.directory.verified')}</Badge>

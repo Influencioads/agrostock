@@ -674,7 +674,8 @@ export function AttributeFields({
             <label key={f.key} className="block">
               {label}
               <input
-                type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                type={f.type === 'date' ? 'date' : 'text'}
+                inputMode={f.type === 'number' ? 'decimal' : undefined}
                 value={(raw as string) ?? ''}
                 onChange={(e) => setField(f.key, e.target.value)}
                 className={selCls}
@@ -847,9 +848,8 @@ export function ProductForm({
               ))}
             </select>
             <input
-              type="number"
-              min={0}
-              step="any"
+              type="text"
+              inputMode="decimal"
               placeholder="840"
               value={value.price}
               onChange={(e) => set('price')(e.target.value)}
@@ -876,18 +876,16 @@ export function ProductForm({
         </label>
         <Input
           label={`${t('web:console.productForm.quantity')} (${toUnit(value.unit)})`}
-          type="number"
-          min={0}
-          step="any"
+          type="text"
+          inputMode="decimal"
           placeholder="500"
           value={value.qty}
           onChange={(e) => set('qty')(e.target.value)}
         />
         <Input
           label={`${t('web:console.productForm.moq')} (${toUnit(value.unit)})`}
-          type="number"
-          min={0}
-          step="any"
+          type="text"
+          inputMode="decimal"
           placeholder="25"
           value={value.moq}
           onChange={(e) => set('moq')(e.target.value)}
@@ -896,8 +894,8 @@ export function ProductForm({
             enforced by the reservation machinery at checkout. */}
         <Input
           label={`${t('web:console.productForm.stock')} (${toUnit(value.unit)})`}
-          type="number"
-          min={0}
+          type="text"
+          inputMode="numeric"
           placeholder={t('web:console.productForm.phStock')}
           value={value.stock}
           onChange={(e) => set('stock')(e.target.value)}
@@ -987,7 +985,7 @@ export function ProductForm({
 
       {value.isAuction && (
         <div className="grid grid-cols-1 gap-3 rounded-xl border border-surface-border bg-brand-surface/40 p-3 sm:grid-cols-2">
-          <Input label={`${t('web:console.seller.startingBid')} (${value.priceCurrency || 'USD'})`} type="number" placeholder="800" value={value.startBid} onChange={(e) => set('startBid')(e.target.value)} />
+          <Input label={`${t('web:console.seller.startingBid')} (${value.priceCurrency || 'USD'})`} type="text" inputMode="decimal" placeholder="800" value={value.startBid} onChange={(e) => set('startBid')(e.target.value)} />
           <Input label={t('web:console.seller.auctionCloses')} type="datetime-local" value={value.auctionEndsAt} onChange={(e) => set('auctionEndsAt')(e.target.value)} />
         </div>
       )}

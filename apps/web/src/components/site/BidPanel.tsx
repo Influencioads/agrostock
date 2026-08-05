@@ -38,7 +38,7 @@ export function BidPanel({ slug }: { slug: string }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { fmtCents } = useCurrency();
-  const [amount, setAmount] = useState<number | null>(null); // dollars; null = track the current price
+  const [amount, setAmount] = useState<string | null>(null); // major units; null = track the current price
   const [autoOpen, setAutoOpen] = useState(false);
   const [autoMax, setAutoMax] = useState('');
   const [error, setError] = useState('');
@@ -61,10 +61,8 @@ export function BidPanel({ slug }: { slug: string }) {
   const currentCents = auction?.highestCents ?? auction?.startBidCents ?? 0;
   // One account, one offer: once you have bid the field opens at YOUR standing
   // offer, because placing again revises it rather than adding a second row.
-  const value = amount ?? (auction?.standing?.yourMaxCents ?? currentCents) / 100;
-  // Nudge size for the ± buttons only — 1% of the current price, so it is
-  // useful at $8/KG and at $6,400/MT alike. Nothing enforces it.
-  const nudge = Math.max(0.01, Math.round(currentCents * 0.01) / 100);
+  const amountText = amount ?? String((auction?.standing?.yourMaxCents ?? currentCents) / 100);
+  const value = Number(amountText);
   // The metric the lot is priced in, so "$8.20" always reads "$8.20/KG".
   const unit = unitSuffix(auction?.unit, t);
   const standing = auction?.standing;
@@ -106,7 +104,6 @@ export function BidPanel({ slug }: { slug: string }) {
     onError: (e: unknown) => setError((e as { response?: { data?: { message?: string } } })?.response?.data?.message || t('site.bidError')),
   });
 
-  const step = (dir: 1 | -1) => setAmount(Math.max(0.01, Math.round((value + dir * nudge) * 100) / 100));
   const onBid = () => { if (requireBuyer()) place.mutate(); };
   const onToggleAuto = () => {
     if (autoOpen && autoMaxCents != null) { saveAuto.mutate(true); setAutoOpen(false); setAutoMax(''); }
@@ -175,16 +172,19 @@ export function BidPanel({ slug }: { slug: string }) {
                 {t('auction.pricePerUnit', { unit: t(`enums:unitShort.${toUnit(auction?.unit)}`) })}
               </span>
             </div>
-            <div className="mt-1.5 flex items-center overflow-hidden rounded-xl border-2 border-brand-leaf shadow-[0_0_0_4px_rgba(83,184,106,0.1)]">
-              <button aria-label={t('auction.decrease')} onClick={() => step(-1)} disabled={ended} className="h-[52px] w-12 shrink-0 text-2xl text-brand-dark hover:bg-brand-surface disabled:opacity-40">−</button>
+            <div className="mt-1.5 flex items-center overflow-hidden rounded-xl border-2 border-brand-leaf px-4 shadow-[0_0_0_4px_rgba(83,184,106,0.1)]">
               <input
-                type="number"
-                value={value}
-                onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
+                type="text"
+                inputMode="decimal"
+                value={amountText}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  if (/^\d*(?:\.\d{0,2})?$/.test(next)) setAmount(next);
+                }}
                 disabled={ended}
-                className="w-full flex-1 border-0 text-center font-numeric text-2xl font-bold text-ink outline-none"
+                aria-label={t('auction.yourOfferLabel')}
+                className="h-[52px] w-full flex-1 border-0 text-center font-numeric text-2xl font-bold text-ink outline-none"
               />
-              <button aria-label={t('auction.increase')} onClick={() => step(1)} disabled={ended} className="h-[52px] w-12 shrink-0 text-2xl text-brand-dark hover:bg-brand-surface disabled:opacity-40">+</button>
             </div>
 
             <Button
@@ -218,7 +218,8 @@ export function BidPanel({ slug }: { slug: string }) {
               {autoOpen && (
                 <div className="mt-2.5 flex gap-2">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     placeholder={t('auction.maxPlaceholder')}
                     value={autoMax}
                     onChange={(e) => setAutoMax(e.target.value)}

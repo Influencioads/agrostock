@@ -159,7 +159,7 @@ export function ProductCard({ p }: { p: Product }) {
           )}
           {/* Availability is the only bold line under the name — it is what a
               buyer scanning a grid of cards is actually comparing. */}
-          <div className="font-bold text-ink">{stockLabel}</div>
+          <div className="font-normal text-ink">{stockLabel}</div>
           <div className="truncate">{t('site.availableLine', { qty, moq, delivery })}</div>
         </div>
 

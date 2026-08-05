@@ -548,9 +548,9 @@ export function MarketPage() {
             <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.priceRange')}</p>
             <div className="mt-2 flex items-center gap-2">
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 min={0}
-                inputMode="numeric"
                 value={minPrice}
                 onChange={(e) => setParam('minPrice', e.target.value || null)}
                 placeholder={t('page.market.min')}
@@ -558,9 +558,9 @@ export function MarketPage() {
               />
               <span className="text-ink-soft">–</span>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 min={0}
-                inputMode="numeric"
                 value={maxPrice}
                 onChange={(e) => setParam('maxPrice', e.target.value || null)}
                 placeholder={t('page.market.max')}

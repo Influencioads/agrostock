@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Combobox, Icon, Input, Modal } from '@agrotraders/ui';
+import { Badge, Button, Card, Combobox, Icon, Input } from '@agrotraders/ui';
 import { CountrySelect } from '@agrotraders/ui/ProductForm';
 import { buildSubcategoryTree, type ApiBuyerBid, type ApiCategory, type SubcategoryNode } from '@agrotraders/api-client';
 import { buyerBidTitle, CURRENCIES, CURRENCY_SYMBOLS, PROCURE_WINDOWS, PRODUCT_UNITS, suggestProductName, toUnit } from '@agrotraders/types';
@@ -89,7 +89,7 @@ export function buyerBidsLoadState(q: { isPending: boolean; isError: boolean }):
  * Buyer posts ONE thing: what they need. Sellers then underbid each other on it
  * and the buyer awards the cheapest — there is no second "mode" to choose.
  */
-function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
+function NewBuyerBidPage({ onBack }: { onBack: () => void }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -186,31 +186,23 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
         images,
       }),
     onMutate: () => setError(''),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-buyer-bids'] }); onClose(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-buyer-bids'] }); onBack(); },
     onError: (e) => setError(errMessage(e, t('console.buyer.postError'))),
   });
 
   const ready = taxonomy.length > 0 && Number(f.qtyValue) > 0;
 
   return (
-    <Modal closeLabel={t('common:close')}
-      open
-      onClose={onClose}
-      title={t('console.buyer.postRequirement')}
-      className="max-w-2xl"
-      footer={
-        // The failure has to sit NEXT to the button. Down in the scrolling body
-        // it was below the fold, so a rejected post read as a dead button.
-        <div className="flex w-full flex-wrap items-center justify-end gap-2">
-          {error && <p className="me-auto text-sm font-semibold text-status-error">{error}</p>}
-          <Button variant="outline" onClick={onClose}>{t('common:cancel')}</Button>
-          <Button disabled={!ready || create.isPending} onClick={() => create.mutate()}>
-            {create.isPending ? t('console.buyer.posting') : t('console.buyer.postRequirement')}
-          </Button>
-        </div>
-      }
-    >
-      <div className="space-y-4">
+    <div className="mx-auto w-full max-w-4xl">
+      <Button variant="ghost" size="sm" className="mb-3" onClick={onBack} leftIcon={<Icon name="chevronLeft" size={15} />}>
+        {t('common:back')}
+      </Button>
+      <div className="mb-5">
+        <h2 className="font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.buyer.postRequirement')}</h2>
+        <p className="mt-1 text-sm text-ink-soft">{t('console.buyer.bidsSub')}</p>
+      </div>
+      <Card className="p-4 sm:p-6">
+        <div className="space-y-4">
         <p className="rounded-lg bg-mango-soft px-3 py-2 text-xs text-ink-soft">{t('console.buyer.modeAuction')}</p>
 
         {/* Read-only: the title is composed below, so every requirement on the
@@ -248,7 +240,8 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
           </label>
           <Input
             label={`${t('console.buyer.quantity')} (${toUnit(f.qtyUnit)})`}
-            type="number"
+            type="text"
+            inputMode="decimal"
             min={0}
             step="any"
             value={f.qtyValue}
@@ -259,7 +252,8 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
               requirement still knows whether a part-load is worth quoting. */}
           <Input
             label={`${t('console.buyer.minLot')} (${toUnit(f.qtyUnit)})`}
-            type="number"
+            type="text"
+            inputMode="decimal"
             min={0}
             step="any"
             placeholder={t('console.buyer.phMinLot')}
@@ -282,7 +276,8 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
                 ))}
               </select>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 min={0}
                 step="any"
                 value={f.targetPrice}
@@ -385,8 +380,16 @@ function NewBuyerBidModal({ onClose }: { onClose: () => void }) {
           <GalleryEditor images={images} onChange={setImages} onError={setError} upload={api.buyerBids.uploadImages} max={MAX_IMAGES} />
           <p className="mt-1.5 text-xs text-ink-soft">{t('console.buyer.photosHint')}</p>
         </div>
-      </div>
-    </Modal>
+        </div>
+        <div className="mt-6 flex w-full flex-col-reverse gap-2 border-t border-surface-border pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          {error && <p className="me-auto text-sm font-semibold text-status-error">{error}</p>}
+          <Button variant="outline" onClick={onBack}>{t('common:cancel')}</Button>
+          <Button disabled={!ready || create.isPending} onClick={() => create.mutate()}>
+            {create.isPending ? t('console.buyer.posting') : t('console.buyer.postRequirement')}
+          </Button>
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -476,6 +479,7 @@ export function BuyerBids() {
   useEffect(() => { const id = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
 
   // The room owns the whole section while it's open — it's a screen, not an overlay.
+  if (creating) return <NewBuyerBidPage onBack={() => setCreating(false)} />;
   if (openId) return <BuyerBidRoom id={openId} onBack={() => setOpenId(null)} />;
 
   const open = buyerBids.filter((r) => r.status === 'open');
@@ -564,7 +568,6 @@ export function BuyerBids() {
         </div>
       )}
 
-      {creating && <NewBuyerBidModal onClose={() => setCreating(false)} />}
     </div>
   );
 }

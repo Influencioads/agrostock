@@ -52,16 +52,15 @@ export function convertCents(usdCents: number, rate: number): number {
   return (usdCents / 100) * rate;
 }
 
-/** Zero-decimal display currencies (large-denomination). */
-const NO_DECIMALS = new Set(['VND', 'JPY', 'KZT', 'IDR', 'NGN', 'PKR', 'INR', 'KES', 'RUB']);
-
 /**
  * Format USD cents in the given currency. Uses Intl when available (Hermes on
  * Expo SDK 54 ships Intl) and falls back to a symbol map otherwise.
  */
 export function formatMoney(usdCents: number, currency: string, rate: number, locale?: string): string {
   const amount = convertCents(usdCents, rate);
-  const decimals = NO_DECIMALS.has(currency) || amount >= 1000 ? 0 : 2;
+  // Preserve entered fractional prices in every currency. Intl omits trailing
+  // zeroes, so 1.2 stays "1.2" while 1.20 is displayed cleanly as "1.2".
+  const decimals = 2;
   try {
     return new Intl.NumberFormat(locale ?? 'en', {
       style: 'currency',

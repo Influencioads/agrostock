@@ -464,7 +464,8 @@ function CheckoutLine({
               clamping on every keystroke makes "500" impossible to type when
               the MOQ is 15. */}
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             aria-label={t('page.product.quantity')}
             min={min}
             step={countBased ? 1 : 'any'}

@@ -990,6 +990,9 @@
       "allocateTo": "Allocate to {{name}} · {{amount}}",
       "allocateTopBid": "Allocate top bid",
       "allocating": "Allocating…",
+      "confirmAllocation": "Confirm winner allocation",
+      "confirmAllocationWarning": "Allocate this auction to {{name}} for {{amount}}? This closes the auction and cannot be undone.",
+      "confirmAllocateTo": "Confirm allocation to {{name}}",
       "bidPlaced": "Bid placed",
       "bidderFallback": "Bidder",
       "bidsBadge": "Bids",
@@ -1526,7 +1529,7 @@
       "verifying": "Signing in…"
     },
     "product": {
-      "availLine": "{{qty}} available · MOQ {{moq}}",
+      "availLine": "{{qty}} In stock · MOQ {{moq}}",
       "browseMarket": "Browse the marketplace",
       "addToCart": "Add to cart",
       "addedToCart": "Added to your cart",

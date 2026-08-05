@@ -370,7 +370,8 @@ export function ProductPage() {
               <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.product.quantity')}</span>
               <div className="flex gap-2">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   min={minQty}
                   step={countBased ? 1 : 'any'}
                   value={qty}
