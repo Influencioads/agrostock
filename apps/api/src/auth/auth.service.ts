@@ -212,6 +212,9 @@ export class AuthService {
     if (existing) throw AppException.conflict('auth.email_taken', 'Email already registered');
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const role = dto.role ?? 'buyer';
+    // Buyer and seller are two views of one trading account. Public signup
+    // grants both dashboards while retaining the chosen role as the initial view.
+    const tradingRoles = role === 'buyer' ? ['seller'] : role === 'seller' ? ['buyer'] : [];
     const user = await this.prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
         data: {
@@ -219,6 +222,7 @@ export class AuthService {
           passwordHash,
           name: dto.name,
           role: role as never,
+          roles: { set: tradingRoles as never[] },
           country: dto.country,
         },
       });

@@ -9,8 +9,8 @@ import { useI18n } from '../i18n';
 /**
  * Landing page for the confirmation link we email at signup
  * (`/verify-email?token=…`). The token is one-shot: on success the API hands
- * back a full session, so the visitor lands signed in on onboarding rather than
- * being bounced to a login form.
+ * back a full session, so the visitor lands signed in on their role dashboard
+ * rather than being bounced to a login form.
  */
 export function VerifyEmailPage() {
   const { t } = useI18n();
@@ -33,7 +33,7 @@ export function VerifyEmailPage() {
       return;
     }
     verifyEmail(token)
-      .then(() => navigate('/onboarding', { replace: true }))
+      .then(() => navigate('/console', { replace: true }))
       .catch((e) =>
         setError(
           resolveApiError(e, (code) => t(`errors:${code}`, { defaultValue: '' }) || undefined, t('errors:unknown')),

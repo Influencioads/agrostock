@@ -547,7 +547,7 @@ export function Hero() {
               {(['buy', 'sell'] as const).map((m) => (
                 <button
                   key={m}
-                  onClick={() => (m === 'sell' ? navigate('/register?role=seller') : setMode(m))}
+                  onClick={() => (m === 'sell' ? navigate('/register') : setMode(m))}
                   className={
                     'rounded-md py-2 text-sm font-bold transition ' +
                     (mode === m ? 'bg-brand-gradient text-white shadow-cta' : 'text-ink-soft hover:text-ink')

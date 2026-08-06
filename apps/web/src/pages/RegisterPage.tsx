@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BrandMark, Button, Card, Combobox, Icon, Input, type IconName } from '@agrotraders/ui';
 import { ALL_COUNTRIES, countryLabel } from '@agrotraders/geo';
@@ -17,8 +17,7 @@ const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker']);
 // Self-registerable roles must match the API's PUBLIC_ROLES (admin is provisioned).
 // Labels/descriptions are translated at render (console.role.<id> / page.register.roleDesc.<id>).
 const roles: { id: string; icon: IconName }[] = [
-  { id: 'buyer', icon: 'bag' },
-  { id: 'seller', icon: 'store' },
+  { id: 'buyer_seller', icon: 'store' },
   { id: 'transporter', icon: 'truck' },
   { id: 'loaderco', icon: 'worker' },
   { id: 'worker', icon: 'user' },
@@ -29,11 +28,7 @@ export function RegisterPage() {
   const { register } = useAuth();
   const { logoSrc } = useBranding();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const roleFromUrl = searchParams.get('role');
-  const initialRole = roles.some((r) => r.id === roleFromUrl) ? roleFromUrl! : 'buyer';
-
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: initialRole, country: '', phone: '', location: '', marketId: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'buyer_seller', country: '', phone: '', location: '', marketId: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [ops, setOps] = useState({
     operatingCities: [] as string[],
@@ -92,6 +87,9 @@ export function RegisterPage() {
       };
       const result = await register({
         ...form,
+        // A trading account receives both Buyer and Seller dashboards. `buyer`
+        // remains the initial dashboard; the API grants `seller` alongside it.
+        role: form.role === 'buyer_seller' ? 'buyer' : form.role,
         phone: form.phone || undefined,
         location: form.location || undefined,
         marketId: form.marketId || undefined,
@@ -116,9 +114,9 @@ export function RegisterPage() {
         setPendingEmail(result.email);
         return;
       }
-      // Otherwise registration signed the user in — land on the profile so
-      // directories show them well.
-      navigate('/onboarding', { replace: true });
+      // Registration is shared by every account type. The console reads the
+      // selected role and renders its matching dashboard.
+      navigate('/console', { replace: true });
     } catch (err) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       setError(status === 409 ? t('page.register.emailTaken') : t('page.register.createFailed'));
@@ -208,8 +206,16 @@ export function RegisterPage() {
                       <Icon name={r.icon} size={18} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-bold text-ink">{t(`console.role.${r.id}`)}</span>
-                      <span className="block text-xs text-ink-soft">{t(`page.register.roleDesc.${r.id}`)}</span>
+                      <span className="block text-sm font-bold text-ink">
+                        {r.id === 'buyer_seller'
+                          ? `${t('console.role.buyer')} / ${t('console.role.seller')}`
+                          : t(`console.role.${r.id}`)}
+                      </span>
+                      <span className="block text-xs text-ink-soft">
+                        {r.id === 'buyer_seller'
+                          ? `${t('page.register.roleDesc.buyer')} · ${t('page.register.roleDesc.seller')}`
+                          : t(`page.register.roleDesc.${r.id}`)}
+                      </span>
                     </span>
                   </button>
                 );
@@ -220,7 +226,7 @@ export function RegisterPage() {
           <form className="mt-5 space-y-4" onSubmit={submit}>
             <Input
               label={t('page.register.fullName')}
-              placeholder={activeRole?.id === 'buyer' ? 'Karim Trading' : 'Punjab Agro Exports'}
+              placeholder={activeRole?.id === 'buyer_seller' ? 'Karim Trading' : 'Punjab Agro Exports'}
               value={form.name}
               onChange={set('name')}
               required
@@ -286,7 +292,7 @@ export function RegisterPage() {
               value={form.phone}
               onChange={set('phone')}
             />
-            {form.role === 'seller' && (
+            {form.role === 'buyer_seller' && (
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{t('page.register.yourMarket')}</span>
                 <select

@@ -1,13 +1,9 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Card, Icon, Input, type BadgeTone } from '@agrotraders/ui';
+import { useQuery } from '@tanstack/react-query';
+import { Badge, Card, Icon, type BadgeTone } from '@agrotraders/ui';
 import type { ApiRoleRequest } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
-
-// Role labels are translated at render from `console.role.<id>`.
-const REQUESTABLE = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'];
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   pending: 'warn',
@@ -19,30 +15,10 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 export function RolesAccessSection() {
   const { t } = useI18n();
   const { roles } = useAuth();
-  const qc = useQueryClient();
   const { data: requests = [] } = useQuery<ApiRoleRequest[]>({
     queryKey: ['my-role-requests'],
     queryFn: () => api.me.roleRequests(),
   });
-
-  const [note, setNote] = useState('');
-  const [err, setErr] = useState('');
-
-  const request = useMutation({
-    mutationFn: (role: string) => api.me.requestRole(role, note || undefined),
-    onSuccess: () => {
-      setNote('');
-      setErr('');
-      void qc.invalidateQueries({ queryKey: ['my-role-requests'] });
-    },
-    onError: (e: unknown) => {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErr(Array.isArray(msg) ? msg.join(', ') : msg || t('console.access.submitError'));
-    },
-  });
-
-  const pendingFor = (role: string) => requests.some((r) => r.role === role && r.status === 'pending');
-  const available = REQUESTABLE.filter((id) => !roles.includes(id));
 
   return (
     <div className="space-y-6">
@@ -60,37 +36,6 @@ export function RolesAccessSection() {
             </Badge>
           ))}
         </div>
-      </Card>
-
-      <Card>
-        <h3 className="font-display font-bold text-ink">{t('console.access.requestAnother')}</h3>
-        <p className="mt-1 text-sm text-ink-soft">{t('console.access.approvalNote')}</p>
-        {err && <p className="mt-2 text-sm font-semibold text-status-error">{err}</p>}
-        <div className="mt-3 max-w-md">
-          <Input
-            label={t('console.access.noteLabel')}
-            placeholder={t('console.access.phNote')}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </div>
-        {available.length === 0 ? (
-          <p className="mt-4 text-sm text-ink-soft">{t('console.access.allHeld')}</p>
-        ) : (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {available.map((id) => (
-              <Button
-                key={id}
-                variant="outline"
-                size="sm"
-                disabled={request.isPending || pendingFor(id)}
-                onClick={() => request.mutate(id)}
-              >
-                {pendingFor(id) ? t('console.access.rolePending', { role: t(`console.role.${id}`) }) : t('console.access.requestRole', { role: t(`console.role.${id}`) })}
-              </Button>
-            ))}
-          </div>
-        )}
       </Card>
 
       <Card padded={false}>
