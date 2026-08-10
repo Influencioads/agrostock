@@ -39,6 +39,7 @@ import {
 // a `javascript:` / `data:` / `vbscript:` value that could execute when a client
 // renders the src. Blocks stored-XSS via the goods-wanted photos.
 const SAFE_IMAGE_REF = /^(?:https?:\/\/|\/)[^\s]*$/i;
+import { assertSafeDealSettlement, requireSafeDeal } from '../products/safe-deal';
 import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -116,7 +117,12 @@ export class CreateBuyerBidDto {
   @ApiProperty({ required: false, description: 'Market/mandi to trade this through' })
   @IsOptional() @IsString() marketId?: string;
 
-  @ApiProperty({ required: false, description: 'Escrow-protected settlement (default) vs. a direct deal' })
+  /**
+   * Always escrow. Kept on the DTO only so an older client that still sends the
+   * field gets a clear rejection instead of a validation error — a bid can no
+   * longer be settled as a direct deal. See products/safe-deal.ts.
+   */
+  @ApiProperty({ required: false, description: 'Always true — bids settle through Safe Deal escrow. Sending `false` is rejected.' })
   @IsOptional() @IsBoolean() safeDeal?: boolean;
 
   @ApiProperty({ required: false, description: 'Buyer will entertain offers away from the target' })
@@ -283,7 +289,8 @@ export class BuyerBidsService {
         deadline: null,
         auctionEndsAt: closesAt ? new Date(closesAt) : null,
         procureBy: dto.procureBy || null,
-        safeDeal: dto.safeDeal ?? true,
+        // Mandatory on every bid — an explicit opt-out is rejected, not coerced.
+        safeDeal: requireSafeDeal(dto.safeDeal),
         negotiable: dto.negotiable ?? false,
         notes: dto.notes,
         images: dto.images ?? [],
@@ -343,6 +350,11 @@ export class BuyerBidsService {
     if (!buyerBid) throw new NotFoundException('Requirement not found');
     if (buyerBid.buyerId !== user.id && !isAdmin(user)) throw new ForbiddenException('Not your requirement');
     if (buyerBid.status !== 'open') throw new BadRequestException('This requirement is already closed.');
+    // The money guard: an order minted out of a bid must be escrow-protected.
+    // This reads the STORED flag, so a requirement written before Safe Deal
+    // became mandatory — or through any path that missed the create-time check —
+    // cannot be awarded outside escrow.
+    assertSafeDealSettlement(buyerBid);
 
     const sellerBid = await this.prisma.sellerBid.findUnique({ where: { id: sellerBidId } });
     if (!sellerBid || sellerBid.buyerBidId !== buyerBidId) throw new NotFoundException('Bid not found');

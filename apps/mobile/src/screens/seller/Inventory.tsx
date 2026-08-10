@@ -8,6 +8,7 @@ import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt, QueryError } from '../../ui';
+import { stockLabel } from '../components';
 import { C } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { unitSuffix } from '@agrotraders/types';
@@ -57,7 +58,7 @@ export function SellerInventory() {
                 </View>
                 <View>
                   <Txt variant="title">{p.name}</Txt>
-                  <Txt variant="muted">{p.flag} {p.qty} · {t('sellerX.inventory.orders', { count: p._count?.orders ?? 0 })}</Txt>
+                  <Txt variant="muted">{p.flag} {stockLabel(p, t)} · {t('sellerX.inventory.orders', { count: p._count?.orders ?? 0 })}</Txt>
                 </View>
               </Row>
               <Txt variant="title">{p.price}{unitSuffix(p.unit, t)}</Txt>

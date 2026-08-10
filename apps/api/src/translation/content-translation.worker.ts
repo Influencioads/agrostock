@@ -80,7 +80,9 @@ export class ContentTranslationWorker {
       });
       if (!p) return;
 
-      const fields = ['name', 'grade', 'origin', 'qty', 'moq', 'delivery'] as const;
+      // Mirrors PRODUCT_TR_FIELDS — `qty` is excluded because it is a derived
+      // numeric display string, not prose (see products.module.ts).
+      const fields = ['name', 'grade', 'origin', 'moq', 'delivery'] as const;
       const hashes = this.translation.fieldHashes(p, [...fields, 'attributes']);
       const changed = !this.hashesUnchanged(p.sourceHashes, hashes);
       const targets = this.pendingTargets(changed, p.translations);

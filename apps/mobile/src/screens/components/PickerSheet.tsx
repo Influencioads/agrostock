@@ -288,6 +288,27 @@ export function PickerField({
 }
 
 /**
+ * A settled value that is NOT a choice — same visual slot as `PickerField` so a
+ * form reads consistently, but with no chevron, no sheet and nothing tappable.
+ *
+ * Used where a rule fixes the value (Safe Deal on auctions and bids): a disabled
+ * picker still tells the user a toggle exists and they lack permission to use
+ * it, which is the wrong message when the option simply does not exist.
+ */
+export function ReadOnlyField({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <View style={{ gap: 6 }}>
+      <Txt variant="label">{label}</Txt>
+      <View style={[s.field, { backgroundColor: C.surface, borderColor: C.leaf }]}>
+        <Ionicons name="shield-checkmark" size={16} color={C.evergreen} />
+        <Text style={[s.fieldText, { color: C.ink, marginLeft: 8 }]} numberOfLines={1}>{value}</Text>
+      </View>
+      {hint ? <Txt variant="small">{hint}</Txt> : null}
+    </View>
+  );
+}
+
+/**
  * Multi-select field: a trigger showing how many are picked, the picked ones as
  * removable chips, and a `MultiPickerSheet` behind it. Replaces dumping every
  * option on the page as a chip grid.

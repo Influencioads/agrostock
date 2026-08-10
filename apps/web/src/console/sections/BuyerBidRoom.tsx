@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
 import { errMessage } from './order-parts';
+import { SafeDealNotice } from '../../components/site/SafeDealNotice';
 
 const HERO = 'radial-gradient(900px 420px at 82% -20%,rgba(83,184,106,.22),transparent),linear-gradient(150deg,#0B3D2E,#0e4632)';
 
@@ -192,7 +193,10 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
         : '—',
     ],
     [t('console.productForm.priceType'), t(buyerBid.negotiable ? 'console.productForm.priceNegotiable' : 'console.productForm.priceFixed')],
-    [t('console.productForm.dealType'), t(buyerBid.safeDeal === false ? 'console.productForm.dealDirect' : 'console.productForm.dealSafe')],
+    // Always Safe Deal. Every bid settles through escrow, including the legacy
+    // rows the migration promoted — so this row states the rule, it does not
+    // report a per-bid setting any more.
+    [t('console.productForm.dealType'), t('console.productForm.dealSafe')],
     // The listing fields that tell a seller whether they can even serve this.
     [t('console.buyer.preferredOrigin'), buyerBid.origin || t('console.buyer.any')],
     [t('console.buyer.acceptFrom'), buyerBid.supplyCountries?.length ? buyerBid.supplyCountries.join(', ') : t('console.buyer.any')],
@@ -300,6 +304,10 @@ export function BuyerBidRoom({ id, onBack }: { id: string; onBack: () => void })
             </dl>
             {buyerBid.notes && <p className="mt-3 rounded-lg bg-brand-surface px-3 py-2 text-sm text-ink-soft">{buyerBid.notes}</p>}
           </Card>
+
+          {/* Every bid settles through escrow — permanent notice, no opt-out to
+              offer and nothing for a seller to dismiss before quoting. */}
+          <SafeDealNotice className="mt-5" />
 
           {/* price / bid section — moved below the product */}
           {buyerBid.isOwner ? (

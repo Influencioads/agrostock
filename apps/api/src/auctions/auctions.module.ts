@@ -27,7 +27,10 @@ import { Locale, localize } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
 
 /** Product fields carrying a per-locale translation (mirrors products.module). */
-const PRODUCT_TR_FIELDS = ['name', 'grade', 'origin', 'qty', 'moq', 'delivery'] as const;
+// Must stay in step with PRODUCT_TR_FIELDS in products.module.ts. `qty` is
+// absent from both: it is a derived "<number> <unit-code>" mirror of
+// `stockQty`, not prose, so it is never translated.
+const PRODUCT_TR_FIELDS = ['name', 'grade', 'origin', 'moq', 'delivery'] as const;
 
 // API-13: these are DOLLARS, converted to int4 `amountCents` on write — cap at
 // the dollar equivalent of MAX_MONEY_CENTS so the conversion can't overflow.

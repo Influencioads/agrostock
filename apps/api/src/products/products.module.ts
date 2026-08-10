@@ -23,7 +23,8 @@ import { ApiBearerAuth, ApiConsumes, ApiTags, PartialType } from '@nestjs/swagge
 import { Prisma } from '@prisma/client';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, toUnit, type AttrField } from '@agrotraders/types';
+import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, parseQtyIn, stockQtyText, toUnit, type AttrField } from '@agrotraders/types';
+import { requireSafeDeal, resolveListingSafeDeal } from './safe-deal';
 import { commonWord } from '@agrotraders/i18n/notifications';
 import { FxModule, FxService } from '../fx/fx.module';
 import { CatalogModule, CategoriesService, MAX_TAXONOMY_DEPTH } from '../catalog/catalog.module';
@@ -38,7 +39,11 @@ import { MAX_QTY } from '../common/limits';
 import type { Lang } from '@agrotraders/i18n';
 
 /** Translatable Product columns folded from a ProductTranslation row. */
-const PRODUCT_TR_FIELDS = ['name', 'grade', 'origin', 'qty', 'moq', 'delivery'] as const;
+// `qty` is NOT translatable: it is a derived "<number> <unit-code>" string
+// mirroring `stockQty`, so a per-locale copy of it is a second quantity that
+// can drift from the canonical one — and machine-translating it only ever
+// produced "500 МТ". The migration clears the rows this used to write.
+const PRODUCT_TR_FIELDS = ['name', 'grade', 'origin', 'moq', 'delivery'] as const;
 
 interface ProductTranslationRow {
   name: string;
@@ -243,6 +248,13 @@ export class CreateProductDto {
   /** Seller's own remarks on the listing (packing, loading terms, …). */
   @IsOptional() @IsString() @MaxLength(2000) notes?: string;
   @IsOptional() @IsString() grade?: string;
+  /**
+   * Legacy display quantity ("500 MT"). DERIVED from `stockQty` server-side and
+   * never trusted from the client: it used to be an independently-authored
+   * figure, which is how a listing ended up advertising one number as "stock"
+   * and a different one as "available". Kept on the model (and accepted here)
+   * only so older clients and the translation pipeline keep working.
+   */
   @IsOptional() @IsString() qty?: string;
   @IsOptional() @IsString() moq?: string;
   @IsOptional() @IsString() flag?: string;
@@ -668,7 +680,6 @@ export class ProductsService {
         vatExtra: dto.vatExtra ?? false,
         notes: dto.notes,
         grade: dto.grade,
-        qty: dto.qty,
         moq: dto.moq,
         flag: dto.flag,
         emoji: dto.emoji ?? '🌾',
@@ -682,10 +693,13 @@ export class ProductsService {
         ...(attributes ? { attributes: attributes as Prisma.InputJsonValue } : {}),
         isOffer: dto.isOffer ?? false,
         isAuction: dto.isAuction ?? false,
-        safeDeal: dto.safeDeal ?? true,
+        // An auction lot is always escrow-protected — see products/safe-deal.ts.
+        safeDeal: resolveListingSafeDeal(dto.safeDeal, dto.isAuction ?? false),
         negotiable: dto.negotiable ?? false,
-        // FLOW-04: managed inventory when the seller sets it; null = unlimited.
-        stockQty: dto.stockQty ?? null,
+        // FLOW-04 + the single-stock rule: `stockQty` is the one figure, and the
+        // legacy `qty` display column is derived from it here so the two can
+        // never diverge. null = the seller does not track stock.
+        ...this.stockPatch(dto)!,
         // The client sends the bid in the seller's own currency; convert to the
         // USD baseline like the price, and keep the raw entry for the edit form.
         startBidCents: dto.isAuction
@@ -708,6 +722,45 @@ export class ProductsService {
     return product;
   }
 
+  /**
+   * Reconcile the two quantity columns onto ONE figure.
+   *
+   * `stockQty` (whole units, in the listing's own unit) is the source of truth.
+   * `qty` is a display string kept in step with it so everything still reading
+   * that column — order snapshots, invoice lines, the translation pipeline,
+   * seeded rows — sees the same number the buyer does. Nothing may set the two
+   * independently: that is what produced a listing showing "300 MT in stock"
+   * next to "500 MT available".
+   *
+   * A client that sends only the legacy `qty` (an older web build, the seeder,
+   * an admin edit) has its number PROMOTED into `stockQty` rather than quietly
+   * becoming a second, unmanaged quantity.
+   *
+   * Returns `null` on update when the caller touched neither column, so an
+   * unrelated edit leaves stock exactly as it was.
+   */
+  private stockPatch(
+    dto: Partial<CreateProductDto>,
+    existing?: { stockQty: number | null; qty: string | null; unit: string | null },
+  ): { stockQty: number | null; qty: string | null } | null {
+    const touched = dto.stockQty !== undefined || dto.qty !== undefined || dto.unit !== undefined;
+    if (existing && !touched) return null;
+
+    const unit = toUnit(dto.unit ?? existing?.unit);
+    let stockQty: number | null;
+    if (dto.stockQty !== undefined) {
+      stockQty = dto.stockQty ?? null;
+    } else if (dto.qty !== undefined) {
+      // Legacy write: read the number back out of the free text ("25000 kg"),
+      // restated in the listing's unit.
+      const parsed = parseQtyIn(dto.qty, unit);
+      stockQty = parsed === undefined ? null : Math.min(MAX_QTY, Math.max(0, Math.round(parsed)));
+    } else {
+      stockQty = existing?.stockQty ?? null;
+    }
+    return { stockQty, qty: stockQtyText(stockQty, unit) };
+  }
+
   /** `sellerId: null` means an admin is acting — ownership is not theirs to have. */
   private async owned(id: string, sellerId: string | null) {
     const p = await this.prisma.product.findUnique({ where: { id } });
@@ -725,7 +778,12 @@ export class ProductsService {
    */
   async update(id: string, sellerId: string | null, data: Partial<CreateProductDto>) {
     const existing = await this.owned(id, sellerId);
-    const { categoryId, subcategoryId, auctionEndsAt, price, priceCurrency, startBidCents, images, marketId, attributes, ...rest } = data;
+    // `qty`/`stockQty` are pulled out of `rest` deliberately: they are never
+    // written straight through. `stockPatch` below decides both from the one
+    // figure, so an update cannot set them to different numbers.
+    const { categoryId, subcategoryId, auctionEndsAt, price, priceCurrency, startBidCents, images, marketId, attributes, qty: _qty, stockQty: _stockQty, ...rest } = data;
+    void _qty;
+    void _stockQty;
     const effectiveCategoryId = categoryId ?? existing.categoryId;
     // Re-validate the subcategory whenever category or subcategory is touched.
     // `nextSubcategoryId` is wherever the listing ENDS UP — attribute cleaning
@@ -767,10 +825,25 @@ export class ProductsService {
             attributes: (await this.cleanAttributes(nextSubcategoryId, attributes)) as Prisma.InputJsonValue,
           }
         : {};
+    // Both quantity columns move together, or neither moves at all.
+    const stockPatch = this.stockPatch(data, existing) ?? {};
+    // Safe Deal is mandatory on auctions, and the check has to run against
+    // wherever the listing ENDS UP: flipping an existing direct-deal listing to
+    // `isAuction` must force escrow on, not inherit the old opt-out.
+    // Turning an existing direct-deal listing into an auction forces escrow ON
+    // rather than failing: only an EXPLICIT `safeDeal: false` is an opt-out to
+    // reject, and the seller flipping the auction switch never sent one.
+    const willBeAuction = data.isAuction ?? existing.isAuction;
+    const safeDealPatch =
+      data.safeDeal !== undefined || data.isAuction !== undefined
+        ? { safeDeal: willBeAuction ? requireSafeDeal(data.safeDeal) : data.safeDeal ?? existing.safeDeal }
+        : {};
     const product = await this.prisma.product.update({
       where: { id },
       data: {
         ...rest,
+        ...stockPatch,
+        ...safeDealPatch,
         ...pricePatch,
         ...bidPatch,
         ...(categoryId ? { categoryId } : {}),

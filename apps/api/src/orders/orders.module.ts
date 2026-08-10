@@ -607,10 +607,33 @@ export class OrdersService {
     const qty = Math.max(0, Math.ceil(order.qtyValue ?? 0));
     if (qty <= 0) return;
     if (capture) {
+      // Needed to rewrite the derived display column below.
+      const product = await this.prisma.product.findUnique({
+        where: { id: order.productId },
+        select: { unit: true },
+      });
+      if (!product) return;
+      // `Product.qty` is a DERIVED display mirror of `stockQty` (see
+      // ProductsService.stockPatch) — recompute it in the SAME statement, or a
+      // shipped order leaves the listing reading "500 MT" while the canonical
+      // count says 450. Both `SET` expressions read the OLD `stockQty`, so the
+      // count and its display string can never disagree.
+      //
+      // The unit code is resolved in TypeScript and passed in, rather than by a
+      // SQL helper: `toUnit` is the one place that mapping lives, and a database
+      // provisioned with `prisma db push` (which never executes migration SQL)
+      // would not have such a helper. NULL at zero — that is how an
+      // out-of-stock listing is stored.
+      const unit = toUnit(product.unit);
       await this.prisma.$executeRaw`
         UPDATE "Product"
         SET "reservedQty" = GREATEST(0, "reservedQty" - ${qty}),
-            "stockQty" = GREATEST(0, "stockQty" - ${qty})
+            "stockQty" = GREATEST(0, "stockQty" - ${qty}),
+            "qty" = CASE
+              WHEN GREATEST(0, "stockQty" - ${qty}) > 0
+                THEN GREATEST(0, "stockQty" - ${qty})::text || ' ' || ${unit}
+              ELSE NULL
+            END
         WHERE "id" = ${order.productId} AND "stockQty" IS NOT NULL`;
     } else {
       await this.prisma.$executeRaw`

@@ -131,6 +131,45 @@ export function comparableUnits(unit: ProductUnit): ProductUnit[] {
 }
 
 /**
+ * How much of a listing there is, resolved from the SINGLE source of truth.
+ *
+ * `Product.stockQty` is that source: a number is the on-hand count in the
+ * listing's own unit, `null`/`undefined` means the seller does not track
+ * inventory. The legacy free-text `Product.qty` column is display-only and is
+ * kept in sync from `stockQty` server-side — it must never be rendered as a
+ * second, separately-labelled figure.
+ *
+ * Every surface (product card, product page, auction room, mobile, admin,
+ * exports, emails) goes through this so one listing can only ever show ONE
+ * stock number. The old split — a bold "Stock" line next to an "N available"
+ * line fed by a different column — is exactly what read as two conflicting
+ * quantities.
+ *
+ * Returns a `kind` rather than a translation key so this package keeps its
+ * no-i18n-dependency rule and each app maps onto its own catalogue namespace.
+ */
+export type StockDisplay =
+  | { kind: 'count'; count: number; unit: ProductUnit }
+  | { kind: 'out' }
+  | { kind: 'untracked' };
+
+export function stockDisplay(stockQty?: number | null, unit?: string | null): StockDisplay {
+  if (typeof stockQty !== 'number' || !Number.isFinite(stockQty)) return { kind: 'untracked' };
+  if (stockQty <= 0) return { kind: 'out' };
+  return { kind: 'count', count: stockQty, unit: toUnit(unit) };
+}
+
+/**
+ * The display string mirrored into the legacy `Product.qty` column so anything
+ * still reading it (order snapshots, invoice lines, seeded rows) sees the same
+ * figure the buyer does. Derived, never authored.
+ */
+export function stockQtyText(stockQty?: number | null, unit?: string | null): string | null {
+  const display = stockDisplay(stockQty, unit);
+  return display.kind === 'count' ? `${display.count} ${display.unit}` : null;
+}
+
+/**
  * Price suffix form — `unitSuffix('KG')` → `'/KG'`. Legacy `'/MT'` stays `'/MT'`.
  *
  * Pass the caller's `t` to localize the code (`'/кг'` in Russian). It stays

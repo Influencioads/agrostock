@@ -26,7 +26,7 @@ import { C, radius, space } from '../../theme/tokens';
 // than a second set that drifts away from it.
 import { AttributeFields, GalleryEditor, MarketPicker, SupplyCountriesPicker } from '../seller/AddProduct';
 import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
-import { PickerField } from '../components/PickerSheet';
+import { PickerField, ReadOnlyField } from '../components/PickerSheet';
 import { CityField } from '../components/GeoFields';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -56,7 +56,7 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
   const [f, setF] = useState({
     qtyValue: '', qtyUnit: 'MT', moq: '', targetPrice: '', targetCurrency: currency, vatExtra: false,
     deliveryPlace: '', destinationCountry: '', origin: '', delivery: 'delivery', marketId: '',
-    safeDeal: true, negotiable: false,
+    negotiable: false,
     notes: '', days: '7', procureBy: 'immediate',
     attributes: {} as Record<string, unknown>,
     supplyCountries: [] as string[],
@@ -113,7 +113,8 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
         delivery: f.delivery || undefined,
         supplyCountries: f.supplyCountries,
         marketId: f.marketId || undefined,
-        safeDeal: f.safeDeal,
+        // Mandatory — the API rejects anything else on a bid.
+        safeDeal: true,
         negotiable: f.negotiable,
         deliveryPlace: f.deliveryPlace || undefined,
         destinationCountry: f.destinationCountry || undefined,
@@ -278,17 +279,13 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
             hint={t('buyerX.bids.fieldAcceptFromHint')}
           />
 
-          {/* Settlement and price posture — the same two-way choices a listing
-              declares, so a seller knows what they are quoting into. */}
-          <PickerField
+          {/* Settlement is NOT a choice on a bid: every bid settles through
+              Safe Deal escrow, so the picker is replaced by a statement of the
+              rule. The API rejects `safeDeal: false` on this flow. */}
+          <ReadOnlyField
             label={t('sellerX.add.dealType')}
-            value={f.safeDeal ? 'safe' : 'direct'}
-            displayValue={f.safeDeal ? t('sellerX.add.dealSafe') : t('sellerX.add.dealDirect')}
-            options={[
-              { value: 'safe', label: t('sellerX.add.dealSafe') },
-              { value: 'direct', label: t('sellerX.add.dealDirect') },
-            ]}
-            onChange={(v) => set('safeDeal')(v === 'safe')}
+            value={t('sellerX.add.dealSafe')}
+            hint={t('sellerX.add.dealBidLocked')}
           />
           <PickerField
             label={t('sellerX.add.priceType')}

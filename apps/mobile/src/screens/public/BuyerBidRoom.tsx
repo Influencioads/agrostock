@@ -83,7 +83,8 @@ export function BuyerBidRoom({ id }: { id: string }) {
     ...(bid.moq != null ? ([[t('buyerX.bids.fieldMinLot'), `${bid.moq} ${bid.qtyUnit}`]] as [string, string][]) : []),
     ...(bid.procureBy ? ([[t('buyerX.bids.fieldProcure'), t(`enums:procure.${bid.procureBy}`)]] as [string, string][]) : []),
     [t('sellerX.add.priceType'), t(bid.negotiable ? 'sellerX.add.priceNegotiable' : 'sellerX.add.priceFixed')],
-    [t('sellerX.add.dealType'), t(bid.safeDeal === false ? 'sellerX.add.dealDirect' : 'sellerX.add.dealSafe')],
+    // Always Safe Deal — every bid settles through escrow, legacy rows included.
+    [t('sellerX.add.dealType'), t('sellerX.add.dealSafe')],
     ...(bid.vatExtra ? ([[t('sellerX.add.vatExtra'), t('common:yes')]] as [string, string][]) : []),
     ...(bid.origin ? ([[t('buyerX.bids.fieldPreferredOrigin'), bid.origin]] as [string, string][]) : []),
     ...(bid.supplyCountries?.length ? ([[t('buyerX.bids.fieldAcceptFrom'), bid.supplyCountries.join(', ')]] as [string, string][]) : []),

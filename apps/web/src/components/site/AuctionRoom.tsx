@@ -8,12 +8,16 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { chatBus } from '../../chat/chatBus';
 import { BidPanel } from './BidPanel';
-import { toUnit, unitSuffix } from '@agrotraders/types';
+import { stockDisplay, toUnit, unitSuffix } from '@agrotraders/types';
+import { SafeDealNotice } from './SafeDealNotice';
 
 interface CardProduct {
   id: string; name: string; emoji?: string | null; flag?: string | null;
   seller?: string; sellerId?: string | null; images?: string[]; imageUrl?: string | null;
-  grade?: string | null; origin?: string | null; qty?: string | null; moq?: string | null;
+  grade?: string | null; origin?: string | null; moq?: string | null;
+  /** The single stock figure — see `stockDisplay`. The legacy free-text `qty`
+   *  column is no longer read here; it was the "Available" duplicate. */
+  stockQty?: number | null;
   unit?: string; delivery?: string | null; marketName?: string | null;
 }
 
@@ -69,10 +73,21 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
 
   // Values are real listing data — an em-dash when absent, rather than the
   // invented "Premium"/"Ready" fallbacks this used to show on every lot.
+  // One stock figure, from `stockQty` — the spec table used to print the
+  // free-text `qty` column under an "Available" label, so a lot could show a
+  // different number here than on its card.
+  const stock = stockDisplay(product.stockQty, product.unit);
+  const stockText =
+    stock.kind === 'count'
+      ? t('site.stockCount', { count: stock.count, unit: stock.unit })
+      : stock.kind === 'out'
+        ? t('site.outOfStock')
+        : t('site.inStock');
+
   const specs: [string, string][] = [
     [t('auction.spec.grade'), product.grade || '—'],
     [t('auction.spec.origin'), product.origin || `${product.flag ?? ''} ${product.seller ?? ''}`.trim() || '—'],
-    [t('auction.spec.available'), product.qty || '—'],
+    [t('auction.spec.stock'), stockText],
     [t('auction.spec.moqLot'), product.moq || '—'],
     [t('auction.spec.delivery'), product.delivery || '—'],
     [t('auction.spec.unit'), unitSuffix(product.unit, t)],
@@ -155,7 +170,9 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
               <span className="text-8xl drop-shadow-lg">{product.emoji ?? '🌾'}</span>
             )}
             <span className="absolute start-3.5 top-3.5 inline-flex items-center gap-1.5 rounded-lg bg-status-error px-2.5 py-1.5 text-xs font-bold text-white">
-              <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-white" />{t('auction.liveLot', { qty: product.qty ?? product.moq ?? '' })}
+              {/* The lot size badge reads the same stock figure as the spec
+                  table below it, not the retired free-text column. */}
+              <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-white" />{t('auction.liveLot', { qty: stock.kind === 'count' ? `${stock.count} ${stock.unit}` : (product.moq ?? '') })}
             </span>
           </div>
           {hasPhotos && photos.length > 1 && (
@@ -187,10 +204,12 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
           {/* price / bid section — moved below the product */}
           <div className="mt-5"><BidPanel slug={slug} /></div>
 
-          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-leaf/40 bg-brand-surface px-4 py-3.5">
-            <Icon name="shield" size={22} className="shrink-0 text-brand-dark" />
-            <div className="text-xs leading-relaxed text-brand-dark">{t('auction.escrowWin')}</div>
-          </div>
+          {/* Escrow is mandatory on every lot, so this sits under the bid panel
+              permanently — badge plus the three-step explainer. It replaces the
+              old one-line note, which stated the outcome without saying how the
+              money actually moves. Not dismissible: there is nothing to opt out
+              of. */}
+          <SafeDealNotice className="mt-4" />
         </div>
 
         {/* RIGHT: masked bid history on top, then seller */}

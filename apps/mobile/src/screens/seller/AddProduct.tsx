@@ -26,7 +26,7 @@ import { useI18n } from '../../i18n';
 import { Button, Card, Chip, ChipSelect, Input, Row, Screen, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
 import { CategorySheet, EMPTY_SELECTION, type CategorySelection } from '../components/CategorySheet';
-import { MultiPickerField, PickerField } from '../components/PickerSheet';
+import { MultiPickerField, PickerField, ReadOnlyField } from '../components/PickerSheet';
 import { CityField } from '../components/GeoFields';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -392,7 +392,12 @@ export function SellerAddProduct() {
         ...f,
         name: canon('name', p.name) ?? '', price: bareNumber(p.price), priceCurrency: p.priceCurrency ?? 'USD', unit: toUnit(p.unit),
         vatExtra: !!p.vatExtra, notes: p.notes ?? '',
-        qty: bareNumber(canon('qty', p.qty)), moq: bareNumber(canon('moq', p.moq)), emoji: p.emoji ?? '🌾',
+        // The stock box reads ONLY the canonical column — no fallback to the
+        // legacy free text, which is now only ever the values the migration
+        // refused to interpret. Stripping those to a bare number would make the
+        // next save an enforced cap in the wrong metric. Same rule as the web form.
+        qty: p.stockQty != null ? String(p.stockQty) : '',
+        moq: bareNumber(canon('moq', p.moq)), emoji: p.emoji ?? '🌾',
         origin: canon('origin', p.origin) ?? '', city: p.city ?? '', country: p.country ?? '',
         subcategoryId: (p.subcategory && typeof p.subcategory === 'object' ? (p.subcategory as { id?: string }).id : '') ?? '',
         attributes: canon('attributes', p.attributes as Record<string, unknown>) ?? {},
@@ -441,8 +446,11 @@ export function SellerAddProduct() {
       const payload: Record<string, unknown> = {
         ...rest,
         unit: toUnit(unit),
-        // Quantity/MOQ are stored with their metric — see the web form.
-        ...(qty ? { qty: withUnit(qty, unit) } : {}),
+        // The stock box is the ONE quantity: send it as `stockQty` and let the
+        // API derive the legacy display column, so this form can never write a
+        // second figure that disagrees with the number buyers are shown.
+        stockQty: qty.trim() === '' ? null : Math.max(0, Math.round(Number(qty))),
+        // MOQ is stored with its metric — see the web form.
         ...(moq ? { moq: withUnit(moq, unit) } : {}),
         ...(origin ? { origin } : {}),
         // The flag follows the origin country, never hand-typed.
@@ -571,7 +579,9 @@ export function SellerAddProduct() {
           onChange={set('unit')}
         />
         <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.quantity')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="500" value={form.qty} onChangeText={setNum('qty')} /></View>
+          {/* ONE quantity field, matching the web form: this is the listing's
+              stock, and the display column is derived from it server-side. */}
+          <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.stock')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="500" value={form.qty} onChangeText={setNum('qty')} /></View>
           <View style={{ flex: 1 }}><Input label={`${t('sellerX.add.moq')} (${toUnit(form.unit)})`} keyboardType="numeric" placeholder="25" value={form.moq} onChangeText={setNum('moq')} /></View>
         </Row>
         <Input label={t('sellerX.add.emoji')} placeholder="🌾" value={form.emoji} onChangeText={set('emoji')} />
@@ -617,18 +627,29 @@ export function SellerAddProduct() {
           style={{ minHeight: 84, textAlignVertical: 'top' }}
         />
 
-        {/* How the deal is settled and priced — both directions are explicit, so
-            a buyer never has to infer "direct deal" from a missing badge. */}
-        <PickerField
-          label={t('sellerX.add.dealType')}
-          value={form.safeDeal ? 'safe' : 'direct'}
-          displayValue={form.safeDeal ? t('sellerX.add.dealSafe') : t('sellerX.add.dealDirect')}
-          options={[
-            { value: 'safe', label: t('sellerX.add.dealSafe') },
-            { value: 'direct', label: t('sellerX.add.dealDirect') },
-          ]}
-          onChange={(v) => setForm((f) => ({ ...f, safeDeal: v === 'safe' }))}
-        />
+        {/* How the deal is settled and priced. An AUCTION has no settlement
+            choice — every lot is escrow — so the picker is replaced by the rule
+            rather than shown disabled. Ordinary listings keep both directions
+            explicit, so a buyer never has to infer "direct deal" from a missing
+            badge. */}
+        {form.isAuction ? (
+          <ReadOnlyField
+            label={t('sellerX.add.dealType')}
+            value={t('sellerX.add.dealSafe')}
+            hint={t('sellerX.add.dealAuctionLocked')}
+          />
+        ) : (
+          <PickerField
+            label={t('sellerX.add.dealType')}
+            value={form.safeDeal ? 'safe' : 'direct'}
+            displayValue={form.safeDeal ? t('sellerX.add.dealSafe') : t('sellerX.add.dealDirect')}
+            options={[
+              { value: 'safe', label: t('sellerX.add.dealSafe') },
+              { value: 'direct', label: t('sellerX.add.dealDirect') },
+            ]}
+            onChange={(v) => setForm((f) => ({ ...f, safeDeal: v === 'safe' }))}
+          />
+        )}
         <PickerField
           label={t('sellerX.add.priceType')}
           value={form.negotiable ? 'negotiable' : 'fixed'}
@@ -644,7 +665,10 @@ export function SellerAddProduct() {
           <Txt variant="label">{t('sellerX.add.listingType')}</Txt>
           <Row gap={8}>
             <Chip label={t('sellerX.add.offer')} active={form.isOffer} onPress={() => setForm((f) => ({ ...f, isOffer: !f.isOffer }))} />
-            <Chip label={t('sellerX.add.auction')} active={form.isAuction} onPress={() => setForm((f) => ({ ...f, isAuction: !f.isAuction }))} />
+            {/* Switching to an auction switches Safe Deal on with it — an auction
+              cannot be a direct deal, so the payload must never carry a stale
+              `false` from before the toggle. */}
+          <Chip label={t('sellerX.add.auction')} active={form.isAuction} onPress={() => setForm((f) => ({ ...f, isAuction: !f.isAuction, safeDeal: !f.isAuction ? true : f.safeDeal }))} />
           </Row>
         </View>
 

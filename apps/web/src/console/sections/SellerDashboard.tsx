@@ -49,7 +49,10 @@ export function SellerDashboard({ name, onNavigate }: { name: string; onNavigate
     // analytics figure. Replaced with the real count of live listings.
     const liveListings = products.length;
     const inquiries = quotes.length + products.reduce((s, p) => s + (p._count?.auctionBids ?? 0), 0);
-    const lowStock = products.filter((p) => parseAmount(p.qty) < 100).length;
+    // Low stock reads the canonical `stockQty`, not the free-text display
+    // column it used to parse. A listing that does not track stock cannot be
+    // "low" on it, so it is excluded rather than counted as 0.
+    const lowStock = products.filter((p) => typeof p.stockQty === 'number' && p.stockQty < 100).length;
     const top = [...products].sort((a, b) => (b._count?.orders ?? 0) - (a._count?.orders ?? 0)).slice(0, 3);
     const maxOrders = Math.max(1, ...top.map((p) => p._count?.orders ?? 0));
     return { paid, quotes, newOrders, totalSales, liveListings, inquiries, lowStock, top, maxOrders };

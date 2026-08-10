@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, type ApiProduct } from '@agrotraders/api-client';
-import { toUnit, unitSuffix } from '@agrotraders/types';
+import { stockDisplay, unitSuffix } from '@agrotraders/types';
 import { C, font, radius, space, type } from '../theme/tokens';
 import { microLabel } from '../theme/casing';
 import { assetUrl } from '../lib/api';
@@ -42,7 +42,7 @@ function SaveHeart({ productId }: { productId: string }) {
  * The layout borrows retail-grade density — image bleeding to the card edge at
  * a tall aspect ratio, a two-line text block, one figure per line — but the
  * content is trade data, not retail: supplier in the "brand" slot, price per
- * unit, MOQ and available quantity. There is deliberately no discount badge,
+ * unit, MOQ and the one stock figure. There is deliberately no discount badge,
  * strikethrough price or wishlist heart; none of those exist in this market.
  */
 
@@ -92,13 +92,14 @@ function Cover({ product, height }: { product: ApiProduct; height: number | unde
   );
 }
 
-/** Supply line: "MOQ 20 MT · 400 MT available". Omits whichever half is missing. */
+/**
+ * Supply line: "MOQ 20 MT". Stock is NOT repeated here — `stockLabel` already
+ * prints it right above, and this line used to add a second figure from the
+ * free-text `qty` column that could disagree with it.
+ */
 function useSupplyLine(product: ApiProduct): string | null {
   const { t } = useI18n();
-  const parts: string[] = [];
-  if (product.moq) parts.push(t('compX.product.moq', { value: product.moq }));
-  if (product.qty) parts.push(t('compX.product.available', { value: product.qty }));
-  return parts.length ? parts.join(' · ') : null;
+  return product.moq ? t('compX.product.moq', { value: product.moq }) : null;
 }
 
 /**
@@ -163,8 +164,9 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
         {supply ? <Text numberOfLines={1} style={s.meta}>{supply}</Text> : null}
         {place ? <Text numberOfLines={1} style={s.meta}>{place}</Text> : null}
         {product.market?.name ? <Text numberOfLines={1} style={s.meta}>🏪 {product.market.name}</Text> : null}
-        {/* Availability is the only bold line under the name — it is what a
-            buyer scanning a grid of cards is actually comparing. */}
+        {/* Stock is the only bold line under the name — it is what a buyer
+            scanning a grid of cards is actually comparing, and it is now the
+            only quantity on the card. */}
         <Text numberOfLines={1} style={[s.meta, s.metaStrong]}>{stockLabel(product, t)}</Text>
       </View>
     </Pressable>
@@ -172,14 +174,15 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
 }
 
 /**
- * Managed inventory: a number is the real on-hand count; null/undefined means
- * the seller does not track stock, so we say "in stock" rather than "0".
+ * The one stock figure, from the shared resolver the web card and product page
+ * use. `stockQty` is the source of truth; null/undefined means the seller does
+ * not track stock, so we say "in stock" rather than "0".
  */
 export function stockLabel(product: ApiProduct, t: (k: string, o?: Record<string, unknown>) => string): string {
-  if (typeof product.stockQty !== 'number') return t('compX.product.inStock');
-  return product.stockQty > 0
-    ? t('compX.product.stockCount', { count: product.stockQty, unit: toUnit(product.unit) })
-    : t('compX.product.outOfStock');
+  const s = stockDisplay(product.stockQty, product.unit);
+  if (s.kind === 'untracked') return t('compX.product.inStock');
+  if (s.kind === 'out') return t('compX.product.outOfStock');
+  return t('compX.product.stockCount', { count: s.count, unit: s.unit });
 }
 
 /**

@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { parseQtyIn, stockQtyText, toUnit } from '@agrotraders/types';
 import { seedAllLabelTranslations } from './seed-translations';
 import { buildTaxonomyPlan, subKey } from './taxonomy/plan';
 import { assertDemoSeedAllowed } from './seed-guard';
@@ -430,6 +431,12 @@ async function main() {
   // products (create seller user per unique seller)
   for (const p of products) {
     const sellerId = await upsertUser(p.seller, 'seller', p.flag, Math.random() > 0.6 ? 'pending' : 'verified');
+    // ONE stock figure per listing. The fixtures above still carry the readable
+    // "500 MT" strings, but `stockQty` is what every surface renders, so it is
+    // derived here and the display column is written back from it — seeding the
+    // two independently is what let a card show two different quantities.
+    const seedUnit = toUnit(undefined);
+    const stockQty = Math.round(parseQtyIn(p.qty, seedUnit) ?? 0) || null;
     await prisma.product.create({
       data: {
         slug: slug(p.name),
@@ -439,7 +446,8 @@ async function main() {
         grade: p.grade,
         flag: p.flag,
         origin: p.flag,
-        qty: p.qty,
+        stockQty,
+        qty: stockQtyText(stockQty, seedUnit),
         moq: p.moq,
         price: p.price,
         priceCents: parseCents(p.price),
@@ -952,7 +960,29 @@ async function main() {
   // Editable public site pages for the admin CMS + footer legal links.
   await prisma.cmsPage.createMany({
     data: [
-      { slug: 'terms', title: 'Terms of Service', published: true, body: 'AgroTraders Terms of Service. Replace with your legal copy.' },
+      {
+        slug: 'terms',
+        title: 'Terms of Service',
+        published: true,
+        // Placeholder legal copy, with ONE binding rule stated explicitly because
+        // the platform now enforces it in code: escrow is not optional on
+        // competitive-bidding flows. Everything else is for the client's lawyers.
+        body: [
+          'AgroTraders Terms of Service. Replace with your legal copy.',
+          '',
+          '## Settlement of auctions and bids',
+          '',
+          'All auction and bid transactions on AgroTraders are settled through Safe Deal escrow.',
+          'This applies to every auction lot and every buyer requirement, and it cannot be waived',
+          'by either party: the buyer pays into the platform escrow account, the funds are held',
+          'while the goods are shipped, and they are released to the seller only once the buyer',
+          'confirms delivery or a dispute is resolved. Settling an auction or bid outside the',
+          'platform is not supported and is not covered by any AgroTraders protection.',
+          '',
+          'Ordinary (non-auction) listings may still be offered as a direct deal at the seller\'s',
+          'discretion; those trades carry no escrow protection and are labelled accordingly.',
+        ].join('\n'),
+      },
       { slug: 'privacy', title: 'Privacy Policy', published: true, body: 'AgroTraders Privacy Policy. Replace with your legal copy.' },
       { slug: 'cookies', title: 'Cookie Policy', published: true, body: 'AgroTraders Cookie Policy. Replace with your legal copy.' },
       { slug: 'about', title: 'About AgroTraders', published: true, body: 'The global agriculture trading platform.' },

@@ -202,7 +202,9 @@ export function ProductDetail() {
             <Text style={s.stockNote}>{stockLabel(p, t)}</Text>
             <View style={s.priceTerms}>
               {[
-                { label: t('pubX.pd.available'), value: p.qty ?? '—' },
+                // No quantity cell here: `stockLabel` prints the one stock
+                // figure directly above, and this strip used to repeat it from
+                // the free-text column under an "Available" label.
                 { label: t('pubX.pd.delivery'), value: p.delivery ?? '—' },
                 ...(p.origin ? [{ label: t('pubX.pd.origin'), value: p.origin }] : []),
               ].map((it, i) => (
@@ -344,7 +346,7 @@ export function ProductDetail() {
         {/* logistics + supplies, collapsed accordions */}
         <View style={[s.block, { paddingVertical: 0 }]}>
           <Accordion title={t('pubX.pd.tradeTerms')} defaultOpen={attrRows.length === 0}>
-            <KeyValue label={t('pubX.pd.available')} value={p.qty ?? '—'} />
+            <KeyValue label={t('pubX.pd.stock')} value={stockLabel(p, t)} />
             <KeyValue label={t('pubX.pd.moq')} value={p.moq ?? '—'} />
             {p.grade ? <KeyValue label={t('pubX.browse.grade')} value={p.grade} /> : null}
             {/* `origin` already embeds its own flag (e.g. "🇺🇸 USA"), as does the

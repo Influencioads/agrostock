@@ -98,7 +98,7 @@ function NewBuyerBidPage({ onBack }: { onBack: () => void }) {
   const [f, setF] = useState({
     qtyValue: '', qtyUnit: 'MT', moq: '', targetPrice: '', targetCurrency: currency, vatExtra: false,
     deliveryPlace: '', destinationCountry: '', origin: '', delivery: 'delivery', marketId: '',
-    safeDeal: true, negotiable: false,
+    negotiable: false,
     deadline: '', procureBy: 'immediate', notes: '', categoryId: '', subcategoryId: '',
   });
   const [supplyCountries, setSupplyCountries] = useState<string[]>([]);
@@ -173,7 +173,8 @@ function NewBuyerBidPage({ onBack }: { onBack: () => void }) {
         delivery: f.delivery || undefined,
         supplyCountries,
         marketId: f.marketId || undefined,
-        safeDeal: f.safeDeal,
+        // Mandatory — the API rejects anything else on a bid.
+        safeDeal: true,
         negotiable: f.negotiable,
         deliveryPlace: f.deliveryPlace || undefined,
         destinationCountry: f.destinationCountry || undefined,
@@ -336,19 +337,19 @@ function NewBuyerBidPage({ onBack }: { onBack: () => void }) {
           hint={t('console.buyer.acceptFromHint')}
         />
 
-        {/* Settlement and price posture — the same two-way choices a listing
-            declares, so a seller knows what they are quoting into. */}
+        {/* Settlement is NOT a choice on a bid: every bid settles through Safe
+            Deal escrow. The picker that used to sit here is replaced by a
+            statement of the rule, so a seller quoting into this requirement
+            knows exactly how it settles. The API rejects `safeDeal: false`. */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="block">
+          <div className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.dealType')}</span>
-            <select value={f.safeDeal ? 'safe' : 'direct'} onChange={(e) => set('safeDeal')(e.target.value === 'safe')} className={selectCls}>
-              <option value="safe">{t('console.productForm.dealSafe')}</option>
-              <option value="direct">{t('console.productForm.dealDirect')}</option>
-            </select>
-            <p className="mt-1 text-xs text-ink-soft">
-              {f.safeDeal ? t('console.productForm.dealSafeHint') : t('console.productForm.dealDirectHint')}
-            </p>
-          </label>
+            <div className="flex items-center gap-2 rounded-md border border-brand-leaf/40 bg-brand-surface/60 px-3 py-2 text-sm font-semibold text-ink">
+              <Icon name="shield" size={15} className="shrink-0 text-brand" />
+              {t('console.productForm.dealSafe')}
+            </div>
+            <p className="mt-1 text-xs text-ink-soft">{t('console.productForm.dealBidLocked')}</p>
+          </div>
           <label className="block">
             <span className="mb-1.5 block text-sm font-semibold text-ink">{t('console.productForm.priceType')}</span>
             <select value={f.negotiable ? 'negotiable' : 'fixed'} onChange={(e) => set('negotiable')(e.target.value === 'negotiable')} className={selectCls}>

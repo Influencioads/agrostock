@@ -6,9 +6,21 @@ import { api, assetUrl } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { errMessage } from './order-parts';
 import { ProductForm, blankProduct, formToPayload, productToForm, productFormReady, type ProductFormValues } from './ProductForm';
-import { unitSuffix } from '@agrotraders/types';
+import { stockDisplay, unitSuffix } from '@agrotraders/types';
 
 type SellerProduct = ApiProduct & { _count?: { orders: number; auctionBids: number } };
+
+/**
+ * The seller's own listing row shows the SAME stock figure the buyer sees, from
+ * the same resolver — it used to print the free-text `qty` column, so a seller
+ * could read one number here and buyers another on the card.
+ */
+function stockText(p: SellerProduct, t: (key: string, vars?: Record<string, unknown>) => string): string {
+  const s = stockDisplay(p.stockQty, p.unit);
+  if (s.kind === 'untracked') return t('site.inStock');
+  if (s.kind === 'out') return t('site.outOfStock');
+  return t('site.stockCount', { count: s.count, unit: s.unit });
+}
 
 /** Add and Edit share one form; `editing` decides which mutation runs on save. */
 function ProductModal({ editing, onClose }: { editing: SellerProduct | null; onClose: () => void }) {
@@ -137,7 +149,7 @@ export function SellerProducts() {
                 <div className="mt-2 font-display font-bold text-ink">{p.name}</div>
                 <div className="text-xs text-ink-soft">
                   {p.flag} {(p.category as { name?: string } | undefined)?.name}
-                  {(p.subcategory as { name?: string } | null | undefined)?.name ? ` › ${(p.subcategory as { name?: string }).name}` : ''} · {p.qty}
+                  {(p.subcategory as { name?: string } | null | undefined)?.name ? ` › ${(p.subcategory as { name?: string }).name}` : ''} · {stockText(p, t)}
                 </div>
                 {gallery.length > 1 && <div className="mt-1 text-xs text-ink-soft">{t('console.productForm.photosCount', { count: gallery.length })}</div>}
                 <div className="mt-2 flex items-end justify-between">

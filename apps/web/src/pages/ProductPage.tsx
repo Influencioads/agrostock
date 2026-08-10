@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import { countryFlag, countryLabel } from '@agrotraders/api-client';
-import { comparableUnits, convertQty, isDeliveryOption, minOrderQty, toUnit, unitSuffix } from '@agrotraders/types';
+import { comparableUnits, convertQty, isDeliveryOption, minOrderQty, stockDisplay, toUnit, unitSuffix } from '@agrotraders/types';
 import { api, toCardProduct } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
@@ -69,6 +69,16 @@ export function ProductPage() {
     buyerUnit !== listingUnit && converted !== undefined ? Math.round(converted * 1000) / 1000 : undefined;
   const minQty = minOrderQty(product?.moq, listingUnit, buyerUnit);
   useEffect(() => setQty((q) => Math.max(q, minQty)), [minQty]);
+
+  // The ONE stock figure on this page. Both the line under the title and the
+  // purchase panel read it, so the header and the buy box can never disagree —
+  // and the free-text `qty` column is no longer surfaced as "available".
+  const stockLabel = ((): string => {
+    const s = stockDisplay(product?.stockQty, product?.unit);
+    if (s.kind === 'untracked') return t('site.inStock');
+    if (s.kind === 'out') return t('site.outOfStock');
+    return t('site.stockCount', { count: s.count, unit: s.unit });
+  })();
 
   // Category-specific attributes captured on this listing, rendered by the API:
   // label and value both arrive localized and formatted, because the field
@@ -241,9 +251,10 @@ export function ProductPage() {
             <h1 className="mt-3 min-w-0 break-words font-display text-2xl font-extrabold text-ink sm:text-3xl">{product.name}</h1>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 text-ink-soft">
               {product.flag} {product.seller} ·{' '}
-              {/* Availability is the one thing bold under the name — a buyer
-                  scanning the page is looking for how much there is. */}
-              <b className="font-bold text-ink">{t('page.product.availLine', { qty: product.qty, moq: product.moq })}</b>
+              {/* Stock is the one thing bold under the name — a buyer scanning
+                  the page is looking for how much there is. Same resolver as the
+                  purchase panel, so there is exactly one figure on the page. */}
+              <b className="font-bold text-ink">{stockLabel} · {t('page.product.moqLine', { moq: product.moq })}</b>
               {product.sellerId && (
                 <button
                   onClick={() => chatBus.openCommunityDm(product.sellerId!, product.seller)}
@@ -355,13 +366,7 @@ export function ProductPage() {
               })}
             </p>
             {/* Bold: stock is the one line on this panel a buyer scans for. */}
-            <p className="mt-1 text-sm font-bold text-ink">
-              {typeof product.stockQty === 'number'
-                ? product.stockQty > 0
-                  ? t('site.stockCount', { count: product.stockQty, unit: toUnit(product.unit) })
-                  : t('site.outOfStock')
-                : t('site.inStock')}
-            </p>
+            <p className="mt-1 text-sm font-bold text-ink">{stockLabel}</p>
 
             {/* Quantity in whatever metric the buyer works in. The price stays
                 quoted per the seller's unit, so the equivalent is spelled out

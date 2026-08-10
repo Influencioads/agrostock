@@ -102,7 +102,7 @@ export function SellerDashboard() {
         <DashSection title={t('dash.actionNeeded')}>
           <View style={{ backgroundColor: C.mangoSoft, borderRadius: radius.card, padding: space.md }}>
             <Txt>
-              <Txt variant="title">{t('dash.lowStockCount', { count: products.filter((p) => parseAmount(p.qty) < 100).length })}</Txt>
+              <Txt variant="title">{t('dash.lowStockCount', { count: products.filter((p) => typeof p.stockQty === 'number' && p.stockQty < 100).length })}</Txt>
               {' '}{t('dash.lowOnStock')}
             </Txt>
           </View>

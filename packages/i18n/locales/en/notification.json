@@ -48,7 +48,7 @@
     },
     "bid_awarded": {
       "title": "Your bid was awarded",
-      "body": "You won {{reference}}. Order {{orderReference}} is now open."
+      "body": "You won {{reference}}. Order {{orderReference}} is now open — payment is held in Safe Deal escrow until you confirm delivery."
     },
     "dispatched": {
       "title": "Order dispatched",
@@ -116,11 +116,11 @@
     },
     "won": {
       "title": "You won the auction",
-      "body": "Your {{amount}} bid won “{{product}}”. Complete your order to secure it."
+      "body": "Your {{amount}} bid won “{{product}}”. Complete your order to secure it — payment is held in Safe Deal escrow until you confirm delivery."
     },
     "sold": {
       "title": "Your auction sold",
-      "body": "“{{product}}” closed at {{amount}} — {{buyer}} is the winning buyer."
+      "body": "“{{product}}” closed at {{amount}} — {{buyer}} is the winning buyer. The funds are held in Safe Deal escrow and released to you once delivery is confirmed."
     },
     "closed_no_bids": {
       "title": "Auction closed",
@@ -130,7 +130,7 @@
   "buyer_bid": {
     "awarded": {
       "title": "You won a buyer bid",
-      "body": "Your bid on {{reference}} was awarded. Order {{orderReference}} is open."
+      "body": "Your bid on {{reference}} was awarded. Order {{orderReference}} is open — the buyer’s payment is held in Safe Deal escrow until delivery is confirmed."
     },
     "new_seller_bid": {
       "title": "New seller bid",

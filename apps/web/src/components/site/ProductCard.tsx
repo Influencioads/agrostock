@@ -6,7 +6,7 @@ import { useI18n } from '../../i18n';
 import { useWishlist } from '../../lib/useWishlist';
 import { chatBus } from '../../chat/chatBus';
 import { countryFlag, countryLabel } from '@agrotraders/api-client';
-import { isDeliveryOption, toUnit, unitSuffix } from '@agrotraders/types';
+import { isDeliveryOption, stockDisplay, unitSuffix } from '@agrotraders/types';
 
 const cardText = (value: unknown, fallback = ''): string => {
   if (typeof value === 'string') return value;
@@ -46,7 +46,6 @@ export function ProductCard({ p }: { p: Product }) {
   const rated = (p.ratingCount ?? 0) > 0;
   const rating = rated ? (p.ratingAvg ?? 0).toFixed(1) : '';
   const unit = unitSuffix(cardText(p.unit), t);
-  const qty = cardText(p.qty);
   const moq = cardText(p.moq);
   const rawDelivery = cardText(p.delivery);
   // Structured listings carry a `DELIVERY_OPTIONS` id; legacy ones free text.
@@ -54,15 +53,17 @@ export function ProductCard({ p }: { p: Product }) {
   const priceProduct = { ...p, name, price: cardText(p.price), unit };
 
   const location = [p.city, countryLabel(p.country, lang)].filter(Boolean).join(', ');
-  // Managed inventory: a number is the real on-hand count, null/undefined means
-  // the seller does not track stock (so we say "in stock", never "0").
-  const stockLabel =
-    typeof p.stockQty === 'number'
-      ? p.stockQty > 0
-        // Canonical, or a legacy row would read "12 /MT in stock".
-        ? t('site.stockCount', { count: p.stockQty, unit: toUnit(cardText(p.unit)) })
-        : t('site.outOfStock')
-      : t('site.inStock');
+  // The ONE stock figure on the card. `stockDisplay` is the shared resolver over
+  // `stockQty` (the single source of truth) — the card used to print this line
+  // AND a second "{qty} available" line fed by the free-text `qty` column, which
+  // is the duplicate the client asked us to remove.
+  const stockLabel = ((): string => {
+    const s = stockDisplay(p.stockQty, cardText(p.unit));
+    if (s.kind === 'untracked') return t('site.inStock');
+    if (s.kind === 'out') return t('site.outOfStock');
+    // Canonical unit, or a legacy row would read "12 /MT in stock".
+    return t('site.stockCount', { count: s.count, unit: s.unit });
+  })();
 
   // "Product details": the first few category-specific specs the seller filled
   // in. The API renders these — label, unit and locale included — because a card
@@ -157,10 +158,11 @@ export function ProductCard({ p }: { p: Product }) {
           {p.marketName && (
             <div className="truncate" title={p.marketName}>🏪 {p.marketName}</div>
           )}
-          {/* Availability is the only bold line under the name — it is what a
-              buyer scanning a grid of cards is actually comparing. */}
+          {/* Stock is the only bold line under the name — it is what a buyer
+              scanning a grid of cards is actually comparing. MOQ and delivery
+              sit under it as terms, not as a second quantity. */}
           <div className="font-normal text-ink">{stockLabel}</div>
-          <div className="truncate">{t('site.availableLine', { qty, moq, delivery })}</div>
+          <div className="truncate">{t('site.stockLine', { moq, delivery })}</div>
         </div>
 
         {/* Wraps: in the homepage's 2-up mobile grid the card is ~171px wide,

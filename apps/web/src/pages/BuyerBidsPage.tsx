@@ -6,6 +6,7 @@ import { api, assetUrl } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
 import { useI18n } from '../i18n';
+import { SafeDealNotice } from '../components/site/SafeDealNotice';
 
 const ENDED = ' ENDED';
 function endsIn(end: string | null) {
@@ -56,6 +57,10 @@ export function BuyerBidsPage() {
         <Icon name="shield" size={13} className="me-1.5 inline text-brand-dark" />
         {t('page.bids.maskedNote')}
       </div>
+
+      {/* Escrow is mandatory on every requirement here — permanent, not
+          dismissible, because there is no alternative settlement to choose. */}
+      <SafeDealNotice className="mb-6" />
 
       {list.length === 0 ? (
         <Card className="py-16 text-center text-ink-soft">{t('page.bids.noBids')}</Card>

@@ -167,6 +167,8 @@ export function productToForm(p: EditableProduct | ApiProduct): ProductFormValue
     priceCurrency: q.priceCurrency ?? 'USD',
     vatExtra: !!q.vatExtra,
     notes: q.notes ?? '',
+    // Derived, not authored — kept on the form values only so `formToPayload`
+    // can mirror it into the legacy display column. See `stock` below.
     qty: bareNumber(src.qty ?? q.qty),
     // Listings created before units were a picker stored the display form ('/MT').
     unit: toUnit(q.unit),
@@ -189,6 +191,15 @@ export function productToForm(p: EditableProduct | ApiProduct): ProductFormValue
     // USD baseline and only right for legacy rows saved before the split.
     startBid: q.startBidSrcCents != null ? String(q.startBidSrcCents / 100) : q.startBidCents != null ? String(q.startBidCents / 100) : '',
     auctionEndsAt: q.auctionEndsAt ? new Date(q.auctionEndsAt).toISOString().slice(0, 16) : '',
+    // The single stock figure — read ONLY from the canonical column.
+    //
+    // Deliberately no fallback to the legacy free-text `qty`: the migration
+    // already promoted every value it could safely interpret, and what it left
+    // behind is exactly the text it refused — "20 x 40ft containers", "400 kg"
+    // on a listing priced per MT, "500 bags". `bareNumber` would strip those to
+    // 2040 / 400 / 500 and the next save would turn each into an ENFORCED stock
+    // cap in the wrong metric. An untracked listing opens with an empty box, so
+    // the seller states the number themselves.
     stock: q.stockQty != null ? String(q.stockQty) : '',
     // Stored attribute values are canonical English — the buyer facets match on
     // them, so the translated display copy must never be saved back.
@@ -208,9 +219,11 @@ export function formToPayload(f: ProductFormValues) {
     vatExtra: f.vatExtra,
     // Sent even when blank, so clearing the box actually clears the note.
     notes: f.notes.trim(),
-    // Quantity/MOQ are stored with their metric so every render reads "500 MT"
-    // without the seller ever typing the unit.
-    ...(f.qty ? { qty: withUnit(f.qty, f.unit) } : {}),
+    // MOQ is stored with its metric so every render reads "25 MT" without the
+    // seller ever typing the unit. The legacy `qty` display column is DERIVED
+    // from stock — it is no longer a field the seller can set to something
+    // different, which is what let a listing advertise two quantities.
+    ...(f.stock.trim() ? { qty: withUnit(f.stock.trim(), f.unit) } : { qty: '' }),
     unit: toUnit(f.unit),
     ...(f.moq ? { moq: withUnit(f.moq, f.unit) } : {}),
     // The flag follows the origin country, so it is never hand-typed.
@@ -228,8 +241,8 @@ export function formToPayload(f: ProductFormValues) {
     safeDeal: f.safeDeal,
     negotiable: f.negotiable,
     images: f.images,
-    // FLOW-04: send stockQty only when the seller entered a number; blank leaves
-    // the listing unmanaged (unlimited). `null` explicitly clears managed stock.
+    // FLOW-04: the single source of truth for how much there is. Blank leaves
+    // the listing untracked; `null` explicitly clears managed stock.
     stockQty: f.stock.trim() === '' ? null : Math.max(0, Math.round(Number(f.stock))),
     ...(f.isAuction && f.startBid ? { startBidCents: Math.round(Number(f.startBid) * 100) } : {}),
     ...(f.isAuction && f.auctionEndsAt ? { auctionEndsAt: new Date(f.auctionEndsAt).toISOString() } : {}),
@@ -874,13 +887,20 @@ export function ProductForm({
             ))}
           </select>
         </label>
+        {/* ONE quantity field. This form used to carry both "Quantity" (free
+            text, shown to buyers as "N available") and "Stock" (the managed
+            count) — two numbers a seller had to keep in step by hand, and the
+            source of the two different figures buyers were seeing. `stock` is
+            now the only input; the listing's display quantity is derived from
+            it. Blank = not tracked; a number caps orders and is enforced by the
+            reservation machinery at checkout. */}
         <Input
-          label={`${t('web:console.productForm.quantity')} (${toUnit(value.unit)})`}
+          label={`${t('web:console.productForm.stock')} (${toUnit(value.unit)})`}
           type="text"
-          inputMode="decimal"
-          placeholder="500"
-          value={value.qty}
-          onChange={(e) => set('qty')(e.target.value)}
+          inputMode="numeric"
+          placeholder={t('web:console.productForm.phStock')}
+          value={value.stock}
+          onChange={(e) => set('stock')(e.target.value)}
         />
         <Input
           label={`${t('web:console.productForm.moq')} (${toUnit(value.unit)})`}
@@ -889,16 +909,6 @@ export function ProductForm({
           placeholder="25"
           value={value.moq}
           onChange={(e) => set('moq')(e.target.value)}
-        />
-        {/* FLOW-04: managed stock. Blank = unlimited; a number caps orders and is
-            enforced by the reservation machinery at checkout. */}
-        <Input
-          label={`${t('web:console.productForm.stock')} (${toUnit(value.unit)})`}
-          type="text"
-          inputMode="numeric"
-          placeholder={t('web:console.productForm.phStock')}
-          value={value.stock}
-          onChange={(e) => set('stock')(e.target.value)}
         />
         {/* Origin is a country, and it is what the listing flag is derived from. */}
         <CountrySelect
@@ -953,16 +963,31 @@ export function ProductForm({
           "direct deal" and "fixed price" are as visible as their opposites, so a
           buyer is never left guessing which one a listing means. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.dealType')}</span>
-          <select value={value.safeDeal ? 'safe' : 'direct'} onChange={(e) => set('safeDeal')(e.target.value === 'safe')} className={selectCls}>
-            <option value="safe">{t('web:console.productForm.dealSafe')}</option>
-            <option value="direct">{t('web:console.productForm.dealDirect')}</option>
-          </select>
-          <p className="mt-1 text-xs text-ink-soft">
-            {value.safeDeal ? t('web:console.productForm.dealSafeHint') : t('web:console.productForm.dealDirectHint')}
-          </p>
-        </label>
+        {/* Auction lots have NO settlement choice: every auction is escrow.
+            The picker is replaced by a statement of the rule rather than being
+            shown disabled, so nothing on screen implies a toggle exists. The
+            API rejects `safeDeal: false` on an auction regardless. */}
+        {value.isAuction ? (
+          <div className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.dealType')}</span>
+            <div className="flex items-center gap-2 rounded-md border border-brand-leaf/40 bg-brand-surface/60 px-3 py-2 text-sm font-semibold text-ink">
+              <Icon name="shield" size={15} className="shrink-0 text-brand" />
+              {t('web:console.productForm.dealSafe')}
+            </div>
+            <p className="mt-1 text-xs text-ink-soft">{t('web:console.productForm.dealAuctionLocked')}</p>
+          </div>
+        ) : (
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.dealType')}</span>
+            <select value={value.safeDeal ? 'safe' : 'direct'} onChange={(e) => set('safeDeal')(e.target.value === 'safe')} className={selectCls}>
+              <option value="safe">{t('web:console.productForm.dealSafe')}</option>
+              <option value="direct">{t('web:console.productForm.dealDirect')}</option>
+            </select>
+            <p className="mt-1 text-xs text-ink-soft">
+              {value.safeDeal ? t('web:console.productForm.dealSafeHint') : t('web:console.productForm.dealDirectHint')}
+            </p>
+          </label>
+        )}
         <label className="block">
           <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.priceType')}</span>
           <select value={value.negotiable ? 'negotiable' : 'fixed'} onChange={(e) => set('negotiable')(e.target.value === 'negotiable')} className={selectCls}>
@@ -978,7 +1003,15 @@ export function ProductForm({
           {t('web:console.productForm.markOffer')}
         </label>
         <label className="flex items-center gap-2 text-sm text-ink">
-          <input type="checkbox" checked={value.isAuction} onChange={(e) => set('isAuction')(e.target.checked)} className="accent-[#249653]" />
+          {/* Switching a listing to an auction switches Safe Deal on with it —
+              the seller cannot run an auction as a direct deal, so the form
+              must not leave a stale `false` in state for the payload to send. */}
+          <input
+            type="checkbox"
+            checked={value.isAuction}
+            onChange={(e) => onChange({ ...value, isAuction: e.target.checked, safeDeal: e.target.checked ? true : value.safeDeal })}
+            className="accent-[#249653]"
+          />
           {t('web:console.productForm.listAuction')}
         </label>
       </div>

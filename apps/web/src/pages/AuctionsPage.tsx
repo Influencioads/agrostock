@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
 import { useI18n } from '../i18n';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
+import { SafeDealNotice } from '../components/site/SafeDealNotice';
 
 interface LiveAuction {
   id: string;
@@ -73,6 +74,10 @@ export function AuctionsPage() {
         <Icon name="shield" size={13} className="me-1.5 inline text-brand-dark" />
         {t('page.auctions.sealedNote')}
       </div>
+
+      {/* Escrow is mandatory on every lot listed here, so the notice is part of
+          the page rather than something a bidder can dismiss. */}
+      <SafeDealNotice className="mb-6" />
 
       {list.length === 0 ? (
         <Card className="py-16 text-center text-ink-soft">{t('page.auctions.noAuctions')}</Card>
