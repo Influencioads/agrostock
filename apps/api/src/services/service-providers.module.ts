@@ -75,19 +75,6 @@ export class UpdateServiceProfileDto {
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() listed?: boolean;
 }
 
-/**
- * A concrete DTO is required here. Individual optional primitive parameters can
- * be presented to the global ValidationPipe as `undefined`, which class-validator
- * rejects as an unknown value before the controller runs.
- */
-export class ListServiceProvidersQueryDto {
-  @IsOptional() @IsIn(SERVICE_CATEGORIES as unknown as string[]) category?: string;
-  @IsOptional() @IsString() @MaxLength(120) city?: string;
-  @IsOptional() @IsString() @MaxLength(80) country?: string;
-  @IsOptional() @IsString() @MaxLength(160) search?: string;
-  @IsOptional() @IsIn(SERVICE_ROLES as unknown as string[]) role?: string;
-}
-
 /** Public columns. An allow-list, so a column added later stays private by default. */
 const PUBLIC_SELECT = {
   id: true, companyName: true, categories: true, citiesServed: true, country: true,
@@ -200,8 +187,33 @@ export class PublicServiceProvidersController {
   constructor(private svc: ServiceProvidersService) {}
 
   @Get('providers')
-  list(@Query() query: ListServiceProvidersQueryDto) {
-    return this.svc.list(query);
+  list(@Query() raw: Record<string, unknown>) {
+    // Keep this public read compatible with an empty query. The global
+    // ValidationPipe rejects an empty all-optional DTO in the production
+    // class-validator configuration, so parse this small allow-list explicitly.
+    const text = (key: string, max: number) => {
+      const value = raw[key];
+      if (value === undefined || value === '') return undefined;
+      if (typeof value !== 'string' || value.length > max) {
+        throw new BadRequestException(`Invalid ${key} filter.`);
+      }
+      return value;
+    };
+    const category = text('category', 80);
+    const role = text('role', 80);
+    if (category && !(SERVICE_CATEGORIES as readonly string[]).includes(category)) {
+      throw new BadRequestException('Invalid category filter.');
+    }
+    if (role && !(SERVICE_ROLES as readonly string[]).includes(role)) {
+      throw new BadRequestException('Invalid role filter.');
+    }
+    return this.svc.list({
+      category,
+      role,
+      city: text('city', 120),
+      country: text('country', 80),
+      search: text('search', 160),
+    });
   }
 
   @Get('providers/:userId')
