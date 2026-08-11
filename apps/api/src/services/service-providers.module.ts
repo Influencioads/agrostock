@@ -84,7 +84,8 @@ const PUBLIC_SELECT = {
   user: {
     select: {
       id: true, name: true, role: true, roles: true, country: true, kycStatus: true,
-      profile: { select: { location: true, rating: true } },
+      ratingAvg: true, ratingCount: true,
+      profile: { select: { location: true } },
     },
   },
 } as const;

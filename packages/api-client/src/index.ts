@@ -821,7 +821,8 @@ export interface ApiServiceProvider {
   user: {
     id: string; name: string; role: string; roles: string[];
     country: string | null; kycStatus: string;
-    profile: { location: string | null; rating: number | null } | null;
+    ratingAvg: number | null; ratingCount: number;
+    profile: { location: string | null } | null;
   };
 }
 
