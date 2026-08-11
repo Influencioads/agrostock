@@ -45,6 +45,33 @@
     "transporter": "Перевозчик",
     "worker": "Рабочий"
   },
+  "serviceCategory": {
+    "accounting": "Бухгалтерия",
+    "blanching": "Бланширование",
+    "chopping": "Дробление",
+    "customs_clearance": "Таможенное оформление",
+    "financial_services": "Финансовые услуги",
+    "fulfillment": "Фулфилмент",
+    "packing": "Упаковка",
+    "pitting": "Удаление косточек",
+    "roasting": "Обжарка",
+    "roasting_salting": "Обжарка и соление",
+    "sorting_grading": "Сортировка и калибровка"
+  },
+  "servicePricingBasis": {
+    "per_hour": "за час",
+    "per_kg": "за кг",
+    "per_lot": "за партию",
+    "per_month": "в месяц",
+    "per_ton": "за тонну"
+  },
+  "serviceRole": {
+    "accountant": "Бухгалтер",
+    "finance_partner": "Финансовые услуги",
+    "fulfillment_partner": "Партнер по фулфилменту",
+    "packer": "Партнер по упаковке",
+    "processor": "Партнер по переработке"
+  },
   "support_category": {
     "account_kyc": "Аккаунт & KYC",
     "auction_bid": "Аукцион / ставка",

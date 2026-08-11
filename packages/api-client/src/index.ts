@@ -371,7 +371,6 @@ export interface ApiVehicle extends ApiVehicleBase {
 export interface ApiPublicVehicle extends ApiVehicleBase {
   plateMasked: string | null;
   tempRange: string | null;
-  owner?: { id: string; name: string } | null;
 }
 
 /** A public vehicle plus the owner card the detail page shows beside it. */
@@ -381,9 +380,7 @@ export interface ApiPublicVehicleDetail extends ApiPublicVehicle {
     name: string;
     country: string | null;
     kycStatus: string | null;
-    ratingAvg: number | null;
-    ratingCount: number;
-    profile: { location: string | null } | null;
+    profile: { location: string | null; rating: number | null } | null;
     routes: { name: string; fromCity: string; toCity: string; distanceKm: number | null }[];
   } | null;
 }
@@ -424,31 +421,6 @@ export interface ApiCmsPage {
   published: boolean;
   updatedAt: string;
   createdAt: string;
-}
-
-export interface ApiAdminServiceProvider {
-  id: string;
-  companyName: string;
-  categories: string[];
-  citiesServed: string[];
-  published: boolean;
-  owner?: { name: string; email: string };
-  _count?: { enquiries: number };
-}
-
-export interface ApiServiceProvider extends ApiAdminServiceProvider {
-  slug: string;
-  description: string | null;
-  capacityPerDay: number | null;
-  capacityUnit: string | null;
-  certifications: string[];
-  minOrderQty: number | null;
-  turnaroundDays: number | null;
-  pricingBasis: string | null;
-  minPriceCents: number | null;
-  maxPriceCents: number | null;
-  photos: string[];
-  rating: number | null;
 }
 
 export interface ApiEmailTemplateTranslation {
@@ -826,6 +798,38 @@ export interface ApiPublicProfile {
     loaderco?: { id: string; name: string } | null;
   } | null;
   _count?: Record<string, number>;
+}
+
+/** A service provider's public listing. */
+export interface ApiServiceProvider {
+  id: string;
+  companyName: string | null;
+  categories: string[];
+  citiesServed: string[];
+  country: string | null;
+  capacityPerDay: number | null;
+  certifications: string[];
+  minOrderQty: number | null;
+  turnaroundDays: number | null;
+  pricingBasis: string | null;
+  /** Minor units of `priceCurrency`; null means "on enquiry". */
+  priceFromCents: number | null;
+  priceCurrency: string;
+  photos: string[];
+  blurb: string | null;
+  createdAt: string;
+  user: {
+    id: string; name: string; role: string; roles: string[];
+    country: string | null; kycStatus: string;
+    profile: { location: string | null; rating: number | null } | null;
+  };
+}
+
+/** The provider's own editable profile — carries `listed`, which the public shape never does. */
+export interface ApiMyServiceProfile extends Omit<ApiServiceProvider, 'user'> {
+  userId: string;
+  listed: boolean;
+  updatedAt: string;
 }
 
 export interface ApiHireRequest {
@@ -1853,6 +1857,15 @@ export function createApiClient(opts: ApiClientOptions) {
       workers: (q: DirectoryQuery = {}) => get<ApiWorkerEntry[]>('/directory/workers', { ...q }),
       profile: (userId: string) => get<ApiPublicProfile>(`/directory/profile/${userId}`),
     },
+    services: {
+      /** Public: listed service providers, optionally filtered. */
+      providers: (q: { category?: string; city?: string; country?: string; search?: string; role?: string } = {}) =>
+        get<ApiServiceProvider[]>('/services/providers', q),
+      provider: (userId: string) => get<ApiServiceProvider>(`/services/providers/${userId}`),
+      /** The signed-in provider's own profile. */
+      myProfile: () => get<ApiMyServiceProfile>('/me/service-profile'),
+      updateMyProfile: (b: Record<string, unknown>) => patch<ApiMyServiceProfile>('/me/service-profile', b),
+    },
     hires: {
       create: (body: {
         targetType: 'transporter' | 'loaderco' | 'worker';
@@ -2057,20 +2070,6 @@ export function createApiClient(opts: ApiClientOptions) {
       selling: () => get<ApiAuctionListing[]>('/auctions/selling'),
       /** Close early; returns the winning bid (if any). */
       close: (slug: string) => post<{ ok: true; winner: ApiAuctionBid | null }>(`/auctions/${slug}/close`),
-    },
-    services: {
-      list: (params?: Record<string, unknown>) =>
-        get<{ items: ApiServiceProvider[]; total: number; page: number; limit: number; pages: number }>('/services', params),
-      detail: (slug: string) => get<ApiServiceProvider>(`/services/${slug}`),
-      enquire: (slug: string, body: { serviceType: string; message: string; quantity?: number; neededDate?: string }) =>
-        post(`/services/${slug}/enquiries`, body),
-      dashboard: () => get('/services/dashboard/mine'),
-      updateEnquiry: (id: string, status: string) => patch(`/services/enquiries/${id}`, { status }),
-    },
-    vehicles: {
-      list: (params?: Record<string, unknown>) =>
-        get<{ items: ApiPublicVehicle[] }>('/transport/public/vehicles', params),
-      detail: (id: string) => get<ApiPublicVehicleDetail>(`/transport/public/vehicles/${id}`),
     },
     transport: {
       requestsOpen: () => get('/transport/requests'),
@@ -2303,9 +2302,6 @@ export function createApiClient(opts: ApiClientOptions) {
     },
     admin: {
       stats: () => get<ApiStats>('/admin/stats'),
-      serviceProviders: () => get<ApiAdminServiceProvider[]>('/admin/services'),
-      updateServiceProvider: (id: string, body: { published?: boolean }) =>
-        patch<ApiAdminServiceProvider>(`/admin/services/${id}`, body),
       volume: () => get<{ data8: number[]; data12: number[] }>('/admin/stats/volume'),
       reports: (range?: { from?: string; to?: string }) => get<ApiAdminReports>('/admin/reports', range as Record<string, unknown> | undefined),
       audit: (params?: { actorId?: string; action?: string; entityType?: string; from?: string; to?: string; take?: number; skip?: number }) =>

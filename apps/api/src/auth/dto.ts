@@ -1,3 +1,4 @@
+import { SERVICE_ROLES } from '@agrotraders/types';
 import { IsArray, IsEmail, IsIn, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -7,7 +8,13 @@ import { ApiProperty } from '@nestjs/swagger';
  * be a privilege-escalation vector (anyone could POST role:"admin"). Workers may
  * self-register: they get an unaffiliated Worker record and can be hired directly.
  */
-export const PUBLIC_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'] as const;
+// Self-registerable roles (admin is provisioned, never requested). Service
+// providers register directly like transporters do — kycStatus stays 'pending'
+// until an admin verifies them, which is the existing gate.
+export const PUBLIC_ROLES = [
+  'buyer', 'seller', 'transporter', 'loaderco', 'worker',
+  ...SERVICE_ROLES,
+] as const;
 
 export class RegisterDto {
   @ApiProperty({ example: 'buyer@agrotraders.org' })

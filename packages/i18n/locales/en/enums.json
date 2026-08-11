@@ -45,6 +45,33 @@
     "transporter": "Transporter",
     "worker": "Worker"
   },
+  "serviceCategory": {
+    "accounting": "Accounting",
+    "blanching": "Blanching",
+    "chopping": "Chopping",
+    "customs_clearance": "Customs clearance",
+    "financial_services": "Financial services",
+    "fulfillment": "Fulfilment",
+    "packing": "Packing",
+    "pitting": "Pitting",
+    "roasting": "Roasting",
+    "roasting_salting": "Roasting & salting",
+    "sorting_grading": "Sorting & grading"
+  },
+  "servicePricingBasis": {
+    "per_hour": "per hour",
+    "per_kg": "per kg",
+    "per_lot": "per lot",
+    "per_month": "per month",
+    "per_ton": "per ton"
+  },
+  "serviceRole": {
+    "accountant": "Accountant",
+    "finance_partner": "Financial services",
+    "fulfillment_partner": "Fulfilment partner",
+    "packer": "Packing partner",
+    "processor": "Processing partner"
+  },
   "support_category": {
     "account_kyc": "Account & KYC",
     "auction_bid": "Auction / bid",

@@ -16,14 +16,20 @@ enum Role {
   transporter
   loaderco
   worker
-  admin
+  // Service providers. Each self-registers like a transporter does and receives
+  // customer enquiries through the same HireRequest flow; the role decides which
+  // dashboard and which service categories they can offer.
   accountant
   packer
   processor
   fulfillment_partner
   finance_partner
+  admin
 }
 
+/// The services a provider offers. Grouped in the UI as financial & compliance,
+/// logistics & handling, and processing — the grouping is presentation only, so
+/// a provider may hold categories across groups.
 enum ServiceCategory {
   accounting
   customs_clearance
@@ -38,12 +44,13 @@ enum ServiceCategory {
   sorting_grading
 }
 
-enum ServiceEnquiryStatus {
-  requested
-  accepted
-  rejected
-  in_progress
-  completed
+/// What a provider's quoted price is measured in.
+enum ServicePricingBasis {
+  per_kg
+  per_ton
+  per_lot
+  per_hour
+  per_month
 }
 
 /// Granular admin capabilities. A staff account (role=admin) is authorized per
@@ -283,6 +290,10 @@ enum HireTargetType {
   transporter
   loaderco
   worker
+  /// A service provider of any of the five service roles. One value rather than
+  /// five, because the specific role is already on the target user — splitting it
+  /// would fork every accept/decline/escrow branch for no behavioural difference.
+  service_provider
 }
 
 enum HireStatus {
@@ -339,8 +350,6 @@ model User {
   trips             Trip[]             @relation("TripTransporter")
   vehicles          Vehicle[]
   routes            Route[]
-  serviceProvider   ServiceProvider?
-  serviceEnquiries  ServiceEnquiry[]
   teams             Team[]
   workers           Worker[]           @relation("LoadercoWorkers")
   workerProfile     Worker?            @relation("WorkerUser")
@@ -384,6 +393,7 @@ model User {
 
   // ── Profile / markets / hiring ──
   profile              Profile?
+  serviceProvider      ServiceProvider?
   hireRequestsMade     HireRequest[] @relation("HireRequester")
   hireRequestsReceived HireRequest[] @relation("HireTarget")
 
@@ -527,6 +537,55 @@ model RefreshSession {
 /// Extended per-user profile. `phone`, `whatsapp` and `contactEmail` are
 /// PRIVATE: only the owner and admins may ever see them — public reads go
 /// through the directory module which never selects those columns.
+/// A service provider's listing profile — one row per user holding one of the
+/// five service roles.
+///
+/// Separate from `Profile` (which every user has) because these fields are
+/// meaningless for a buyer or a worker, and because a buyer choosing a packer
+/// filters on things no other role has: capacity per day, certifications,
+/// minimum order quantity, turnaround. Rating is NOT stored here — it comes from
+/// the existing unified Review system, so there is one rating pipeline.
+model ServiceProvider {
+  id         String            @id @default(cuid())
+  userId     String            @unique
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Trading name, when it differs from the account name.
+  companyName String?
+  /// What they actually do. A provider may hold several, and the role only
+  /// gates which ones they may pick — a PROCESSOR cannot list `accounting`.
+  categories ServiceCategory[] @default([])
+  citiesServed String[]        @default([])
+  country    String?
+
+  /// Throughput in the unit implied by `pricingBasis` (kg/day, ton/day, lots/day).
+  capacityPerDay Int?
+  /// FSSAI / ISO / HACCP and similar. Free text: certification names vary by
+  /// country and a fixed enum would silently exclude valid ones.
+  certifications String[]      @default([])
+  minOrderQty    Int?
+  turnaroundDays Int?
+
+  pricingBasis   ServicePricingBasis?
+  /// Indicative rate in minor units of `priceCurrency`, matching every other
+  /// money column. Null = "on enquiry", which is common in this trade.
+  priceFromCents Int?
+  priceCurrency  String        @default("USD")
+
+  photos     String[]          @default([])
+  /// Free-text description shown on the provider's public card.
+  blurb      String?
+
+  /// Providers are hidden from the directory until they opt in, so a
+  /// half-filled profile is never the first thing a buyer sees.
+  listed     Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @default(now()) @updatedAt
+
+  @@index([listed])
+  @@index([country])
+}
+
 model Profile {
   id            String   @id @default(cuid())
   userId        String   @unique
@@ -1333,53 +1392,6 @@ model Vehicle {
   @@index([ownerId, createdAt])
   @@index([vehicleType, status])
   @@index([country, city])
-}
-
-model ServiceProvider {
-  id              String            @id @default(cuid())
-  slug            String            @unique
-  companyName     String
-  description     String?
-  categories      ServiceCategory[]
-  citiesServed    String[]          @default([])
-  capacityPerDay  Float?
-  capacityUnit    String?
-  certifications  String[]          @default([])
-  minOrderQty     Float?
-  turnaroundDays  Int?
-  pricingBasis    String?
-  minPriceCents   Int?
-  maxPriceCents   Int?
-  photos          String[]          @default([])
-  rating          Float?            @default(0)
-  published       Boolean           @default(true)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  ownerId         String            @unique
-  owner           User              @relation(fields: [ownerId], references: [id])
-  enquiries       ServiceEnquiry[]
-
-  @@index([published, createdAt])
-}
-
-model ServiceEnquiry {
-  id          String               @id @default(cuid())
-  reference   String               @unique
-  serviceType ServiceCategory
-  message     String
-  quantity    Float?
-  neededDate  DateTime?
-  status      ServiceEnquiryStatus @default(requested)
-  documents   String[]             @default([])
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  providerId  String
-  provider    ServiceProvider      @relation(fields: [providerId], references: [id])
-  customerId  String
-  customer    User                 @relation(fields: [customerId], references: [id])
-
-  @@index([providerId, status])
-  @@index([customerId, createdAt])
 }
 
 model Route {

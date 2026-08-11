@@ -18,10 +18,11 @@ export const NAV: NavItem[] = [
   { key: 'auctions', icon: 'gavel', to: '/auctions' },
   { key: 'bids', icon: 'file', to: '/bids' },
   { key: 'transporters', icon: 'truck', to: '/transporters' },
-  { key: 'vehicles', icon: 'truck', to: '/vehicles' },
-  { key: 'services', icon: 'store', to: '/services' },
   { key: 'loaders', icon: 'worker', to: '/loaders' },
   { key: 'workers', icon: 'user', to: '/workers' },
+  // Service providers: accounting, customs, finance, packing, fulfilment,
+  // processing. NOT a vehicles entry — vehicles stay inside a transporter.
+  { key: 'services', icon: 'store', to: '/services' },
 ];
 
 /** Whether a nav item is the current route (`/market` is exact; the rest match prefixes). */

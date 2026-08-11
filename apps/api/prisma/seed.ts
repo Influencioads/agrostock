@@ -298,6 +298,7 @@ async function main() {
   await prisma.trip.deleteMany();
   await prisma.transportQuote.deleteMany();
   await prisma.transportRequest.deleteMany();
+  await prisma.serviceProvider.deleteMany();
   await prisma.vehicle.deleteMany();
   await prisma.route.deleteMany();
   await prisma.auctionBid.deleteMany();
@@ -1013,6 +1014,56 @@ async function main() {
     }
   }
   await prisma.crewAvailability.createMany({ data: availabilityRows });
+
+  // ── service providers ────────────────────────────────────────────────────
+  // One per role, listed, so the /services directory and the provider consoles
+  // have something real the moment the seed finishes.
+  const serviceProviders: {
+    name: string; role: Role; country: string; categories: string[];
+    cities: string[]; capacity: number; certs: string[]; turnaround: number;
+    basis: string; priceFrom: number; blurb: string;
+  }[] = [
+    { name: 'Meridian Trade Accounting', role: 'accountant' as Role, country: 'India',
+      categories: ['accounting', 'customs_clearance'], cities: ['Mumbai', 'Delhi'],
+      capacity: 40, certs: ['ICAI'], turnaround: 3, basis: 'per_month', priceFrom: 45000,
+      blurb: 'Export-import documentation and customs clearance for agri traders.' },
+    { name: 'Harbour Pack Solutions', role: 'packer' as Role, country: 'India',
+      categories: ['packing', 'fulfillment'], cities: ['Chennai', 'Bengaluru'],
+      capacity: 25000, certs: ['FSSAI', 'ISO 22000'], turnaround: 2, basis: 'per_ton', priceFrom: 1200,
+      blurb: 'Vacuum, jute and retail packing for nuts, pulses and spices.' },
+    { name: 'Anatolia Processing Works', role: 'processor' as Role, country: 'Turkey',
+      categories: ['roasting', 'roasting_salting', 'sorting_grading'], cities: ['Mersin', 'Istanbul'],
+      capacity: 18000, certs: ['HACCP', 'BRCGS'], turnaround: 4, basis: 'per_ton', priceFrom: 9500,
+      blurb: 'Roasting, salting, sorting and grading for tree nuts.' },
+    { name: 'Gulf Fulfilment Hub', role: 'fulfillment_partner' as Role, country: 'United Arab Emirates',
+      categories: ['fulfillment'], cities: ['Dubai', 'Jebel Ali'],
+      capacity: 900, certs: ['ISO 9001'], turnaround: 1, basis: 'per_lot', priceFrom: 18000,
+      blurb: 'Bonded warehousing, order dispatch and delivery proof.' },
+    { name: 'Steppe Trade Finance', role: 'finance_partner' as Role, country: 'Kazakhstan',
+      categories: ['financial_services'], cities: ['Almaty'],
+      capacity: 20, certs: [], turnaround: 7, basis: 'per_lot', priceFrom: 0,
+      blurb: 'Working capital, trade finance and invoice discounting.' },
+  ];
+  for (const sp of serviceProviders) {
+    const uid = await upsertUser(sp.name, sp.role, sp.country, 'verified');
+    await prisma.serviceProvider.create({
+      data: {
+        userId: uid,
+        companyName: sp.name,
+        categories: sp.categories as never,
+        citiesServed: sp.cities,
+        country: sp.country,
+        capacityPerDay: sp.capacity,
+        certifications: sp.certs,
+        minOrderQty: 1,
+        turnaroundDays: sp.turnaround,
+        pricingBasis: sp.basis as never,
+        priceFromCents: sp.priceFrom || null,
+        blurb: sp.blurb,
+        listed: true,
+      },
+    });
+  }
 
   // Editable public site pages for the admin CMS + footer legal links.
   await prisma.cmsPage.createMany({

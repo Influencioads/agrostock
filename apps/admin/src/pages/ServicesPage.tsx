@@ -1,16 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import type { ApiServiceProvider } from '@agrotraders/api-client';
 import { api } from '../lib/api';
 
 export function ServicesPage() {
-  const qc = useQueryClient();
-  const { data = [] } = useQuery({
+  const { data = [] } = useQuery<ApiServiceProvider[]>({
     queryKey: ['admin-services'],
-    queryFn: () => api.admin.serviceProviders(),
-  });
-  const toggle = useMutation({
-    mutationFn: ({ id, published }: { id: string; published: boolean }) =>
-      api.admin.updateServiceProvider(id, { published }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-services'] }),
+    queryFn: () => api.services.providers(),
   });
 
   return (
@@ -34,14 +29,9 @@ export function ServicesPage() {
                 <td className="p-3 font-semibold">{provider.companyName}</td>
                 <td className="p-3">{provider.categories.join(', ')}</td>
                 <td className="p-3">{provider.citiesServed.join(', ')}</td>
-                <td className="p-3">{provider._count?.enquiries || 0}</td>
+                <td className="p-3">—</td>
                 <td className="p-3">
-                  <button
-                    onClick={() => toggle.mutate({ id: provider.id, published: !provider.published })}
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${provider.published ? 'bg-brand-surface text-brand' : 'bg-surface-bg text-ink-soft'}`}
-                  >
-                    {provider.published ? 'Published' : 'Hidden'}
-                  </button>
+                  <span className="rounded-full bg-brand-surface px-3 py-1 text-xs font-bold text-brand">Listed</span>
                 </td>
               </tr>
             ))}

@@ -28,7 +28,8 @@ import { RolesAccessSection } from './sections/AccessSections';
 import { HiresSection } from './sections/HiresSection';
 import { KycSection } from './sections/KycSection';
 import { ProfileForm } from '../pages/ProfileFormPage';
-import { ServicePartnerDashboard } from './sections/ServicePartnerDashboard';
+import { isServiceRole, SERVICE_ROLES } from '@agrotraders/types';
+import { ServiceEnquiries, ServiceProfile, ServiceProviderDashboard } from './sections/ServiceProvider';
 
 // Nav items carry only `id` + `icon`; labels are translated at render from
 // `web:console.nav.<id>` in ConsoleLayout (never store the English label here).
@@ -105,15 +106,23 @@ const NAV: Record<string, ConsoleNavItem[]> = {
     { id: 'reviews', icon: 'star' },
     { id: 'invoices', icon: 'file' },
   ],
-  accountant: [dash],
-  packer: [dash],
-  processor: [dash],
-  fulfillment_partner: [dash],
-  finance_partner: [dash],
 };
 
+// All five service roles share one console: they differ only in which service
+// categories they may offer, which the profile form already scopes. Five copies
+// of this list would be five places to fix the same bug.
+const SERVICE_NAV: ConsoleNavItem[] = [
+  dash,
+  { id: 'enquiries', icon: 'message' },
+  { id: 'serviceProfile', icon: 'store' },
+  { id: 'invoices', icon: 'file' },
+  { id: 'wallet', icon: 'wallet' },
+  { id: 'reviews', icon: 'star' },
+];
+for (const role of SERVICE_ROLES) NAV[role] = SERVICE_NAV;
+
 /** Roles with a dedicated dashboard title; others fall back to `console.title.fallback`. */
-const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'worker', 'accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner']);
+const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'worker']);
 
 /**
  * F05: map the section slug in a notification deep link (/console/<slug>) to the
@@ -180,7 +189,8 @@ export function ConsolePage() {
       if (role === 'transporter') return <TransporterDashboard name={greetName} onNavigate={setActive} />;
       if (role === 'loaderco') return <LoaderDashboard name={greetName} onNavigate={setActive} />;
       if (role === 'worker') return <WorkerDashboard />;
-      if (['accountant','packer','processor','fulfillment_partner','finance_partner'].includes(role)) return <ServicePartnerDashboard />;
+      // One dashboard for every service role — see ServiceProvider.tsx.
+      if (isServiceRole(role)) return <ServiceProviderDashboard name={greetName} />;
       return <Overview name={greetName} />;
     }
     // Wallet (add money to hire) and Earnings (read-only, from completed work)
@@ -232,6 +242,10 @@ export function ConsolePage() {
       if (active === 'attendance') return <LoaderAttendance />;
       if (active === 'invoices') return <LoadercoInvoices />;
       if (active === 'reviews') return <LoaderReviews />;
+    }
+    if (isServiceRole(role)) {
+      if (active === 'enquiries') return <ServiceEnquiries />;
+      if (active === 'serviceProfile') return <ServiceProfile />;
     }
     if (role === 'worker' && active === 'jobs') return <WorkerJobs />;
     if (role === 'worker' && active === 'attendance') return <WorkerAttendance />;

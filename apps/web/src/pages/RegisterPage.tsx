@@ -8,11 +8,13 @@ import { useAuth } from '../auth/AuthContext';
 import { useBranding } from '../branding/BrandingProvider';
 import { api } from '../lib/api';
 import { useCityOptions } from '../lib/geo';
+import { SERVICE_ROLES } from '@agrotraders/types';
 import { useI18n } from '../i18n';
 import { TagInput } from '../components/TagInput';
 
 /** Roles that fill in operational details (where they operate / supply, thresholds). */
-const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker']);
+// Roles that get the extra onboarding fields (location, market) at signup.
+const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker', ...SERVICE_ROLES]);
 
 // Self-registerable roles must match the API's PUBLIC_ROLES (admin is provisioned).
 // Labels/descriptions are translated at render (console.role.<id> / page.register.roleDesc.<id>).
@@ -21,6 +23,13 @@ const roles: { id: string; icon: IconName }[] = [
   { id: 'transporter', icon: 'truck' },
   { id: 'loaderco', icon: 'worker' },
   { id: 'worker', icon: 'user' },
+  // Service providers self-register like transporters do; an admin verifies them
+  // afterwards through the same KYC gate.
+  { id: 'accountant', icon: 'file' },
+  { id: 'packer', icon: 'box' },
+  { id: 'processor', icon: 'gauge' },
+  { id: 'fulfillment_partner', icon: 'bag' },
+  { id: 'finance_partner', icon: 'wallet' },
 ];
 
 export function RegisterPage() {

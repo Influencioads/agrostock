@@ -1,20 +1,151 @@
-import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { api, assetUrl } from '../lib/api';
+import { Badge, Button, Card, Icon } from '@agrotraders/ui';
+import type { ApiServiceProvider } from '@agrotraders/api-client';
+import { SERVICE_CATEGORIES, SERVICE_GROUPS } from '@agrotraders/types';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api';
+import { useAuth } from '../auth/AuthContext';
+import { useCurrency } from '../currency/CurrencyContext';
+import { useI18n } from '../i18n';
+import { useDocumentTitle } from '../lib/useDocumentTitle';
+import { chatBus } from '../chat/chatBus';
 
-export const SERVICE_TYPES = ['accounting','customs_clearance','financial_services','fulfillment','packing','roasting','roasting_salting','chopping','blanching','pitting','sorting_grading'];
-const label = (s: string) => s.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
-
+/**
+ * Public directory of service providers.
+ *
+ * Browsable without an account — a buyer evaluates providers before signing in,
+ * and only sending an enquiry requires login. Filters live in the query string so
+ * a filtered view is a shareable link.
+ */
 export function ServicesPage() {
-  const { category } = useParams(); const [params, setParams] = useSearchParams();
-  const set = (k: string, v: string) => { const n = new URLSearchParams(params); if (v) n.set(k,v); else n.delete(k); setParams(n,{replace:true}); };
-  const serviceType = category || params.get('serviceType') || '';
-  useEffect(() => { document.title = `${serviceType ? label(serviceType) : 'Business services'} | AgroTraders`; }, [serviceType]);
-  const q = { ...Object.fromEntries(params.entries()), serviceType: serviceType || undefined };
-  const { data, isLoading } = useQuery({ queryKey:['services', category, params.toString()], queryFn:()=>api.services.list(q) });
-  return <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6"><h1 className="font-display text-3xl font-extrabold">{serviceType ? label(serviceType) : 'Services for agricultural trade'}</h1><p className="mt-1 text-ink-soft">Verified finance, compliance, logistics, packing and processing partners.</p>
-    <div className="my-6 grid gap-3 rounded-xl border border-surface-border bg-white p-4 sm:grid-cols-2 lg:grid-cols-5"><select value={serviceType} onChange={e=>category ? location.assign(`/services?serviceType=${e.target.value}`) : set('serviceType',e.target.value)} className="h-10 rounded-md border px-2"><option value="">All services</option>{SERVICE_TYPES.map(x=><option key={x} value={x}>{label(x)}</option>)}</select><input value={params.get('city')||''} onChange={e=>set('city',e.target.value)} placeholder="City" className="h-10 rounded-md border px-3"/><input value={params.get('capacityMin')||''} onChange={e=>set('capacityMin',e.target.value)} placeholder="Min capacity/day" type="number" className="h-10 rounded-md border px-3"/><select value={params.get('certification')||''} onChange={e=>set('certification',e.target.value)} className="h-10 rounded-md border px-2"><option value="">Any certification</option>{['FSSAI','ISO','HACCP'].map(x=><option key={x}>{x}</option>)}</select><div className="flex gap-2"><input value={params.get('priceMin')||''} onChange={e=>set('priceMin',e.target.value)} placeholder="Min price" type="number" className="min-w-0 h-10 w-1/2 rounded-md border px-2"/><input value={params.get('priceMax')||''} onChange={e=>set('priceMax',e.target.value)} placeholder="Max price" type="number" className="min-w-0 h-10 w-1/2 rounded-md border px-2"/></div></div>
-    {isLoading?<p>Loading services…</p>:!data?.items.length?<div className="rounded-xl border border-dashed p-12 text-center text-ink-soft">No providers match these filters.</div>:<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.items.map(p=><Link key={p.id} to={`/services/provider/${p.slug}`} className="overflow-hidden rounded-xl border border-surface-border bg-white shadow-card">{p.photos[0]?<img src={assetUrl(p.photos[0])} alt="" className="h-40 w-full object-cover"/>:<div className="flex h-40 items-center justify-center bg-brand-surface text-5xl">🏭</div>}<div className="p-4"><div className="flex justify-between"><h2 className="font-display text-lg font-bold">{p.companyName}</h2><span>★ {p.rating||'New'}</span></div><p className="mt-1 line-clamp-2 text-sm text-ink-soft">{p.description}</p><div className="mt-3 flex flex-wrap gap-1">{p.categories.map(c=><span key={c} className="rounded-full bg-brand-surface px-2 py-1 text-xs text-brand">{label(c)}</span>)}</div><p className="mt-3 text-xs">{p.citiesServed.join(' · ')} · {p.capacityPerDay||'—'} {p.capacityUnit||'units'}/day</p><p className="mt-1 text-xs text-ink-soft">{p.certifications.join(' · ')} · MOQ {p.minOrderQty||'On request'} · {p.turnaroundDays||'—'} days</p></div></Link>)}</div>}
-  </main>;
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const { fmtCents } = useCurrency();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  useDocumentTitle(t('service.providers'));
+
+  const category = params.get('category') ?? '';
+  const city = params.get('city') ?? '';
+
+  const { data: providers = [], isLoading } = useQuery<ApiServiceProvider[]>({
+    queryKey: ['service-providers', category, city],
+    queryFn: () => api.services.providers({ category: category || undefined, city: city || undefined }),
+  });
+
+  /** Write one filter into the URL, dropping it entirely when cleared. */
+  const setFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+      <h1 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('service.providers')}</h1>
+      <p className="mt-1 text-ink-soft">{t('service.sub')}</p>
+
+      {/* Category chips, grouped the way the trade thinks about them. */}
+      <div className="mt-6 space-y-3">
+        {(Object.keys(SERVICE_GROUPS) as (keyof typeof SERVICE_GROUPS)[]).map((group) => (
+          <div key={group} className="flex flex-wrap items-center gap-2">
+            <span className="w-full text-xs font-semibold uppercase tracking-wide text-ink-soft sm:w-40">
+              {t(`service.group.${group}`)}
+            </span>
+            {SERVICE_GROUPS[group].map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={category === c}
+                onClick={() => setFilter('category', category === c ? '' : c)}
+                className={
+                  'rounded-full border px-3 py-1.5 text-sm font-semibold transition ' +
+                  (category === c
+                    ? 'border-brand bg-brand-surface text-brand-dark'
+                    : 'border-surface-border text-ink-soft hover:border-brand-leaf')
+                }
+              >
+                {t(`enums:serviceCategory.${c}`)}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <input
+          value={city}
+          onChange={(e) => setFilter('city', e.target.value)}
+          placeholder={t('service.cities')}
+          className="w-full max-w-sm rounded-md border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-brand-leaf"
+        />
+      </div>
+
+      {isLoading ? (
+        <Card className="mt-6 py-16 text-center text-ink-soft">{t('common:loading')}</Card>
+      ) : providers.length === 0 ? (
+        <Card className="mt-6 py-16 text-center text-ink-soft">{t('service.none')}</Card>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {providers.map((p) => (
+            <Card key={p.id} className="flex h-full flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 font-display text-base font-bold text-ink">
+                    <span className="truncate">{p.companyName || p.user.name}</span>
+                    {p.user.kycStatus === 'verified' && <Icon name="shield" size={14} className="shrink-0 text-brand" />}
+                  </div>
+                  <div className="text-xs text-ink-soft">{t(`enums:serviceRole.${p.user.role}`, { defaultValue: p.user.role })}</div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {p.categories.slice(0, 3).map((c) => (
+                  <Badge key={c} tone="slate">{t(`enums:serviceCategory.${c}`)}</Badge>
+                ))}
+              </div>
+
+              <dl className="space-y-0.5 text-sm text-ink-soft">
+                {p.citiesServed.length > 0 && (
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Icon name="mapPin" size={13} className="shrink-0" />
+                    <span className="truncate">{p.citiesServed.join(', ')}</span>
+                  </div>
+                )}
+                {p.capacityPerDay != null && (
+                  <div>{t('service.capacity')}: <b className="text-ink">{p.capacityPerDay}</b></div>
+                )}
+                {p.turnaroundDays != null && (
+                  <div>{t('service.turnaround')}: <b className="text-ink">{t('service.turnaroundDays', { count: p.turnaroundDays })}</b></div>
+                )}
+                {p.certifications.length > 0 && (
+                  <div className="truncate">{t('service.certifications')}: {p.certifications.join(', ')}</div>
+                )}
+              </dl>
+
+              <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+                <div className="font-display text-sm font-extrabold text-ink">
+                  {p.priceFromCents != null && p.pricingBasis
+                    ? t('service.priceFrom', {
+                        amount: fmtCents(p.priceFromCents),
+                        basis: t(`enums:servicePricingBasis.${p.pricingBasis}`),
+                      })
+                    : t('service.onEnquiry')}
+                </div>
+                {/* Browsing is open; sending the enquiry is the gated step. */}
+                <Button
+                  size="sm"
+                  onClick={() => (user ? chatBus.openCommunityDm(p.user.id, p.companyName || p.user.name) : navigate('/login'))}
+                >
+                  {t('service.contact')}
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -41,8 +41,8 @@ import { CommunityModule } from './community/community.module';
 import { SupportModule } from './support/support.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { ServiceProvidersModule } from './services/service-providers.module';
 import { TranslationModule } from './translation/translation.module';
-import { ServicesModule } from './services/services.module';
 
 @Module({
   imports: [
@@ -91,7 +91,7 @@ import { ServicesModule } from './services/services.module';
     SupportModule,
     ReviewsModule,
     WishlistModule,
-    ServicesModule,
+    ServiceProvidersModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

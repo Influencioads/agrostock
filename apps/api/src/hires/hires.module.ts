@@ -16,6 +16,7 @@ import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { HireTargetType } from '@prisma/client';
 import { IsDateString, IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import type { Lang } from '@agrotraders/i18n';
+import { SERVICE_ROLES } from '@agrotraders/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -174,8 +175,16 @@ export class HiresService {
     }
     const target = await this.prisma.user.findFirst({ where: { id: dto.targetUserId, active: true } });
     if (!target) throw new NotFoundException('User not found');
-    const targetRoles = new Set([target.role, ...target.roles]);
-    if (!targetRoles.has(dto.targetType)) {
+    const targetRoles = new Set<string>([target.role, ...target.roles]);
+    // `service_provider` is an umbrella: the enquiry targets whichever of the
+    // five service roles the user actually holds, so the flow does not fork five
+    // ways for what is one behaviour. Every other targetType still matches the
+    // role name exactly, as it always did.
+    const targetMatches =
+      dto.targetType === 'service_provider'
+        ? SERVICE_ROLES.some((r) => targetRoles.has(r))
+        : targetRoles.has(dto.targetType);
+    if (!targetMatches) {
       throw new BadRequestException(`This user is not a ${dto.targetType}.`);
     }
 
@@ -495,23 +504,25 @@ export class HiresController {
     @Query('targetType') targetType?: string,
     @Query('orderId') orderId?: string,
   ) {
-    const valid = targetType === 'transporter' || targetType === 'loaderco' || targetType === 'worker';
+    const valid =
+      targetType === 'transporter' || targetType === 'loaderco' ||
+      targetType === 'worker' || targetType === 'service_provider';
     return this.hires.mine(user.id, { targetType: valid ? (targetType as HireTargetType) : undefined, orderId }, locale);
   }
 
-  @Roles('transporter', 'loaderco', 'worker')
+  @Roles('transporter', 'loaderco', 'worker', ...SERVICE_ROLES)
   @Get('incoming')
   incoming(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
     return this.hires.incoming(user.id, locale);
   }
 
-  @Roles('transporter', 'loaderco', 'worker')
+  @Roles('transporter', 'loaderco', 'worker', ...SERVICE_ROLES)
   @Post(':id/accept')
   accept(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.hires.accept(user, id);
   }
 
-  @Roles('transporter', 'loaderco', 'worker')
+  @Roles('transporter', 'loaderco', 'worker', ...SERVICE_ROLES)
   @Post(':id/decline')
   decline(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.hires.decline(user, id);
