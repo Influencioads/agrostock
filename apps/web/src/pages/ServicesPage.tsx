@@ -1,0 +1,20 @@
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { api, assetUrl } from '../lib/api';
+
+export const SERVICE_TYPES = ['accounting','customs_clearance','financial_services','fulfillment','packing','roasting','roasting_salting','chopping','blanching','pitting','sorting_grading'];
+const label = (s: string) => s.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+export function ServicesPage() {
+  const { category } = useParams(); const [params, setParams] = useSearchParams();
+  const set = (k: string, v: string) => { const n = new URLSearchParams(params); if (v) n.set(k,v); else n.delete(k); setParams(n,{replace:true}); };
+  const serviceType = category || params.get('serviceType') || '';
+  useEffect(() => { document.title = `${serviceType ? label(serviceType) : 'Business services'} | AgroTraders`; }, [serviceType]);
+  const q = { ...Object.fromEntries(params.entries()), serviceType: serviceType || undefined };
+  const { data, isLoading } = useQuery({ queryKey:['services', category, params.toString()], queryFn:()=>api.services.list(q) });
+  return <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6"><h1 className="font-display text-3xl font-extrabold">{serviceType ? label(serviceType) : 'Services for agricultural trade'}</h1><p className="mt-1 text-ink-soft">Verified finance, compliance, logistics, packing and processing partners.</p>
+    <div className="my-6 grid gap-3 rounded-xl border border-surface-border bg-white p-4 sm:grid-cols-2 lg:grid-cols-5"><select value={serviceType} onChange={e=>category ? location.assign(`/services?serviceType=${e.target.value}`) : set('serviceType',e.target.value)} className="h-10 rounded-md border px-2"><option value="">All services</option>{SERVICE_TYPES.map(x=><option key={x} value={x}>{label(x)}</option>)}</select><input value={params.get('city')||''} onChange={e=>set('city',e.target.value)} placeholder="City" className="h-10 rounded-md border px-3"/><input value={params.get('capacityMin')||''} onChange={e=>set('capacityMin',e.target.value)} placeholder="Min capacity/day" type="number" className="h-10 rounded-md border px-3"/><select value={params.get('certification')||''} onChange={e=>set('certification',e.target.value)} className="h-10 rounded-md border px-2"><option value="">Any certification</option>{['FSSAI','ISO','HACCP'].map(x=><option key={x}>{x}</option>)}</select><div className="flex gap-2"><input value={params.get('priceMin')||''} onChange={e=>set('priceMin',e.target.value)} placeholder="Min price" type="number" className="min-w-0 h-10 w-1/2 rounded-md border px-2"/><input value={params.get('priceMax')||''} onChange={e=>set('priceMax',e.target.value)} placeholder="Max price" type="number" className="min-w-0 h-10 w-1/2 rounded-md border px-2"/></div></div>
+    {isLoading?<p>Loading services…</p>:!data?.items.length?<div className="rounded-xl border border-dashed p-12 text-center text-ink-soft">No providers match these filters.</div>:<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.items.map(p=><Link key={p.id} to={`/services/provider/${p.slug}`} className="overflow-hidden rounded-xl border border-surface-border bg-white shadow-card">{p.photos[0]?<img src={assetUrl(p.photos[0])} alt="" className="h-40 w-full object-cover"/>:<div className="flex h-40 items-center justify-center bg-brand-surface text-5xl">🏭</div>}<div className="p-4"><div className="flex justify-between"><h2 className="font-display text-lg font-bold">{p.companyName}</h2><span>★ {p.rating||'New'}</span></div><p className="mt-1 line-clamp-2 text-sm text-ink-soft">{p.description}</p><div className="mt-3 flex flex-wrap gap-1">{p.categories.map(c=><span key={c} className="rounded-full bg-brand-surface px-2 py-1 text-xs text-brand">{label(c)}</span>)}</div><p className="mt-3 text-xs">{p.citiesServed.join(' · ')} · {p.capacityPerDay||'—'} {p.capacityUnit||'units'}/day</p><p className="mt-1 text-xs text-ink-soft">{p.certifications.join(' · ')} · MOQ {p.minOrderQty||'On request'} · {p.turnaroundDays||'—'} days</p></div></Link>)}</div>}
+  </main>;
+}

@@ -18,6 +18,8 @@ export const NAV: NavItem[] = [
   { key: 'auctions', icon: 'gavel', to: '/auctions' },
   { key: 'bids', icon: 'file', to: '/bids' },
   { key: 'transporters', icon: 'truck', to: '/transporters' },
+  { key: 'vehicles', icon: 'truck', to: '/vehicles' },
+  { key: 'services', icon: 'store', to: '/services' },
   { key: 'loaders', icon: 'worker', to: '/loaders' },
   { key: 'workers', icon: 'user', to: '/workers' },
 ];

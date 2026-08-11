@@ -6,6 +6,7 @@ import { api, assetUrl } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
 import { useI18n } from '../i18n';
+import { VehicleCard } from '../components/site/VehicleCard';
 import { chatBus } from '../chat/chatBus';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
 import { ReviewList } from '../console/components/ReviewList';
@@ -184,6 +185,26 @@ export function PublicProfilePage() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* transporter fleet — the actual vehicles, not just the count.
+          The `Vehicles` stat above remains as the header figure; this is what
+          the client asked for and what the stat must never stand in for. */}
+      {roles.includes('transporter') && (
+        <div className="mt-8">
+          <h2 className="mb-4 font-display text-xl font-extrabold text-ink">
+            {t('vehicle.count', { count: p.vehicles?.length ?? counts.vehicles ?? 0 })}
+          </h2>
+          {(p.vehicles?.length ?? 0) > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {p.vehicles!.map((v) => (
+                <VehicleCard key={v.id} v={v} />
+              ))}
+            </div>
+          ) : (
+            <Card className="py-10 text-center text-sm text-ink-soft">{t('vehicle.none')}</Card>
+          )}
         </div>
       )}
 

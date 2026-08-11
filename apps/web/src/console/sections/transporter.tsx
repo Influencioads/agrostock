@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal, type BadgeTone } from '@agrotraders/ui';
 import type { ApiRoute, ApiVehicle } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
+import { VEHICLE_TYPES } from '@agrotraders/types';
 import { useI18n } from '../../i18n';
 import { usd } from '../lib';
 import { errMessage } from './order-parts';
@@ -122,8 +123,28 @@ export function TransporterTrips() {
 }
 
 /* ── Vehicles (add / edit / photo / rich fields) ─────────────────────── */
-type VehicleForm = { type: string; plate: string; capacityMt: string; makeModel: string; year: string; insuranceExpiry: string; notes: string };
-const emptyVehicle: VehicleForm = { type: '', plate: '', capacityMt: '', makeModel: '', year: '', insuranceExpiry: '', notes: '' };
+type VehicleForm = {
+  type: string; plate: string; capacityMt: string; makeModel: string; year: string;
+  insuranceExpiry: string; notes: string;
+  // Public-listing fields. Buyers browse on these, so an empty one costs the
+  // transporter visibility — the form labels them plainly rather than hiding
+  // them behind an "advanced" toggle.
+  vehicleType: string; capacityTons: string; bodyLengthFt: string;
+  refrigerated: boolean; tempMinC: string; tempMaxC: string;
+  gpsTracking: boolean; driverCount: string;
+  city: string; country: string; servicingCities: string;
+  ratePerKm: string; ratePerTrip: string; loadingIncluded: boolean;
+  permitExpiry: string; availableFrom: string;
+};
+const emptyVehicle: VehicleForm = {
+  type: '', plate: '', capacityMt: '', makeModel: '', year: '', insuranceExpiry: '', notes: '',
+  vehicleType: '', capacityTons: '', bodyLengthFt: '',
+  refrigerated: false, tempMinC: '', tempMaxC: '',
+  gpsTracking: false, driverCount: '',
+  city: '', country: '', servicingCities: '',
+  ratePerKm: '', ratePerTrip: '', loadingIncluded: false,
+  permitExpiry: '', availableFrom: '',
+};
 
 export function TransporterVehicles() {
   const { t } = useI18n();
@@ -170,7 +191,24 @@ function VehicleModal({ vehicle, onClose, onSaved }: { vehicle: ApiVehicle | nul
   const [form, setForm] = useState<VehicleForm>(vehicle ? {
     type: vehicle.type, plate: vehicle.plate, capacityMt: vehicle.capacityMt ?? '', makeModel: vehicle.makeModel ?? '',
     year: vehicle.year ? String(vehicle.year) : '', insuranceExpiry: vehicle.insuranceExpiry ? vehicle.insuranceExpiry.slice(0, 10) : '', notes: vehicle.notes ?? '',
+    vehicleType: vehicle.vehicleType ?? '',
+    capacityTons: vehicle.capacityTons != null ? String(vehicle.capacityTons) : '',
+    bodyLengthFt: vehicle.bodyLengthFt != null ? String(vehicle.bodyLengthFt) : '',
+    refrigerated: !!vehicle.refrigerated,
+    tempMinC: vehicle.tempMinC != null ? String(vehicle.tempMinC) : '',
+    tempMaxC: vehicle.tempMaxC != null ? String(vehicle.tempMaxC) : '',
+    gpsTracking: !!vehicle.gpsTracking,
+    driverCount: vehicle.driverCount != null ? String(vehicle.driverCount) : '',
+    city: vehicle.city ?? '', country: vehicle.country ?? '',
+    servicingCities: (vehicle.servicingCities ?? []).join(', '),
+    // Rates are stored in minor units; the form edits whole currency units.
+    ratePerKm: vehicle.ratePerKmCents != null ? String(vehicle.ratePerKmCents / 100) : '',
+    ratePerTrip: vehicle.ratePerTripCents != null ? String(vehicle.ratePerTripCents / 100) : '',
+    loadingIncluded: !!vehicle.loadingIncluded,
+    permitExpiry: vehicle.permitExpiry ? vehicle.permitExpiry.slice(0, 10) : '',
+    availableFrom: vehicle.availableFrom ? vehicle.availableFrom.slice(0, 10) : '',
   } : emptyVehicle);
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([]);
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
   const [clearPhoto, setClearPhoto] = useState(false);
   const [error, setError] = useState('');
@@ -178,11 +216,34 @@ function VehicleModal({ vehicle, onClose, onSaved }: { vehicle: ApiVehicle | nul
 
   const save = useMutation({
     mutationFn: async () => {
+      const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
+      const cents = (v: string) => (v.trim() === '' ? undefined : Math.round(Number(v) * 100));
       const body = {
         type: form.type, plate: form.plate, capacityMt: form.capacityMt || undefined, makeModel: form.makeModel || undefined,
         year: form.year ? Number(form.year) : undefined, insuranceExpiry: form.insuranceExpiry || undefined, notes: form.notes || undefined,
+        vehicleType: form.vehicleType || undefined,
+        capacityTons: num(form.capacityTons),
+        bodyLengthFt: num(form.bodyLengthFt),
+        // The API forces this true for a reefer; sending it keeps the form and
+        // the stored row in agreement for every other body type.
+        refrigerated: form.refrigerated,
+        tempMinC: num(form.tempMinC),
+        tempMaxC: num(form.tempMaxC),
+        gpsTracking: form.gpsTracking,
+        driverCount: num(form.driverCount),
+        city: form.city || undefined,
+        country: form.country || undefined,
+        servicingCities: form.servicingCities.split(',').map((c) => c.trim()).filter(Boolean),
+        ratePerKmCents: cents(form.ratePerKm),
+        ratePerTripCents: cents(form.ratePerTrip),
+        loadingIncluded: form.loadingIncluded,
+        permitExpiry: form.permitExpiry || undefined,
+        availableFrom: form.availableFrom || undefined,
       };
       const saved = vehicle ? await api.transport.updateVehicle(vehicle.id, body) : await api.transport.addVehicle(body);
+      // Gallery first, then the legacy single-photo field, so a transporter who
+      // used either control ends up with the same ordered gallery.
+      if (pendingPhotos.length) await api.transport.uploadVehiclePhotos(saved.id, pendingPhotos);
       if (pendingPhoto) await api.transport.uploadVehiclePhoto(saved.id, pendingPhoto);
     },
     onSuccess: () => { onSaved(); onClose(); },
@@ -194,6 +255,21 @@ function VehicleModal({ vehicle, onClose, onSaved }: { vehicle: ApiVehicle | nul
       footer={<><Button variant="ghost" onClick={onClose}>{t('common:cancel')}</Button><Button disabled={!form.type.trim() || !form.plate.trim() || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t('console.transporter.saving') : t('console.transporter.save')}</Button></>}>
       <div className="space-y-3">
         <PhotoField url={clearPhoto ? null : vehicle?.photoUrl} pending={pendingPhoto} onFile={(f) => { setPendingPhoto(f); setClearPhoto(false); }} onClear={() => { setPendingPhoto(null); setClearPhoto(true); }} />
+
+        {/* Extra gallery photos. Buyers judge a truck on pictures, so more than
+            one is the point — these APPEND, they never replace the cover. */}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-ink">
+            {t('vehicle.photosCount', { count: (vehicle?.photos?.length ?? 0) + pendingPhotos.length })}
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => setPendingPhotos(Array.from(e.target.files ?? []).slice(0, 6))}
+            className="block w-full text-sm text-ink-soft file:me-3 file:rounded-md file:border-0 file:bg-brand-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-brand-dark"
+          />
+        </label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label={t('console.transporter.type')} placeholder={t('console.ph.vehicleType')} value={form.type} onChange={s('type')} />
           <Input label={t('console.transporter.plate')} placeholder="GJ-01-AB-1234" value={form.plate} onChange={s('plate')} />
@@ -202,6 +278,69 @@ function VehicleModal({ vehicle, onClose, onSaved }: { vehicle: ApiVehicle | nul
           <Input label={t('console.transporter.year')} type="number" placeholder="2021" value={form.year} onChange={s('year')} />
           <Input label={t('console.transporter.insuranceExpiry')} type="date" value={form.insuranceExpiry} onChange={s('insuranceExpiry')} />
         </div>
+
+        {/* ── what buyers browse on ─────────────────────────────────── */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-ink">{t('vehicle.title')}</span>
+            <select
+              value={form.vehicleType}
+              onChange={(e) => setForm((f) => ({
+                ...f,
+                vehicleType: e.target.value,
+                // A reefer is refrigerated by definition — the API enforces the
+                // same rule, so the checkbox must not be able to contradict it.
+                refrigerated: e.target.value === 'reefer' ? true : f.refrigerated,
+              }))}
+              className="w-full rounded-md border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-brand-leaf"
+            >
+              <option value="">—</option>
+              {VEHICLE_TYPES.map((v) => (
+                <option key={v} value={v}>{t(`enums:vehicleType.${v}`)}</option>
+              ))}
+            </select>
+          </label>
+          <Input label={`${t('vehicle.capacity')} (t)`} type="number" placeholder="10" value={form.capacityTons} onChange={s('capacityTons')} />
+          <Input label={t('vehicle.location')} placeholder="Bengaluru" value={form.city} onChange={s('city')} />
+          <Input label={t('vehicle.bodyLength')} type="number" placeholder="32" value={form.bodyLengthFt} onChange={s('bodyLengthFt')} />
+          <Input label={t('vehicle.ratePerKm')} type="number" placeholder="45" value={form.ratePerKm} onChange={s('ratePerKm')} />
+          <Input label={t('vehicle.ratePerTrip')} type="number" placeholder="5000" value={form.ratePerTrip} onChange={s('ratePerTrip')} />
+          <Input label={t('vehicle.drivers')} type="number" placeholder="2" value={form.driverCount} onChange={s('driverCount')} />
+          <Input label={t('vehicle.permitValid')} type="date" value={form.permitExpiry} onChange={s('permitExpiry')} />
+          <Input label={t('vehicle.availability')} type="date" value={form.availableFrom} onChange={s('availableFrom')} />
+        </div>
+
+        <Input label={t('vehicle.servicing')} placeholder="Bengaluru, Chennai, Hyderabad" value={form.servicingCities} onChange={s('servicingCities')} />
+
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={form.refrigerated}
+              disabled={form.vehicleType === 'reefer'}
+              onChange={(e) => setForm((f) => ({ ...f, refrigerated: e.target.checked }))}
+              className="accent-[#249653]"
+            />
+            {t('vehicle.refrigerated')}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={form.gpsTracking} onChange={(e) => setForm((f) => ({ ...f, gpsTracking: e.target.checked }))} className="accent-[#249653]" />
+            {t('vehicle.gps')}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={form.loadingIncluded} onChange={(e) => setForm((f) => ({ ...f, loadingIncluded: e.target.checked }))} className="accent-[#249653]" />
+            {t('vehicle.loadingIncluded')}
+          </label>
+        </div>
+
+        {/* Only meaningful for a reefer, so it is only offered for one. */}
+        {form.refrigerated && (
+          <div className="grid grid-cols-2 gap-3">
+            <Input label={`${t('vehicle.tempRange')} — min °C`} type="number" placeholder="-18" value={form.tempMinC} onChange={s('tempMinC')} />
+            <Input label={`${t('vehicle.tempRange')} — max °C`} type="number" placeholder="4" value={form.tempMaxC} onChange={s('tempMaxC')} />
+          </div>
+        )}
+
         <Input label={t('console.transporter.notes')} placeholder={t('console.ph.vehicleNotes')} value={form.notes} onChange={s('notes')} />
         {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       </div>

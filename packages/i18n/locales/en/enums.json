@@ -1,96 +1,105 @@
 {
-  "role": {
-    "buyer": "Buyer",
-    "seller": "Seller",
-    "transporter": "Transporter",
+  "delivery": {
+    "delivery": "Seller delivers",
+    "no_delivery": "No delivery or collection",
+    "self_pickup": "Buyer arranges a delivery partner"
+  },
+  "hire_status": {
+    "accepted": "Accepted",
+    "cancelled": "Cancelled",
+    "declined": "Declined",
+    "pending": "Pending"
+  },
+  "hire_target": {
     "loaderco": "Loader Co",
-    "worker": "Worker",
-    "admin": "Admin"
+    "transporter": "Transporter",
+    "worker": "Worker"
   },
   "kyc": {
     "pending": "Pending",
-    "verified": "Verified",
-    "rejected": "Rejected"
+    "rejected": "Rejected",
+    "verified": "Verified"
   },
   "order_status": {
-    "quote": "Quote sent",
-    "processing": "Processing",
-    "paid": "Escrow held",
-    "shipped": "Shipped",
-    "in_transit": "In transit",
+    "cancelled": "Cancelled",
     "delivered": "Delivered",
     "dispute": "Dispute",
-    "cancelled": "Cancelled"
-  },
-  "support_category": {
-    "account_kyc": "Account & KYC",
-    "product_listing": "Product listing",
-    "buyer_order": "Buyer order issue",
-    "seller_order": "Seller order issue",
-    "payment_safedeal": "Payment / Safe Deal",
-    "wallet_payout": "Wallet / payout",
-    "auction_bid": "Auction / bid",
-    "transport": "Transport",
-    "loader": "Loader / worker",
-    "import_export": "Import / export",
-    "technical": "Technical issue",
-    "global_office": "Global office",
-    "other": "Other"
-  },
-  "support_status": {
-    "all": "All",
-    "new": "New",
-    "waiting_support": "Waiting for support",
-    "assigned": "Assigned",
-    "in_progress": "In progress",
-    "waiting_user": "Waiting for you",
-    "escalated": "Escalated",
-    "resolved": "Resolved",
-    "closed": "Closed"
-  },
-  "support_priority": {
-    "low": "Low",
-    "medium": "Medium",
-    "high": "High",
-    "urgent": "Urgent"
-  },
-  "hire_status": {
-    "pending": "Pending",
-    "accepted": "Accepted",
-    "declined": "Declined",
-    "cancelled": "Cancelled"
-  },
-  "hire_target": {
-    "transporter": "Transporter",
-    "loaderco": "Loader Co",
-    "worker": "Worker"
-  },
-  "unit": {
-    "KG": "Kilogram (KG)",
-    "MT": "Metric ton (MT)",
-    "QUINTAL": "Quintal",
-    "TON": "Ton",
-    "BAG": "Bag",
-    "PIECE": "Piece"
-  },
-  "unitShort": {
-    "KG": "KG",
-    "MT": "MT",
-    "QUINTAL": "QTL",
-    "TON": "TON",
-    "BAG": "BAG",
-    "PIECE": "PC"
-  },
-  "delivery": {
-    "delivery": "Seller delivers",
-    "self_pickup": "Buyer arranges a delivery partner",
-    "no_delivery": "No delivery or collection"
+    "in_transit": "In transit",
+    "paid": "Escrow held",
+    "processing": "Processing",
+    "quote": "Quote sent",
+    "shipped": "Shipped"
   },
   "procure": {
+    "flexible": "Flexible",
     "immediate": "Immediately",
     "within_1_month": "Within a month",
     "within_2_months": "Within 2 months",
-    "within_3_months": "Within 3 months",
-    "flexible": "Flexible"
+    "within_3_months": "Within 3 months"
+  },
+  "role": {
+    "admin": "Admin",
+    "buyer": "Buyer",
+    "loaderco": "Loader Co",
+    "seller": "Seller",
+    "transporter": "Transporter",
+    "worker": "Worker"
+  },
+  "support_category": {
+    "account_kyc": "Account & KYC",
+    "auction_bid": "Auction / bid",
+    "buyer_order": "Buyer order issue",
+    "global_office": "Global office",
+    "import_export": "Import / export",
+    "loader": "Loader / worker",
+    "other": "Other",
+    "payment_safedeal": "Payment / Safe Deal",
+    "product_listing": "Product listing",
+    "seller_order": "Seller order issue",
+    "technical": "Technical issue",
+    "transport": "Transport",
+    "wallet_payout": "Wallet / payout"
+  },
+  "support_priority": {
+    "high": "High",
+    "low": "Low",
+    "medium": "Medium",
+    "urgent": "Urgent"
+  },
+  "support_status": {
+    "all": "All",
+    "assigned": "Assigned",
+    "closed": "Closed",
+    "escalated": "Escalated",
+    "in_progress": "In progress",
+    "new": "New",
+    "resolved": "Resolved",
+    "waiting_support": "Waiting for support",
+    "waiting_user": "Waiting for you"
+  },
+  "unit": {
+    "BAG": "Bag",
+    "KG": "Kilogram (KG)",
+    "MT": "Metric ton (MT)",
+    "PIECE": "Piece",
+    "QUINTAL": "Quintal",
+    "TON": "Ton"
+  },
+  "unitShort": {
+    "BAG": "BAG",
+    "KG": "KG",
+    "MT": "MT",
+    "PIECE": "PC",
+    "QUINTAL": "QTL",
+    "TON": "TON"
+  },
+  "vehicleType": {
+    "container": "Container",
+    "mini_truck": "Mini truck / Tempo",
+    "open_truck": "Open truck",
+    "reefer": "Refrigerated truck",
+    "tanker": "Tanker",
+    "tipper": "Tipper",
+    "trailer": "Trailer"
   }
 }

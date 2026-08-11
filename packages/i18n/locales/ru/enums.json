@@ -30,6 +30,13 @@
     "quote": "Отправлено предложение",
     "shipped": "Отгружено"
   },
+  "procure": {
+    "flexible": "Гибкие сроки",
+    "immediate": "Немедленно",
+    "within_1_month": "В течение месяца",
+    "within_2_months": "В течение 2 месяцев",
+    "within_3_months": "В течение 3 месяцев"
+  },
   "role": {
     "admin": "Администратор",
     "buyer": "Покупатель",
@@ -86,11 +93,13 @@
     "QUINTAL": "ц",
     "TON": "т"
   },
-  "procure": {
-    "immediate": "Немедленно",
-    "within_1_month": "В течение месяца",
-    "within_2_months": "В течение 2 месяцев",
-    "within_3_months": "В течение 3 месяцев",
-    "flexible": "Гибкие сроки"
+  "vehicleType": {
+    "container": "Контейнеровоз",
+    "mini_truck": "Мини-грузовик / Темпо",
+    "open_truck": "Бортовой грузовик",
+    "reefer": "Рефрижератор",
+    "tanker": "Автоцистерна",
+    "tipper": "Самосвал",
+    "trailer": "Прицеп"
   }
 }

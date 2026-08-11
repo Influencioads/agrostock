@@ -9,6 +9,8 @@
   <url><loc>https://agrotraders.org/requirements</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://agrotraders.org/sellers</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://agrotraders.org/transporters</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://agrotraders.org/vehicles</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://agrotraders.org/services</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://agrotraders.org/loaders</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://agrotraders.org/workers</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://agrotraders.org/offices</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>

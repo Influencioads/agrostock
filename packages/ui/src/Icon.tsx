@@ -17,6 +17,9 @@ export const ICON_PATHS = {
   palette:
     'M12 22a10 10 0 1 1 0-20c5 0 9 3.5 9 8 0 3-2.5 4-4.5 4H14a2 2 0 0 0-1.5 3.3A1.5 1.5 0 0 1 12 22ZM7.5 11.5v.01M11 7.5v.01M16 8.5v.01',
   truck: 'M1 3h15v13H1zM16 8h4l3 3v5h-7M5.5 18.5a2 2 0 1 0 0 1M18.5 18.5a2 2 0 1 0 0 1',
+  /** Reefer / refrigerated marker — six-spoke snowflake in the same line style. */
+  snowflake:
+    'M12 2v20M4.2 7l15.6 10M19.8 7 4.2 17M12 6l-2.2-2.2M12 6l2.2-2.2M12 18l-2.2 2.2M12 18l2.2 2.2M7.1 9.4 4 8.6M7.1 14.6 4 15.4M16.9 9.4 20 8.6M16.9 14.6 20 15.4',
   worker: 'M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2M9 8 7 5h10l-2 3',
   shield: 'M12 2 4 5v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V5l-8-3ZM9 12l2 2 4-4',
   wallet:

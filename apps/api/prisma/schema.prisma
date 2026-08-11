@@ -17,6 +17,33 @@ enum Role {
   loaderco
   worker
   admin
+  accountant
+  packer
+  processor
+  fulfillment_partner
+  finance_partner
+}
+
+enum ServiceCategory {
+  accounting
+  customs_clearance
+  financial_services
+  fulfillment
+  packing
+  roasting
+  roasting_salting
+  chopping
+  blanching
+  pitting
+  sorting_grading
+}
+
+enum ServiceEnquiryStatus {
+  requested
+  accepted
+  rejected
+  in_progress
+  completed
 }
 
 /// Granular admin capabilities. A staff account (role=admin) is authorized per
@@ -312,6 +339,8 @@ model User {
   trips             Trip[]             @relation("TripTransporter")
   vehicles          Vehicle[]
   routes            Route[]
+  serviceProvider   ServiceProvider?
+  serviceEnquiries  ServiceEnquiry[]
   teams             Team[]
   workers           Worker[]           @relation("LoadercoWorkers")
   workerProfile     Worker?            @relation("WorkerUser")
@@ -1224,21 +1253,133 @@ model TransportQuote {
   transporter   User             @relation("QuoteTransporter", fields: [transporterId], references: [id])
 }
 
+/// The structured body types a buyer filters on. `Vehicle.type` stays as the
+/// transporter's own words ("40ft Reefer", "Curtain-side") because that is what
+/// they recognise on their own fleet list; this is the canonical facet beside it.
+enum VehicleType {
+  reefer
+  open_truck
+  container
+  tanker
+  tipper
+  mini_truck
+  trailer
+}
+
 model Vehicle {
   id              String        @id @default(cuid())
+  /// Free text, the transporter's own label. Kept as the display fallback for
+  /// every vehicle listed before `vehicleType` existed.
   type            String
+  /// Structured body type. Nullable: legacy rows have only the free text, and
+  /// guessing a category from it would put trucks in the wrong filter bucket.
+  vehicleType     VehicleType?
+  /// Registration number. NEVER returned unmasked on a public endpoint — see
+  /// `maskPlate` in transport/vehicle-public.ts. Owner and admin see it whole.
   plate           String
+  /// Legacy free-text capacity ("28"). `capacityTons` is the canonical figure;
+  /// this is retained as the display fallback for rows that never parsed.
   capacityMt      String?
+  capacityTons    Float?
+  /// Load bed length in feet — what decides whether a consignment physically fits.
+  bodyLengthFt    Float?
   status          VehicleStatus @default(available)
+  /// First date the vehicle can take a new load. Null = available now.
+  availableFrom   DateTime?
+
+  /// Cover photo. Always mirrors `photos[0]` when the gallery is non-empty, so
+  /// every existing single-photo render keeps working untouched — same contract
+  /// as `Product.imageUrl`/`Product.images`.
   photoUrl        String?
+  photos          String[]      @default([])
+
+  refrigerated    Boolean       @default(false)
+  /// Reefer operating range in whole °C. Stored as two numbers rather than the
+  /// "-18°C to +4°C" string so a buyer can filter on it; the display string is
+  /// derived (`tempRange` in the API response).
+  tempMinC        Int?
+  tempMaxC        Int?
+
+  gpsTracking     Boolean       @default(false)
+  driverCount     Int?
+
+  /// Where the vehicle is based, and the cities it will run to. `Route` rows on
+  /// the same owner carry full from→to lanes; this is the lighter city list a
+  /// card can show without a join.
+  city            String?
+  country         String?
+  servicingCities String[]      @default([])
+
+  /// Freight rates in integer minor units of `rateCurrency`, matching every
+  /// other money column in the schema (`priceCents`, `amountCents`).
+  ratePerKmCents   Int?
+  ratePerTripCents Int?
+  rateCurrency     String       @default("USD")
+  /// Whether the quoted rate already covers loading and unloading labour.
+  loadingIncluded  Boolean      @default(false)
+
   makeModel       String?
   year            Int?
   insuranceExpiry DateTime?
+  permitExpiry    DateTime?
   notes           String?
   createdAt       DateTime      @default(now())
   ownerId         String
   owner           User          @relation(fields: [ownerId], references: [id])
   trips           Trip[]
+
+  /// The public transporter profile lists a fleet owner-first; buyers browsing
+  /// filter on type, capacity and location.
+  @@index([ownerId, createdAt])
+  @@index([vehicleType, status])
+  @@index([country, city])
+}
+
+model ServiceProvider {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  companyName     String
+  description     String?
+  categories      ServiceCategory[]
+  citiesServed    String[]          @default([])
+  capacityPerDay  Float?
+  capacityUnit    String?
+  certifications  String[]          @default([])
+  minOrderQty     Float?
+  turnaroundDays  Int?
+  pricingBasis    String?
+  minPriceCents   Int?
+  maxPriceCents   Int?
+  photos          String[]          @default([])
+  rating          Float?            @default(0)
+  published       Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  ownerId         String            @unique
+  owner           User              @relation(fields: [ownerId], references: [id])
+  enquiries       ServiceEnquiry[]
+
+  @@index([published, createdAt])
+}
+
+model ServiceEnquiry {
+  id          String               @id @default(cuid())
+  reference   String               @unique
+  serviceType ServiceCategory
+  message     String
+  quantity    Float?
+  neededDate  DateTime?
+  status      ServiceEnquiryStatus @default(requested)
+  documents   String[]             @default([])
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  providerId  String
+  provider    ServiceProvider      @relation(fields: [providerId], references: [id])
+  customerId  String
+  customer    User                 @relation(fields: [customerId], references: [id])
+
+  @@index([providerId, status])
+  @@index([customerId, createdAt])
 }
 
 model Route {

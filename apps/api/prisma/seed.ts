@@ -73,6 +73,13 @@ async function recomputeAllRatingAggregates() {
   );
 }
 
+/** Deterministic small hash — keeps seeded plates stable across reseeds. */
+function hashCode(input: string): number {
+  let h = 0;
+  for (let i = 0; i < input.length; i += 1) h = (h * 31 + input.charCodeAt(i)) | 0;
+  return h;
+}
+
 const slug = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -655,7 +662,57 @@ async function main() {
   });
   for (const t of transporters) {
     const tid = await upsertUser(t.name, 'transporter', t.country, t.kyc);
-    await prisma.vehicle.create({ data: { type: t.vehicle, plate: t.plate, capacityMt: t.capacity, ownerId: tid } });
+    // TWO vehicles each, so the public transporter profile shows a real fleet
+    // rather than a single card — and so the "Vehicles (2)" acceptance case has
+    // something to assert against straight after a seed.
+    const reefer = /reefer/i.test(t.vehicle);
+    await prisma.vehicle.create({
+      data: {
+        type: t.vehicle,
+        plate: t.plate,
+        capacityMt: t.capacity,
+        capacityTons: Number(t.capacity) || null,
+        vehicleType: (reefer ? 'reefer'
+          : /tipper/i.test(t.vehicle) ? 'tipper'
+          : /container/i.test(t.vehicle) ? 'container'
+          : /trailer/i.test(t.vehicle) ? 'trailer'
+          : null) as never,
+        refrigerated: reefer,
+        tempMinC: reefer ? -18 : null,
+        tempMaxC: reefer ? 4 : null,
+        gpsTracking: true,
+        driverCount: 2,
+        bodyLengthFt: 32,
+        city: t.from,
+        country: t.country,
+        servicingCities: [t.from, t.to],
+        ratePerKmCents: 4500,
+        ratePerTripCents: 500000,
+        loadingIncluded: reefer,
+        insuranceExpiry: new Date(Date.now() + 300 * 864e5),
+        permitExpiry: new Date(Date.now() + 200 * 864e5),
+        ownerId: tid,
+      },
+    });
+    await prisma.vehicle.create({
+      data: {
+        type: 'Open Truck',
+        plate: `${t.plate.slice(0, 6)}-OT-${String(Math.abs(hashCode(t.name)) % 9000 + 1000)}`,
+        capacityMt: '15',
+        capacityTons: 15,
+        vehicleType: 'open_truck' as never,
+        gpsTracking: false,
+        driverCount: 1,
+        bodyLengthFt: 22,
+        city: t.to,
+        country: t.country,
+        servicingCities: [t.to],
+        ratePerKmCents: 3500,
+        ratePerTripCents: 250000,
+        insuranceExpiry: new Date(Date.now() + 250 * 864e5),
+        ownerId: tid,
+      },
+    });
     await prisma.route.create({ data: { name: `${t.from} → ${t.to}`, fromCity: t.from, toCity: t.to, distanceKm: t.km, ownerId: tid } });
   }
 

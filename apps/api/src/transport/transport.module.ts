@@ -12,14 +12,17 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Prisma, TripStatus } from '@prisma/client';
-import { IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { VEHICLE_TYPES } from '@agrotraders/types';
+import { PUBLIC_VEHICLE_SELECT, toPublicVehicle } from './vehicle-public';
 import { MAX_MONEY_CENTS } from '../common/limits';
 import { Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -72,6 +75,9 @@ const TRIP_TRANSITIONS: Record<TripStatus, TripStatus[]> = {
   delivered: [],
 };
 
+/** Gallery cap, mirroring MAX_PRODUCT_IMAGES. */
+export const MAX_VEHICLE_PHOTOS = 6;
+
 export class CreateVehicleDto {
   @IsString() @MinLength(1) type!: string;
   @IsString() @MinLength(1) plate!: string;
@@ -80,6 +86,31 @@ export class CreateVehicleDto {
   @IsOptional() @IsInt() @Min(1900) year?: number;
   @IsOptional() @IsDateString() insuranceExpiry?: string;
   @IsOptional() @IsString() notes?: string;
+  /** Structured body type buyers filter on; the free-text `type` stays as typed. */
+  @ApiProperty({ required: false, enum: VEHICLE_TYPES })
+  @IsOptional() @IsIn(VEHICLE_TYPES as unknown as string[]) vehicleType?: string;
+  /** Canonical payload capacity. `capacityMt` is the legacy display fallback. */
+  @IsOptional() @IsNumber() @Min(0) @Max(1000) capacityTons?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(200) bodyLengthFt?: number;
+  @IsOptional() @IsBoolean() refrigerated?: boolean;
+  /** Reefer range in whole °C. Stored as two numbers so buyers can filter it. */
+  @IsOptional() @IsInt() @Min(-100) @Max(100) tempMinC?: number;
+  @IsOptional() @IsInt() @Min(-100) @Max(100) tempMaxC?: number;
+  @IsOptional() @IsBoolean() gpsTracking?: boolean;
+  @IsOptional() @IsInt() @Min(0) @Max(50) driverCount?: number;
+  @IsOptional() @IsString() @MaxLength(120) city?: string;
+  @IsOptional() @IsString() @MaxLength(80) country?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) @MaxLength(120, { each: true })
+  servicingCities?: string[];
+  /** Rates in minor units of `rateCurrency`, like every other money column. */
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) ratePerKmCents?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) ratePerTripCents?: number;
+  @IsOptional() @IsString() @MaxLength(8) rateCurrency?: string;
+  @IsOptional() @IsBoolean() loadingIncluded?: boolean;
+  @IsOptional() @IsDateString() permitExpiry?: string;
+  @IsOptional() @IsDateString() availableFrom?: string;
+  /** Gallery, ordered — the first entry becomes the cover (`photoUrl`). */
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_VEHICLE_PHOTOS) @IsString({ each: true }) photos?: string[];
 }
 
 export class UpdateVehicleDto {
@@ -92,6 +123,31 @@ export class UpdateVehicleDto {
   @IsOptional() @IsString() notes?: string;
   @ApiProperty({ required: false, enum: ['available', 'on_trip', 'maintenance'] })
   @IsOptional() @IsIn(['available', 'on_trip', 'maintenance']) status?: string;
+  /** Structured body type buyers filter on; the free-text `type` stays as typed. */
+  @ApiProperty({ required: false, enum: VEHICLE_TYPES })
+  @IsOptional() @IsIn(VEHICLE_TYPES as unknown as string[]) vehicleType?: string;
+  /** Canonical payload capacity. `capacityMt` is the legacy display fallback. */
+  @IsOptional() @IsNumber() @Min(0) @Max(1000) capacityTons?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(200) bodyLengthFt?: number;
+  @IsOptional() @IsBoolean() refrigerated?: boolean;
+  /** Reefer range in whole °C. Stored as two numbers so buyers can filter it. */
+  @IsOptional() @IsInt() @Min(-100) @Max(100) tempMinC?: number;
+  @IsOptional() @IsInt() @Min(-100) @Max(100) tempMaxC?: number;
+  @IsOptional() @IsBoolean() gpsTracking?: boolean;
+  @IsOptional() @IsInt() @Min(0) @Max(50) driverCount?: number;
+  @IsOptional() @IsString() @MaxLength(120) city?: string;
+  @IsOptional() @IsString() @MaxLength(80) country?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) @MaxLength(120, { each: true })
+  servicingCities?: string[];
+  /** Rates in minor units of `rateCurrency`, like every other money column. */
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) ratePerKmCents?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) ratePerTripCents?: number;
+  @IsOptional() @IsString() @MaxLength(8) rateCurrency?: string;
+  @IsOptional() @IsBoolean() loadingIncluded?: boolean;
+  @IsOptional() @IsDateString() permitExpiry?: string;
+  @IsOptional() @IsDateString() availableFrom?: string;
+  /** Gallery, ordered — the first entry becomes the cover (`photoUrl`). */
+  @IsOptional() @IsArray() @ArrayMaxSize(MAX_VEHICLE_PHOTOS) @IsString({ each: true }) photos?: string[];
 }
 
 export class CreateRouteDto {
@@ -300,17 +356,55 @@ export class TransportService {
     const rows = await this.prisma.vehicle.findMany({ where: { ownerId }, orderBy: { createdAt: 'desc' } });
     return this.text.localizeRows(rows, ['type', 'notes'], locale);
   }
+  /**
+   * The columns a create and an update write identically. Kept in one place so a
+   * field added to the form can never land on only one of the two paths — which
+   * is how a vehicle ends up editable but not creatable (or worse, the reverse).
+   *
+   * `undefined` means "not sent, leave alone" on update; Prisma ignores it.
+   */
+  private vehicleFields(dto: CreateVehicleDto | UpdateVehicleDto) {
+    const photos = dto.photos?.slice(0, MAX_VEHICLE_PHOTOS);
+    return {
+      type: dto.type,
+      plate: dto.plate,
+      capacityMt: dto.capacityMt,
+      capacityTons: dto.capacityTons,
+      bodyLengthFt: dto.bodyLengthFt,
+      vehicleType: dto.vehicleType as never,
+      // A reefer is refrigerated by definition, so the flag follows the type
+      // rather than trusting a form that can disagree with itself.
+      refrigerated: dto.vehicleType === 'reefer' ? true : dto.refrigerated,
+      tempMinC: dto.tempMinC,
+      tempMaxC: dto.tempMaxC,
+      gpsTracking: dto.gpsTracking,
+      driverCount: dto.driverCount,
+      city: dto.city,
+      country: dto.country,
+      servicingCities: dto.servicingCities,
+      ratePerKmCents: dto.ratePerKmCents,
+      ratePerTripCents: dto.ratePerTripCents,
+      rateCurrency: dto.rateCurrency,
+      loadingIncluded: dto.loadingIncluded,
+      makeModel: dto.makeModel,
+      year: dto.year,
+      insuranceExpiry: dto.insuranceExpiry ? new Date(dto.insuranceExpiry) : undefined,
+      permitExpiry: dto.permitExpiry ? new Date(dto.permitExpiry) : undefined,
+      availableFrom: dto.availableFrom ? new Date(dto.availableFrom) : undefined,
+      notes: dto.notes,
+      // The cover always mirrors photos[0] — same contract as Product.imageUrl.
+      ...(photos ? { photos, photoUrl: photos[0] ?? null } : {}),
+    };
+  }
+
   addVehicle(ownerId: string, dto: CreateVehicleDto) {
     return this.prisma.vehicle.create({
       data: {
         ownerId,
+        ...this.vehicleFields(dto),
         type: dto.type,
         plate: dto.plate,
-        capacityMt: dto.capacityMt,
-        makeModel: dto.makeModel,
-        year: dto.year,
         insuranceExpiry: dto.insuranceExpiry ? new Date(dto.insuranceExpiry) : null,
-        notes: dto.notes,
       },
     });
   }
@@ -323,21 +417,74 @@ export class TransportService {
     await this.ownedVehicle(id, ownerId);
     return this.prisma.vehicle.update({
       where: { id },
-      data: {
-        type: dto.type,
-        plate: dto.plate,
-        capacityMt: dto.capacityMt,
-        makeModel: dto.makeModel,
-        year: dto.year,
-        insuranceExpiry: dto.insuranceExpiry ? new Date(dto.insuranceExpiry) : undefined,
-        notes: dto.notes,
-        status: dto.status as never,
-      },
+      data: { ...this.vehicleFields(dto), status: dto.status as never },
     });
   }
+
+  /**
+   * Append newly uploaded photos to the gallery, capped. Appends rather than
+   * replaces so uploading a second photo does not silently drop the first —
+   * removing one is an explicit `photos: [...]` update from the form.
+   */
+  async addVehiclePhotos(id: string, ownerId: string, urls: string[]) {
+    const existing = await this.ownedVehicle(id, ownerId);
+    const photos = [...(existing.photos ?? []), ...urls].slice(0, MAX_VEHICLE_PHOTOS);
+    return this.prisma.vehicle.update({
+      where: { id },
+      data: { photos, photoUrl: photos[0] ?? null },
+    });
+  }
+
+  /** Back-compat: the single-photo endpoint now seeds/refreshes the gallery. */
   async setVehiclePhoto(id: string, ownerId: string, photoUrl: string) {
-    await this.ownedVehicle(id, ownerId);
-    return this.prisma.vehicle.update({ where: { id }, data: { photoUrl } });
+    return this.addVehiclePhotos(id, ownerId, [photoUrl]);
+  }
+
+  /* ── public reads ──────────────────────────────────────────────────────
+   * No auth. Everything goes through PUBLIC_VEHICLE_SELECT + toPublicVehicle,
+   * so the registration number is masked and no column leaks by omission.
+   */
+
+  /** Every vehicle belonging to one transporter — the profile's fleet section. */
+  async publicVehiclesOf(ownerId: string | undefined, locale: Lang = 'en') {
+    const rows = await this.prisma.vehicle.findMany({
+      where: { ...(ownerId ? { ownerId } : {}), owner: { active: true } },
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      select: PUBLIC_VEHICLE_SELECT,
+    });
+    const localized = await this.text.localizeRows(rows, ['type', 'notes'], locale);
+    const ownerIds = [...new Set(rows.map((row) => row.ownerId))];
+    const owners = await this.prisma.user.findMany({
+      where: { id: { in: ownerIds }, active: true },
+      select: { id: true, name: true },
+    });
+    const ownersById = new Map(owners.map((owner) => [owner.id, owner]));
+    const items = localized.map((row) => ({
+      ...toPublicVehicle(row),
+      owner: ownersById.get(row.ownerId),
+    }));
+    return ownerId ? items : { items };
+  }
+
+  /** One vehicle, for the public detail page. */
+  async publicVehicle(id: string, locale: Lang = 'en') {
+    const row = await this.prisma.vehicle.findFirst({
+      where: { id, owner: { active: true } },
+      select: PUBLIC_VEHICLE_SELECT,
+    });
+    if (!row) throw new NotFoundException('Vehicle not found');
+    const [localized] = await this.text.localizeRows([row], ['type', 'notes'], locale);
+    // The owner card the detail page needs — name and rating only, never contact
+    // details: those stay behind the login the booking button leads to.
+    const owner = await this.prisma.user.findUnique({
+      where: { id: row.ownerId as string },
+      select: {
+        id: true, name: true, country: true, kycStatus: true, ratingAvg: true, ratingCount: true,
+        profile: { select: { location: true } },
+        routes: { where: { active: true }, take: 8, select: { name: true, fromCity: true, toCity: true, distanceKm: true } },
+      },
+    });
+    return { ...toPublicVehicle(localized ?? row), owner };
   }
   async delVehicle(id: string, ownerId: string) {
     await this.ownedVehicle(id, ownerId);
@@ -438,6 +585,24 @@ export class TransportController {
   }
   @Roles('transporter')
   @ApiConsumes('multipart/form-data')
+  /** Upload up to MAX_VEHICLE_PHOTOS gallery photos. Order in = order out. */
+  @ApiBearerAuth()
+  @Roles('transporter')
+  @Post('vehicles/:id/photos')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('files', MAX_VEHICLE_PHOTOS, uploadLimits(MAX_VEHICLE_PHOTOS)))
+  async uploadVehiclePhotos(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    if (!files?.length) throw new BadRequestException('No photos were uploaded.');
+    // Sequential: sharp is CPU-bound, so parallelising the encodes just thrashes.
+    const urls: string[] = [];
+    for (const file of files) urls.push(await this.uploads.saveImage(file, 'vehicles'));
+    return this.svc.addVehiclePhotos(id, u.id, urls);
+  }
+
   @Post('vehicles/:id/photo')
   @UseInterceptors(FileInterceptor('file', uploadLimits()))
   async uploadVehiclePhoto(@CurrentUser() u: AuthUser, @Param('id') id: string, @UploadedFile() file?: Express.Multer.File) {
@@ -472,6 +637,36 @@ export class TransportController {
 }
 
 /** Admin oversight of transporter companies, their fleet and lanes. */
+/**
+ * Public, unauthenticated vehicle browsing.
+ *
+ * A separate controller precisely because the class-level `@UseGuards(JwtAuthGuard,
+ * RolesGuard)` on `TransportController` is what kept vehicles invisible: every
+ * route there is transporter-only and owner-scoped. Rather than punching a hole
+ * in that guard (and risking the next route inheriting the hole), the public
+ * surface is its own class with no guard at all and a hard-coded safe projection.
+ *
+ * Contact and booking stay behind login — this controller is read-only and has
+ * no route that reveals a phone number, an email or a full registration number.
+ */
+@ApiTags('transport')
+@Controller('transport/public')
+export class PublicTransportController {
+  constructor(private svc: TransportService) {}
+
+  /** Every vehicle of one transporter — the fleet section of a public profile. */
+  @Get('vehicles')
+  vehicles(@Query('ownerId') ownerId: string, @Locale() locale: Lang) {
+    return this.svc.publicVehiclesOf(ownerId || undefined, locale);
+  }
+
+  /** One vehicle, with the owner card the detail page shows beside it. */
+  @Get('vehicles/:id')
+  vehicle(@Param('id') id: string, @Locale() locale: Lang) {
+    return this.svc.publicVehicle(id, locale);
+  }
+}
+
 @ApiTags('admin')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -564,5 +759,8 @@ export class AdminTransportController {
   }
 }
 
-@Module({ controllers: [TransportController, AdminTransportController], providers: [TransportService] })
+@Module({
+  controllers: [PublicTransportController, TransportController, AdminTransportController],
+  providers: [TransportService],
+})
 export class TransportModule {}

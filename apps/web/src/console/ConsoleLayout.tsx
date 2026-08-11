@@ -22,6 +22,11 @@ const ROLES: { id: string; icon: IconName }[] = [
   { id: 'transporter', icon: 'truck' },
   { id: 'loaderco', icon: 'worker' },
   { id: 'worker', icon: 'gauge' },
+  { id: 'accountant', icon: 'file' },
+  { id: 'packer', icon: 'box' },
+  { id: 'processor', icon: 'gauge' },
+  { id: 'fulfillment_partner', icon: 'truck' },
+  { id: 'finance_partner', icon: 'wallet' },
   { id: 'admin', icon: 'shield' },
 ];
 

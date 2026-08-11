@@ -44,7 +44,7 @@ describe('a requirement stores the same listing fields a product does', () => {
       delivery: 'self_pickup',
       supplyCountries: ['India', 'Pakistan'],
       marketId: 'mkt1',
-      safeDeal: false,
+      safeDeal: true,
       negotiable: true,
     });
 
@@ -55,7 +55,7 @@ describe('a requirement stores the same listing fields a product does', () => {
       delivery: 'self_pickup',
       supplyCountries: ['India', 'Pakistan'],
       marketId: 'mkt1',
-      safeDeal: false,
+      safeDeal: true,
       negotiable: true,
     });
   });

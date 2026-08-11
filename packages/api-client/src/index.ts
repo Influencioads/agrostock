@@ -314,19 +314,78 @@ export interface DriverInput {
   ratePerHourCents?: number;
 }
 
-export interface ApiVehicle {
+/** Structured body type; see VEHICLE_TYPES in @agrotraders/types. */
+export type ApiVehicleType =
+  | 'reefer' | 'open_truck' | 'container' | 'tanker' | 'tipper' | 'mini_truck' | 'trailer';
+
+/** The fields a vehicle carries on every surface, public or owner. */
+interface ApiVehicleBase {
   id: string;
+  /** Free text, the transporter's own label ("40ft Reefer"). */
   type: string;
-  plate: string;
+  /** Structured facet; null on rows listed before it existed. */
+  vehicleType: ApiVehicleType | null;
+  /** Legacy free-text capacity — display fallback when `capacityTons` is null. */
   capacityMt: string | null;
+  capacityTons: number | null;
+  bodyLengthFt: number | null;
   status: 'available' | 'on_trip' | 'maintenance';
-  /** Uploaded photo path ("/uploads/vehicles/…"); resolve with `assetUrl()`. */
+  /** First date it can take a load; null = available now. */
+  availableFrom: string | null;
+  /** Cover photo, always `photos[0]`; resolve with `assetUrl()`. */
   photoUrl: string | null;
+  /** Gallery, ordered. Legacy single-photo rows arrive as a one-entry array. */
+  photos: string[];
+  refrigerated: boolean;
+  tempMinC: number | null;
+  tempMaxC: number | null;
+  gpsTracking: boolean;
+  driverCount: number | null;
+  city: string | null;
+  country: string | null;
+  servicingCities: string[];
+  /** Rates in minor units of `rateCurrency`. */
+  ratePerKmCents: number | null;
+  ratePerTripCents: number | null;
+  rateCurrency: string;
+  loadingIncluded: boolean;
   makeModel: string | null;
   year: number | null;
   insuranceExpiry: string | null;
+  permitExpiry: string | null;
   notes: string | null;
   createdAt: string;
+}
+
+/** Owner/admin view — carries the real registration number. */
+export interface ApiVehicle extends ApiVehicleBase {
+  plate: string;
+}
+
+/**
+ * Public view. There is no `plate`: the registration number is masked server
+ * side and arrives as `plateMasked`, so a component cannot render the real one
+ * by accident. `tempRange` is pre-formatted ("-18°C to +4°C") and is null unless
+ * the vehicle is refrigerated.
+ */
+export interface ApiPublicVehicle extends ApiVehicleBase {
+  plateMasked: string | null;
+  tempRange: string | null;
+  owner?: { id: string; name: string } | null;
+}
+
+/** A public vehicle plus the owner card the detail page shows beside it. */
+export interface ApiPublicVehicleDetail extends ApiPublicVehicle {
+  owner: {
+    id: string;
+    name: string;
+    country: string | null;
+    kycStatus: string | null;
+    ratingAvg: number | null;
+    ratingCount: number;
+    profile: { location: string | null } | null;
+    routes: { name: string; fromCity: string; toCity: string; distanceKm: number | null }[];
+  } | null;
 }
 
 export interface ApiRoute {
@@ -365,6 +424,31 @@ export interface ApiCmsPage {
   published: boolean;
   updatedAt: string;
   createdAt: string;
+}
+
+export interface ApiAdminServiceProvider {
+  id: string;
+  companyName: string;
+  categories: string[];
+  citiesServed: string[];
+  published: boolean;
+  owner?: { name: string; email: string };
+  _count?: { enquiries: number };
+}
+
+export interface ApiServiceProvider extends ApiAdminServiceProvider {
+  slug: string;
+  description: string | null;
+  capacityPerDay: number | null;
+  capacityUnit: string | null;
+  certifications: string[];
+  minOrderQty: number | null;
+  turnaroundDays: number | null;
+  pricingBasis: string | null;
+  minPriceCents: number | null;
+  maxPriceCents: number | null;
+  photos: string[];
+  rating: number | null;
 }
 
 export interface ApiEmailTemplateTranslation {
@@ -725,6 +809,11 @@ export interface ApiPublicProfile {
   contactMasked: { phone: string | null; email: string | null };
   products?: ApiProfileProduct[];
   routes?: { name: string; fromCity: string; toCity: string; distanceKm: number | null }[];
+  /**
+   * The transporter's actual fleet, masked for public view. `_count.vehicles` is
+   * still present and is the header number — it does NOT stand in for this list.
+   */
+  vehicles?: ApiPublicVehicle[];
   workerProfile?: {
     id: string;
     rating: string | null;
@@ -1969,6 +2058,20 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Close early; returns the winning bid (if any). */
       close: (slug: string) => post<{ ok: true; winner: ApiAuctionBid | null }>(`/auctions/${slug}/close`),
     },
+    services: {
+      list: (params?: Record<string, unknown>) =>
+        get<{ items: ApiServiceProvider[]; total: number; page: number; limit: number; pages: number }>('/services', params),
+      detail: (slug: string) => get<ApiServiceProvider>(`/services/${slug}`),
+      enquire: (slug: string, body: { serviceType: string; message: string; quantity?: number; neededDate?: string }) =>
+        post(`/services/${slug}/enquiries`, body),
+      dashboard: () => get('/services/dashboard/mine'),
+      updateEnquiry: (id: string, status: string) => patch(`/services/enquiries/${id}`, { status }),
+    },
+    vehicles: {
+      list: (params?: Record<string, unknown>) =>
+        get<{ items: ApiPublicVehicle[] }>('/transport/public/vehicles', params),
+      detail: (id: string) => get<ApiPublicVehicleDetail>(`/transport/public/vehicles/${id}`),
+    },
     transport: {
       requestsOpen: () => get('/transport/requests'),
       myRequests: () => get('/transport/requests/mine'),
@@ -1987,7 +2090,19 @@ export function createApiClient(opts: ApiClientOptions) {
         fd.append('file', file as never);
         return (await http.post<ApiVehicle>(`/transport/vehicles/${id}/photo`, fd)).data;
       },
+      /** Upload up to 6 gallery photos at once; they append to the gallery. */
+      uploadVehiclePhotos: async (id: string, files: (File | Blob | { uri: string; name: string; type: string })[]) => {
+        const fd = new FormData();
+        for (const f of files) fd.append('files', f as never);
+        return (await http.post<ApiVehicle>(`/transport/vehicles/${id}/photos`, fd)).data;
+      },
       delVehicle: (id: string) => del(`/transport/vehicles/${id}`),
+      /** Public, no login: one transporter's fleet. */
+      publicVehicles: (ownerId: string) =>
+        get<ApiPublicVehicle[]>('/transport/public/vehicles', { ownerId }),
+      /** Public, no login: one vehicle plus its owner card. */
+      publicVehicle: (id: string) =>
+        get<ApiPublicVehicleDetail>(`/transport/public/vehicles/${id}`),
       routes: () => get<ApiRoute[]>('/transport/routes'),
       addRoute: (b: Record<string, unknown>) => post<ApiRoute>('/transport/routes', b),
       updateRoute: (id: string, b: Record<string, unknown>) => patch<ApiRoute>(`/transport/routes/${id}`, b),
@@ -2188,6 +2303,9 @@ export function createApiClient(opts: ApiClientOptions) {
     },
     admin: {
       stats: () => get<ApiStats>('/admin/stats'),
+      serviceProviders: () => get<ApiAdminServiceProvider[]>('/admin/services'),
+      updateServiceProvider: (id: string, body: { published?: boolean }) =>
+        patch<ApiAdminServiceProvider>(`/admin/services/${id}`, body),
       volume: () => get<{ data8: number[]; data12: number[] }>('/admin/stats/volume'),
       reports: (range?: { from?: string; to?: string }) => get<ApiAdminReports>('/admin/reports', range as Record<string, unknown> | undefined),
       audit: (params?: { actorId?: string; action?: string; entityType?: string; from?: string; to?: string; take?: number; skip?: number }) =>

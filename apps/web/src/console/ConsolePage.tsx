@@ -28,6 +28,7 @@ import { RolesAccessSection } from './sections/AccessSections';
 import { HiresSection } from './sections/HiresSection';
 import { KycSection } from './sections/KycSection';
 import { ProfileForm } from '../pages/ProfileFormPage';
+import { ServicePartnerDashboard } from './sections/ServicePartnerDashboard';
 
 // Nav items carry only `id` + `icon`; labels are translated at render from
 // `web:console.nav.<id>` in ConsoleLayout (never store the English label here).
@@ -104,10 +105,15 @@ const NAV: Record<string, ConsoleNavItem[]> = {
     { id: 'reviews', icon: 'star' },
     { id: 'invoices', icon: 'file' },
   ],
+  accountant: [dash],
+  packer: [dash],
+  processor: [dash],
+  fulfillment_partner: [dash],
+  finance_partner: [dash],
 };
 
 /** Roles with a dedicated dashboard title; others fall back to `console.title.fallback`. */
-const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'worker']);
+const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'worker', 'accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner']);
 
 /**
  * F05: map the section slug in a notification deep link (/console/<slug>) to the
@@ -174,6 +180,7 @@ export function ConsolePage() {
       if (role === 'transporter') return <TransporterDashboard name={greetName} onNavigate={setActive} />;
       if (role === 'loaderco') return <LoaderDashboard name={greetName} onNavigate={setActive} />;
       if (role === 'worker') return <WorkerDashboard />;
+      if (['accountant','packer','processor','fulfillment_partner','finance_partner'].includes(role)) return <ServicePartnerDashboard />;
       return <Overview name={greetName} />;
     }
     // Wallet (add money to hire) and Earnings (read-only, from completed work)

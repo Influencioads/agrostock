@@ -41,6 +41,7 @@ export const MODULES: Mod[] = [
   { to: '/support', key: 'support', icon: 'message', group: 'Messaging', perm: 'support_agent' },
   { to: '/community', key: 'community', icon: 'leaf', group: 'Messaging', perm: 'community_moderate' },
   { to: '/transport', key: 'transport', icon: 'truck', group: 'Logistics', perm: 'transport_manage' },
+  { to: '/services', key: 'services', icon: 'store', group: 'Marketplace', perm: 'users_manage' },
   { to: '/loaders', key: 'loaders', icon: 'worker', group: 'Logistics', perm: 'loaders_manage' },
   { to: '/cms', key: 'cms', icon: 'file', group: 'Company', perm: 'cms_manage' },
   { to: '/email-templates', key: 'emailTemplates', icon: 'message', group: 'Company', perm: 'email_templates' },

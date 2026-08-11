@@ -4,6 +4,7 @@ export { BRAND } from './brand';
 export * from './attributes';
 export * from './listing';
 export * from './units';
+export * from './vehicles';
 
 /** Platform roles (from the AgroTraders design). */
 export const Role = {

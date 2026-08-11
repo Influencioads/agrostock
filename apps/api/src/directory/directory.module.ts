@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import type { Lang } from '@agrotraders/i18n';
 import { PrismaService } from '../prisma/prisma.service';
+import { PUBLIC_VEHICLE_SELECT, toPublicVehicle } from '../transport/vehicle-public';
 import { Locale } from '../common/locale';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { maskEmail, maskPhone } from '../common/sanitize';
@@ -358,6 +359,14 @@ export class DirectoryService {
           select: { id: true, slug: true, name: true, emoji: true, imageUrl: true, price: true, priceCents: true, unit: true, flag: true, rating: true },
         },
         routes: { where: { active: true }, take: 5, select: { name: true, fromCity: true, toCity: true, distanceKm: true } },
+        // THE fix: a transporter profile used to carry only `_count.vehicles`,
+        // so the page could render "Vehicles: 5" and nothing else. The actual
+        // fleet now travels with the profile, through the same masked public
+        // projection the standalone vehicle endpoints use.
+        vehicles: {
+          orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+          select: PUBLIC_VEHICLE_SELECT,
+        },
         workerProfile: {
           select: {
             id: true,
@@ -384,7 +393,7 @@ export class DirectoryService {
       },
     });
     if (!user) throw new NotFoundException('User not found');
-    const { profile, ...rest } = user;
+    const { profile, vehicles, ...rest } = user;
     const { phone, contactEmail, ...publicProfile } = profile ?? ({} as never);
     // Localize the blurb + market name, and the featured product names shown on
     // the public profile card, in one batched translate-on-read pass.
@@ -397,6 +406,8 @@ export class DirectoryService {
     }
     return {
       ...rest,
+      // Masked plates, derived temp range, gallery normalised — never raw rows.
+      vehicles: (vehicles ?? []).map(toPublicVehicle),
       profile: profile ? publicProfile : null,
       // Masked hints only — the real values never leave the admin endpoints.
       contactMasked: {

@@ -7,7 +7,9 @@
     "bids": "Bids",
     "transporters": "Transporters",
     "loaders": "Loaders",
-    "workers": "Workers"
+    "workers": "Workers",
+    "vehicles": "Vehicles",
+    "services": "Services"
   },
   "tab": {
     "Home": "Home",

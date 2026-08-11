@@ -157,7 +157,8 @@ async function main() {
       create: { slug, ...data },
       update: data,
     });
-    existing ? updated++ : created++;
+    if (existing) updated++;
+    else created++;
 
     // The Russian originals, so a Russian reader sees the name on the signboard.
     await prisma.marketTranslation.upsert({
