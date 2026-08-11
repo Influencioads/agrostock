@@ -962,6 +962,7 @@
       "admin": "Admin",
       "buyer": "Buyer",
       "finance_partner": "Financial services",
+      "service_provider": "Service Provider",
       "fulfillment_partner": "Fulfilment partner",
       "loaderco": "Loader Co",
       "packer": "Packing partner",
@@ -1686,6 +1687,7 @@
       "pickMarket": "— pick your trade market —",
       "pwTooShort": "Password must be at least 8 characters.",
       "registerAs": "I want to register as a…",
+      "serviceType": "Service type",
       "resend": "Resend the link",
       "resent": "Link sent — check your inbox",
       "roleDesc": {
@@ -1693,6 +1695,7 @@
         "buyer": "Import & purchase produce",
         "buyer_seller": "Buy and sell on the marketplace.",
         "finance_partner": "Working capital, trade finance and invoice discounting.",
+        "service_provider": "Accounting, packing, processing, fulfilment and finance services.",
         "fulfillment_partner": "Order fulfilment, dispatch and delivery proof.",
         "loaderco": "Manage loading crews",
         "packer": "Packing and fulfilment for agricultural consignments.",

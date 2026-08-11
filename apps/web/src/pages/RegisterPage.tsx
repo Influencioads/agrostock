@@ -23,13 +23,9 @@ const roles: { id: string; icon: IconName }[] = [
   { id: 'transporter', icon: 'truck' },
   { id: 'loaderco', icon: 'worker' },
   { id: 'worker', icon: 'user' },
-  // Service providers self-register like transporters do; an admin verifies them
-  // afterwards through the same KYC gate.
-  { id: 'accountant', icon: 'file' },
-  { id: 'packer', icon: 'box' },
-  { id: 'processor', icon: 'gauge' },
-  { id: 'fulfillment_partner', icon: 'bag' },
-  { id: 'finance_partner', icon: 'wallet' },
+  // One public card keeps signup simple; the select below maps it to the real
+  // role so dashboards and RBAC remain unchanged.
+  { id: 'service_provider', icon: 'bag' },
 ];
 
 export function RegisterPage() {
@@ -38,6 +34,7 @@ export function RegisterPage() {
   const { logoSrc } = useBranding();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'buyer_seller', country: '', phone: '', location: '', marketId: '' });
+  const [serviceRole, setServiceRole] = useState<(typeof SERVICE_ROLES)[number]>('accountant');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [ops, setOps] = useState({
     operatingCities: [] as string[],
@@ -86,10 +83,11 @@ export function RegisterPage() {
     }
     setBusy(true);
     try {
-      const isProvider = PROVIDER_ROLES.has(form.role);
-      const isTransporter = form.role === 'transporter';
-      const isLoaderco = form.role === 'loaderco';
-      const isWorker = form.role === 'worker';
+      const selectedRole = form.role === 'service_provider' ? serviceRole : form.role;
+      const isProvider = PROVIDER_ROLES.has(selectedRole);
+      const isTransporter = selectedRole === 'transporter';
+      const isLoaderco = selectedRole === 'loaderco';
+      const isWorker = selectedRole === 'worker';
       const numOrUndef = (v: string) => {
         const n = Number(v);
         return v.trim() && Number.isFinite(n) ? n : undefined;
@@ -98,7 +96,7 @@ export function RegisterPage() {
         ...form,
         // A trading account receives both Buyer and Seller dashboards. `buyer`
         // remains the initial dashboard; the API grants `seller` alongside it.
-        role: form.role === 'buyer_seller' ? 'buyer' : form.role,
+        role: selectedRole === 'buyer_seller' ? 'buyer' : selectedRole,
         phone: form.phone || undefined,
         location: form.location || undefined,
         marketId: form.marketId || undefined,
@@ -135,6 +133,7 @@ export function RegisterPage() {
   };
 
   const activeRole = roles.find((r) => r.id === form.role);
+  const effectiveRole = form.role === 'service_provider' ? serviceRole : form.role;
 
   const resend = async () => {
     setResent('sending');
@@ -232,6 +231,15 @@ export function RegisterPage() {
             </div>
           </div>
 
+          {form.role === 'service_provider' && (
+            <label className="mt-4 block text-sm font-semibold text-ink">
+              {t('page.register.serviceType')}
+              <select value={serviceRole} onChange={(e) => setServiceRole(e.target.value as (typeof SERVICE_ROLES)[number])} className="mt-1 h-11 w-full rounded-md border border-surface-border bg-white px-3 text-sm text-ink">
+                {SERVICE_ROLES.map((role) => <option key={role} value={role}>{t(`console.role.${role}`)}</option>)}
+              </select>
+            </label>
+          )}
+
           <form className="mt-5 space-y-4" onSubmit={submit}>
             <Input
               label={t('page.register.fullName')}
@@ -319,7 +327,7 @@ export function RegisterPage() {
               </label>
             )}
 
-            {PROVIDER_ROLES.has(form.role) && (
+            {PROVIDER_ROLES.has(effectiveRole) && (
               <div className="space-y-4 rounded-lg border border-surface-border bg-brand-surface/40 p-4">
                 <div>
                   <span className="block text-sm font-bold text-ink">{t('page.register.opsTitle')}</span>
@@ -403,7 +411,7 @@ export function RegisterPage() {
 
             {error && <p className="text-sm font-semibold text-status-error">{error}</p>}
             <Button type="submit" fullWidth disabled={busy} leftIcon={<Icon name="check" size={16} />}>
-              {busy ? t('page.register.creating') : t('page.register.createAccount', { role: t(`console.role.${form.role}`) })}
+              {busy ? t('page.register.creating') : t('page.register.createAccount', { role: t(`console.role.${effectiveRole}`) })}
             </Button>
           </form>
 
