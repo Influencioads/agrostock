@@ -212,6 +212,10 @@ export class AuthService {
     if (existing) throw AppException.conflict('auth.email_taken', 'Email already registered');
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const role = dto.role ?? 'buyer';
+    const serviceRoles = new Set(['accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner']);
+    if (serviceRoles.has(role) && (!dto.companyName?.trim() || !dto.serviceCity?.trim() || !dto.serviceCategories?.length)) {
+      throw AppException.badRequest('auth.service_application_incomplete', 'Company, city and at least one service are required.');
+    }
     // Buyer and seller are two views of one trading account. Public signup
     // grants both dashboards while retaining the chosen role as the initial view.
     const tradingRoles = role === 'buyer' ? ['seller'] : role === 'seller' ? ['buyer'] : [];
@@ -273,6 +277,31 @@ export class AuthService {
             operatingCities: dto.operatingCities ?? [],
             operatingCountries: dto.operatingCountries ?? [],
             minWorkHours: dto.minWorkHours,
+          },
+        });
+      }
+      if (serviceRoles.has(role)) {
+        const baseSlug = (dto.companyName || dto.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'provider';
+        await tx.serviceProvider.create({
+          data: {
+            ownerId: created.id,
+            slug: `${baseSlug}-${created.id.slice(-6)}`,
+            companyName: dto.companyName!.trim(),
+            description: dto.location,
+            contactEmail: dto.email,
+            contactPhone: dto.contactPhone || dto.phone,
+            city: dto.serviceCity,
+            citiesServed: [dto.serviceCity!, ...(dto.operatingCities ?? [])].filter((value, index, rows) => rows.indexOf(value) === index),
+            categories: { set: (dto.serviceCategories ?? []) as never[] },
+            capacityPerDay: dto.serviceCapacityPerDay,
+            capacityUnit: dto.serviceCapacityUnit,
+            certifications: dto.serviceCertifications ?? [],
+            pricingBasis: dto.servicePricingBasis,
+            minPriceCents: dto.serviceMinPrice == null ? undefined : Math.round(dto.serviceMinPrice * 100),
+            maxPriceCents: dto.serviceMaxPrice == null ? undefined : Math.round(dto.serviceMaxPrice * 100),
+            documents: dto.serviceDocuments ?? [],
+            status: 'pending',
+            published: false,
           },
         });
       }

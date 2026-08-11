@@ -9,7 +9,10 @@ describe('public self-registration roles', () => {
     expect(PUBLIC_ROLES).not.toContain('admin');
   });
 
-  it('allows the five self-serve roles (incl. worker)', () => {
-    expect([...PUBLIC_ROLES].sort()).toEqual(['buyer', 'loaderco', 'seller', 'transporter', 'worker']);
+  it('allows marketplace and pending-approval service-provider signup roles', () => {
+    expect([...PUBLIC_ROLES].sort()).toEqual([
+      'accountant', 'buyer', 'finance_partner', 'fulfillment_partner', 'loaderco',
+      'packer', 'processor', 'seller', 'transporter', 'worker',
+    ]);
   });
 });

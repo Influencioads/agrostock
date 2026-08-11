@@ -1,4 +1,4 @@
-import { IsArray, IsEmail, IsIn, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Min, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
@@ -7,7 +7,8 @@ import { ApiProperty } from '@nestjs/swagger';
  * be a privilege-escalation vector (anyone could POST role:"admin"). Workers may
  * self-register: they get an unaffiliated Worker record and can be hired directly.
  */
-export const PUBLIC_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'] as const;
+export const PUBLIC_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker', 'accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner'] as const;
+export const SERVICE_CATEGORIES = ['accounting', 'customs_clearance', 'financial_services', 'fulfillment', 'packing', 'roasting', 'roasting_salting', 'chopping', 'blanching', 'pitting', 'sorting_grading'] as const;
 
 export class RegisterDto {
   @ApiProperty({ example: 'buyer@agrotraders.org' })
@@ -101,6 +102,20 @@ export class RegisterDto {
   @IsInt()
   @Min(0)
   minLoaders?: number;
+
+  // Service-provider application. A provider row is created as pending and is
+  // never returned by public listing endpoints until an admin approves it.
+  @IsOptional() @IsString() companyName?: string;
+  @IsOptional() @IsString() contactPhone?: string;
+  @IsOptional() @IsString() serviceCity?: string;
+  @IsOptional() @IsArray() @IsIn(SERVICE_CATEGORIES as unknown as string[], { each: true }) serviceCategories?: string[];
+  @IsOptional() @IsNumber() @Min(0) serviceCapacityPerDay?: number;
+  @IsOptional() @IsString() serviceCapacityUnit?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) serviceCertifications?: string[];
+  @IsOptional() @IsString() servicePricingBasis?: string;
+  @IsOptional() @IsNumber() @Min(0) serviceMinPrice?: number;
+  @IsOptional() @IsNumber() @Min(0) serviceMaxPrice?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) serviceDocuments?: string[];
 }
 
 export class LoginDto {

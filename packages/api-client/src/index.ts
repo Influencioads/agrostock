@@ -432,8 +432,37 @@ export interface ApiAdminServiceProvider {
   categories: string[];
   citiesServed: string[];
   published: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  city?: string | null;
+  documents?: string[];
   owner?: { name: string; email: string };
   _count?: { enquiries: number };
+}
+
+export interface ApiAdminServiceProviderInput {
+  ownerId: string;
+  companyName: string;
+  slug: string;
+  description?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  city?: string;
+  categories: string[];
+  citiesServed: string[];
+  capacityPerDay?: number;
+  capacityUnit?: string;
+  certifications: string[];
+  minOrderQty?: number;
+  turnaroundDays?: number;
+  pricingBasis?: string;
+  minPriceCents?: number;
+  maxPriceCents?: number;
+  photos?: string[];
+  documents?: string[];
+  status?: 'pending' | 'approved' | 'rejected' | 'suspended';
+  published?: boolean;
 }
 
 export interface ApiServiceProvider extends ApiAdminServiceProvider {
@@ -1792,6 +1821,17 @@ export function createApiClient(opts: ApiClientOptions) {
         minWorkHours?: number;
         minDistanceKm?: number;
         minLoaders?: number;
+        companyName?: string;
+        contactPhone?: string;
+        serviceCity?: string;
+        serviceCategories?: string[];
+        serviceCapacityPerDay?: number;
+        serviceCapacityUnit?: string;
+        serviceCertifications?: string[];
+        servicePricingBasis?: string;
+        serviceMinPrice?: number;
+        serviceMaxPrice?: number;
+        serviceDocuments?: string[];
       }) => (await http.post<RegisterResult>('/auth/register', body)).data,
       refresh: async (refreshToken: string) =>
         (await http.post<AuthResult>('/auth/refresh', { refreshToken })).data,
@@ -2062,7 +2102,7 @@ export function createApiClient(opts: ApiClientOptions) {
       list: (params?: Record<string, unknown>) =>
         get<{ items: ApiServiceProvider[]; total: number; page: number; limit: number; pages: number }>('/services', params),
       detail: (slug: string) => get<ApiServiceProvider>(`/services/${slug}`),
-      enquire: (slug: string, body: { serviceType: string; message: string; quantity?: number; neededDate?: string }) =>
+      enquire: (slug: string, body: { serviceType: string; message: string; quantity?: number; neededDate?: string; location?: string }) =>
         post(`/services/${slug}/enquiries`, body),
       dashboard: () => get('/services/dashboard/mine'),
       updateEnquiry: (id: string, status: string) => patch(`/services/enquiries/${id}`, { status }),
@@ -2304,7 +2344,10 @@ export function createApiClient(opts: ApiClientOptions) {
     admin: {
       stats: () => get<ApiStats>('/admin/stats'),
       serviceProviders: () => get<ApiAdminServiceProvider[]>('/admin/services'),
-      updateServiceProvider: (id: string, body: { published?: boolean }) =>
+      serviceEnquiries: () => get<Array<{ id: string; reference: string; serviceType: string; quantity: number | null; location: string | null; neededDate: string | null; status: string; createdAt: string; provider: { companyName: string }; customer: { name: string; email: string } }>>('/admin/services/enquiries'),
+      createServiceProvider: (body: ApiAdminServiceProviderInput) =>
+        post<ApiAdminServiceProvider>('/admin/services', body),
+      updateServiceProvider: (id: string, body: Partial<ApiAdminServiceProviderInput>) =>
         patch<ApiAdminServiceProvider>(`/admin/services/${id}`, body),
       volume: () => get<{ data8: number[]; data12: number[] }>('/admin/stats/volume'),
       reports: (range?: { from?: string; to?: string }) => get<ApiAdminReports>('/admin/reports', range as Record<string, unknown> | undefined),
