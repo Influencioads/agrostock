@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Injectable, Module, NotFoundException, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Prisma, ServiceCategory, ServiceEnquiryStatus, ServiceProviderStatus } from '@prisma/client';
+import { Prisma, ServiceCategory, ServiceEnquiryStatus } from '@prisma/client';
 import { IsArray, IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -27,7 +27,6 @@ class CreateEnquiryDto {
   @IsString() @MinLength(10) message!: string;
   @IsOptional() @IsNumber() @Min(0) quantity?: number;
   @IsOptional() @IsDateString() neededDate?: string;
-  @IsOptional() @IsString() location?: string;
 }
 
 class UpdateEnquiryDto {
@@ -38,9 +37,6 @@ class ProviderDto {
   @IsString() @MinLength(2) companyName!: string;
   @IsString() @MinLength(2) slug!: string;
   @IsOptional() @IsString() description?: string;
-  @IsOptional() @IsString() contactEmail?: string;
-  @IsOptional() @IsString() contactPhone?: string;
-  @IsOptional() @IsString() city?: string;
   @IsArray() categories!: ServiceCategory[];
   @IsArray() citiesServed!: string[];
   @IsOptional() @IsNumber() capacityPerDay?: number;
@@ -52,8 +48,6 @@ class ProviderDto {
   @IsOptional() @IsNumber() minPriceCents?: number;
   @IsOptional() @IsNumber() maxPriceCents?: number;
   @IsOptional() @IsArray() photos?: string[];
-  @IsOptional() @IsArray() documents?: string[];
-  @IsOptional() @IsEnum(ServiceProviderStatus) status?: ServiceProviderStatus;
   @IsOptional() @IsBoolean() published?: boolean;
   @IsString() ownerId!: string;
 }
@@ -64,7 +58,7 @@ class ServicesService {
 
   async list(q: ListServicesQuery) {
     const page = Number(q.page || 1), limit = Math.min(Number(q.limit || 12), 100);
-    const where: Prisma.ServiceProviderWhereInput = { status: 'approved', published: true };
+    const where: Prisma.ServiceProviderWhereInput = { published: true };
     if (q.serviceType) where.categories = { has: q.serviceType };
     if (q.city) where.citiesServed = { has: q.city };
     if (q.certification) where.certifications = { has: q.certification };
@@ -79,23 +73,23 @@ class ServicesService {
   }
 
   async detail(slug: string) {
-    const row = await this.prisma.serviceProvider.findFirst({ where: { slug, status: 'approved', published: true }, include: { owner: { select: { id: true, name: true, ratingAvg: true, ratingCount: true, country: true } } } });
+    const row = await this.prisma.serviceProvider.findFirst({ where: { slug, published: true }, include: { owner: { select: { id: true, name: true, ratingAvg: true, ratingCount: true, country: true } } } });
     if (!row) throw new NotFoundException('Service provider not found');
     return row;
   }
 
   async enquire(slug: string, customerId: string, dto: CreateEnquiryDto) {
-    const provider = await this.prisma.serviceProvider.findFirst({ where: { slug, status: 'approved', published: true } });
+    const provider = await this.prisma.serviceProvider.findFirst({ where: { slug, published: true } });
     if (!provider) throw new NotFoundException('Service provider not found');
     if (!provider.categories.includes(dto.serviceType)) throw new BadRequestException('This provider does not offer the selected service.');
-    return this.prisma.serviceEnquiry.create({ data: { reference: secureReference('SE'), providerId: provider.id, customerId, serviceType: dto.serviceType, message: dto.message, quantity: dto.quantity, location: dto.location, neededDate: dto.neededDate ? new Date(dto.neededDate) : null } });
+    return this.prisma.serviceEnquiry.create({ data: { reference: secureReference('SE'), providerId: provider.id, customerId, serviceType: dto.serviceType, message: dto.message, quantity: dto.quantity, neededDate: dto.neededDate ? new Date(dto.neededDate) : null } });
   }
 
   async dashboard(user: AuthUser) {
     const provider = await this.prisma.serviceProvider.findUnique({ where: { ownerId: user.id } });
     const enquiries = provider ? await this.prisma.serviceEnquiry.findMany({ where: { providerId: provider.id }, orderBy: { createdAt: 'desc' }, include: { customer: { select: { name: true, email: true } } } }) : [];
     const counts = Object.fromEntries(Object.values(ServiceEnquiryStatus).map((s) => [s, enquiries.filter((e) => e.status === s).length]));
-    return { role: user.role, provider, enquiries, counts, total: enquiries.length, new: counts.requested ?? 0, pending: (counts.contacted ?? 0) + (counts.accepted ?? 0) + (counts.in_progress ?? 0), completed: counts.completed ?? 0, capacityCalendar: [], earningsCents: 0, invoices: { raised: 0, pending: 0, paid: 0 }, gstSummary: { taxableCents: 0, gstCents: 0 }, clients: [...new Set(enquiries.map((e) => e.customer.name))] };
+    return { role: user.role, provider, enquiries, counts, capacityCalendar: [], earningsCents: 0, invoices: { raised: 0, pending: 0, paid: 0 }, gstSummary: { taxableCents: 0, gstCents: 0 }, clients: [...new Set(enquiries.map((e) => e.customer.name))] };
   }
 
   async updateEnquiry(id: string, ownerId: string, status: ServiceEnquiryStatus) {
@@ -124,15 +118,8 @@ class ServiceActionsController {
 class AdminServicesController {
   constructor(private prisma: PrismaService) {}
   @Get() list() { return this.prisma.serviceProvider.findMany({ orderBy: { createdAt: 'desc' }, include: { owner: { select: { name: true, email: true } }, _count: { select: { enquiries: true } } } }); }
-  @Post() create(@Body() dto: ProviderDto) { return this.prisma.serviceProvider.create({ data: { ...dto, status: 'pending', published: false } }); }
-  @Get('enquiries') enquiries() { return this.prisma.serviceEnquiry.findMany({ orderBy: { createdAt: 'desc' }, include: { provider: { select: { companyName: true } }, customer: { select: { name: true, email: true } } } }); }
-  @Patch(':id') async update(@Param('id') id: string, @Body() dto: Partial<ProviderDto>) {
-    const current = await this.prisma.serviceProvider.findUnique({ where: { id } });
-    if (!current) throw new NotFoundException('Service provider not found');
-    const status = dto.status ?? current.status;
-    if (dto.published === true && status !== 'approved') throw new BadRequestException('Only approved providers can be published.');
-    return this.prisma.serviceProvider.update({ where: { id }, data: { ...dto, published: status === 'approved' ? dto.published ?? current.published : false } });
-  }
+  @Post() create(@Body() dto: ProviderDto) { return this.prisma.serviceProvider.create({ data: dto }); }
+  @Patch(':id') update(@Param('id') id: string, @Body() dto: Partial<ProviderDto>) { return this.prisma.serviceProvider.update({ where: { id }, data: dto }); }
 }
 
 @Module({ controllers: [PublicServicesController, ServiceActionsController, AdminServicesController], providers: [ServicesService] })

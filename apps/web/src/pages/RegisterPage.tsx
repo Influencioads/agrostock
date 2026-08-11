@@ -13,8 +13,6 @@ import { TagInput } from '../components/TagInput';
 
 /** Roles that fill in operational details (where they operate / supply, thresholds). */
 const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker']);
-const SERVICE_PROVIDER_ROLES = new Set(['accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner']);
-const SERVICE_TYPES = ['accounting', 'customs_clearance', 'financial_services', 'fulfillment', 'packing', 'roasting', 'roasting_salting', 'chopping', 'blanching', 'pitting', 'sorting_grading'];
 
 // Self-registerable roles must match the API's PUBLIC_ROLES (admin is provisioned).
 // Labels/descriptions are translated at render (console.role.<id> / page.register.roleDesc.<id>).
@@ -23,11 +21,6 @@ const roles: { id: string; icon: IconName }[] = [
   { id: 'transporter', icon: 'truck' },
   { id: 'loaderco', icon: 'worker' },
   { id: 'worker', icon: 'user' },
-  { id: 'accountant', icon: 'file' },
-  { id: 'packer', icon: 'box' },
-  { id: 'processor', icon: 'gauge' },
-  { id: 'fulfillment_partner', icon: 'store' },
-  { id: 'finance_partner', icon: 'wallet' },
 ];
 
 export function RegisterPage() {
@@ -46,7 +39,6 @@ export function RegisterPage() {
     minDistanceKm: '',
     minLoaders: '',
   });
-  const [service, setService] = useState({ companyName: '', categories: [] as string[], capacity: '', capacityUnit: '', certifications: '', pricingBasis: '', minPrice: '', maxPrice: '', documents: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   // Set once the API says the account exists but still has to confirm its email.
@@ -89,7 +81,6 @@ export function RegisterPage() {
       const isTransporter = form.role === 'transporter';
       const isLoaderco = form.role === 'loaderco';
       const isWorker = form.role === 'worker';
-      const isServiceProvider = SERVICE_PROVIDER_ROLES.has(form.role);
       const numOrUndef = (v: string) => {
         const n = Number(v);
         return v.trim() && Number.isFinite(n) ? n : undefined;
@@ -116,19 +107,6 @@ export function RegisterPage() {
         ...((isLoaderco || isWorker) && { minWorkHours: numOrUndef(ops.minWorkHours) }),
         ...(isTransporter && { minDistanceKm: numOrUndef(ops.minDistanceKm) }),
         ...(isLoaderco && { minLoaders: numOrUndef(ops.minLoaders) }),
-        ...(isServiceProvider && {
-          companyName: service.companyName,
-          contactPhone: form.phone || undefined,
-          serviceCity: form.location,
-          serviceCategories: service.categories,
-          serviceCapacityPerDay: numOrUndef(service.capacity),
-          serviceCapacityUnit: service.capacityUnit || undefined,
-          serviceCertifications: service.certifications.split(',').map((value) => value.trim()).filter(Boolean),
-          servicePricingBasis: service.pricingBasis || undefined,
-          serviceMinPrice: numOrUndef(service.minPrice),
-          serviceMaxPrice: numOrUndef(service.maxPrice),
-          serviceDocuments: service.documents.split(',').map((value) => value.trim()).filter(Boolean),
-        }),
       });
       // With SMTP configured the account cannot sign in until it confirms its
       // address, so we swap the form for a "check your inbox" panel instead.
@@ -411,17 +389,6 @@ export function RegisterPage() {
                     />
                   )}
                 </div>
-              </div>
-            )}
-
-            {SERVICE_PROVIDER_ROLES.has(form.role) && (
-              <div className="space-y-4 rounded-lg border border-surface-border bg-brand-surface/40 p-4">
-                <div><span className="block text-sm font-bold text-ink">Service provider application</span><span className="block text-xs text-ink-soft">New providers remain pending until an administrator reviews and approves them.</span></div>
-                <Input label="Company name" value={service.companyName} onChange={(event) => setService({ ...service, companyName: event.target.value })} required />
-                <fieldset><legend className="text-sm font-semibold">Services offered</legend><div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">{SERVICE_TYPES.map((type) => <label key={type} className="flex items-center gap-2 text-sm capitalize"><input type="checkbox" checked={service.categories.includes(type)} onChange={(event) => setService({ ...service, categories: event.target.checked ? [...service.categories, type] : service.categories.filter((item) => item !== type) })}/>{type.replaceAll('_', ' ')}</label>)}</div></fieldset>
-                <div className="grid gap-3 sm:grid-cols-2"><Input label="Capacity per day" type="number" min={0} value={service.capacity} onChange={(event) => setService({ ...service, capacity: event.target.value })}/><Input label="Capacity unit" placeholder="kg, ton, lots" value={service.capacityUnit} onChange={(event) => setService({ ...service, capacityUnit: event.target.value })}/><Input label="Certifications" placeholder="FSSAI, ISO, HACCP" value={service.certifications} onChange={(event) => setService({ ...service, certifications: event.target.value })}/><Input label="Document URLs" placeholder="Comma-separated document links" value={service.documents} onChange={(event) => setService({ ...service, documents: event.target.value })}/><Input label="Minimum price" type="number" min={0} value={service.minPrice} onChange={(event) => setService({ ...service, minPrice: event.target.value })}/><Input label="Maximum price" type="number" min={0} value={service.maxPrice} onChange={(event) => setService({ ...service, maxPrice: event.target.value })}/></div>
-                <label className="block text-sm font-semibold">Pricing basis<select value={service.pricingBasis} onChange={(event) => setService({ ...service, pricingBasis: event.target.value })} className="mt-1 h-10 w-full rounded-md border border-surface-border bg-white px-3"><option value="">On request</option><option value="per_kg">Per kg</option><option value="per_ton">Per ton</option><option value="per_lot">Per lot</option></select></label>
-                {service.categories.length === 0 && <p className="text-xs text-status-warn">Select at least one service.</p>}
               </div>
             )}
 

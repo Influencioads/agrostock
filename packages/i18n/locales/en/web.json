@@ -956,14 +956,9 @@
       "submitError": "Could not submit your review. Please try again."
     },
     "role": {
-      "accountant": "Accountant",
       "admin": "Admin",
       "buyer": "Buyer",
-      "finance_partner": "Finance Partner",
-      "fulfillment_partner": "Fulfillment Partner",
       "loaderco": "Loader Co",
-      "packer": "Packer",
-      "processor": "Processor",
       "seller": "Seller",
       "transporter": "Transporter",
       "worker": "Worker"
@@ -1687,13 +1682,8 @@
       "resend": "Resend the link",
       "resent": "Link sent — check your inbox",
       "roleDesc": {
-        "accountant": "Accounting and compliance services",
         "buyer": "Import & purchase produce",
-        "finance_partner": "Trade finance and working capital",
-        "fulfillment_partner": "Store, dispatch and fulfill orders",
         "loaderco": "Manage loading crews",
-        "packer": "Packing and handling services",
-        "processor": "Food processing services",
         "seller": "List & sell your produce",
         "transporter": "Move cargo, run a fleet",
         "worker": "Get loading jobs & earn"

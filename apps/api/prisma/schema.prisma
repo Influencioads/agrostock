@@ -40,18 +40,10 @@ enum ServiceCategory {
 
 enum ServiceEnquiryStatus {
   requested
-  contacted
   accepted
   rejected
   in_progress
   completed
-}
-
-enum ServiceProviderStatus {
-  pending
-  approved
-  rejected
-  suspended
 }
 
 /// Granular admin capabilities. A staff account (role=admin) is authorized per
@@ -1348,9 +1340,6 @@ model ServiceProvider {
   slug            String            @unique
   companyName     String
   description     String?
-  contactEmail    String?
-  contactPhone    String?
-  city            String?
   categories      ServiceCategory[]
   citiesServed    String[]          @default([])
   capacityPerDay  Float?
@@ -1362,17 +1351,15 @@ model ServiceProvider {
   minPriceCents   Int?
   maxPriceCents   Int?
   photos          String[]          @default([])
-  documents       String[]          @default([])
   rating          Float?            @default(0)
-  status          ServiceProviderStatus @default(pending)
-  published       Boolean           @default(false)
+  published       Boolean           @default(true)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   ownerId         String            @unique
   owner           User              @relation(fields: [ownerId], references: [id])
   enquiries       ServiceEnquiry[]
 
-  @@index([status, published, createdAt])
+  @@index([published, createdAt])
 }
 
 model ServiceEnquiry {
@@ -1381,7 +1368,6 @@ model ServiceEnquiry {
   serviceType ServiceCategory
   message     String
   quantity    Float?
-  location    String?
   neededDate  DateTime?
   status      ServiceEnquiryStatus @default(requested)
   documents   String[]             @default([])
