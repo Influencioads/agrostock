@@ -75,6 +75,19 @@ export class UpdateServiceProfileDto {
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() listed?: boolean;
 }
 
+/**
+ * A concrete DTO is required here. Individual optional primitive parameters can
+ * be presented to the global ValidationPipe as `undefined`, which class-validator
+ * rejects as an unknown value before the controller runs.
+ */
+export class ListServiceProvidersQueryDto {
+  @IsOptional() @IsIn(SERVICE_CATEGORIES as unknown as string[]) category?: string;
+  @IsOptional() @IsString() @MaxLength(120) city?: string;
+  @IsOptional() @IsString() @MaxLength(80) country?: string;
+  @IsOptional() @IsString() @MaxLength(160) search?: string;
+  @IsOptional() @IsIn(SERVICE_ROLES as unknown as string[]) role?: string;
+}
+
 /** Public columns. An allow-list, so a column added later stays private by default. */
 const PUBLIC_SELECT = {
   id: true, companyName: true, categories: true, citiesServed: true, country: true,
@@ -187,14 +200,8 @@ export class PublicServiceProvidersController {
   constructor(private svc: ServiceProvidersService) {}
 
   @Get('providers')
-  list(
-    @Query('category') category?: string,
-    @Query('city') city?: string,
-    @Query('country') country?: string,
-    @Query('search') search?: string,
-    @Query('role') role?: string,
-  ) {
-    return this.svc.list({ category, city, country, search, role });
+  list(@Query() query: ListServiceProvidersQueryDto) {
+    return this.svc.list(query);
   }
 
   @Get('providers/:userId')
