@@ -23,6 +23,8 @@ const DirectoryPage = lazy(() => import('./pages/DirectoryPage').then((m) => ({ 
 const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
 const VehiclePage = lazy(() => import('./pages/VehiclePage').then((m) => ({ default: m.VehiclePage })));
 const VehiclesPage = lazy(() => import('./pages/VehiclesPage').then((m) => ({ default: m.VehiclesPage })));
+const ServicesPage = lazy(() => import('./pages/ServicesPage').then((m) => ({ default: m.ServicesPage })));
+const ServiceProviderPage = lazy(() => import('./pages/ServiceProviderPage').then((m) => ({ default: m.ServiceProviderPage })));
 const AuctionsPage = lazy(() => import('./pages/AuctionsPage').then((m) => ({ default: m.AuctionsPage })));
 const BuyerBidsPage = lazy(() => import('./pages/BuyerBidsPage').then((m) => ({ default: m.BuyerBidsPage })));
 const BuyerBidRoomPage = lazy(() => import('./pages/BuyerBidRoomPage').then((m) => ({ default: m.BuyerBidRoomPage })));
@@ -85,6 +87,9 @@ export function App() {
             <Route path="/vehicles" element={<VehiclesPage />} />
             <Route path="/vehicles/:id" element={<VehiclePage />} />
             <Route path="/vehicle/:id" element={<VehiclePage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/services/category/:category" element={<ServicesPage />} />
+            <Route path="/services/provider/:slug" element={<ServiceProviderPage />} />
             <Route path="/auctions" element={<AuctionsPage />} />
             <Route path="/bids" element={<BuyerBidsPage />} />
             <Route path="/bid/:id" element={<BuyerBidRoomPage />} />
