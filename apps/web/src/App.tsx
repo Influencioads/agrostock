@@ -22,6 +22,7 @@ const OfficesPage = lazy(() => import('./pages/OfficesPage').then((m) => ({ defa
 const DirectoryPage = lazy(() => import('./pages/DirectoryPage').then((m) => ({ default: m.DirectoryPage })));
 const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
 const VehiclePage = lazy(() => import('./pages/VehiclePage').then((m) => ({ default: m.VehiclePage })));
+const VehiclesPage = lazy(() => import('./pages/VehiclesPage').then((m) => ({ default: m.VehiclesPage })));
 const AuctionsPage = lazy(() => import('./pages/AuctionsPage').then((m) => ({ default: m.AuctionsPage })));
 const BuyerBidsPage = lazy(() => import('./pages/BuyerBidsPage').then((m) => ({ default: m.BuyerBidsPage })));
 const BuyerBidRoomPage = lazy(() => import('./pages/BuyerBidRoomPage').then((m) => ({ default: m.BuyerBidRoomPage })));
@@ -81,6 +82,8 @@ export function App() {
             <Route path="/workers" element={<DirectoryPage type="workers" />} />
             <Route path="/u/:userId" element={<PublicProfilePage />} />
             {/* Public vehicle detail — no login. Only contact/booking is gated. */}
+            <Route path="/vehicles" element={<VehiclesPage />} />
+            <Route path="/vehicles/:id" element={<VehiclePage />} />
             <Route path="/vehicle/:id" element={<VehiclePage />} />
             <Route path="/auctions" element={<AuctionsPage />} />
             <Route path="/bids" element={<BuyerBidsPage />} />
