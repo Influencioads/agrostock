@@ -12,6 +12,7 @@ const prisma = new PrismaClient();
 
 const businesses: Array<{
   slug: string;
+  loginEmail?: string;
   name: string;
   role: Role;
   country: string;
@@ -27,35 +28,35 @@ const businesses: Array<{
   blurb: string;
 }> = [
   {
-    slug: 'meridian-trade-accounting', name: 'Meridian Trade Accounting', role: Role.accountant,
+    slug: 'meridian-trade-accounting', loginEmail: 'accountant@agrostock.live', name: 'Meridian Trade Accounting', role: Role.accountant,
     country: 'India', categories: [ServiceCategory.accounting, ServiceCategory.customs_clearance],
     cities: ['Mumbai', 'Delhi'], capacity: 40, certifications: ['ICAI'], minOrderQty: 1,
     turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_month, priceFromCents: 45000, currency: 'USD',
     blurb: 'Export-import accounting, GST support and customs documentation for agricultural traders.',
   },
   {
-    slug: 'harbour-pack-solutions', name: 'Harbour Pack Solutions', role: Role.packer,
+    slug: 'harbour-pack-solutions', loginEmail: 'packer@agrostock.live', name: 'Harbour Pack Solutions', role: Role.packer,
     country: 'India', categories: [ServiceCategory.packing, ServiceCategory.fulfillment],
     cities: ['Chennai', 'Bengaluru'], capacity: 25000, certifications: ['FSSAI', 'ISO 22000'], minOrderQty: 500,
     turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 1200, currency: 'USD',
     blurb: 'Vacuum, jute and retail packing for nuts, pulses, grains and spices.',
   },
   {
-    slug: 'anatolia-processing-works', name: 'Anatolia Processing Works', role: Role.processor,
+    slug: 'anatolia-processing-works', loginEmail: 'processor@agrostock.live', name: 'Anatolia Processing Works', role: Role.processor,
     country: 'Turkey', categories: [ServiceCategory.roasting, ServiceCategory.roasting_salting, ServiceCategory.sorting_grading],
     cities: ['Mersin', 'Istanbul'], capacity: 18000, certifications: ['HACCP', 'BRCGS'], minOrderQty: 1000,
     turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 9500, currency: 'USD',
     blurb: 'Roasting, salting, sorting and grading for tree nuts and seeds.',
   },
   {
-    slug: 'gulf-fulfilment-hub', name: 'Gulf Fulfilment Hub', role: Role.fulfillment_partner,
+    slug: 'gulf-fulfilment-hub', loginEmail: 'fulfillment@agrostock.live', name: 'Gulf Fulfilment Hub', role: Role.fulfillment_partner,
     country: 'United Arab Emirates', categories: [ServiceCategory.fulfillment],
     cities: ['Dubai', 'Jebel Ali'], capacity: 900, certifications: ['ISO 9001'], minOrderQty: 1,
     turnaroundDays: 1, pricingBasis: ServicePricingBasis.per_lot, priceFromCents: 18000, currency: 'USD',
     blurb: 'Bonded warehousing, order dispatch, inventory handling and delivery proof.',
   },
   {
-    slug: 'steppe-trade-finance', name: 'Steppe Trade Finance', role: Role.finance_partner,
+    slug: 'steppe-trade-finance', loginEmail: 'finance@agrostock.live', name: 'Steppe Trade Finance', role: Role.finance_partner,
     country: 'Kazakhstan', categories: [ServiceCategory.financial_services],
     cities: ['Almaty', 'Astana'], capacity: 20, certifications: [], minOrderQty: 1,
     turnaroundDays: 7, pricingBasis: ServicePricingBasis.per_lot, priceFromCents: null, currency: 'USD',
@@ -85,17 +86,31 @@ const businesses: Array<{
 ];
 
 async function main() {
-  // These records are directory examples, not shared login accounts. A random
-  // unknown password prevents the predictable credentials used by the full demo seed.
-  const passwordHash = await bcrypt.hash(randomUUID(), 12);
+  // Match the existing buyer/seller demo-account convention. Production users
+  // must never reuse these public demo credentials.
+  const loginPassword = process.env.SERVICE_PROVIDER_LOGIN_PASSWORD || 'password123';
+  const loginPasswordHash = await bcrypt.hash(loginPassword, 10);
+  const lockedPasswordHash = await bcrypt.hash(randomUUID(), 12);
 
   for (const business of businesses) {
-    const email = `${business.slug}@directory.agrotraders.org`;
+    const directoryEmail = `${business.slug}@directory.agrotraders.org`;
+    const email = business.loginEmail || directoryEmail;
+
+    // Existing production seeds used the directory email. Rename that same
+    // user so its ServiceProvider relation and enquiry history remain intact.
+    if (business.loginEmail) {
+      const desired = await prisma.user.findUnique({ where: { email } });
+      const legacy = desired ? null : await prisma.user.findUnique({ where: { email: directoryEmail } });
+      if (legacy) {
+        await prisma.user.update({ where: { id: legacy.id }, data: { email } });
+      }
+    }
+
     const user = await prisma.user.upsert({
       where: { email },
       create: {
         email,
-        passwordHash,
+        passwordHash: business.loginEmail ? loginPasswordHash : lockedPasswordHash,
         name: business.name,
         role: business.role,
         country: business.country,
@@ -109,6 +124,7 @@ async function main() {
         country: business.country,
         active: true,
         kycStatus: KycStatus.verified,
+        ...(business.loginEmail ? { passwordHash: loginPasswordHash, emailVerifiedAt: new Date() } : {}),
       },
     });
 
@@ -149,6 +165,10 @@ async function main() {
   }
 
   console.log(`Seeded ${businesses.length} public service businesses.`);
+  console.log('Service demo logins:');
+  for (const business of businesses.filter((entry) => entry.loginEmail)) {
+    console.log(`- ${business.name}: ${business.loginEmail}`);
+  }
 }
 
 main()
