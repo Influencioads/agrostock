@@ -713,6 +713,17 @@ export function Categories() {
     staleTime: 3600e3,
     retry: 1,
   });
+  // `/categories` reports `_count.products` over EVERY row, whatever its status,
+  // so a tile promised six and the grid behind it delivered four. The facet
+  // counts are computed from the same browse predicate the grid runs, so the
+  // number on the tile is the number of cards you land on.
+  const { data: facets } = useQuery({
+    queryKey: ['product-facets', {}],
+    queryFn: () => api.products.facets({}),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+  const liveCount = (id: string) => facets?.categories.find((c) => c.value === id)?.count;
   return (
     <Section>
       <SectionHeader title={t('section.categories')} action={t('common:viewAll')} onAction={() => navigate('/market')} />
@@ -733,7 +744,9 @@ export function Categories() {
                     back to the live English label when a locale has no matching key. */}
                 {t(`categoryName.${categoryKey(c.name)}`, { defaultValue: c.name })}
               </span>
-              <span className="text-xs text-ink-soft">{c._count?.products ?? 0}</span>
+              {/* Blank until the counts land — a flashed "0" on a category that
+                  has stock reads as "nothing here" and costs the click. */}
+              <span className="text-xs text-ink-soft">{liveCount(c.id) ?? ''}</span>
             </button>
           </StaggerItem>
         ))}

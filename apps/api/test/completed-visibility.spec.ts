@@ -141,7 +141,19 @@ describe('completed requirements are owner-scoped', () => {
 // ── browse grid ──────────────────────────────────────────────────
 
 describe('ProductsService browse', () => {
-  it('excludes lots whose countdown has run out', async () => {
+  /**
+   * Browse is the one public surface that does NOT hide completed lots.
+   *
+   * An auction is a product and belongs in its category's grid — a category
+   * holding six listings, two of them auctions, has to show six. Browse used to
+   * run the purchase predicate, so every auction vanished from the grid and the
+   * category counts never matched what you landed on.
+   *
+   * The auction BOARD still hides ended lots (see the specs above), and buying
+   * one is still refused by `assertProductSellable` — visibility and
+   * purchasability are separate questions and are answered separately.
+   */
+  it('keeps auction lots in the grid, ended or not', async () => {
     const prisma = {
       product: { findMany: vi.fn(async () => []), count: vi.fn(async () => 0) },
       subcategory: { findMany: vi.fn(async () => []) },
@@ -157,6 +169,8 @@ describe('ProductsService browse', () => {
     await svc.findAll({});
 
     const { where } = prisma.product.findMany.mock.calls[0][0] as never as { where: Record<string, unknown> };
-    expect(where.NOT).toEqual({ isAuction: true, auctionEndsAt: { lte: expect.any(Date) } });
+    expect(where.status).toBe('live');
+    expect(where.NOT).toBeUndefined();
+    expect(JSON.stringify(where)).not.toContain('auctionEndsAt');
   });
 });

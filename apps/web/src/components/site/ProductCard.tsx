@@ -35,6 +35,8 @@ export function ProductCard({ p }: { p: Product }) {
     }
     toggle(p.productId);
   };
+  // An open-ended lot (no countdown) is never "ended" — it runs until closed.
+  const auctionEnded = !!p.auction && !!p.auctionEndsAt && new Date(p.auctionEndsAt).getTime() <= Date.now();
   const name = cardText(p.name, 'Product');
   const flag = cardText(p.flag);
   const seller = cardText(p.seller);
@@ -95,7 +97,14 @@ export function ProductCard({ p }: { p: Product }) {
           {/* F30: paid placements must be disclosed to the buyer. */}
           {p.sponsored && <Badge tone="slate">{t('site.sponsored')}</Badge>}
           {p.offer && <Badge tone="mango">{t('site.offer')}</Badge>}
-          {p.auction && <Badge tone="info">{t('site.auction')}</Badge>}
+          {p.auction && (
+            // An ended lot stays in the grid — it is still a listing, and its
+            // category count has to include it — but saying only "Auction"
+            // would promise a bid room whose countdown is already over.
+            <Badge tone={auctionEnded ? 'slate' : 'info'}>
+              {auctionEnded ? t('site.auctionEnded') : t('site.auction')}
+            </Badge>
+          )}
         </div>
       </Link>
       {/* F02: real save control, a sibling of the link (never nested in it). */}
@@ -186,13 +195,20 @@ export function ProductCard({ p }: { p: Product }) {
                 <Icon name="message" size={15} />
               </Button>
             )}
+            {/* An auction lot cannot be bought outright — the order path rejects
+                it — so the CTA says what the page it opens actually offers. Both
+                go to the same detail route; only the promise differs. */}
             <Button
               size="sm"
-              leftIcon={<Icon name="bag" size={15} />}
-              aria-label={t('site.buyNamed', { name })}
+              leftIcon={<Icon name={p.auction ? 'gavel' : 'bag'} size={15} />}
+              aria-label={
+                auctionEnded ? t('site.viewNamed', { name })
+                  : p.auction ? t('site.bidNamed', { name })
+                  : t('site.buyNamed', { name })
+              }
               onClick={() => navigate(`/product/${p.id}`)}
             >
-              {t('site.buy')}
+              {auctionEnded ? t('site.view') : p.auction ? t('site.bid') : t('site.buy')}
             </Button>
           </div>
         </div>

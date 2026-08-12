@@ -88,6 +88,7 @@ export function toCardProduct(p: ApiProduct): Product {
     negotiable: !!p.negotiable,
     offer: p.isOffer,
     auction: p.isAuction,
+    auctionEndsAt: p.auctionEndsAt ?? null,
     delivery: textValue(p.delivery),
     category: textValue(p.category),
     subcategory: nullableText(p.subcategory) ?? undefined,

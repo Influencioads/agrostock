@@ -146,6 +146,13 @@ export interface Product {
   negotiable?: boolean;
   offer: boolean;
   auction: boolean;
+  /**
+   * When the lot's countdown runs out. `null` on an open-ended lot, and absent
+   * on anything that isn't an auction. Browse shows ended lots (they are still
+   * listings), so the card needs this to say so rather than promising a bid
+   * room the viewer cannot open.
+   */
+  auctionEndsAt?: string | null;
   /** Paid ad placement — cards flagged true render a visible "Sponsored" label
    *  (F30). Set by the promoted-ad query paths, never by the organic catalog. */
   sponsored?: boolean;

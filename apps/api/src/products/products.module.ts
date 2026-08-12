@@ -34,7 +34,7 @@ import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
 import { PRODUCT_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
 import { Locale, localize } from '../common/locale';
-import { sellableWhere } from './sellable';
+import { browsableWhere } from './sellable';
 import { MAX_QTY } from '../common/limits';
 import type { Lang } from '@agrotraders/i18n';
 
@@ -491,17 +491,19 @@ export class ProductsService {
    * The browse predicate for a query — shared by the listing read and the facet
    * counts, so a facet can never disagree with the grid it filters.
    *
-   * API-11: uses the ONE canonical sellable predicate rather than a hand-rolled
+   * API-11: uses the ONE canonical browse predicate rather than a hand-rolled
    * `approved: true`. `status` is the source of truth the detail read (404s
-   * non-live) and order placement both use — filtering on `approved` here meant
-   * a hidden/moderated listing could still appear in browse yet 404 on tap (or
-   * the reverse), and it can't use the `@@index([status, categoryId])` either.
-   * sellableWhere() also subsumes the finished-auction exclusion: a lot whose
-   * countdown ran out leaves the browse grid alongside the auction board (the
-   * seller still sees it under `/auctions/selling`).
+   * non-live) uses — filtering on `approved` here meant a hidden/moderated
+   * listing could still appear in browse yet 404 on tap (or the reverse), and it
+   * can't use the `@@index([status, categoryId])` either.
+   *
+   * Browse is deliberately the BROWSABLE predicate, not the sellable one. Auction
+   * lots are products and belong in their category's grid; running the purchase
+   * predicate here made every auction vanish from browse, so a category with six
+   * listings showed four. Buying is still blocked on the order path itself.
    */
   private async buildWhere(q: Record<string, string | undefined>, locale: Lang): Promise<Prisma.ProductWhereInput> {
-    const where: Prisma.ProductWhereInput = { ...sellableWhere() };
+    const where: Prisma.ProductWhereInput = { ...browsableWhere() };
     // Conditions that are themselves an OR (a multi-select facet, a place match)
     // cannot sit at the top level beside the free-text search OR — the later
     // assignment would silently replace the earlier one. They all collect here.

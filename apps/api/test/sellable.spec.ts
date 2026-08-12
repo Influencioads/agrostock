@@ -53,6 +53,14 @@ describe('sellableWhere (F04)', () => {
   it('filters to live and excludes finished auctions', () => {
     const w = sellableWhere();
     expect(w.status).toBe('live');
-    expect(w.NOT).toMatchObject({ isAuction: true });
+    // Spelled out as the passing cases rather than `NOT: { isAuction, endsAt
+    // <= now }`. That negation is NULL for an open-ended lot (TRUE AND NULL),
+    // `NOT NULL` is NULL, and a WHERE keeps only TRUE — so the old form quietly
+    // dropped every lot without a countdown, the opposite of what it claimed.
+    expect(w.OR).toEqual([
+      { isAuction: false },
+      { auctionEndsAt: null },
+      { auctionEndsAt: { gt: expect.any(Date) } },
+    ]);
   });
 });
