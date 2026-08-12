@@ -1552,21 +1552,30 @@ export function isPendingVerification(r: RegisterResult): r is PendingVerificati
   return (r as PendingVerification).pendingVerification === true;
 }
 
+/**
+ * A browse facet the marketplace filter panel lets you tick more than one box
+ * in. Values OR together; a bare string is a selection of one, which is why
+ * every existing single-value deep link keeps working unchanged.
+ */
+export type MultiFilter = string | string[];
+
 export interface ProductQuery {
   /** Stable category id filter. Preferred over `category` when available. */
-  categoryId?: string;
-  category?: string;
+  categoryId?: MultiFilter;
+  category?: MultiFilter;
   /** Stable subcategory id filter. Includes that node's descendant branch on the API. */
   subcategoryId?: string;
   subcategory?: string;
   /** Market slug filter. */
-  market?: string;
+  market?: MultiFilter;
   /** Market city (matched case-insensitively via the market relation). */
-  city?: string;
+  city?: MultiFilter;
   /** Market country (matched case-insensitively via the market relation). */
-  country?: string;
+  country?: MultiFilter;
+  /** Countries the seller ships to; several values match any of them. */
+  supplyCountry?: MultiFilter;
   /** Product grade (e.g. "Premium", "Organic"). */
-  grade?: string;
+  grade?: MultiFilter;
   /** Minimum price in USD cents (inclusive). */
   minPrice?: number;
   /** Maximum price in USD cents (inclusive). */
@@ -1576,6 +1585,7 @@ export interface ProductQuery {
   safe?: boolean;
   /** Negotiable listings only (`true`) or fixed-price only (`false`). */
   negotiable?: boolean;
+  /** Discounted listings. Set alongside `auction` the two OR rather than AND. */
   offer?: boolean;
   auction?: boolean;
   search?: string;
@@ -1609,17 +1619,31 @@ export interface ProductListResult {
   similarFrom?: { id: string; name: string };
 }
 
+/**
+ * A multi-select facet on the wire: one comma-separated param rather than a
+ * repeated key, so the API can keep parsing `Record<string, string>` and a
+ * shared URL stays legible. Empty selections drop out entirely.
+ */
+function multi(v: MultiFilter | undefined): string | undefined {
+  if (Array.isArray(v)) {
+    const picked = v.map((s) => s.trim()).filter(Boolean);
+    return picked.length ? picked.join(',') : undefined;
+  }
+  return v || undefined;
+}
+
 /** Serialize a ProductQuery into the flat string query params `GET /products` expects. */
 function productQueryParams(q: ProductQuery): Record<string, string | undefined> {
   const params: Record<string, string | undefined> = {
-    categoryId: q.categoryId,
-    category: q.category,
+    categoryId: multi(q.categoryId),
+    category: multi(q.category),
     subcategoryId: q.subcategoryId,
     subcategory: q.subcategory,
-    market: q.market || undefined,
-    city: q.city || undefined,
-    country: q.country || undefined,
-    grade: q.grade || undefined,
+    market: multi(q.market),
+    city: multi(q.city),
+    country: multi(q.country),
+    supplyCountry: multi(q.supplyCountry),
+    grade: multi(q.grade),
     minPrice: q.minPrice != null ? String(q.minPrice) : undefined,
     maxPrice: q.maxPrice != null ? String(q.maxPrice) : undefined,
     verified: q.verified ? 'true' : undefined,
@@ -1644,19 +1668,21 @@ function productQueryParams(q: ProductQuery): Record<string, string | undefined>
 }
 
 export interface DirectoryQuery {
-  country?: string;
-  market?: string;
+  country?: MultiFilter;
+  market?: MultiFilter;
   verified?: boolean;
   search?: string;
   sort?: string;
-  status?: string;
-  // Operational filters. operating*/supplying* match a single tag exactly.
-  originCity?: string;
-  originCountry?: string;
-  operatingCity?: string;
-  operatingCountry?: string;
-  supplyingCity?: string;
-  supplyingCountry?: string;
+  /** Worker availability. Several values OR together. */
+  status?: MultiFilter;
+  // Operational filters. operating*/supplying* match the stored tags exactly;
+  // several values match any of them.
+  originCity?: MultiFilter;
+  originCountry?: MultiFilter;
+  operatingCity?: MultiFilter;
+  operatingCountry?: MultiFilter;
+  supplyingCity?: MultiFilter;
+  supplyingCountry?: MultiFilter;
   // "Serves this place", comma-separated so one param carries both legs of a route.
   // OR-matched across origin/operating/supplying; providers who declared no areas
   // count as unrestricted. Build these with `orderLogistics(order).serves`.
@@ -1666,6 +1692,24 @@ export interface DirectoryQuery {
   minWorkHours?: number;
   minDistanceKm?: number;
   minLoaders?: number;
+}
+
+/** Serialize a DirectoryQuery, flattening the multi-select facets to CSV. */
+function directoryQueryParams(q: DirectoryQuery): Record<string, string | number | undefined> {
+  const { country, market, status, originCity, originCountry, operatingCity, operatingCountry, supplyingCity, supplyingCountry, verified, ...rest } = q;
+  return {
+    ...rest,
+    country: multi(country),
+    market: multi(market),
+    status: multi(status),
+    originCity: multi(originCity),
+    originCountry: multi(originCountry),
+    operatingCity: multi(operatingCity),
+    operatingCountry: multi(operatingCountry),
+    supplyingCity: multi(supplyingCity),
+    supplyingCountry: multi(supplyingCountry),
+    verified: verified ? 'true' : undefined,
+  };
 }
 
 /* ── client ─────────────────────────────────────────────────────── */
@@ -1849,13 +1893,10 @@ export function createApiClient(opts: ApiClientOptions) {
     markets: { list: () => get<ApiMarket[]>('/markets') },
     fx: { rates: (symbols?: string) => get<ApiFxRates>('/fx/rates', { symbols }) },
     directory: {
-      sellers: (q: DirectoryQuery = {}) =>
-        get<ApiDirectoryEntry[]>('/directory/sellers', { ...q, verified: q.verified ? 'true' : undefined }),
-      transporters: (q: DirectoryQuery = {}) =>
-        get<ApiDirectoryEntry[]>('/directory/transporters', { ...q, verified: q.verified ? 'true' : undefined }),
-      loaders: (q: DirectoryQuery = {}) =>
-        get<ApiDirectoryEntry[]>('/directory/loaders', { ...q, verified: q.verified ? 'true' : undefined }),
-      workers: (q: DirectoryQuery = {}) => get<ApiWorkerEntry[]>('/directory/workers', { ...q }),
+      sellers: (q: DirectoryQuery = {}) => get<ApiDirectoryEntry[]>('/directory/sellers', directoryQueryParams(q)),
+      transporters: (q: DirectoryQuery = {}) => get<ApiDirectoryEntry[]>('/directory/transporters', directoryQueryParams(q)),
+      loaders: (q: DirectoryQuery = {}) => get<ApiDirectoryEntry[]>('/directory/loaders', directoryQueryParams(q)),
+      workers: (q: DirectoryQuery = {}) => get<ApiWorkerEntry[]>('/directory/workers', directoryQueryParams(q)),
       profile: (userId: string) => get<ApiPublicProfile>(`/directory/profile/${userId}`),
     },
     services: {

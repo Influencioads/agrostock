@@ -89,7 +89,8 @@ export function CityTagInput({
   placeholder,
   hint,
 }: {
-  label: string;
+  /** Omitted when the surrounding filter group already names the field. */
+  label?: string;
   value: string[];
   onChange: (next: string[]) => void;
   country?: string | null;
@@ -121,7 +122,7 @@ export function CountryTagInput({
   placeholder,
   hint,
 }: {
-  label: string;
+  label?: string;
   value: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;

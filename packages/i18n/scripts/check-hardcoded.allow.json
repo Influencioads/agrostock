@@ -111,7 +111,7 @@
   "apps/web/src/pages/MarketPage.tsx|Milling",
   "apps/web/src/pages/MarketPage.tsx|Organic",
   "apps/web/src/pages/MarketPage.tsx|Premium",
-  "apps/web/src/pages/MarketPage.tsx|rotate-180 transition",
+  "apps/web/src/components/site/FilterPanel.tsx|rotate-180 transition",
   "apps/web/src/pages/OfficesPage.tsx|Aigerim N.",
   "apps/web/src/pages/OfficesPage.tsx|Camila Souza",
   "apps/web/src/pages/OfficesPage.tsx|DE · EN · RU",

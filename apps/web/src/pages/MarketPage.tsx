@@ -1,15 +1,24 @@
-import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Badge, Button, Icon, Reveal } from '@agrotraders/ui';
 import type { ApiCategory, ApiMarket, ApiSubcategory, ProductQuery } from '@agrotraders/api-client';
 import { filterFields, optionLabel, type AttrField } from '@agrotraders/types';
+import { ALL_COUNTRIES, countryLabel } from '@agrotraders/geo';
 import { ProductCard } from '../components/site/ProductCard';
+import {
+  ActiveFilterChips,
+  FilterCheckbox,
+  FilterGroup,
+  FilterOptionList,
+  FilterPanel,
+  type FilterChip,
+  type FilterOption,
+} from '../components/site/FilterPanel';
 import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
+import { useFilterParams } from '../lib/filterParams';
 import { browseAttrFields, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
-import { CountrySelect } from '@agrotraders/ui/ProductForm';
-import { CityInput } from '../components/GeoInputs';
+import { CityTagInput } from '../components/GeoInputs';
 import { useI18n } from '../i18n';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
@@ -21,71 +30,100 @@ const gradeOptions: { key: string; value: string }[] = [
   { key: 'feed', value: 'Feed' },
   { key: 'milling', value: 'Milling' },
 ];
-// `safe` moved out of the on/off toggles: "direct deal only" is a real buyer
-// intent, and an unchecked box could never express it.
-const toggleKeys = ['verified', 'offers', 'auctions'] as const;
-// URL param name per toggle (the header deep-links use ?offer=/?auction=).
-const toggleParam: Record<(typeof toggleKeys)[number], string> = {
-  verified: 'verified',
-  offers: 'offer',
-  auctions: 'auction',
-};
+
+/**
+ * Deal type / price type / listing type are three checkbox groups whose boxes
+ * are two sides of the same coin. Ticking BOTH boxes in a group has to be
+ * expressible and has to mean "either" — which a tri-state `?safe=true|false`
+ * could not say, so those groups carry their own multi-value param and are
+ * translated to the API's booleans at query time.
+ */
+const DEAL_SAFE = 'safe';
+const DEAL_DIRECT = 'direct';
+const PRICING_NEGOTIABLE = 'negotiable';
+const PRICING_FIXED = 'fixed';
+const LISTING_OFFER = 'offer';
+const LISTING_AUCTION = 'auction';
+
+/**
+ * A group of exactly two opposite boxes → the API's tri-state boolean.
+ * Neither ticked and both ticked are the same query (no constraint); they are
+ * different *states* only in the panel, which is the whole point.
+ */
+function eitherOr(values: string[], truthy: string, falsy: string): boolean | undefined {
+  const yes = values.includes(truthy);
+  const no = values.includes(falsy);
+  if (yes === no) return undefined;
+  return yes;
+}
+
 const PAGE_SIZE = 24;
 
-export function MarketPage() {
-  const { t } = useI18n();
-  useDocumentTitle(t('page.market.title'));
-  const [params, setParams] = useSearchParams();
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  // Below `lg` the filter panel is collapsed by default. Rendered inline it is
-  // several screens tall, which pushed the actual products off the bottom of a
-  // phone — the page looked empty until you scrolled past every facet.
-  const [filtersOpen, setFiltersOpen] = useState(false);
-
-  // Every filter lives in the URL so views are deep-linkable and shareable.
-  const categoryId = params.get('categoryId') ?? '';
-  const category = params.get('category') ?? '';
-  const subcategoryId = params.get('subcategoryId') ?? '';
-  const subcategory = params.get('subcategory') ?? '';
-  const market = params.get('market') ?? '';
-  const city = params.get('city') ?? '';
-  const country = params.get('country') ?? '';
-  const grade = params.get('grade') ?? '';
-  const search = params.get('search') ?? '';
-  const minPrice = params.get('minPrice') ?? '';
-  const maxPrice = params.get('maxPrice') ?? '';
-  const sort = params.get('sort') ?? 'relevance';
-  const page = Math.max(1, Number(params.get('page')) || 1);
-  const flag = (name: string) => params.get(name) === 'true';
-  // Tri-state: '' = any, 'true'/'false' = one side only.
-  const safe = params.get('safe') ?? '';
-  const negotiable = params.get('negotiable') ?? '';
-  const triState = (v: string) => (v === '' ? undefined : v === 'true');
-
-  // Writing any filter resets to page 1; changing the page itself does not.
-  const setParam = (k: string, v: string | null) => {
-    const next = new URLSearchParams(params);
-    if (v) next.set(k, v);
-    else next.delete(k);
-    if (k !== 'page') next.delete('page');
-    setParams(next, { replace: true });
-  };
-  const clearAll = () => setParams(new URLSearchParams(), { replace: true });
-
-  // Badge on the collapsed mobile "Filters" button, so an active filter is never
-  // hidden behind a closed panel. `sort`/`page` are not filters; the paired
-  // `*Id` params are counted once alongside their human-readable twin.
-  const activeFilterCount = useMemo(() => {
-    let n = 0;
-    for (const [k, v] of params.entries()) {
-      if (!v || k === 'sort' || k === 'page' || k === 'categoryId' || k === 'subcategoryId') continue;
-      n += k.startsWith('attr_') ? v.split(',').filter(Boolean).length : 1;
+/**
+ * Deep links the site emitted before the panel became multi-select
+ * (`?offer=true`, `?safe=false`, the header's auction shortcut) still arrive.
+ * Fold them into the checkbox-group params once, on mount, so the panel has a
+ * single source of truth per group instead of two that can disagree.
+ */
+function migrateLegacyParams(params: URLSearchParams): URLSearchParams | null {
+  const legacy: [string, string, string][] = [
+    ['safe', 'deal', DEAL_SAFE],
+    ['negotiable', 'pricing', PRICING_NEGOTIABLE],
+    ['offer', 'listing', LISTING_OFFER],
+    ['auction', 'listing', LISTING_AUCTION],
+  ];
+  const opposite: Record<string, string> = { safe: DEAL_DIRECT, negotiable: PRICING_FIXED };
+  const next = new URLSearchParams(params);
+  let changed = false;
+  for (const [oldKey, group, onValue] of legacy) {
+    const raw = params.get(oldKey);
+    if (raw !== 'true' && raw !== 'false') continue;
+    // `?offer=false` was never meaningful — only the tri-states have an "off" side.
+    const value = raw === 'true' ? onValue : opposite[oldKey];
+    if (value) {
+      const current = new Set((next.get(group) ?? '').split(',').filter(Boolean));
+      current.add(value);
+      next.set(group, [...current].join(','));
     }
-    return n;
-  }, [params]);
+    next.delete(oldKey);
+    changed = true;
+  }
+  return changed ? next : null;
+}
 
-  // Filter facets come from the English schema; only the display is localized —
-  // the value sent to the API stays canonical English.
+export function MarketPage() {
+  const { t, lang } = useI18n();
+  useDocumentTitle(t('page.market.title'));
+  const { params, values, value, has, toggle, setValues, setValue, patch, replaceAll, clearAll, activeCount } =
+    useFilterParams();
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  useEffect(() => {
+    const migrated = migrateLegacyParams(params);
+    if (migrated) replaceAll(migrated);
+  }, [params, replaceAll]);
+
+  // ── selections ────────────────────────────────────────────────────
+  const categoryIds = values('categoryId');
+  const marketSlugs = values('market');
+  const countries = values('country');
+  const cities = values('city');
+  const supplyCountries = values('supplyCountry');
+  const grades = values('grade');
+  const deal = values('deal');
+  const pricing = values('pricing');
+  const listing = values('listing');
+  const verified = has('verified', 'true');
+  const subcategoryId = value('subcategoryId');
+  const subcategory = value('subcategory');
+  const search = value('search');
+  const minPrice = value('minPrice');
+  const maxPrice = value('maxPrice');
+  const sort = value('sort') || 'relevance';
+  const page = Math.max(1, Number(value('page')) || 1);
+
+  // Attribute facets come from the English schema; only the display is localized
+  // — the value sent to the API stays canonical English.
   const attrSelections = useMemo(() => {
     const out: Record<string, string[]> = {};
     for (const [k, v] of params.entries()) {
@@ -94,45 +132,7 @@ export function MarketPage() {
     return out;
   }, [params]);
 
-  // Attribute picks belong to a specific subcategory — drop them when it changes.
-  const clearAttrParams = (next: URLSearchParams) => {
-    for (const k of Array.from(next.keys())) if (k.startsWith('attr_')) next.delete(k);
-  };
-  const setCategory = (nextCategory: ApiCategory | null) => {
-    const next = new URLSearchParams(params);
-    if (nextCategory) {
-      next.set('categoryId', nextCategory.id);
-      next.set('category', nextCategory.name);
-    } else {
-      next.delete('categoryId');
-      next.delete('category');
-    }
-    next.delete('subcategoryId');
-    next.delete('subcategory');
-    clearAttrParams(next);
-    next.delete('page');
-    setParams(next, { replace: true });
-  };
-  const setSubcategory = (id: string | null) => {
-    const next = new URLSearchParams(params);
-    const node = flatSubOptions.find((entry) => entry.node.id === id)?.node ?? null;
-    if (node) {
-      next.set('subcategoryId', node.id);
-      next.set('subcategory', node.name);
-    } else {
-      next.delete('subcategoryId');
-      next.delete('subcategory');
-    }
-    clearAttrParams(next);
-    next.delete('page');
-    setParams(next, { replace: true });
-  };
-  const toggleAttr = (key: string, value: string) => {
-    const cur = attrSelections[key] ?? [];
-    const nextVals = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
-    setParam(`attr_${key}`, nextVals.length ? nextVals.join(',') : null);
-  };
-
+  // ── data ──────────────────────────────────────────────────────────
   const { data: catData = [] } = useQuery<ApiCategory[]>({
     queryKey: ['categories'],
     queryFn: () => api.categories.list(),
@@ -154,23 +154,24 @@ export function MarketPage() {
   });
 
   const query: ProductQuery = {
-    categoryId: categoryId || undefined,
-    category: category || undefined,
+    categoryId: categoryIds.length ? categoryIds : undefined,
     subcategoryId: subcategoryId || undefined,
     subcategory: subcategory || undefined,
-    market: market || undefined,
-    city: city || undefined,
-    country: country || undefined,
-    grade: grade || undefined,
+    market: marketSlugs.length ? marketSlugs : undefined,
+    city: cities.length ? cities : undefined,
+    country: countries.length ? countries : undefined,
+    supplyCountry: supplyCountries.length ? supplyCountries : undefined,
+    grade: grades.length ? grades : undefined,
     search: search.trim() || undefined,
     // The inputs are in whole dollars; the API filters on integer cents.
     minPrice: minPrice ? Math.round(Number(minPrice) * 100) : undefined,
     maxPrice: maxPrice ? Math.round(Number(maxPrice) * 100) : undefined,
-    verified: flag('verified') || undefined,
-    safe: triState(safe),
-    negotiable: triState(negotiable),
-    offer: flag('offer') || undefined,
-    auction: flag('auction') || undefined,
+    verified: verified || undefined,
+    safe: eitherOr(deal, DEAL_SAFE, DEAL_DIRECT),
+    negotiable: eitherOr(pricing, PRICING_NEGOTIABLE, PRICING_FIXED),
+    // Ticking both ORs them server-side — "show me offers and auctions".
+    offer: listing.includes(LISTING_OFFER) || undefined,
+    auction: listing.includes(LISTING_AUCTION) || undefined,
     sort: sort === 'relevance' ? undefined : sort,
     attrs: Object.keys(attrSelections).length ? attrSelections : undefined,
     page,
@@ -202,26 +203,70 @@ export function MarketPage() {
     return [...flagged].sort((a, b) => Number(!!b.sponsored) - Number(!!a.sponsored));
   }, [items, promoted, sort]);
 
+  // ── taxonomy ──────────────────────────────────────────────────────
+  const selectedCategories = useMemo(
+    () => catData.filter((c) => categoryIds.includes(c.id)),
+    [catData, categoryIds],
+  );
+  /**
+   * The subcategory drill-down needs ONE category to drill into — a tree with
+   * two roots is not a drill-down. So it appears only while exactly one category
+   * is ticked, and any change to the category selection drops the picks made
+   * under the old one.
+   */
+  const drillCategory = selectedCategories.length === 1 ? selectedCategories[0] : null;
+
+  // Attribute picks belong to a specific subcategory — drop them when it changes.
+  const clearTaxonScopedParams = (next: URLSearchParams) => {
+    next.delete('subcategoryId');
+    next.delete('subcategory');
+    for (const k of Array.from(next.keys())) if (k.startsWith('attr_')) next.delete(k);
+  };
+  const toggleCategory = (category: ApiCategory) => {
+    patch((next) => {
+      const nextIds = categoryIds.includes(category.id)
+        ? categoryIds.filter((id) => id !== category.id)
+        : [...categoryIds, category.id];
+      if (nextIds.length) next.set('categoryId', nextIds.join(','));
+      else next.delete('categoryId');
+      // The `category` name twin only makes sense for a single pick (the API
+      // prefers ids anyway); with several selected the ids alone are canonical.
+      const names = catData.filter((c) => nextIds.includes(c.id)).map((c) => c.name);
+      if (names.length) next.set('category', names.join(','));
+      else next.delete('category');
+      clearTaxonScopedParams(next);
+      next.delete('page');
+    });
+  };
+  const setSubcategory = (id: string | null) => {
+    patch((next) => {
+      const node = flatSubOptions.find((entry) => entry.node.id === id)?.node ?? null;
+      clearTaxonScopedParams(next);
+      if (node) {
+        next.set('subcategoryId', node.id);
+        next.set('subcategory', node.name);
+      }
+      next.delete('page');
+    });
+  };
+  const toggleAttr = (key: string, attrValue: string) => toggle(`attr_${key}`, attrValue);
+
   // Type-ahead over the whole subtree. With five levels of taxonomy, drilling one
   // level at a time is fine when you know where you are going and painful when
   // you don't — this lets a buyer jump straight to "1121 Steam".
   const [subQuery, setSubQuery] = useState('');
-  const selectedCategory = useMemo(
-    () => catData.find((c) => (categoryId ? c.id === categoryId : c.name === category)) ?? null,
-    [catData, categoryId, category],
-  );
   // `/categories` only ships one level down. Once a category is chosen, pull its
   // whole subtree so drill-down and the type-ahead can reach every level —
   // scoped to the one category the buyer is in, never all 24 at once.
   const { data: deepSubs } = useQuery<ApiSubcategory[]>({
-    queryKey: ['category-subtree', selectedCategory?.id],
-    queryFn: () => api.categories.subtree(selectedCategory!.id, { depth: 'all' }),
-    enabled: Boolean(selectedCategory?.id),
+    queryKey: ['category-subtree', drillCategory?.id],
+    queryFn: () => api.categories.subtree(drillCategory!.id, { depth: 'all' }),
+    enabled: Boolean(drillCategory?.id),
     staleTime: 5 * 60 * 1000,
   });
   const subOptions = useMemo(
-    () => buildSubcategoryTree(deepSubs ?? selectedCategory?.subcategories ?? []),
-    [deepSubs, selectedCategory?.subcategories],
+    () => buildSubcategoryTree(deepSubs ?? drillCategory?.subcategories ?? []),
+    [deepSubs, drillCategory?.subcategories],
   );
   const flatSubOptions = useMemo(() => flattenSubcategoryTree(subOptions), [subOptions]);
   const selectedSubcategory = useMemo(
@@ -241,7 +286,7 @@ export function MarketPage() {
   // node owns them and inherited downward, so a deep pick resolves along its
   // path — otherwise drilling past the owning level would wipe the facet list.
   // Anything the path (or the drill-down list right above) already asks is left
-  // out, so the same choice never appears as both a node and a chip.
+  // out, so the same choice never appears as both a node and a checkbox.
   // Labels arrive localized from the API; option VALUES stay English because
   // they are what the `attr_*` query params carry and what products store.
   const attrFields = useMemo(
@@ -260,8 +305,94 @@ export function MarketPage() {
         trail: findSubcategoryPath(subOptions, node.id).map((n) => n.name).join(' › '),
       }));
   }, [subQuery, flatSubOptions, subOptions]);
+
+  // ── option lists ──────────────────────────────────────────────────
+  const categoryOptions: FilterOption[] = useMemo(
+    () => catData.map((c) => ({ value: c.id, label: c.name, emoji: c.emoji ?? undefined, count: c._count?.products ?? 0 })),
+    [catData],
+  );
+  const marketOptions: FilterOption[] = useMemo(
+    () => markets.map((m) => ({ value: m.slug, label: m.name, emoji: m.flag ?? undefined, hint: m.city ?? undefined })),
+    [markets],
+  );
+  // Every country, not only the ones the current page happens to cover — an
+  // empty result set used to leave the filter with nothing left to pick.
+  const countryOptions: FilterOption[] = useMemo(
+    () => ALL_COUNTRIES.map((c) => ({ value: c.name, label: countryLabel(c.name, lang), emoji: c.flag })),
+    [lang],
+  );
+  const gradeOptionList: FilterOption[] = useMemo(
+    () => gradeOptions.map((g) => ({ value: g.value, label: t(`page.market.grades.${g.key}`) })),
+    [t],
+  );
+
   const marketName = (slug: string) => markets.find((m) => m.slug === slug)?.name ?? slug;
-  const inputCls = 'mt-2 h-9 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink';
+
+  // ── chips ─────────────────────────────────────────────────────────
+  const chips: FilterChip[] = useMemo(() => {
+    const out: FilterChip[] = [];
+    const pushAll = (
+      key: string,
+      selected: string[],
+      tone: FilterChip['tone'],
+      label: (v: string) => string,
+    ) => {
+      for (const v of selected) {
+        out.push({ key: `${key}:${v}`, label: label(v), tone, onRemove: () => toggle(key, v) });
+      }
+    };
+    if (search.trim()) {
+      out.push({ key: 'search', label: `“${search.trim()}”`, tone: 'slate', onRemove: () => setValue('search', null) });
+    }
+    pushAll('categoryId', categoryIds, 'green', (id) => catData.find((c) => c.id === id)?.name ?? id);
+    if (selectedSubcategory) {
+      out.push({
+        key: `subcategory:${selectedSubcategory.id}`,
+        label: selectedSubcategory.name,
+        tone: 'green',
+        onRemove: () => setSubcategory(null),
+      });
+    }
+    for (const f of attrFields) {
+      for (const val of attrSelections[f.key] ?? []) {
+        out.push({
+          key: `attr_${f.key}:${val}`,
+          label: f.type === 'boolean' ? f.label : optionLabel(f, val),
+          tone: 'mango',
+          onRemove: () => toggleAttr(f.key, val),
+        });
+      }
+    }
+    pushAll('market', marketSlugs, 'mango', marketName);
+    pushAll('country', countries, 'mango', (c) => countryLabel(c, lang));
+    pushAll('city', cities, 'mango', (c) => c);
+    pushAll('supplyCountry', supplyCountries, 'mango', (c) => t('page.market.chipShipsTo', { country: countryLabel(c, lang) }));
+    pushAll('grade', grades, 'slate', (g) => gradeOptionList.find((o) => o.value === g)?.label ?? g);
+    if (minPrice || maxPrice) {
+      out.push({
+        key: 'price',
+        label: `$${minPrice || '0'}–${maxPrice || '∞'}`,
+        tone: 'slate',
+        onRemove: () => patch((next) => { next.delete('minPrice'); next.delete('maxPrice'); next.delete('page'); }),
+      });
+    }
+    pushAll('deal', deal, 'green', (v) => (v === DEAL_SAFE ? t('site.safeDeal') : t('site.directDeal')));
+    pushAll('pricing', pricing, 'mango', (v) => (v === PRICING_NEGOTIABLE ? t('site.negotiable') : t('site.fixedPrice')));
+    pushAll('listing', listing, 'mango', (v) =>
+      v === LISTING_OFFER ? t('page.market.chipOffers') : t('page.market.chipAuctions'),
+    );
+    if (verified) {
+      out.push({ key: 'verified', label: t('page.market.chipVerified'), tone: 'green', onRemove: () => setValue('verified', null) });
+    }
+    return out;
+    // `toggleAttr`/`setSubcategory`/`marketName` are stable-enough closures over
+    // the same params this already depends on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    search, categoryIds, catData, selectedSubcategory, attrFields, attrSelections, marketSlugs, markets,
+    countries, cities, supplyCountries, grades, minPrice, maxPrice, deal, pricing, listing, verified,
+    gradeOptionList, lang, t, toggle, setValue, patch,
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:px-6">
@@ -273,92 +404,39 @@ export function MarketPage() {
         </p>
       </div>
 
-      {/* Mobile-only disclosure for the filter panel. */}
-      <Button
-        variant="outline"
-        fullWidth
-        className="mb-4 justify-between lg:hidden"
-        aria-expanded={filtersOpen}
-        aria-controls="market-filters"
-        onClick={() => setFiltersOpen((v) => !v)}
-        leftIcon={<Icon name="filter" size={16} />}
-        rightIcon={<Icon name="chevronDown" size={16} className={filtersOpen ? 'rotate-180 transition' : 'transition'} />}
-      >
-        {t('page.market.filters')}
-        {activeFilterCount > 0 && (
-          <span className="rounded-pill bg-brand px-2 py-0.5 text-xs font-bold text-white">{activeFilterCount}</span>
-        )}
-      </Button>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)]">
-        {/* filters */}
-        <aside
-          id="market-filters"
-          className={
-            'h-fit rounded-lg border border-surface-border bg-white p-4 shadow-card sm:p-5 lg:block ' +
-            (filtersOpen ? 'block' : 'hidden')
-          }
-        >
-          <div className="flex items-center gap-2 font-display font-bold text-ink">
-            <Icon name="filter" size={18} /> {t('page.market.filters')}
-          </div>
-
-          {/* search */}
-          <label className="mt-4 flex items-center gap-2 rounded-md border border-surface-border px-2.5">
-            <Icon name="search" size={15} className="text-ink-soft" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(240px,280px)_minmax(0,1fr)]">
+        <FilterPanel id="market-filters" activeCount={activeCount} onClearAll={clearAll}>
+          {/* search — not a group: it is the one field you type into, and
+              hiding it behind a disclosure costs a click on every visit. */}
+          <label className="mb-3 flex items-center gap-2 rounded-md border border-surface-border px-2.5">
+            <Icon name="search" size={15} className="shrink-0 text-ink-soft" />
             <input
               value={search}
-              onChange={(e) => setParam('search', e.target.value || null)}
+              onChange={(e) => setValue('search', e.target.value || null)}
               placeholder={t('page.market.searchPlaceholder')}
-              className="h-9 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft"
+              className="h-9 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-ink-soft"
             />
           </label>
 
-          {/* category (single-select) */}
-          <div className="mt-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.category')}</p>
-            <div className="mt-2 space-y-1.5">
-              {/* "Any" leads every level of the drill-down, category included —
-                  the specific choices sit under it. */}
-              <button
-                type="button"
-                onClick={() => setCategory(null)}
-                aria-current={!selectedCategory}
-                className={
-                  'flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition ' +
-                  (!selectedCategory ? 'bg-brand-surface font-bold text-brand-dark' : 'text-ink hover:bg-brand-surface/60')
-                }
-              >
-                <Icon name="check" size={14} className={selectedCategory ? 'opacity-0' : ''} />
-                <span className="min-w-0 flex-1 truncate">{t('page.market.allCategories')}</span>
-              </button>
-              {catData.map((c) => {
-                const active = selectedCategory?.id === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setCategory(active ? null : c)}
-                    aria-current={active}
-                    className={
-                      'flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition ' +
-                      (active ? 'bg-brand-surface font-bold text-brand-dark' : 'text-ink hover:bg-brand-surface/60')
-                    }
-                  >
-                    <span className="min-w-0 flex-1 truncate">{c.emoji} {c.name}</span>
-                    <span className="text-xs text-ink-soft">{c._count?.products ?? 0}</span>
-                    {active && <Icon name="chevronRight" size={14} className="text-brand-dark" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <FilterGroup title={t('page.market.category')} selectedCount={categoryIds.length}>
+            <FilterOptionList
+              options={categoryOptions}
+              selected={categoryIds}
+              onToggle={(id) => {
+                const category = catData.find((c) => c.id === id);
+                if (category) toggleCategory(category);
+              }}
+              searchable={categoryOptions.length > 12}
+              searchPlaceholder={t('page.market.searchCategories')}
+              initialLimit={10}
+            />
+          </FilterGroup>
 
-          {/* subcategory — only once a category with children is chosen */}
-          {selectedCategory && flatSubOptions.length > 0 && (
-            <div className="mt-5">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.subcategory')}</p>
+          {/* subcategory — a drill-down, not a checkbox list: five levels of
+              taxonomy do not flatten into boxes. Needs exactly one category. */}
+          {drillCategory && flatSubOptions.length > 0 && (
+            <FilterGroup title={t('page.market.subcategory')} selectedCount={selectedSubcategory ? 1 : 0}>
+              <div className="flex items-center justify-end">
                 {currentSubParent && (
                   <button
                     type="button"
@@ -366,14 +444,14 @@ export function MarketPage() {
                     className="inline-flex items-center gap-1 text-xs font-bold text-brand-dark hover:text-brand"
                   >
                     <Icon name="chevronLeft" size={13} />
-                    Back
+                    {t('page.market.back')}
                   </button>
                 )}
               </div>
               {selectedSubcategoryPath.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1 text-xs text-ink-soft">
+                <div className="mb-2 flex flex-wrap gap-1 text-xs text-ink-soft">
                   <button type="button" onClick={() => setSubcategory(null)} className="font-bold text-brand-dark hover:text-brand">
-                    {selectedCategory.name}
+                    {drillCategory.name}
                   </button>
                   {selectedSubcategoryPath.map((node, index) => (
                     <span key={node.id} className="inline-flex items-center gap-1">
@@ -394,14 +472,12 @@ export function MarketPage() {
                 value={subQuery}
                 onChange={(e) => setSubQuery(e.target.value)}
                 placeholder={t('page.market.searchSubcategories')}
-                className="mt-2 h-9 w-full rounded-md border border-surface-border bg-white px-2.5 text-sm text-ink placeholder:text-ink-soft"
+                className="mb-2 h-9 w-full rounded-md border border-surface-border bg-white px-2.5 text-sm text-ink placeholder:text-ink-soft"
               />
-              <div className="mt-2 overflow-hidden rounded-md border border-surface-border bg-white">
+              <div className="overflow-hidden rounded-md border border-surface-border bg-white">
                 {subQuery.trim() ? (
                   subMatches.length === 0 ? (
-                    <div className="px-2.5 py-3 text-xs text-ink-soft">
-                      {t('page.market.noSubcategoryMatch')}
-                    </div>
+                    <div className="px-2.5 py-3 text-xs text-ink-soft">{t('page.market.noSubcategoryMatch')}</div>
                   ) : (
                     <div className="max-h-64 overflow-y-auto p-1.5">
                       {subMatches.map(({ node, trail }) => (
@@ -422,256 +498,182 @@ export function MarketPage() {
                   )
                 ) : (
                   <>
-                <button
-                  type="button"
-                  onClick={() => setSubcategory(currentSubParent?.id ?? null)}
-                  className="flex min-h-9 w-full items-center gap-2 border-b border-surface-border px-2.5 py-2 text-start text-sm font-bold text-brand-dark hover:bg-brand-surface/60"
-                >
-                  <Icon name="check" size={14} />
-                  <span className="min-w-0 flex-1 truncate">
-                    {currentSubParent
-                      ? `${t('hero.allOf')} ${currentSubParent.name}`
-                      : `${t('hero.allOf')} ${selectedCategory.name}`}
-                  </span>
-                </button>
-                {visibleSubOptions.length === 0 ? (
-                  <div className="px-2.5 py-3 text-xs text-ink-soft">{t('page.market.noChildCategories')}</div>
-                ) : (
-                  <div className="max-h-64 overflow-y-auto p-1.5">
-                    {visibleSubOptions.map((node) => {
-                      const active = selectedSubcategory?.id === node.id;
-                      return (
-                        <button
-                          key={node.id}
-                          type="button"
-                          onClick={() => setSubcategory(node.id)}
-                          aria-current={active}
-                          className={
-                            'flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition ' +
-                            (active ? 'bg-brand-surface font-bold text-brand-dark' : 'text-ink hover:bg-brand-surface/60')
-                          }
-                        >
-                          <span className="min-w-0 flex-1 truncate">{node.emoji ? `${node.emoji} ` : ''}{node.name}</span>
-                          {node.children.length > 0 && <Icon name="chevronRight" size={14} className="text-ink-soft/60" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                    <button
+                      type="button"
+                      onClick={() => setSubcategory(currentSubParent?.id ?? null)}
+                      className="flex min-h-9 w-full items-center gap-2 border-b border-surface-border px-2.5 py-2 text-start text-sm font-bold text-brand-dark hover:bg-brand-surface/60"
+                    >
+                      <Icon name="check" size={14} />
+                      <span className="min-w-0 flex-1 truncate">
+                        {currentSubParent
+                          ? `${t('hero.allOf')} ${currentSubParent.name}`
+                          : `${t('hero.allOf')} ${drillCategory.name}`}
+                      </span>
+                    </button>
+                    {visibleSubOptions.length === 0 ? (
+                      <div className="px-2.5 py-3 text-xs text-ink-soft">{t('page.market.noChildCategories')}</div>
+                    ) : (
+                      <div className="max-h-64 overflow-y-auto p-1.5">
+                        {visibleSubOptions.map((node) => {
+                          const active = selectedSubcategory?.id === node.id;
+                          return (
+                            <button
+                              key={node.id}
+                              type="button"
+                              onClick={() => setSubcategory(node.id)}
+                              aria-current={active}
+                              className={
+                                'flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition ' +
+                                (active ? 'bg-brand-surface font-bold text-brand-dark' : 'text-ink hover:bg-brand-surface/60')
+                              }
+                            >
+                              <span className="min-w-0 flex-1 truncate">{node.emoji ? `${node.emoji} ` : ''}{node.name}</span>
+                              {node.children.length > 0 && <Icon name="chevronRight" size={14} className="text-ink-soft/60" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
-            </div>
+            </FilterGroup>
           )}
 
-          {/* category/subcategory-specific attribute facets */}
-          {attrFields.length > 0 && (
-            <div className="mt-5 space-y-4 border-t border-surface-border pt-4">
-              {attrFields.map((f: AttrField) => {
-                const selected = attrSelections[f.key] ?? [];
-                // Boolean facet: a single on/off checkbox keyed to "true".
-                if (f.type === 'boolean') {
-                  return (
-                    <label key={f.key} className="flex cursor-pointer items-center justify-between text-sm text-ink">
-                      {f.label}
-                      <input
-                        type="checkbox"
-                        checked={selected.includes('true')}
-                        onChange={() => toggleAttr(f.key, 'true')}
-                        className="accent-[#249653]"
-                      />
-                    </label>
-                  );
-                }
-                // select / multiselect: pick any number of option chips (OR-ed).
-                return (
-                  <div key={f.key}>
-                    <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{f.label}</p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {(f.options ?? []).map((opt) => {
-                        const active = selected.includes(opt);
-                        return (
-                          <button key={opt} type="button" onClick={() => toggleAttr(f.key, opt)}>
-                            <Badge tone={active ? 'green' : 'slate'}>{optionLabel(f, opt)}</Badge>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* Category/subcategory-specific attribute facets — moisture, packing,
+              origin, whatever the taxonomy node defines. */}
+          {attrFields.map((f: AttrField) => {
+            const selected = attrSelections[f.key] ?? [];
+            // Boolean facet: a single on/off box keyed to "true".
+            if (f.type === 'boolean') {
+              return (
+                <FilterGroup key={f.key} title={f.label} selectedCount={selected.length}>
+                  <FilterCheckbox
+                    checked={selected.includes('true')}
+                    onChange={() => toggleAttr(f.key, 'true')}
+                    label={f.label}
+                  />
+                </FilterGroup>
+              );
+            }
+            return (
+              <FilterGroup key={f.key} title={f.label} selectedCount={selected.length}>
+                <FilterOptionList
+                  options={(f.options ?? []).map((opt) => ({ value: opt, label: optionLabel(f, opt) }))}
+                  selected={selected}
+                  onToggle={(opt) => toggleAttr(f.key, opt)}
+                  searchable={(f.options ?? []).length > 12}
+                />
+              </FilterGroup>
+            );
+          })}
 
-          {/* market */}
-          <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.market')}</p>
-            <select value={market} onChange={(e) => setParam('market', e.target.value || null)} className={inputCls}>
-              <option value="">{t('page.market.allMarkets')}</option>
-              {markets.map((m) => (
-                // Name FIRST: a native select jumps to the option starting with
-                // the letter you type, and a leading flag emoji made that
-                // impossible — "f" never reached "Food City". City disambiguates
-                // the many markets sharing a name.
-                <option key={m.id} value={m.slug}>{m.name}{m.city ? ` · ${m.city}` : ''} {m.flag}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Country first, then city inside it — both TYPEABLE, not just
-              dropdowns. The plain selects only jumped to the letter you pressed,
-              which is unusable at 200 countries, and the city list was limited to
-              the cities the loaded markets happened to cover. */}
-          <div className="mt-5">
-            <CountrySelect
-              label={t('page.market.country')}
-              value={country}
-              placeholder={t('page.market.allCountries')}
-              // A city belongs to its country, so changing it invalidates the pick.
-              onChange={(next) => { setParam('country', next || null); setParam('city', null); }}
+          <FilterGroup title={t('page.market.market')} selectedCount={marketSlugs.length} defaultOpen={false}>
+            <FilterOptionList
+              options={marketOptions}
+              selected={marketSlugs}
+              onToggle={(slug) => toggle('market', slug)}
+              searchable={marketOptions.length > 8}
+              searchPlaceholder={t('page.market.searchMarkets')}
             />
-          </div>
+          </FilterGroup>
 
-          <div className="mt-5">
-            <CityInput
-              label={t('page.market.city')}
-              value={city}
-              country={country || null}
-              // Debounced through the URL like every other filter; typing a place
-              // that isn't in the dataset still searches for it verbatim.
-              onChange={(next) => setParam('city', next || null)}
+          <FilterGroup title={t('page.market.country')} selectedCount={countries.length} defaultOpen={false}>
+            <FilterOptionList
+              options={countryOptions}
+              selected={countries}
+              onToggle={(name) => toggle('country', name)}
+              searchable
+              searchPlaceholder={t('page.market.searchCountries')}
             />
-          </div>
+          </FilterGroup>
 
-          {/* price range (whole dollars) */}
-          <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.priceRange')}</p>
-            <div className="mt-2 flex items-center gap-2">
+          <FilterGroup title={t('page.market.city')} selectedCount={cities.length} defaultOpen={false}>
+            {/* The one facet with no closed option set: the geo dataset runs to
+                tens of thousands of places and listings carry free text besides.
+                So cities are ADDED by type-ahead and removed by their own chip,
+                and — like every other facet — they surface above the results. */}
+            <CityTagInput
+              value={cities}
+              onChange={(next) => setValues('city', next)}
+              // Scoped to the selected country when there is exactly one;
+              // unscoped the search spans every country, so it still works alone.
+              country={countries.length === 1 ? countries[0] : null}
+              placeholder={t('page.market.addCity')}
+            />
+          </FilterGroup>
+
+          <FilterGroup title={t('page.market.shipsTo')} selectedCount={supplyCountries.length} defaultOpen={false}>
+            <FilterOptionList
+              options={countryOptions}
+              selected={supplyCountries}
+              onToggle={(name) => toggle('supplyCountry', name)}
+              searchable
+              searchPlaceholder={t('page.market.searchCountries')}
+            />
+          </FilterGroup>
+
+          <FilterGroup title={t('page.market.priceRange')} selectedCount={minPrice || maxPrice ? 1 : 0}>
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 inputMode="decimal"
-                min={0}
                 value={minPrice}
-                onChange={(e) => setParam('minPrice', e.target.value || null)}
+                onChange={(e) => setValue('minPrice', e.target.value || null)}
                 placeholder={t('page.market.min')}
-                className="h-9 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
+                aria-label={t('page.market.min')}
+                className="h-9 w-full min-w-0 rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
               />
               <span className="text-ink-soft">–</span>
               <input
                 type="text"
                 inputMode="decimal"
-                min={0}
                 value={maxPrice}
-                onChange={(e) => setParam('maxPrice', e.target.value || null)}
+                onChange={(e) => setValue('maxPrice', e.target.value || null)}
                 placeholder={t('page.market.max')}
-                className="h-9 w-full rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
+                aria-label={t('page.market.max')}
+                className="h-9 w-full min-w-0 rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
               />
             </div>
-          </div>
+          </FilterGroup>
 
-          {/* grade (single-select) */}
-          <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.grade')}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {gradeOptions.map((g) => {
-                const active = grade === g.value;
-                return (
-                  <button key={g.key} onClick={() => setParam('grade', active ? null : g.value)}>
-                    <Badge tone={active ? 'green' : 'slate'}>{t(`page.market.grades.${g.key}`)}</Badge>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <FilterGroup title={t('page.market.grade')} selectedCount={grades.length}>
+            <FilterOptionList options={gradeOptionList} selected={grades} onToggle={(g) => toggle('grade', g)} />
+          </FilterGroup>
 
-          {/* deal type + price type — both directions are selectable, so a buyer
-              can ask for direct/fixed listings and not just their opposites */}
-          <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.dealType')}</p>
-            <select value={safe} onChange={(e) => setParam('safe', e.target.value || null)} className={inputCls}>
-              <option value="">{t('page.market.anyDeal')}</option>
-              <option value="true">{t('site.safeDeal')}</option>
-              <option value="false">{t('site.directDeal')}</option>
-            </select>
-          </div>
+          <FilterGroup title={t('page.market.dealType')} selectedCount={deal.length}>
+            <FilterCheckbox checked={deal.includes(DEAL_SAFE)} onChange={() => toggle('deal', DEAL_SAFE)} label={t('site.safeDeal')} />
+            <FilterCheckbox checked={deal.includes(DEAL_DIRECT)} onChange={() => toggle('deal', DEAL_DIRECT)} label={t('site.directDeal')} />
+          </FilterGroup>
 
-          <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-soft">{t('page.market.priceType')}</p>
-            <select value={negotiable} onChange={(e) => setParam('negotiable', e.target.value || null)} className={inputCls}>
-              <option value="">{t('page.market.anyPrice')}</option>
-              <option value="true">{t('site.negotiable')}</option>
-              <option value="false">{t('site.fixedPrice')}</option>
-            </select>
-          </div>
+          <FilterGroup title={t('page.market.priceType')} selectedCount={pricing.length}>
+            <FilterCheckbox checked={pricing.includes(PRICING_NEGOTIABLE)} onChange={() => toggle('pricing', PRICING_NEGOTIABLE)} label={t('site.negotiable')} />
+            <FilterCheckbox checked={pricing.includes(PRICING_FIXED)} onChange={() => toggle('pricing', PRICING_FIXED)} label={t('site.fixedPrice')} />
+          </FilterGroup>
 
-          {/* deal toggles */}
-          <div className="mt-5 space-y-2">
-            {toggleKeys.map((tg) => {
-              const name = toggleParam[tg];
-              return (
-                <label key={tg} className="flex cursor-pointer items-center justify-between text-sm text-ink">
-                  {t(`page.market.toggles.${tg}`)}
-                  <input
-                    type="checkbox"
-                    checked={flag(name)}
-                    onChange={(e) => setParam(name, e.target.checked ? 'true' : null)}
-                    className="accent-[#249653]"
-                  />
-                </label>
-              );
-            })}
-          </div>
-        </aside>
+          <FilterGroup title={t('page.market.listingType')} selectedCount={listing.length}>
+            <FilterCheckbox checked={listing.includes(LISTING_OFFER)} onChange={() => toggle('listing', LISTING_OFFER)} label={t('page.market.toggles.offers')} />
+            <FilterCheckbox checked={listing.includes(LISTING_AUCTION)} onChange={() => toggle('listing', LISTING_AUCTION)} label={t('page.market.toggles.auctions')} />
+          </FilterGroup>
+
+          <FilterGroup title={t('page.market.seller')} selectedCount={verified ? 1 : 0}>
+            <FilterCheckbox
+              checked={verified}
+              onChange={() => setValue('verified', verified ? null : 'true')}
+              label={t('page.market.toggles.verified')}
+            />
+          </FilterGroup>
+        </FilterPanel>
 
         {/* results */}
         <div>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-wrap gap-1.5">
-              {selectedCategory && <FilterChip label={selectedCategory.name} tone="green" onRemove={() => setCategory(null)} />}
-              {selectedSubcategory && <FilterChip label={selectedSubcategory.name} tone="green" onRemove={() => setSubcategory(null)} />}
-              {market && <FilterChip label={marketName(market)} tone="mango" onRemove={() => setParam('market', null)} />}
-              {city && <FilterChip label={city} tone="mango" onRemove={() => setParam('city', null)} />}
-              {country && <FilterChip label={country} tone="mango" onRemove={() => setParam('country', null)} />}
-              {grade && <FilterChip label={grade} tone="slate" onRemove={() => setParam('grade', null)} />}
-              {(minPrice || maxPrice) && (
-                <FilterChip
-                  label={`$${minPrice || '0'}–${maxPrice || '∞'}`}
-                  tone="slate"
-                  onRemove={() => { setParam('minPrice', null); setParam('maxPrice', null); }}
-                />
-              )}
-              {attrFields.flatMap((f: AttrField) =>
-                (attrSelections[f.key] ?? []).map((val) => (
-                  <FilterChip
-                    key={`${f.key}:${val}`}
-                    label={f.type === 'boolean' ? f.label : optionLabel(f, val)}
-                    tone="mango"
-                    onRemove={() => toggleAttr(f.key, val)}
-                  />
-                )),
-              )}
-              {flag('verified') && <FilterChip label={t('page.market.chipVerified')} tone="green" onRemove={() => setParam('verified', null)} />}
-              {safe && (
-                <FilterChip
-                  label={safe === 'true' ? t('site.safeDeal') : t('site.directDeal')}
-                  tone="green"
-                  onRemove={() => setParam('safe', null)}
-                />
-              )}
-              {negotiable && (
-                <FilterChip
-                  label={negotiable === 'true' ? t('site.negotiable') : t('site.fixedPrice')}
-                  tone="mango"
-                  onRemove={() => setParam('negotiable', null)}
-                />
-              )}
-              {flag('offer') && <FilterChip label={t('page.market.chipOffers')} tone="mango" onRemove={() => setParam('offer', null)} />}
-              {flag('auction') && <FilterChip label={t('page.market.chipAuctions')} tone="mango" onRemove={() => setParam('auction', null)} />}
-            </div>
+            <ActiveFilterChips chips={chips} onClearAll={clearAll} />
             <div className="ms-auto flex shrink-0 items-center gap-2">
               <select
                 value={sort}
-                onChange={(e) => setParam('sort', e.target.value === 'relevance' ? null : e.target.value)}
+                onChange={(e) => setValue('sort', e.target.value === 'relevance' ? null : e.target.value)}
+                aria-label={t('page.market.sortRelevance')}
                 className="h-9 max-w-[10rem] rounded-md border border-surface-border bg-white px-2 text-sm text-ink"
               >
                 <option value="relevance">{t('page.market.sortRelevance')}</option>
@@ -682,12 +684,16 @@ export function MarketPage() {
               <div className="flex rounded-md border border-surface-border">
                 <button
                   onClick={() => setView('grid')}
+                  aria-label={t('page.market.gridView')}
+                  aria-pressed={view === 'grid'}
                   className={'flex h-9 w-9 items-center justify-center ' + (view === 'grid' ? 'text-brand' : 'text-ink-soft')}
                 >
                   <Icon name="grid" size={16} />
                 </button>
                 <button
                   onClick={() => setView('list')}
+                  aria-label={t('page.market.listView')}
+                  aria-pressed={view === 'list'}
                   className={'flex h-9 w-9 items-center justify-center ' + (view === 'list' ? 'text-brand' : 'text-ink-soft')}
                 >
                   <Icon name="menu" size={16} />
@@ -761,7 +767,7 @@ export function MarketPage() {
                     variant="outline"
                     size="sm"
                     disabled={page <= 1 || isFetching}
-                    onClick={() => setParam('page', String(page - 1))}
+                    onClick={() => setValue('page', String(page - 1))}
                   >
                     {t('page.market.prev')}
                   </Button>
@@ -770,7 +776,7 @@ export function MarketPage() {
                     variant="outline"
                     size="sm"
                     disabled={page >= pageCount || isFetching}
-                    onClick={() => setParam('page', String(page + 1))}
+                    onClick={() => setValue('page', String(page + 1))}
                   >
                     {t('page.market.next')}
                   </Button>
@@ -781,13 +787,5 @@ export function MarketPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function FilterChip({ label, tone, onRemove }: { label: string; tone: 'green' | 'mango' | 'slate'; onRemove: () => void }) {
-  return (
-    <button onClick={onRemove} className="focus:outline-none">
-      <Badge tone={tone}>{label} ✕</Badge>
-    </button>
   );
 }

@@ -21,7 +21,8 @@ export function TagInput({
   loading,
   onDraftChange,
 }: {
-  label: string;
+  /** Omitted when the surrounding group already names the field. */
+  label?: string;
   value: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
@@ -74,7 +75,7 @@ export function TagInput({
 
   return (
     <div className="relative block">
-      <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{label}</span>
+      {label && <span className="mb-1.5 block text-xs font-semibold text-ink-soft">{label}</span>}
       <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-surface-border bg-white px-2 py-1.5 focus-within:border-brand">
         {value.map((tag, i) => (
           <span

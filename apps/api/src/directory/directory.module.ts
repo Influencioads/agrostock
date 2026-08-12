@@ -92,9 +92,34 @@ function atMost(field: string, v?: number): Prisma.ProfileWhereInput | null {
   return { OR: [{ [field]: null }, { [field]: { lte: v } }] } as Prisma.ProfileWhereInput;
 }
 
-/** Split a comma-separated `serves*` param into trimmed, de-duplicated values. */
+/**
+ * Split a comma-separated param into trimmed, de-duplicated values.
+ *
+ * Every browse facet the directory panel lets you tick more than one box in
+ * travels this way, so a filter with one value is indistinguishable from the
+ * single-value param it used to be — which is what keeps every existing deep
+ * link working unchanged.
+ */
 function csv(v?: string): string[] {
   return [...new Set((v ?? '').split(',').map((s) => s.trim()).filter(Boolean))];
+}
+
+/** `['a']` → `'a'`, `['a','b']` → `{ in: [...] }`; a single value stays an equality. */
+function eqOrIn(values: string[]): string | { in: string[] } {
+  return values.length === 1 ? values[0] : { in: values };
+}
+
+/** An insensitive `contains` over one or several values, OR-ed. */
+function containsAny<T>(field: string, values: string[]): T | null {
+  if (!values.length) return null;
+  if (values.length === 1) return { [field]: { contains: values[0], mode: 'insensitive' } } as T;
+  return { OR: values.map((v) => ({ [field]: { contains: v, mode: 'insensitive' } })) } as T;
+}
+
+/** Array-tag match: `has` for one value, `hasSome` (an OR) for several. */
+function tagMatch(values: string[]): { has: string } | { hasSome: string[] } | null {
+  if (!values.length) return null;
+  return values.length === 1 ? { has: values[0] } : { hasSome: values };
 }
 
 /**
@@ -191,31 +216,45 @@ export class DirectoryService {
       active: true,
       OR: [{ role }, { roles: { has: role } }],
     };
-    if (q.country) where.country = { contains: q.country, mode: 'insensitive' };
+    // One country stays a plain column match. Several are their own OR, and the
+    // role match above already owns the top-level `OR` — assigning a second one
+    // would silently drop the first, returning every user on the platform.
+    const countries = csv(q.country);
+    if (countries.length === 1) where.country = { contains: countries[0], mode: 'insensitive' };
+    else if (countries.length > 1) {
+      where.AND = [containsAny<Prisma.UserWhereInput>('country', countries)!];
+    }
     if (q.verified === 'true') where.kycStatus = 'verified';
     if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
     const profileWhere: Prisma.ProfileWhereInput = {};
-    if (q.market) profileWhere.market = { slug: q.market };
+    const marketSlugs = csv(q.market);
+    if (marketSlugs.length) profileWhere.market = { slug: eqOrIn(marketSlugs) };
     // Transporters & loader companies only appear once an admin approves the listing
     // (the seller directory is not gated on this flag).
     if (role === 'transporter' || role === 'loaderco') profileWhere.listApproved = true;
-    // Location filters.
-    if (q.originCity) profileWhere.originCity = { contains: q.originCity, mode: 'insensitive' };
-    if (q.originCountry) profileWhere.originCountry = { contains: q.originCountry, mode: 'insensitive' };
-    if (q.operatingCity) profileWhere.operatingCities = { has: q.operatingCity };
-    if (q.operatingCountry) profileWhere.operatingCountries = { has: q.operatingCountry };
-    if (q.supplyingCity) profileWhere.supplyingCities = { has: q.supplyingCity };
-    if (q.supplyingCountry) profileWhere.supplyingCountries = { has: q.supplyingCountry };
-    // Threshold filters (null minimum = accepts anything, so always included), plus
-    // the route filter. Both live under AND: `serves` brings its own OR and would
-    // clobber (or be clobbered by) any sibling OR on the same object.
-    const thresholds = [
+    // Location filters. The `operating*`/`supplying*` pairs are stored tag arrays,
+    // so several picks are a `hasSome` — "works in any of these", not "in all".
+    const operatingCities = tagMatch(csv(q.operatingCity));
+    if (operatingCities) profileWhere.operatingCities = operatingCities;
+    const operatingCountries = tagMatch(csv(q.operatingCountry));
+    if (operatingCountries) profileWhere.operatingCountries = operatingCountries;
+    const supplyingCities = tagMatch(csv(q.supplyingCity));
+    if (supplyingCities) profileWhere.supplyingCities = supplyingCities;
+    const supplyingCountries = tagMatch(csv(q.supplyingCountry));
+    if (supplyingCountries) profileWhere.supplyingCountries = supplyingCountries;
+    // Threshold filters (null minimum = accepts anything, so always included), the
+    // free-text origin match and the route filter. All live under AND: each brings
+    // its own OR and would clobber (or be clobbered by) a sibling OR on the same
+    // object.
+    const profileAnd = [
+      containsAny<Prisma.ProfileWhereInput>('originCity', csv(q.originCity)),
+      containsAny<Prisma.ProfileWhereInput>('originCountry', csv(q.originCountry)),
       atMost('minWorkHours', num(q.minWorkHours)),
       atMost('minDistanceKm', num(q.minDistanceKm)),
       atMost('minLoaders', num(q.minLoaders)),
       serves(q, { supplying: true }) as Prisma.ProfileWhereInput | null,
     ].filter(Boolean) as Prisma.ProfileWhereInput[];
-    if (thresholds.length) profileWhere.AND = thresholds;
+    if (profileAnd.length) profileWhere.AND = profileAnd;
     if (Object.keys(profileWhere).length > 0) where.profile = profileWhere;
     return where;
   }
@@ -286,18 +325,27 @@ export class DirectoryService {
 
   async workers(q: DirectoryQuery & { status?: string }, locale: Lang = 'en') {
     const where: Prisma.WorkerWhereInput = { userId: { not: null } };
-    if (q.status && ['available', 'on_site', 'off'].includes(q.status)) where.status = q.status as never;
+    // "Availability" is a checkbox group: ticking Available and On site means
+    // either, so the statuses OR together.
+    const statuses = csv(q.status).filter((s) => ['available', 'on_site', 'off'].includes(s));
+    if (statuses.length) where.status = eqOrIn(statuses) as never;
     if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
-    if (q.country) where.user = { country: { contains: q.country, mode: 'insensitive' } };
+    const countries = csv(q.country);
+    if (countries.length === 1) where.user = { country: { contains: countries[0], mode: 'insensitive' } };
+    else if (countries.length > 1) {
+      where.user = { OR: countries.map((c) => ({ country: { contains: c, mode: 'insensitive' as const } })) };
+    }
     // Worker location filters (stored on the Worker row so crew are filterable too).
-    if (q.originCity) where.originCity = { contains: q.originCity, mode: 'insensitive' };
-    if (q.originCountry) where.originCountry = { contains: q.originCountry, mode: 'insensitive' };
-    if (q.operatingCity) where.operatingCities = { has: q.operatingCity };
-    if (q.operatingCountry) where.operatingCountries = { has: q.operatingCountry };
-    // Both of these carry their own OR, so they go under AND — a bare `where.OR`
-    // for one would silently drop the other.
+    const operatingCities = tagMatch(csv(q.operatingCity));
+    if (operatingCities) where.operatingCities = operatingCities;
+    const operatingCountries = tagMatch(csv(q.operatingCountry));
+    if (operatingCountries) where.operatingCountries = operatingCountries;
+    // Every one of these carries its own OR, so they go under AND — a bare
+    // `where.OR` for one would silently drop the others.
     const minHrs = num(q.minWorkHours);
     const workerAnd = [
+      containsAny<Prisma.WorkerWhereInput>('originCity', csv(q.originCity)),
+      containsAny<Prisma.WorkerWhereInput>('originCountry', csv(q.originCountry)),
       minHrs != null ? { OR: [{ minWorkHours: null }, { minWorkHours: { lte: minHrs } }] } : null,
       serves(q, { supplying: false }),
     ].filter(Boolean) as Prisma.WorkerWhereInput[];

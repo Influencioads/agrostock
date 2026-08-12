@@ -219,6 +219,30 @@ export function sanitizeAttributes(input: Record<string, unknown>, fields: AttrF
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).slice(2, 6);
 
+/**
+ * Split a browse facet into its selected values.
+ *
+ * Every multi-select facet travels as one comma-separated param
+ * (`?country=India,Turkey`) rather than a repeated key, so a URL stays readable
+ * and `Record<string, string>` query parsing keeps working. A single value is
+ * just a list of one, which is what makes every pre-existing deep link
+ * (`/market?market=kandla`) still mean exactly what it meant before.
+ */
+function csv(v?: string): string[] {
+  return [...new Set((v ?? '').split(',').map((s) => s.trim()).filter(Boolean))];
+}
+
+/**
+ * `['a']` → `'a'`, `['a','b']` → `{ in: [...] }`.
+ *
+ * The scalar form for the common single-value case is deliberate: `categoryId`
+ * is covered by `@@index([status, categoryId])`, and an `in` of one would ask
+ * the planner to re-derive what an equality already states.
+ */
+function eqOrIn(values: string[]): string | { in: string[] } {
+  return values.length === 1 ? values[0] : { in: values };
+}
+
 /** Max images per product gallery. Enforced by the DTO and the upload interceptor. */
 export const MAX_PRODUCT_IMAGES = 6;
 
@@ -344,7 +368,12 @@ export class ProductsService {
     return [...picked];
   }
 
-  /** Resolve a subcategory from either an id or a name scoped to the chosen category. */
+  /**
+   * Resolve a subcategory from either an id or a name scoped to the chosen
+   * category. The drill-down stays single-select even though `categoryId` is
+   * now multi — a name lookup is therefore scoped to whichever of the selected
+   * categories owns a node by that name.
+   */
   private async findSubcategory(q: Record<string, string | undefined>) {
     if (q.subcategoryId) {
       return this.prisma.subcategory.findUnique({
@@ -353,11 +382,13 @@ export class ProductsService {
       });
     }
     if (!q.subcategory) return null;
+    const categoryIds = csv(q.categoryId);
+    const categoryNames = csv(q.category);
     return this.prisma.subcategory.findFirst({
       where: {
         name: q.subcategory,
-        ...(q.categoryId ? { categoryId: q.categoryId } : {}),
-        ...(!q.categoryId && q.category ? { category: { name: q.category } } : {}),
+        ...(categoryIds.length ? { categoryId: eqOrIn(categoryIds) } : {}),
+        ...(!categoryIds.length && categoryNames.length ? { category: { name: eqOrIn(categoryNames) } } : {}),
       },
       select: { id: true, name: true, parentId: true, categoryId: true },
     });
@@ -383,8 +414,15 @@ export class ProductsService {
     // whose countdown ran out leaves the browse grid alongside the auction board
     // (the seller still sees it under `/auctions/selling`).
     const where: Prisma.ProductWhereInput = { ...sellableWhere() };
-    if (q.categoryId) where.categoryId = q.categoryId;
-    else if (q.category) where.category = { name: q.category };
+    // Conditions that are themselves an OR (a multi-select facet, a place match)
+    // cannot sit at the top level beside the free-text search OR — the later
+    // assignment would silently replace the earlier one. They all collect here.
+    const and: Prisma.ProductWhereInput[] = [];
+
+    const categoryIds = csv(q.categoryId);
+    const categoryNames = csv(q.category);
+    if (categoryIds.length) where.categoryId = eqOrIn(categoryIds);
+    else if (categoryNames.length) where.category = { name: eqOrIn(categoryNames) };
     if (q.verified === 'true') where.verified = true;
     if (q.safe === 'true') where.safeDeal = true;
     // Explicitly browsable BOTH ways — "direct deal only" is a real buyer intent,
@@ -392,19 +430,36 @@ export class ProductsService {
     if (q.safe === 'false') where.safeDeal = false;
     if (q.negotiable === 'true') where.negotiable = true;
     if (q.negotiable === 'false') where.negotiable = false;
-    if (q.offer === 'true') where.isOffer = true;
-    if (q.auction === 'true') where.isAuction = true;
+    // Offers and auctions are two boxes in one "listing type" group, so ticking
+    // both has to mean "either". AND-ing them (the old behaviour) asked for a
+    // listing that is simultaneously a discount and a live lot — nearly always
+    // nothing, which read as a broken filter rather than an empty niche.
+    const listingConds: Prisma.ProductWhereInput[] = [];
+    if (q.offer === 'true') listingConds.push({ isOffer: true });
+    if (q.auction === 'true') listingConds.push({ isAuction: true });
+    if (listingConds.length === 1) Object.assign(where, listingConds[0]);
+    else if (listingConds.length > 1) and.push({ OR: listingConds });
     // Both the id and the name form are branch-inclusive: selecting a parent has
     // to return everything listed under its descendants, or picking anything but
     // a leaf would look empty on a deep tree.
+    // The branch walk is scoped to a category only when exactly one is selected;
+    // across several the scope is every subcategory, which is the correct
+    // (if wider) set to climb.
+    const branchScope = categoryIds.length === 1 ? categoryIds[0] : undefined;
     if (q.subcategoryId) {
-      where.subcategoryId = { in: await this.subcategoryBranchIds(q.subcategoryId, q.categoryId) };
+      where.subcategoryId = { in: await this.subcategoryBranchIds(q.subcategoryId, branchScope) };
     } else if (q.subcategory) {
       const match = await this.findSubcategory(q);
       if (match) where.subcategoryId = { in: await this.subcategoryBranchIds(match.id, match.categoryId) };
       else where.subcategory = { name: q.subcategory };
     }
-    if (q.grade) where.grade = { equals: q.grade, mode: 'insensitive' };
+    // Grade is free text on the listing, so each pick is an insensitive equality;
+    // several picks OR together.
+    const grades = csv(q.grade);
+    if (grades.length === 1) where.grade = { equals: grades[0], mode: 'insensitive' };
+    else if (grades.length > 1) {
+      and.push({ OR: grades.map((g) => ({ grade: { equals: g, mode: 'insensitive' as const } })) });
+    }
     // Search hits the English base row AND every translation of it. Matching
     // only `name` meant a Russian buyer typing "пшеница" got nothing back: the
     // Russian copy lives in ProductTranslation, and the base name is always
@@ -424,19 +479,28 @@ export class ProductsService {
         { market: { is: { country: contains } } },
       ];
     }
-    // Buyers can narrow to products a seller ships to their country.
-    if (q.supplyCountry) where.supplyCountries = { has: q.supplyCountry };
+    // Buyers can narrow to products a seller ships to their country. Several
+    // picks are an OR — "ships to anywhere I asked about", not "to all of them".
+    const supplyCountries = csv(q.supplyCountry);
+    if (supplyCountries.length === 1) where.supplyCountries = { has: supplyCountries[0] };
+    else if (supplyCountries.length > 1) where.supplyCountries = { hasSome: supplyCountries };
 
     // The market filter targets the related Market row. City/country do NOT:
     // a listing carries its own structured place (that is what the cards and the
     // product page display), and matching only the market hid every listing whose
     // seller never attached one. Either side matching is a hit.
-    if (q.market) where.market = { slug: q.market };
+    const marketSlugs = csv(q.market);
+    if (marketSlugs.length) where.market = { slug: eqOrIn(marketSlugs) };
     const placeConds: Prisma.ProductWhereInput[] = [];
-    for (const [field, value] of [['city', q.city], ['country', q.country]] as const) {
-      if (!value) continue;
-      const equals = { equals: value, mode: 'insensitive' } as const;
-      placeConds.push({ OR: [{ [field]: equals }, { market: { is: { [field]: equals } } }] });
+    for (const [field, raw] of [['city', q.city], ['country', q.country]] as const) {
+      const values = csv(raw);
+      if (!values.length) continue;
+      const ors: Prisma.ProductWhereInput[] = [];
+      for (const value of values) {
+        const equals = { equals: value, mode: 'insensitive' } as const;
+        ors.push({ [field]: equals }, { market: { is: { [field]: equals } } });
+      }
+      placeConds.push({ OR: ors });
     }
 
     // priceCents is the only reliably numeric price column; range-filter on it.
@@ -471,9 +535,11 @@ export class ProductsService {
       });
       attrConds.push(ors.length === 1 ? ors[0] : { OR: ors });
     }
-    // One AND bucket for both: each place filter is itself an OR, so they cannot
-    // live at the top level next to the search OR without swallowing it.
-    const and = [...placeConds, ...attrConds];
+    // One AND bucket for every OR-shaped condition: each place filter is itself
+    // an OR, so they cannot live at the top level next to the search OR without
+    // swallowing it. Place/attribute order is preserved for the existing specs.
+    and.unshift(...placeConds);
+    and.push(...attrConds);
     if (and.length) where.AND = and;
 
     // Every sort key here has ties — a batch import shares a `createdAt` to the
