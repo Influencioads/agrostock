@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { Badge, Button, Icon, Reveal } from '@agrotraders/ui';
-import type { ApiCategory, ApiMarket, ApiSubcategory, ProductQuery } from '@agrotraders/api-client';
-import { filterFields, optionLabel, type AttrField } from '@agrotraders/types';
-import { ALL_COUNTRIES, countryLabel } from '@agrotraders/geo';
+import type { ApiCategory, ApiFacetOption, ApiSubcategory, ProductQuery } from '@agrotraders/api-client';
 import { ProductCard } from '../components/site/ProductCard';
 import {
   ActiveFilterChips,
@@ -17,19 +15,24 @@ import {
 import { ErrorState } from '../components/ErrorState';
 import { api, toCardProduct } from '../lib/api';
 import { useFilterParams } from '../lib/filterParams';
-import { browseAttrFields, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
-import { CityTagInput } from '../components/GeoInputs';
+import { buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
 import { useI18n } from '../i18n';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
-// The 5 grade chips map to the free-text `grade` values products actually carry.
-const gradeOptions: { key: string; value: string }[] = [
-  { key: 'premium', value: 'Premium' },
-  { key: 'gradeA', value: 'Grade A' },
-  { key: 'organic', value: 'Organic' },
-  { key: 'feed', value: 'Feed' },
-  { key: 'milling', value: 'Milling' },
-];
+/**
+ * EVERY option in this panel comes from `GET /products/facets`, counted against
+ * the live catalog. Nothing is hardcoded and nothing is capped.
+ *
+ * It used to be the opposite. Grade was five literals in this file, so a seller
+ * who typed "Sortex Clean" had a listing no filter could reach. Country and
+ * "ships to" were the 250-entry static geo dataset, so a country the catalog
+ * spells differently was equally unreachable — while 240 countries with nothing
+ * behind them padded the list. City had no options at all, only a type-ahead
+ * over a reference dataset that knows nothing about what is listed.
+ *
+ * Now the panel renders what the catalog holds, with a count on every box, and
+ * the two cannot drift.
+ */
 
 /**
  * Deal type / price type / listing type are three checkbox groups whose boxes
@@ -92,9 +95,11 @@ function migrateLegacyParams(params: URLSearchParams): URLSearchParams | null {
 }
 
 export function MarketPage() {
-  const { t, lang } = useI18n();
+  // No `lang` here any more: every option label arrives already localized from
+  // `/products/facets`, so the panel no longer translates anything itself.
+  const { t } = useI18n();
   useDocumentTitle(t('page.market.title'));
-  const { params, values, value, has, toggle, setValues, setValue, patch, replaceAll, clearAll, activeCount } =
+  const { params, values, value, has, toggle, setValue, patch, replaceAll, clearAll, activeCount } =
     useFilterParams();
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
@@ -139,12 +144,6 @@ export function MarketPage() {
     staleTime: 3600e3,
     retry: 1,
   });
-  const { data: markets = [] } = useQuery<ApiMarket[]>({
-    queryKey: ['markets'],
-    queryFn: () => api.markets.list(),
-    staleTime: 3600e3,
-    retry: 1,
-  });
   // Products behind a live ad campaign. They rank first on the default view AND
   // carry a visible "Sponsored" label (F30).
   const { data: promoted = [] } = useQuery({
@@ -184,6 +183,26 @@ export function MarketPage() {
     placeholderData: keepPreviousData,
     retry: 1,
   });
+
+  // The panel's entire option set, counted against the same query the grid runs.
+  // `page`/`pageSize`/`sort` are stripped: which page you are on cannot change
+  // which options exist, and including them would refetch every facet on paging.
+  const facetQuery: ProductQuery = useMemo(() => {
+    const { page: _page, pageSize: _pageSize, sort: _sort, ...rest } = query;
+    return rest;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify({ ...query, page: 0, pageSize: 0, sort: '' })]);
+  const { data: facets } = useQuery({
+    queryKey: ['product-facets', facetQuery],
+    queryFn: () => api.products.facets(facetQuery),
+    placeholderData: keepPreviousData,
+    retry: 1,
+  });
+
+  // Straight through — the API already ordered these by count and localized the
+  // labels. No slicing, no client-side option invention.
+  const toOptions = (rows: ApiFacetOption[] | undefined): FilterOption[] =>
+    (rows ?? []).map((o) => ({ value: o.value, label: o.label, emoji: o.emoji, hint: o.hint, count: o.count }));
 
   const items = useMemo(() => (data?.items ?? []).map(toCardProduct), [data]);
   const total = data?.total ?? 0;
@@ -282,24 +301,21 @@ export function MarketPage() {
   const parentSubcategory = selectedSubcategoryPath.length > 1 ? selectedSubcategoryPath[selectedSubcategoryPath.length - 2] : null;
   const goUpSubcategory = () => setSubcategory(parentSubcategory?.id ?? null);
 
-  // Attribute facets for the current selection. Fields are attached to whichever
-  // node owns them and inherited downward, so a deep pick resolves along its
-  // path — otherwise drilling past the owning level would wipe the facet list.
-  // Anything the path (or the drill-down list right above) already asks is left
-  // out, so the same choice never appears as both a node and a checkbox.
-  // Labels arrive localized from the API; option VALUES stay English because
-  // they are what the `attr_*` query params carry and what products store.
-  const attrFields = useMemo(
-    () => filterFields(browseAttrFields(selectedSubcategoryPath, visibleSubOptions)),
-    [selectedSubcategoryPath, visibleSubOptions],
-  );
+  // Attribute facets for the current selection, resolved and counted server-side:
+  // the field list follows the taxonomy's own inheritance, and each option
+  // carries how many listings actually hold it. Values a listing stores that the
+  // schema has since retired come back too, so nothing on a live listing is
+  // unreachable. Labels arrive localized; option VALUES stay canonical English
+  // because they are what the `attr_*` params carry and what products store.
+  const attrFields = facets?.attributes ?? [];
 
+  // Every match, not the first 40 — the cap silently hid the tail of a search on
+  // a 13k-node taxonomy, which reads as "that subcategory doesn't exist".
   const subMatches = useMemo(() => {
     const needle = subQuery.trim().toLowerCase();
     if (!needle) return [];
     return flatSubOptions
       .filter(({ node }) => node.name.toLowerCase().includes(needle))
-      .slice(0, 40)
       .map(({ node }) => ({
         node,
         trail: findSubcategoryPath(subOptions, node.id).map((n) => n.name).join(' › '),
@@ -307,26 +323,23 @@ export function MarketPage() {
   }, [subQuery, flatSubOptions, subOptions]);
 
   // ── option lists ──────────────────────────────────────────────────
-  const categoryOptions: FilterOption[] = useMemo(
-    () => catData.map((c) => ({ value: c.id, label: c.name, emoji: c.emoji ?? undefined, count: c._count?.products ?? 0 })),
-    [catData],
-  );
-  const marketOptions: FilterOption[] = useMemo(
-    () => markets.map((m) => ({ value: m.slug, label: m.name, emoji: m.flag ?? undefined, hint: m.city ?? undefined })),
-    [markets],
-  );
-  // Every country, not only the ones the current page happens to cover — an
-  // empty result set used to leave the filter with nothing left to pick.
-  const countryOptions: FilterOption[] = useMemo(
-    () => ALL_COUNTRIES.map((c) => ({ value: c.name, label: countryLabel(c.name, lang), emoji: c.flag })),
-    [lang],
-  );
-  const gradeOptionList: FilterOption[] = useMemo(
-    () => gradeOptions.map((g) => ({ value: g.value, label: t(`page.market.grades.${g.key}`) })),
-    [t],
-  );
+  // All of them, straight from the facets response. A selection the current
+  // facet response has not caught up with yet still renders (see `withSelected`)
+  // so a ticked box never vanishes mid-request.
+  const withSelected = (options: FilterOption[], selected: string[]): FilterOption[] => {
+    const known = new Set(options.map((o) => o.value));
+    const missing = selected.filter((v) => !known.has(v)).map((value) => ({ value, label: value, count: 0 }));
+    return missing.length ? [...options, ...missing] : options;
+  };
+  const categoryOptions = withSelected(toOptions(facets?.categories), categoryIds);
+  const marketOptions = withSelected(toOptions(facets?.markets), marketSlugs);
+  const countryOptions = withSelected(toOptions(facets?.countries), countries);
+  const cityOptions = withSelected(toOptions(facets?.cities), cities);
+  const supplyCountryOptions = withSelected(toOptions(facets?.supplyCountries), supplyCountries);
+  const gradeOptionList = withSelected(toOptions(facets?.grades), grades);
 
-  const marketName = (slug: string) => markets.find((m) => m.slug === slug)?.name ?? slug;
+  const labelOf = (options: FilterOption[], value: string) =>
+    options.find((o) => o.value === value)?.label ?? value;
 
   // ── chips ─────────────────────────────────────────────────────────
   const chips: FilterChip[] = useMemo(() => {
@@ -344,7 +357,7 @@ export function MarketPage() {
     if (search.trim()) {
       out.push({ key: 'search', label: `“${search.trim()}”`, tone: 'slate', onRemove: () => setValue('search', null) });
     }
-    pushAll('categoryId', categoryIds, 'green', (id) => catData.find((c) => c.id === id)?.name ?? id);
+    pushAll('categoryId', categoryIds, 'green', (id) => labelOf(categoryOptions, id));
     if (selectedSubcategory) {
       out.push({
         key: `subcategory:${selectedSubcategory.id}`,
@@ -357,17 +370,19 @@ export function MarketPage() {
       for (const val of attrSelections[f.key] ?? []) {
         out.push({
           key: `attr_${f.key}:${val}`,
-          label: f.type === 'boolean' ? f.label : optionLabel(f, val),
+          label: f.type === 'boolean' ? f.label : labelOf(f.options, val),
           tone: 'mango',
           onRemove: () => toggleAttr(f.key, val),
         });
       }
     }
-    pushAll('market', marketSlugs, 'mango', marketName);
-    pushAll('country', countries, 'mango', (c) => countryLabel(c, lang));
-    pushAll('city', cities, 'mango', (c) => c);
-    pushAll('supplyCountry', supplyCountries, 'mango', (c) => t('page.market.chipShipsTo', { country: countryLabel(c, lang) }));
-    pushAll('grade', grades, 'slate', (g) => gradeOptionList.find((o) => o.value === g)?.label ?? g);
+    pushAll('market', marketSlugs, 'mango', (s) => labelOf(marketOptions, s));
+    pushAll('country', countries, 'mango', (c) => labelOf(countryOptions, c));
+    pushAll('city', cities, 'mango', (c) => labelOf(cityOptions, c));
+    pushAll('supplyCountry', supplyCountries, 'mango', (c) =>
+      t('page.market.chipShipsTo', { country: labelOf(supplyCountryOptions, c) }),
+    );
+    pushAll('grade', grades, 'slate', (g) => labelOf(gradeOptionList, g));
     if (minPrice || maxPrice) {
       out.push({
         key: 'price',
@@ -385,13 +400,14 @@ export function MarketPage() {
       out.push({ key: 'verified', label: t('page.market.chipVerified'), tone: 'green', onRemove: () => setValue('verified', null) });
     }
     return out;
-    // `toggleAttr`/`setSubcategory`/`marketName` are stable-enough closures over
-    // the same params this already depends on.
+    // `toggleAttr`/`setSubcategory`/`labelOf` are stable-enough closures over the
+    // same params and option lists this already depends on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    search, categoryIds, catData, selectedSubcategory, attrFields, attrSelections, marketSlugs, markets,
+    search, categoryIds, selectedSubcategory, attrFields, attrSelections, marketSlugs,
     countries, cities, supplyCountries, grades, minPrice, maxPrice, deal, pricing, listing, verified,
-    gradeOptionList, lang, t, toggle, setValue, patch,
+    categoryOptions, marketOptions, countryOptions, cityOptions, supplyCountryOptions, gradeOptionList,
+    t, toggle, setValue, patch,
   ]);
 
   return (
@@ -428,7 +444,7 @@ export function MarketPage() {
               }}
               searchable={categoryOptions.length > 12}
               searchPlaceholder={t('page.market.searchCategories')}
-              initialLimit={10}
+              initialLimit={12}
             />
           </FilterGroup>
 
@@ -541,17 +557,23 @@ export function MarketPage() {
           )}
 
           {/* Category/subcategory-specific attribute facets — moisture, packing,
-              origin, whatever the taxonomy node defines. */}
-          {attrFields.map((f: AttrField) => {
+              origin, whatever the taxonomy node defines. Both the fields and
+              their options come from the API, counted. */}
+          {attrFields.map((f) => {
             const selected = attrSelections[f.key] ?? [];
-            // Boolean facet: a single on/off box keyed to "true".
+            // Boolean facet: two boxes, so "no" is as askable as "yes". One
+            // hardcoded "true" box could only ever express half the question.
             if (f.type === 'boolean') {
               return (
                 <FilterGroup key={f.key} title={f.label} selectedCount={selected.length}>
-                  <FilterCheckbox
-                    checked={selected.includes('true')}
-                    onChange={() => toggleAttr(f.key, 'true')}
-                    label={f.label}
+                  <FilterOptionList
+                    options={f.options.map((o) => ({
+                      value: o.value,
+                      label: o.value === 'true' ? t('vehicle.yes') : t('page.market.no'),
+                      count: o.count,
+                    }))}
+                    selected={selected}
+                    onToggle={(opt) => toggleAttr(f.key, opt)}
                   />
                 </FilterGroup>
               );
@@ -559,10 +581,10 @@ export function MarketPage() {
             return (
               <FilterGroup key={f.key} title={f.label} selectedCount={selected.length}>
                 <FilterOptionList
-                  options={(f.options ?? []).map((opt) => ({ value: opt, label: optionLabel(f, opt) }))}
+                  options={toOptions(f.options)}
                   selected={selected}
                   onToggle={(opt) => toggleAttr(f.key, opt)}
-                  searchable={(f.options ?? []).length > 12}
+                  searchable={f.options.length > 12}
                 />
               </FilterGroup>
             );
@@ -588,24 +610,23 @@ export function MarketPage() {
             />
           </FilterGroup>
 
+          {/* Cities the catalog actually lists in — not the geo reference set.
+              The type-ahead over /geo/cities offered places nothing was listed
+              in, while a city a seller typed that the dataset spells differently
+              could never be ticked at all. */}
           <FilterGroup title={t('page.market.city')} selectedCount={cities.length} defaultOpen={false}>
-            {/* The one facet with no closed option set: the geo dataset runs to
-                tens of thousands of places and listings carry free text besides.
-                So cities are ADDED by type-ahead and removed by their own chip,
-                and — like every other facet — they surface above the results. */}
-            <CityTagInput
-              value={cities}
-              onChange={(next) => setValues('city', next)}
-              // Scoped to the selected country when there is exactly one;
-              // unscoped the search spans every country, so it still works alone.
-              country={countries.length === 1 ? countries[0] : null}
-              placeholder={t('page.market.addCity')}
+            <FilterOptionList
+              options={cityOptions}
+              selected={cities}
+              onToggle={(name) => toggle('city', name)}
+              searchable
+              searchPlaceholder={t('page.market.searchCities')}
             />
           </FilterGroup>
 
           <FilterGroup title={t('page.market.shipsTo')} selectedCount={supplyCountries.length} defaultOpen={false}>
             <FilterOptionList
-              options={countryOptions}
+              options={supplyCountryOptions}
               selected={supplyCountries}
               onToggle={(name) => toggle('supplyCountry', name)}
               searchable
@@ -641,19 +662,22 @@ export function MarketPage() {
             <FilterOptionList options={gradeOptionList} selected={grades} onToggle={(g) => toggle('grade', g)} />
           </FilterGroup>
 
+          {/* The on/off groups carry counts too, each measured without its own
+              constraint — so "Safe Deal 412 / Direct deal 38" is visible before
+              you commit to the click. */}
           <FilterGroup title={t('page.market.dealType')} selectedCount={deal.length}>
-            <FilterCheckbox checked={deal.includes(DEAL_SAFE)} onChange={() => toggle('deal', DEAL_SAFE)} label={t('site.safeDeal')} />
-            <FilterCheckbox checked={deal.includes(DEAL_DIRECT)} onChange={() => toggle('deal', DEAL_DIRECT)} label={t('site.directDeal')} />
+            <FilterCheckbox checked={deal.includes(DEAL_SAFE)} onChange={() => toggle('deal', DEAL_SAFE)} label={t('site.safeDeal')} count={facets?.flags.safe} />
+            <FilterCheckbox checked={deal.includes(DEAL_DIRECT)} onChange={() => toggle('deal', DEAL_DIRECT)} label={t('site.directDeal')} count={facets?.flags.direct} />
           </FilterGroup>
 
           <FilterGroup title={t('page.market.priceType')} selectedCount={pricing.length}>
-            <FilterCheckbox checked={pricing.includes(PRICING_NEGOTIABLE)} onChange={() => toggle('pricing', PRICING_NEGOTIABLE)} label={t('site.negotiable')} />
-            <FilterCheckbox checked={pricing.includes(PRICING_FIXED)} onChange={() => toggle('pricing', PRICING_FIXED)} label={t('site.fixedPrice')} />
+            <FilterCheckbox checked={pricing.includes(PRICING_NEGOTIABLE)} onChange={() => toggle('pricing', PRICING_NEGOTIABLE)} label={t('site.negotiable')} count={facets?.flags.negotiable} />
+            <FilterCheckbox checked={pricing.includes(PRICING_FIXED)} onChange={() => toggle('pricing', PRICING_FIXED)} label={t('site.fixedPrice')} count={facets?.flags.fixed} />
           </FilterGroup>
 
           <FilterGroup title={t('page.market.listingType')} selectedCount={listing.length}>
-            <FilterCheckbox checked={listing.includes(LISTING_OFFER)} onChange={() => toggle('listing', LISTING_OFFER)} label={t('page.market.toggles.offers')} />
-            <FilterCheckbox checked={listing.includes(LISTING_AUCTION)} onChange={() => toggle('listing', LISTING_AUCTION)} label={t('page.market.toggles.auctions')} />
+            <FilterCheckbox checked={listing.includes(LISTING_OFFER)} onChange={() => toggle('listing', LISTING_OFFER)} label={t('page.market.toggles.offers')} count={facets?.flags.offer} />
+            <FilterCheckbox checked={listing.includes(LISTING_AUCTION)} onChange={() => toggle('listing', LISTING_AUCTION)} label={t('page.market.toggles.auctions')} count={facets?.flags.auction} />
           </FilterGroup>
 
           <FilterGroup title={t('page.market.seller')} selectedCount={verified ? 1 : 0}>
@@ -661,6 +685,7 @@ export function MarketPage() {
               checked={verified}
               onChange={() => setValue('verified', verified ? null : 'true')}
               label={t('page.market.toggles.verified')}
+              count={facets?.flags.verified}
             />
           </FilterGroup>
         </FilterPanel>

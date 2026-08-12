@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Icon } from '@agrotraders/ui';
-import { ALL_COUNTRIES, countryLabel } from '@agrotraders/geo';
-import type { ApiDirectoryEntry, ApiMarket, ApiWorkerEntry } from '@agrotraders/api-client';
+import type { ApiDirectoryEntry, ApiFacetOption, ApiWorkerEntry } from '@agrotraders/api-client';
 import { api } from '../lib/api';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
-import { CityTagInput } from '../components/GeoInputs';
 import {
   ActiveFilterChips,
   FilterCheckbox,
@@ -38,8 +36,6 @@ const HIRE_TYPE: Record<DirectoryType, HireTarget['targetType'] | null> = {
   workers: 'worker',
 };
 
-/** Worker availability — a checkbox group, so several states OR together. */
-const WORKER_STATUSES = ['available', 'on_site', 'off'] as const;
 
 type Entry = (ApiDirectoryEntry | ApiWorkerEntry) & { userId?: string };
 
@@ -65,9 +61,11 @@ function normalize(type: DirectoryType, raw: (ApiDirectoryEntry | ApiWorkerEntry
  * asked at all. Every facet is now multi-select, chipped and instant.
  */
 export function DirectoryPage({ type }: { type: DirectoryType }) {
-  const { t, lang } = useI18n();
+  // No `lang` here any more: every option label arrives already localized from
+  // `/directory/facets`, so the panel no longer translates anything itself.
+  const { t } = useI18n();
   const { user } = useAuth();
-  const { values, value, has, toggle, setValues, setValue, clearAll, activeCount } = useFilterParams();
+  const { values, value, has, toggle, setValue, clearAll, activeCount } = useFilterParams();
   const [hire, setHire] = useState<HireTarget | null>(null);
   const icon = ICON[type];
 
@@ -83,47 +81,68 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
   const minWorkHours = value('minWorkHours');
   const minLoaders = value('minLoaders');
 
-  const { data: markets = [] } = useQuery<ApiMarket[]>({ queryKey: ['markets'], queryFn: () => api.markets.list(), staleTime: 3600e3 });
-
   const num = (v: string) => (v.trim() && Number.isFinite(Number(v)) ? Number(v) : undefined);
 
+  // The one query object both the list and its facets run on, so the panel can
+  // never offer an option the list would not honour.
+  const query = useMemo(
+    () => ({
+      country: countries.length ? countries : undefined,
+      market: marketSlugs.length ? marketSlugs : undefined,
+      verified: verified || undefined,
+      search: search || undefined,
+      operatingCountry: operatingCountries.length ? operatingCountries : undefined,
+      operatingCity: operatingCities.length ? operatingCities : undefined,
+      supplyingCountry: supplyingCountries.length ? supplyingCountries : undefined,
+      status: statuses.length ? statuses : undefined,
+      minWorkHours: num(minWorkHours),
+      ...(type === 'transporters' ? { minDistanceKm: num(minDistanceKm) } : {}),
+      ...(type === 'loaders' ? { minLoaders: num(minLoaders) } : {}),
+    }),
+    [type, countries, marketSlugs, verified, search, operatingCountries, operatingCities, supplyingCountries, statuses, minWorkHours, minDistanceKm, minLoaders],
+  );
+
   const { data: raw = [], isLoading } = useQuery<(ApiDirectoryEntry | ApiWorkerEntry)[]>({
-    queryKey: [
-      'directory', type, countries, marketSlugs, verified, search, statuses,
-      operatingCountries, operatingCities, supplyingCountries, minDistanceKm, minWorkHours, minLoaders,
-    ],
+    queryKey: ['directory', type, query],
     queryFn: async () => {
-      const q = {
-        country: countries.length ? countries : undefined,
-        market: marketSlugs.length ? marketSlugs : undefined,
-        verified: verified || undefined,
-        search: search || undefined,
-        operatingCountry: operatingCountries.length ? operatingCountries : undefined,
-        operatingCity: operatingCities.length ? operatingCities : undefined,
-        supplyingCountry: supplyingCountries.length ? supplyingCountries : undefined,
-        minWorkHours: num(minWorkHours),
-      };
-      if (type === 'sellers') return api.directory.sellers(q);
-      if (type === 'transporters') return api.directory.transporters({ ...q, minDistanceKm: num(minDistanceKm) });
-      if (type === 'loaders') return api.directory.loaders({ ...q, minLoaders: num(minLoaders) });
-      return api.directory.workers({ ...q, status: statuses.length ? statuses : undefined });
+      if (type === 'sellers') return api.directory.sellers(query);
+      if (type === 'transporters') return api.directory.transporters(query);
+      if (type === 'loaders') return api.directory.loaders(query);
+      return api.directory.workers(query);
     },
   });
   const entries = useMemo(() => normalize(type, raw as (ApiDirectoryEntry | ApiWorkerEntry)[]), [type, raw]);
 
-  // Every country, not just the ones the current results happen to cover —
-  // an empty result set used to leave the filter with nothing to pick.
-  const countryOptions: FilterOption[] = useMemo(
-    () => ALL_COUNTRIES.map((c) => ({ value: c.name, label: countryLabel(c.name, lang), emoji: c.flag })),
-    [lang],
-  );
-  const marketOptions: FilterOption[] = useMemo(
-    () => markets.map((m) => ({ value: m.slug, label: m.name, emoji: m.flag ?? undefined, hint: m.city ?? undefined })),
-    [markets],
-  );
+  // Options come from the listed providers themselves. This used to render the
+  // 250-entry static country dataset for a directory that might hold four — 246
+  // dead options, while a provider whose country string the dataset spells
+  // differently could not be selected at all.
+  const { data: facets } = useQuery({
+    queryKey: ['directory-facets', type, query],
+    queryFn: () => api.directory.facets(type, query),
+    placeholderData: keepPreviousData,
+    retry: 1,
+  });
+  const toOptions = (rows: ApiFacetOption[] | undefined): FilterOption[] =>
+    (rows ?? []).map((o) => ({ value: o.value, label: o.label, emoji: o.emoji, hint: o.hint, count: o.count }));
+  // A selection the current facet response has not caught up with still renders,
+  // so a ticked box never vanishes mid-request.
+  const withSelected = (options: FilterOption[], selected: string[]): FilterOption[] => {
+    const known = new Set(options.map((o) => o.value));
+    const missing = selected.filter((v) => !known.has(v)).map((value) => ({ value, label: value, count: 0 }));
+    return missing.length ? [...options, ...missing] : options;
+  };
+  const countryOptions = withSelected(toOptions(facets?.countries), countries);
+  const marketOptions = withSelected(toOptions(facets?.markets), marketSlugs);
+  const operatingCountryOptions = withSelected(toOptions(facets?.operatingCountries), operatingCountries);
+  const operatingCityOptions = withSelected(toOptions(facets?.operatingCities), operatingCities);
+  const supplyingCountryOptions = withSelected(toOptions(facets?.supplyingCountries), supplyingCountries);
+  const statusOptions = withSelected(toOptions(facets?.statuses), statuses);
+
   const statusLabel = (v: string) =>
     v === 'available' ? t('page.directory.availableNow') : v === 'on_site' ? t('page.directory.onSite') : t('page.directory.workerOff');
-  const marketName = (slug: string) => markets.find((m) => m.slug === slug)?.name ?? slug;
+  const labelOf = (options: FilterOption[], value: string) =>
+    options.find((o) => o.value === value)?.label ?? value;
 
   const chips: FilterChip[] = useMemo(() => {
     const out: FilterChip[] = [];
@@ -133,12 +152,16 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
     if (search.trim()) {
       out.push({ key: 'search', label: `“${search.trim()}”`, tone: 'slate', onRemove: () => setValue('search', null) });
     }
-    pushAll('country', countries, 'mango', (c) => countryLabel(c, lang));
-    pushAll('market', marketSlugs, 'mango', marketName);
+    pushAll('country', countries, 'mango', (c) => labelOf(countryOptions, c));
+    pushAll('market', marketSlugs, 'mango', (s) => labelOf(marketOptions, s));
     pushAll('status', statuses, 'green', statusLabel);
-    pushAll('operatingCountry', operatingCountries, 'slate', (c) => t('page.directory.operatesIn', { areas: countryLabel(c, lang) }));
+    pushAll('operatingCountry', operatingCountries, 'slate', (c) =>
+      t('page.directory.operatesIn', { areas: labelOf(operatingCountryOptions, c) }),
+    );
     pushAll('operatingCity', operatingCities, 'slate', (c) => t('page.directory.operatesIn', { areas: c }));
-    pushAll('supplyingCountry', supplyingCountries, 'slate', (c) => t('page.directory.suppliesTo', { areas: countryLabel(c, lang) }));
+    pushAll('supplyingCountry', supplyingCountries, 'slate', (c) =>
+      t('page.directory.suppliesTo', { areas: labelOf(supplyingCountryOptions, c) }),
+    );
     if (minDistanceKm) {
       out.push({ key: 'minDistanceKm', label: t('page.directory.minDistanceBadge', { km: minDistanceKm }), tone: 'mango', onRemove: () => setValue('minDistanceKm', null) });
     }
@@ -153,7 +176,7 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, countries, marketSlugs, markets, statuses, operatingCountries, operatingCities, supplyingCountries, minDistanceKm, minWorkHours, minLoaders, verified, lang, t, toggle, setValue]);
+  }, [search, countries, marketSlugs, statuses, operatingCountries, operatingCities, supplyingCountries, minDistanceKm, minWorkHours, minLoaders, verified, countryOptions, marketOptions, operatingCountryOptions, supplyingCountryOptions, t, toggle, setValue]);
 
   const chatWith = (userId: string | undefined, name: string) => {
     if (!userId) return;
@@ -211,39 +234,36 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
 
           {type === 'workers' && (
             <FilterGroup title={t('page.directory.availability')} selectedCount={statuses.length}>
-              {WORKER_STATUSES.map((s) => (
-                <FilterCheckbox
-                  key={s}
-                  checked={statuses.includes(s)}
-                  onChange={() => toggle('status', s)}
-                  label={statusLabel(s)}
-                />
-              ))}
+              <FilterOptionList
+                options={statusOptions.map((o) => ({ ...o, label: statusLabel(o.value) }))}
+                selected={statuses}
+                onToggle={(s) => toggle('status', s)}
+              />
             </FilterGroup>
           )}
 
           {/* Operational reach — where a provider actually works, as opposed to
               where it is registered. This is the question a buyer sourcing a
-              route asks, and it needed both legs at once. */}
+              route asks, and it needed both legs at once. Both lists are the
+              providers' own declared areas, so every option has someone behind
+              it and nothing a provider declared is missing. */}
           {type !== 'sellers' && (
             <FilterGroup title={t('page.directory.operatingArea')} selectedCount={operatingCountries.length + operatingCities.length} defaultOpen={false}>
               <FilterOptionList
-                options={countryOptions}
+                options={operatingCountryOptions}
                 selected={operatingCountries}
                 onToggle={(c) => toggle('operatingCountry', c)}
                 searchable
                 searchPlaceholder={t('page.market.searchCountries')}
               />
-              <div className="mt-3">
-                {/* Scoped by the operating-country picks above when there is
-                    exactly one; unscoped it searches every country, so the
-                    filter still works on its own. */}
-                <CityTagInput
-                  label={t('page.directory.operatingCity')}
-                  value={operatingCities}
-                  onChange={(next) => setValues('operatingCity', next)}
-                  country={operatingCountries.length === 1 ? operatingCountries[0] : null}
-                  placeholder={t('page.directory.operatingCity')}
+              <div className="mt-3 border-t border-surface-border pt-3">
+                <p className="mb-1.5 text-xs font-semibold text-ink-soft">{t('page.directory.operatingCity')}</p>
+                <FilterOptionList
+                  options={operatingCityOptions}
+                  selected={operatingCities}
+                  onToggle={(c) => toggle('operatingCity', c)}
+                  searchable
+                  searchPlaceholder={t('page.market.searchCities')}
                 />
               </div>
             </FilterGroup>
@@ -252,7 +272,7 @@ export function DirectoryPage({ type }: { type: DirectoryType }) {
           {(type === 'transporters' || type === 'loaders') && (
             <FilterGroup title={t('page.directory.suppliesToLabel')} selectedCount={supplyingCountries.length} defaultOpen={false}>
               <FilterOptionList
-                options={countryOptions}
+                options={supplyingCountryOptions}
                 selected={supplyingCountries}
                 onToggle={(c) => toggle('supplyingCountry', c)}
                 searchable

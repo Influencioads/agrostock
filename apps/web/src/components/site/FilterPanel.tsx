@@ -26,7 +26,12 @@ export interface FilterOption {
   label: string;
   /** Leading glyph — a category emoji, a country flag. */
   emoji?: string;
-  /** Trailing count of matching listings, when the API gives us one. */
+  /**
+   * Matching listings, as the API counted them with every OTHER filter applied.
+   * `0` is meaningful and IS rendered — an option with nothing behind it right
+   * now is still a real choice, and hiding it would make the panel disagree with
+   * the catalog.
+   */
   count?: number;
   /** Second line under the label — a taxonomy trail, a market's city. */
   hint?: string;
@@ -63,11 +68,16 @@ export function FilterCheckbox({
   count?: number;
   hint?: string;
 }) {
+  // Dimmed at zero rather than removed: the box still says something true (there
+  // is nothing behind this option right now), and it stays tickable so a stale
+  // count can never trap a buyer out of a filter.
+  const empty = count === 0 && !checked;
   return (
     <label
       className={
         'flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition ' +
-        (checked ? 'bg-brand-surface font-semibold text-brand-dark' : 'text-ink hover:bg-brand-surface/60')
+        (checked ? 'bg-brand-surface font-semibold text-brand-dark' : 'text-ink hover:bg-brand-surface/60') +
+        (empty ? ' opacity-55' : '')
       }
     >
       <input

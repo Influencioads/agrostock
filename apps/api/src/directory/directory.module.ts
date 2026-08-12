@@ -169,6 +169,40 @@ function serves(q: DirectoryQuery, opts: { supplying: boolean }): { OR: Record<s
   return { OR: or };
 }
 
+export type DirectoryType = 'sellers' | 'transporters' | 'loaders' | 'workers';
+
+/** One tickable box in the directory panel. */
+export interface DirectoryFacetOption {
+  value: string;
+  label: string;
+  emoji?: string;
+  hint?: string;
+  count: number;
+}
+
+/** Every option the directory panel can offer, taken from the listed providers. */
+export interface DirectoryFacets {
+  countries: DirectoryFacetOption[];
+  markets: DirectoryFacetOption[];
+  operatingCountries: DirectoryFacetOption[];
+  operatingCities: DirectoryFacetOption[];
+  supplyingCountries: DirectoryFacetOption[];
+  /** Workers only — the availability states actually held. */
+  statuses: DirectoryFacetOption[];
+  verified: number;
+}
+
+/** The columns a facet tally reads, flattened across the user and worker shapes. */
+interface FacetRow {
+  country: string | null;
+  marketSlug: string | null;
+  operatingCities: string[];
+  operatingCountries: string[];
+  supplyingCountries: string[];
+  status: string | null;
+  verified: boolean;
+}
+
 /** Profile-ish object carrying the free-text fields worth translating on read. */
 interface Translatable {
   bio?: string | null;
@@ -323,7 +357,8 @@ export class DirectoryService {
     return users.map((u) => ({ ...u, type: 'loaderco' as const }));
   }
 
-  async workers(q: DirectoryQuery & { status?: string }, locale: Lang = 'en') {
+  /** The worker browse predicate — shared by the listing read and the facet counts. */
+  private workerWhere(q: DirectoryQuery & { status?: string }): Prisma.WorkerWhereInput {
     const where: Prisma.WorkerWhereInput = { userId: { not: null } };
     // "Availability" is a checkbox group: ticking Available and On site means
     // either, so the statuses OR together.
@@ -350,8 +385,12 @@ export class DirectoryService {
       serves(q, { supplying: false }),
     ].filter(Boolean) as Prisma.WorkerWhereInput[];
     if (workerAnd.length) where.AND = workerAnd;
+    return where;
+  }
+
+  async workers(q: DirectoryQuery & { status?: string }, locale: Lang = 'en') {
     const workers = await this.prisma.worker.findMany({
-      where,
+      where: this.workerWhere(q),
       orderBy: { rating: 'desc' },
       ...pageArgs(q),
       select: {
@@ -379,6 +418,121 @@ export class DirectoryService {
     });
     await this.localizeProfiles(workers.map((w) => w.user?.profile), locale);
     return workers.map((w) => ({ ...w, type: 'worker' as const, independent: !w.loaderco }));
+  }
+
+  /**
+   * Every option the directory panel can offer, taken from the listed providers
+   * themselves.
+   *
+   * The panel used to render the 250-entry static country dataset for a
+   * directory that might hold providers in four — 246 dead options, and a
+   * provider whose country string the dataset spells differently was
+   * unselectable. These lists are the providers' own values.
+   *
+   * A facet is counted with every OTHER filter applied but not its own, so
+   * ticking one country still shows the rest as addable.
+   */
+  async facets(
+    type: DirectoryType,
+    q: DirectoryQuery & { status?: string },
+    locale: Lang = 'en',
+  ): Promise<DirectoryFacets> {
+    type FacetKey = keyof DirectoryQuery | 'status';
+    const rowsFor = (except?: FacetKey) =>
+      this.rowsForFacets(type, except ? { ...q, [except]: undefined } : q, locale);
+    const [countryRows, marketRows, operatingRows, supplyingRows, statusRows, verifiedRows] = await Promise.all([
+      rowsFor('country'),
+      rowsFor('market'),
+      rowsFor('operatingCountry'),
+      rowsFor('supplyingCountry'),
+      rowsFor('status'),
+      rowsFor('verified'),
+    ]);
+
+    const tally = (rows: FacetRow[], pick: (r: FacetRow) => (string | null | undefined)[]): DirectoryFacetOption[] => {
+      const counts = new Map<string, number>();
+      for (const row of rows) {
+        for (const raw of new Set(pick(row))) {
+          const value = raw?.trim();
+          if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+        }
+      }
+      return [...counts.entries()]
+        .map(([value, count]) => ({ value, label: value, count }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, locale));
+    };
+
+    return {
+      countries: tally(countryRows, (r) => [r.country]),
+      // Every browsable market, with a count — an empty one is still a choice.
+      markets: (await this.prisma.market.findMany({
+        where: { active: true, status: 'approved' },
+        select: { id: true, slug: true, name: true, city: true, flag: true, translations: { where: { locale }, select: { name: true } } },
+      }))
+        .map((m) => ({
+          value: m.slug,
+          label: m.translations[0]?.name ?? m.name,
+          emoji: m.flag ?? undefined,
+          hint: m.city ?? undefined,
+          count: marketRows.filter((r) => r.marketSlug === m.slug).length,
+        }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, locale)),
+      operatingCountries: tally(operatingRows, (r) => r.operatingCountries),
+      operatingCities: tally(operatingRows, (r) => r.operatingCities),
+      supplyingCountries: tally(supplyingRows, (r) => r.supplyingCountries),
+      statuses: type === 'workers' ? tally(statusRows, (r) => [r.status]) : [],
+      verified: verifiedRows.filter((r) => r.verified).length,
+    };
+  }
+
+  /** The place/tag columns each listed provider carries, under the given filters. */
+  private async rowsForFacets(type: DirectoryType, q: DirectoryQuery, locale: Lang): Promise<FacetRow[]> {
+    if (type === 'workers') {
+      const rows = await this.prisma.worker.findMany({
+        where: this.workerWhere(q),
+        select: {
+          status: true,
+          operatingCities: true,
+          operatingCountries: true,
+          user: { select: { country: true, kycStatus: true, profile: { select: { market: { select: { slug: true } } } } } },
+        },
+      });
+      return rows.map((w) => ({
+        country: w.user?.country ?? null,
+        marketSlug: w.user?.profile?.market?.slug ?? null,
+        operatingCities: w.operatingCities,
+        operatingCountries: w.operatingCountries,
+        supplyingCountries: [],
+        status: w.status,
+        verified: w.user?.kycStatus === 'verified',
+      }));
+    }
+    const role = type === 'sellers' ? 'seller' : type === 'transporters' ? 'transporter' : 'loaderco';
+    const rows = await this.prisma.user.findMany({
+      where: this.roleWhere(role, q),
+      select: {
+        country: true,
+        kycStatus: true,
+        profile: {
+          select: {
+            operatingCities: true,
+            operatingCountries: true,
+            supplyingCountries: true,
+            market: { select: { slug: true } },
+          },
+        },
+      },
+    });
+    void locale;
+    return rows.map((u) => ({
+      country: u.country,
+      marketSlug: u.profile?.market?.slug ?? null,
+      operatingCities: u.profile?.operatingCities ?? [],
+      operatingCountries: u.profile?.operatingCountries ?? [],
+      supplyingCountries: u.profile?.supplyingCountries ?? [],
+      status: null,
+      verified: u.kycStatus === 'verified',
+    }));
   }
 
   async profile(userId: string, locale: Lang = 'en') {
@@ -489,6 +643,22 @@ export class DirectoryController {
   @Get('workers')
   workers(@Query() q: DirectoryQuery & { status?: string }, @Locale() locale: Lang) {
     return this.directory.workers(q, locale);
+  }
+
+  /**
+   * The panel's options for one directory, counted against the listed providers.
+   * A query param rather than `/directory/:type/facets` so it cannot collide
+   * with the `profile/:userId` route below.
+   */
+  @Get('facets')
+  facets(
+    @Query() q: DirectoryQuery & { type?: string; status?: string },
+    @Locale() locale: Lang,
+  ) {
+    const type: DirectoryType = ['sellers', 'transporters', 'loaders', 'workers'].includes(q.type ?? '')
+      ? (q.type as DirectoryType)
+      : 'sellers';
+    return this.directory.facets(type, q, locale);
   }
 
   @Get('profile/:userId')

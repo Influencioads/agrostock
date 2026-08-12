@@ -1694,6 +1694,60 @@ export interface DirectoryQuery {
   minLoaders?: number;
 }
 
+/** One tickable box in the browse panel, as the API computed it. */
+export interface ApiFacetOption {
+  value: string;
+  label: string;
+  emoji?: string;
+  hint?: string;
+  /** Listings this option matches with every OTHER filter applied. */
+  count: number;
+}
+
+/** Listing counts for the on/off filter groups. */
+export interface ApiFacetFlags {
+  safe: number;
+  direct: number;
+  negotiable: number;
+  fixed: number;
+  offer: number;
+  auction: number;
+  verified: number;
+}
+
+/**
+ * Every option the marketplace panel can offer, derived from the live catalog
+ * rather than invented client-side. What the panel renders and what the catalog
+ * holds are the same set by construction.
+ */
+export interface ApiProductFacets {
+  categories: ApiFacetOption[];
+  subcategories: ApiFacetOption[];
+  markets: ApiFacetOption[];
+  countries: ApiFacetOption[];
+  cities: ApiFacetOption[];
+  grades: ApiFacetOption[];
+  supplyCountries: ApiFacetOption[];
+  attributes: { key: string; label: string; type: string; options: ApiFacetOption[] }[];
+  flags: ApiFacetFlags;
+  priceRange: { minCents: number | null; maxCents: number | null };
+}
+
+/**
+ * Every option a directory panel can offer, taken from the listed providers
+ * rather than a static reference dataset.
+ */
+export interface ApiDirectoryFacets {
+  countries: ApiFacetOption[];
+  markets: ApiFacetOption[];
+  operatingCountries: ApiFacetOption[];
+  operatingCities: ApiFacetOption[];
+  supplyingCountries: ApiFacetOption[];
+  /** Workers only — the availability states actually held. */
+  statuses: ApiFacetOption[];
+  verified: number;
+}
+
 /** Serialize a DirectoryQuery, flattening the multi-select facets to CSV. */
 function directoryQueryParams(q: DirectoryQuery): Record<string, string | number | undefined> {
   const { country, market, status, originCity, originCountry, operatingCity, operatingCountry, supplyingCity, supplyingCountry, verified, ...rest } = q;
@@ -1897,6 +1951,13 @@ export function createApiClient(opts: ApiClientOptions) {
       transporters: (q: DirectoryQuery = {}) => get<ApiDirectoryEntry[]>('/directory/transporters', directoryQueryParams(q)),
       loaders: (q: DirectoryQuery = {}) => get<ApiDirectoryEntry[]>('/directory/loaders', directoryQueryParams(q)),
       workers: (q: DirectoryQuery = {}) => get<ApiWorkerEntry[]>('/directory/workers', directoryQueryParams(q)),
+      /**
+       * The panel's options for one directory, counted against the listed
+       * providers. Send the SAME query the list uses — each facet is counted
+       * with every other filter applied but not its own.
+       */
+      facets: (type: 'sellers' | 'transporters' | 'loaders' | 'workers', q: DirectoryQuery = {}) =>
+        get<ApiDirectoryFacets>('/directory/facets', { ...directoryQueryParams(q), type }),
       profile: (userId: string) => get<ApiPublicProfile>(`/directory/profile/${userId}`),
     },
     services: {
@@ -1945,6 +2006,14 @@ export function createApiClient(opts: ApiClientOptions) {
        */
       list: async (q: ProductQuery = {}) =>
         (await get<ProductListResult>('/products', productQueryParams(q))).items,
+      /**
+       * The browse panel's options, counted against the live catalog for the
+       * query passed. Send the SAME query the grid uses: each facet is counted
+       * with every other filter applied but not its own, so ticking one country
+       * still shows the rest as addable.
+       */
+      facets: (q: ProductQuery = {}) =>
+        get<ApiProductFacets>('/products/facets', productQueryParams(q)),
       get: (slug: string) => get<ApiProduct>(`/products/${slug}`),
       mine: () => get<ApiProduct[]>('/products/mine'),
       create: (body: Record<string, unknown>) => post<ApiProduct>('/products', body),

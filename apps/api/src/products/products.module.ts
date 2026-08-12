@@ -23,7 +23,7 @@ import { ApiBearerAuth, ApiConsumes, ApiTags, PartialType } from '@nestjs/swagge
 import { Prisma } from '@prisma/client';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, parseQtyIn, stockQtyText, toUnit, type AttrField } from '@agrotraders/types';
+import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, filterFields, parseQtyIn, stockQtyText, toUnit, type AttrField } from '@agrotraders/types';
 import { requireSafeDeal, resolveListingSafeDeal } from './safe-deal';
 import { commonWord } from '@agrotraders/i18n/notifications';
 import { FxModule, FxService } from '../fx/fx.module';
@@ -243,6 +243,89 @@ function eqOrIn(values: string[]): string | { in: string[] } {
   return values.length === 1 ? values[0] : { in: values };
 }
 
+/** One tickable box: `value` is what the URL carries, `label` what a human reads. */
+export interface FacetOption {
+  value: string;
+  label: string;
+  emoji?: string;
+  hint?: string;
+  /** Listings this option would match, with every other filter still applied. */
+  count: number;
+}
+
+/** How many listings sit on each side of the on/off filter groups. */
+export interface FacetFlagCounts {
+  safe: number;
+  direct: number;
+  negotiable: number;
+  fixed: number;
+  offer: number;
+  auction: number;
+  verified: number;
+}
+
+/** Every option the browse panel can offer, derived from the live catalog. */
+export interface ProductFacets {
+  categories: FacetOption[];
+  subcategories: FacetOption[];
+  markets: FacetOption[];
+  countries: FacetOption[];
+  cities: FacetOption[];
+  grades: FacetOption[];
+  supplyCountries: FacetOption[];
+  attributes: { key: string; label: string; type: string; options: FacetOption[] }[];
+  flags: FacetFlagCounts;
+  priceRange: { minCents: number | null; maxCents: number | null };
+}
+
+/** `?attr_<key>=v1,v2` → `{ key: ['v1','v2'] }`. */
+function attrSelectionsOf(q: Record<string, string | undefined>): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const [key, value] of Object.entries(q)) {
+    if (!key.startsWith('attr_') || !value) continue;
+    const picked = csv(value);
+    if (picked.length) out[key.slice(5)] = picked;
+  }
+  return out;
+}
+
+/** A copy of the query without the given params. */
+function stripKeys(q: Record<string, string | undefined>, keys: string[]): Record<string, string | undefined> {
+  const out = { ...q };
+  for (const key of keys) delete out[key];
+  return out;
+}
+
+/** Does this listing ship to any of the requested countries? */
+function rowMatchesSupply(stored: string[], wanted: Set<string>): boolean {
+  return stored.some((c) => wanted.has(c));
+}
+
+/**
+ * Does a listing satisfy every attribute selection EXCEPT the one being counted?
+ * Without the exclusion a facet would be counted against itself and collapse to
+ * the single value already ticked.
+ */
+function attrRowMatches(
+  values: Record<string, unknown>,
+  selections: Record<string, string[]>,
+  exceptKey: string,
+): boolean {
+  for (const [key, wanted] of Object.entries(selections)) {
+    if (key === exceptKey) continue;
+    const raw = values[key];
+    const held = Array.isArray(raw) ? raw.map((v) => String(v)) : raw == null ? [] : [String(raw)];
+    if (!held.some((v) => wanted.includes(v))) return false;
+  }
+  return true;
+}
+
+/** Display text for one option value, honouring the field's locale overlay. */
+function optionLabelOf(field: AttrField, value: string): string {
+  const i = field.options?.indexOf(value) ?? -1;
+  return i >= 0 ? (field.optionLabels?.[i] ?? value) : value;
+}
+
 /** Max images per product gallery. Enforced by the DTO and the upload interceptor. */
 export const MAX_PRODUCT_IMAGES = 6;
 
@@ -404,15 +487,20 @@ export class ProductsService {
     return (await this.categories.fieldMap(locale)).get(node.id) ?? [];
   }
 
-  async findAll(q: Record<string, string | undefined>, locale: Lang = 'en') {
-    // API-11: use the ONE canonical sellable predicate rather than a hand-rolled
-    // `approved: true`. `status` is the source of truth the detail read (404s
-    // non-live) and order placement both use — filtering on `approved` here meant
-    // a hidden/moderated listing could still appear in browse yet 404 on tap (or
-    // the reverse), and it can't use the `@@index([status, categoryId])` either.
-    // sellableWhere() also subsumes the finished-auction exclusion below: a lot
-    // whose countdown ran out leaves the browse grid alongside the auction board
-    // (the seller still sees it under `/auctions/selling`).
+  /**
+   * The browse predicate for a query — shared by the listing read and the facet
+   * counts, so a facet can never disagree with the grid it filters.
+   *
+   * API-11: uses the ONE canonical sellable predicate rather than a hand-rolled
+   * `approved: true`. `status` is the source of truth the detail read (404s
+   * non-live) and order placement both use — filtering on `approved` here meant
+   * a hidden/moderated listing could still appear in browse yet 404 on tap (or
+   * the reverse), and it can't use the `@@index([status, categoryId])` either.
+   * sellableWhere() also subsumes the finished-auction exclusion: a lot whose
+   * countdown ran out leaves the browse grid alongside the auction board (the
+   * seller still sees it under `/auctions/selling`).
+   */
+  private async buildWhere(q: Record<string, string | undefined>, locale: Lang): Promise<Prisma.ProductWhereInput> {
     const where: Prisma.ProductWhereInput = { ...sellableWhere() };
     // Conditions that are themselves an OR (a multi-select facet, a place match)
     // cannot sit at the top level beside the free-text search OR — the later
@@ -541,6 +629,11 @@ export class ProductsService {
     and.unshift(...placeConds);
     and.push(...attrConds);
     if (and.length) where.AND = and;
+    return where;
+  }
+
+  async findAll(q: Record<string, string | undefined>, locale: Lang = 'en') {
+    const where = await this.buildWhere(q, locale);
 
     // Every sort key here has ties — a batch import shares a `createdAt` to the
     // millisecond, and price/rating repeat constantly. Postgres does not promise
@@ -586,6 +679,256 @@ export class ProductsService {
       pageSize,
       ...(similar ?? {}),
     };
+  }
+
+  /**
+   * Every option a buyer can actually tick, counted against the real listings.
+   *
+   * This exists because the panel used to invent its own options: five hardcoded
+   * grades, and a 250-entry static country list. A seller who typed "Sortex
+   * Clean" as a grade, or listed from a country the geo dataset spells
+   * differently, produced a listing no filter could reach — invisible stock.
+   * Everything here is derived from the catalog instead, so what the panel
+   * offers and what the catalog holds cannot drift.
+   *
+   * Standard faceted-search semantics: a facet's options are counted with every
+   * OTHER filter applied but NOT its own. Counting a facet against itself
+   * collapses it to the one value already picked, and a second value could never
+   * be added.
+   */
+  async facets(q: Record<string, string | undefined>, locale: Lang = 'en'): Promise<ProductFacets> {
+    // `attributes`/`supplyCountries` need the widest predicate any facet uses, so
+    // the per-facet exclusions are applied to the scan results in memory rather
+    // than by re-querying per key.
+    const whereFor = (except?: string) => this.whereExcept(q, locale, except);
+    const [
+      baseWhere, categoryWhere, subcategoryWhere, marketWhere, placeWhere, gradeWhere, supplyWhere,
+    ] = await Promise.all([
+      whereFor(),
+      whereFor('categoryId'),
+      whereFor('subcategoryId'),
+      whereFor('market'),
+      whereFor('place'),
+      whereFor('grade'),
+      whereFor('supplyCountry'),
+    ]);
+
+    const [catRows, subRows, marketRows, placeRows, gradeRows, priceAgg, flagCounts, scanRows] =
+      await Promise.all([
+        this.prisma.product.groupBy({ by: ['categoryId'], where: categoryWhere, _count: { _all: true } }),
+        this.prisma.product.groupBy({ by: ['subcategoryId'], where: subcategoryWhere, _count: { _all: true } }),
+        this.prisma.product.groupBy({ by: ['marketId'], where: marketWhere, _count: { _all: true } }),
+        // City and country come out of ONE grouping: a listing's place is its own
+        // city/country, falling back to its market's when the seller left them
+        // blank — exactly what the cards display. Grouping them separately and
+        // summing would double-count a listing whose market repeats its country.
+        this.prisma.product.groupBy({
+          by: ['city', 'country', 'marketId'],
+          where: placeWhere,
+          _count: { _all: true },
+        }),
+        this.prisma.product.groupBy({ by: ['grade'], where: gradeWhere, _count: { _all: true } }),
+        this.prisma.product.aggregate({ where: baseWhere, _min: { priceCents: true }, _max: { priceCents: true } }),
+        this.flagFacetCounts(q, locale),
+        // The JSON and array columns Prisma cannot group by. One pass over two
+        // narrow columns, tallied in memory.
+        this.prisma.product.findMany({
+          where: supplyWhere,
+          select: { id: true, supplyCountries: true, attributes: true },
+        }),
+      ]);
+
+    // EVERY browsable market and category, not only those with a listing behind
+    // them right now — an admin-created market with nothing in it yet is still a
+    // real choice, and a panel that silently omits it does not match the backend.
+    // The groupBy supplies the counts; absent means zero, not missing.
+    const markets = await this.prisma.market.findMany({
+      where: { active: true, status: 'approved' },
+      select: { id: true, slug: true, name: true, city: true, country: true, flag: true, translations: { where: { locale }, select: { name: true } } },
+    });
+    const marketCountById = new Map(marketRows.map((r) => [r.marketId ?? '', r._count._all]));
+    // Place fallback needs every market referenced by the place grouping, which
+    // is a different (wider) set than the market facet's.
+    const placeMarketIds = [...new Set(placeRows.map((r) => r.marketId).filter((id): id is string => !!id))];
+    const placeMarkets = await this.prisma.market.findMany({
+      where: { id: { in: placeMarketIds } },
+      select: { id: true, city: true, country: true },
+    });
+    const placeMarketById = new Map(placeMarkets.map((m) => [m.id, m]));
+
+    const categories = await this.prisma.category.findMany({
+      orderBy: [{ sort: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, emoji: true, translations: { where: { locale }, select: { name: true } } },
+    });
+    const categoryCountById = new Map(catRows.map((r) => [r.categoryId, r._count._all]));
+    const subcategories = await this.prisma.subcategory.findMany({
+      where: { id: { in: subRows.map((r) => r.subcategoryId).filter((id): id is string => !!id) } },
+      select: { id: true, name: true, emoji: true, translations: { where: { locale }, select: { name: true } } },
+    });
+    const subcategoryById = new Map(subcategories.map((s) => [s.id, s]));
+
+    // Places: tally under the listing's own value, falling back to its market's.
+    const cityCounts = new Map<string, number>();
+    const countryCounts = new Map<string, number>();
+    for (const row of placeRows) {
+      const fallback = row.marketId ? placeMarketById.get(row.marketId) : undefined;
+      const city = row.city?.trim() || fallback?.city?.trim();
+      const country = row.country?.trim() || fallback?.country?.trim();
+      const n = row._count._all;
+      if (city) cityCounts.set(city, (cityCounts.get(city) ?? 0) + n);
+      if (country) countryCounts.set(country, (countryCounts.get(country) ?? 0) + n);
+    }
+
+    // Grade is free text, and the filter matches it case-insensitively — so
+    // "Premium" and "premium" are ONE option here. The most-used spelling wins
+    // the label, which is also the value the checkbox sends back.
+    const gradeCounts = new Map<string, { label: string; count: number; top: number }>();
+    for (const row of gradeRows) {
+      const raw = row.grade?.trim();
+      if (!raw) continue;
+      const key = raw.toLowerCase();
+      const n = row._count._all;
+      const seen = gradeCounts.get(key);
+      if (!seen) gradeCounts.set(key, { label: raw, count: n, top: n });
+      else {
+        seen.count += n;
+        if (n > seen.top) { seen.top = n; seen.label = raw; }
+      }
+    }
+
+    // Supply countries and attribute values, tallied from the scan. Attribute
+    // picks must not narrow their own facet either, so a row is only counted for
+    // a key when it satisfies every OTHER attribute selection.
+    const selectedAttrs = attrSelectionsOf(q);
+    // Only the discrete types make sensible checkbox facets; a free number or
+    // date field has no closed option set to tick.
+    const attrFields = filterFields(await this.fieldsForQuery(q, locale));
+    const supplySelected = new Set(csv(q.supplyCountry));
+    const supplyCounts = new Map<string, number>();
+    const attrCounts = new Map<string, Map<string, number>>();
+    for (const row of scanRows) {
+      if (!supplySelected.size || rowMatchesSupply(row.supplyCountries, supplySelected)) {
+        for (const c of new Set(row.supplyCountries)) {
+          if (c?.trim()) supplyCounts.set(c, (supplyCounts.get(c) ?? 0) + 1);
+        }
+      }
+      const values = (row.attributes ?? {}) as Record<string, unknown>;
+      for (const field of attrFields) {
+        if (!attrRowMatches(values, selectedAttrs, field.key)) continue;
+        const raw = values[field.key];
+        if (raw === undefined || raw === null || raw === '') continue;
+        const bucket = attrCounts.get(field.key) ?? new Map<string, number>();
+        for (const v of Array.isArray(raw) ? raw : [raw]) {
+          const option = typeof v === 'boolean' ? String(v) : String(v);
+          if (option === '') continue;
+          bucket.set(option, (bucket.get(option) ?? 0) + 1);
+        }
+        attrCounts.set(field.key, bucket);
+      }
+    }
+
+    const byCountDesc = (a: FacetOption, b: FacetOption) => b.count - a.count || a.label.localeCompare(b.label, locale);
+    const fromCounts = (counts: Map<string, number>): FacetOption[] =>
+      [...counts.entries()].map(([value, count]) => ({ value, label: value, count })).sort(byCountDesc);
+
+    return {
+      categories: categories
+        .map((c) => ({
+          value: c.id,
+          label: c.translations[0]?.name ?? c.name,
+          emoji: c.emoji ?? undefined,
+          count: categoryCountById.get(c.id) ?? 0,
+        }))
+        .sort(byCountDesc),
+      subcategories: subRows
+        .filter((r): r is typeof r & { subcategoryId: string } => !!r.subcategoryId)
+        .map((r) => {
+          const row = subcategoryById.get(r.subcategoryId);
+          return {
+            value: r.subcategoryId,
+            label: row?.translations[0]?.name ?? row?.name ?? r.subcategoryId,
+            emoji: row?.emoji ?? undefined,
+            count: r._count._all,
+          };
+        })
+        .sort(byCountDesc),
+      markets: markets
+        .map((m) => ({
+          value: m.slug,
+          label: m.translations[0]?.name ?? m.name,
+          emoji: m.flag ?? undefined,
+          hint: m.city ?? undefined,
+          count: marketCountById.get(m.id) ?? 0,
+        }))
+        .sort(byCountDesc),
+      countries: fromCounts(countryCounts),
+      cities: fromCounts(cityCounts),
+      grades: [...gradeCounts.values()]
+        .map(({ label, count }) => ({ value: label, label, count }))
+        .sort(byCountDesc),
+      supplyCountries: fromCounts(supplyCounts),
+      // Schema options FIRST (they are the canonical closed set, and an option
+      // nothing carries yet is still a real choice), then any value listings
+      // actually hold that the schema no longer lists — an admin can retire an
+      // option at any time, and the listings that used it must stay reachable.
+      attributes: attrFields.map((f) => {
+        const counts = attrCounts.get(f.key) ?? new Map<string, number>();
+        const schema = (f.type === 'boolean' ? ['true', 'false'] : (f.options ?? [])).map((value) => ({
+          value,
+          label: f.type === 'boolean' ? value : optionLabelOf(f, value),
+          count: counts.get(value) ?? 0,
+        }));
+        const known = new Set(schema.map((o) => o.value));
+        const orphans = [...counts.entries()]
+          .filter(([value]) => !known.has(value))
+          .map(([value, count]) => ({ value, label: value, count }));
+        return { key: f.key, label: f.label, type: f.type, options: [...schema, ...orphans.sort(byCountDesc)] };
+      }),
+      flags: flagCounts,
+      priceRange: {
+        minCents: priceAgg._min.priceCents ?? null,
+        maxCents: priceAgg._max.priceCents ?? null,
+      },
+    };
+  }
+
+  /**
+   * The browse predicate with one facet's own selection lifted out, so that
+   * facet's options are counted against everything else the buyer asked for.
+   * `place` covers city and country together — they are one grouping.
+   */
+  private whereExcept(q: Record<string, string | undefined>, locale: Lang, except?: string) {
+    if (!except) return this.buildWhere(q, locale);
+    const scoped = { ...q };
+    delete scoped[except];
+    // The id params travel with a human-readable twin; dropping one without the
+    // other would leave the filter still applied under its other name.
+    if (except === 'categoryId') delete scoped.category;
+    if (except === 'subcategoryId') delete scoped.subcategory;
+    if (except === 'place') { delete scoped.city; delete scoped.country; }
+    return this.buildWhere(scoped, locale);
+  }
+
+  /** Counts for the on/off groups, each measured without its own constraint. */
+  private async flagFacetCounts(q: Record<string, string | undefined>, locale: Lang): Promise<FacetFlagCounts> {
+    const [safeBase, negotiableBase, listingBase, verifiedBase] = await Promise.all([
+      this.whereExcept(q, locale, 'safe'),
+      this.whereExcept(q, locale, 'negotiable'),
+      this.buildWhere(stripKeys(q, ['offer', 'auction']), locale),
+      this.whereExcept(q, locale, 'verified'),
+    ]);
+    const count = (where: Prisma.ProductWhereInput, extra: Prisma.ProductWhereInput) =>
+      this.prisma.product.count({ where: { AND: [where, extra] } });
+    const [safe, direct, negotiable, fixed, offer, auction, verified] = await Promise.all([
+      count(safeBase, { safeDeal: true }),
+      count(safeBase, { safeDeal: false }),
+      count(negotiableBase, { negotiable: true }),
+      count(negotiableBase, { negotiable: false }),
+      count(listingBase, { isOffer: true }),
+      count(listingBase, { isAuction: true }),
+      count(verifiedBase, { verified: true }),
+    ]);
+    return { safe, direct, negotiable, fixed, offer, auction, verified };
   }
 
   /**
@@ -978,6 +1321,18 @@ export class ProductsController {
   @Get()
   findAll(@Query() q: Record<string, string>, @Locale() locale: Lang) {
     return this.products.findAll(q, locale);
+  }
+
+  /**
+   * Every option the browse panel can offer, counted against the live catalog.
+   *
+   * Declared BEFORE `@Get(':slug')` — Nest matches in declaration order, so the
+   * slug route would otherwise swallow `/products/facets` and 404 looking for a
+   * listing by that name.
+   */
+  @Get('facets')
+  facets(@Query() q: Record<string, string>, @Locale() locale: Lang) {
+    return this.products.facets(q, locale);
   }
 
   /** Upload a single product image; converted to WebP and stored locally. */
