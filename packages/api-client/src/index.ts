@@ -1016,6 +1016,12 @@ export interface AdminAuction {
   status: string;
   startBidCents: number | null;
   auctionEndsAt: string | null;
+  /**
+   * Set once the lot has been settled — by a manual close or the scheduled
+   * auto-closer. A settled auction CANNOT be closed again (the API 400s), so
+   * anything offering a close action has to read this first.
+   */
+  auctionSettledAt: string | null;
   seller: { id: string; name: string } | null;
   highestCents: number | null;
   highBidder: string | null;

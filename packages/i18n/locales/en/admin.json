@@ -433,17 +433,20 @@
     "refund": "Refund buyer"
   },
   "auctionsAdmin": {
-    "sub": "Every auction on the platform — click to inspect the bid book.",
-    "none": "No auctions right now.",
-    "bidsCount": "{{count}} bids",
-    "high": "High {{amount}}",
-    "ends": "Ends {{date}}",
-    "drawerTitle": "Auction",
-    "closeNow": "Close now",
-    "void": "Void auction",
+    "alreadyClosed": "Already closed",
     "bidBook": "Bid book ({{count}})",
+    "bidderFallback": "Bidder",
+    "bidsCount": "{{count}} bids",
+    "closeNow": "Close now",
+    "closed": "Closed",
+    "drawerTitle": "Auction",
+    "ends": "Ends {{date}}",
+    "high": "High {{amount}}",
     "noBids": "No bids yet.",
-    "bidderFallback": "Bidder"
+    "none": "No auctions right now.",
+    "settledAt": "Settled {{date}}",
+    "sub": "Every auction on the platform — click to inspect the bid book.",
+    "void": "Void auction"
   },
   "kycDocs": {
     "title": "KYC documents"

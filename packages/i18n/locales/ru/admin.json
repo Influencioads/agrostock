@@ -42,15 +42,18 @@
     "offlineMock": "офлайн (имитация)"
   },
   "auctionsAdmin": {
+    "alreadyClosed": "Уже закрыт",
     "bidBook": "Книга ставок ({{count}})",
     "bidderFallback": "Участник",
     "bidsCount": "{{count}} ставок",
     "closeNow": "Закрыть сейчас",
+    "closed": "Закрыт",
     "drawerTitle": "Аукцион",
     "ends": "Завершение {{date}}",
     "high": "Макс. {{amount}}",
     "noBids": "Ставок пока нет.",
     "none": "Сейчас нет аукционов.",
+    "settledAt": "Завершён {{date}}",
     "sub": "Все аукционы на платформе — нажмите, чтобы посмотреть книгу ставок.",
     "void": "Аннулировать аукцион"
   },

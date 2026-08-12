@@ -4,6 +4,7 @@ import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import type { AdminAuction } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
 import { api } from '../lib/api';
+import { errMessage } from '../lib/errors';
 import { useI18n } from '../i18n';
 
 /** Compact dollar label, e.g. 284000 → "$284K". `n` is dollars. */
@@ -12,11 +13,26 @@ const compactUsd = (n: number): string =>
 
 function AuctionDrawer({ slug, onClose, onChanged }: { slug: string; onClose: () => void; onChanged: () => void }) {
   const { t } = useI18n();
+  const [err, setErr] = useState('');
   const { data: detail } = useQuery({ queryKey: ['admin-auction', slug], queryFn: () => api.admin.auctionDetail(slug) });
   const { data: bids = [] } = useQuery({ queryKey: ['admin-auction-bids', slug], queryFn: () => api.admin.auctionBids(slug) });
-  const close = useMutation({ mutationFn: () => api.admin.closeAuction(slug), onSuccess: onChanged });
-  const cancel = useMutation({ mutationFn: () => api.admin.cancelAuction(slug), onSuccess: onChanged });
+  // Both mutations reported failure only to the browser console: a refused close
+  // looked to the admin exactly like a working one that changed nothing.
+  const close = useMutation({
+    mutationFn: () => api.admin.closeAuction(slug),
+    onSuccess: onChanged,
+    onError: (e) => setErr(errMessage(e, t('genericError'))),
+  });
+  const cancel = useMutation({
+    mutationFn: () => api.admin.cancelAuction(slug),
+    onSuccess: onChanged,
+    onError: (e) => setErr(errMessage(e, t('genericError'))),
+  });
   const d = detail as Record<string, unknown> | undefined;
+  // A lot settles exactly once — by this button or by the scheduled auto-closer
+  // that sweeps every lapsed auction. Whichever got there first, closing again
+  // is refused, so the button must not offer it.
+  const settledAt = d?.auctionSettledAt ? String(d.auctionSettledAt) : null;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={onClose}>
@@ -34,14 +50,22 @@ function AuctionDrawer({ slug, onClose, onChanged }: { slug: string; onClose: ()
           <div className="mt-1 text-sm text-ink-soft">
             {t('auctionsAdmin.ends', { date: d?.auctionEndsAt ? new Date(String(d.auctionEndsAt)).toLocaleString() : '—' })}
           </div>
+          {settledAt && (
+            <div className="mt-2">
+              <Badge tone="slate">
+                {t('auctionsAdmin.settledAt', { date: new Date(settledAt).toLocaleString() })}
+              </Badge>
+            </div>
+          )}
           <div className="mt-3 flex gap-2">
-            <Button size="sm" disabled={close.isPending} onClick={() => close.mutate()}>
-              {t('auctionsAdmin.closeNow')}
+            <Button size="sm" disabled={close.isPending || !!settledAt} onClick={() => close.mutate()}>
+              {settledAt ? t('auctionsAdmin.alreadyClosed') : t('auctionsAdmin.closeNow')}
             </Button>
             <Button size="sm" variant="danger" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
               {t('auctionsAdmin.void')}
             </Button>
           </div>
+          {err && <p className="mt-2 text-sm text-status-error">{err}</p>}
         </Card>
         <Card padded={false}>
           <div className="border-b border-surface-border px-4 py-3 font-display font-bold text-ink">{t('auctionsAdmin.bidBook', { count: bids.length })}</div>
@@ -90,9 +114,15 @@ export function AuctionsPage() {
           {auctions.map((a) => (
             <button key={a.id} onClick={() => setViewing(a.slug)} className="text-left">
               <Card className="h-full transition hover:shadow-[0_10px_30px_rgba(11,61,46,0.10)]">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-1.5">
                   <span className="text-2xl">{a.emoji ?? '🌾'}</span>
-                  <Badge tone="info">{t('auctionsAdmin.bidsCount', { count: a.bidCount })}</Badge>
+                  <span className="flex flex-wrap justify-end gap-1">
+                    {/* Settled lots stay listed (the bid book is the record), so
+                        the card has to say so — otherwise every one of them looks
+                        live and invites a close that the API will refuse. */}
+                    {a.auctionSettledAt && <Badge tone="slate">{t('auctionsAdmin.closed')}</Badge>}
+                    <Badge tone="info">{t('auctionsAdmin.bidsCount', { count: a.bidCount })}</Badge>
+                  </span>
                 </div>
                 <div className="mt-2 font-display font-bold text-ink">{a.name}</div>
                 <div className="text-xs text-ink-soft">
