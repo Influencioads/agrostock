@@ -801,6 +801,39 @@ export interface ApiPublicProfile {
 }
 
 /** A service provider's public listing. */
+/** Where a node sits in the service taxonomy. Only `SERVICE` nodes are pricable. */
+export type ApiServiceNodeKind = 'SECTION' | 'GROUP' | 'COUNTRY' | 'SUBGROUP' | 'SERVICE';
+
+/**
+ * One taxonomy node. `name` is already resolved for the request locale (falling
+ * back to English where no translation exists); `nameEn` is the canonical label
+ * and is what admin surfaces edit.
+ */
+export interface ApiServiceNode {
+  id: string;
+  /** Kebab-cased full ancestor path — also the node's stable identity. */
+  slug: string;
+  parentId: string | null;
+  name: string;
+  nameEn: string;
+  description: string | null;
+  kind: ApiServiceNodeKind;
+  countryScope: string | null;
+  /** 1 = section … 4 = deepest leaf. */
+  level: number;
+  isLeaf: boolean;
+  /** False only on admin reads — public reads never return retired nodes. */
+  isActive: boolean;
+  sortOrder: number;
+  icon: string | null;
+  children: ApiServiceNode[];
+}
+
+/** A node page: the node itself plus the path to it and one level below it. */
+export interface ApiServiceNodeDetail extends ApiServiceNode {
+  ancestors: ApiServiceNode[];
+}
+
 export interface ApiServiceProvider {
   id: string;
   companyName: string | null;
@@ -1967,6 +2000,21 @@ export function createApiClient(opts: ApiClientOptions) {
       profile: (userId: string) => get<ApiPublicProfile>(`/directory/profile/${userId}`),
     },
     services: {
+      /**
+       * The service taxonomy as a tree, labels already resolved for the caller's
+       * locale. ~600 nodes, served whole and cached: a browse UI that fetched a
+       * level at a time could not type-ahead across all 544 leaves, which is the
+       * escape hatch that makes a list that size usable.
+       */
+      taxonomy: (q: { section?: string; country?: string; depth?: number } = {}) =>
+        get<ApiServiceNode[]>('/services/taxonomy', {
+          section: q.section, country: q.country,
+          depth: q.depth != null ? String(q.depth) : undefined,
+        }),
+      /** One node with its ancestors and immediate children. */
+      node: (slug: string) => get<ApiServiceNodeDetail>(`/services/nodes/${slug}`),
+      /** Countries a provider may declare it serves — NOT taxonomy country nodes. */
+      countries: () => get<{ code: string; nameEn: string }[]>('/services/countries'),
       /** Public: listed service providers, optionally filtered. */
       providers: (q: { category?: string; city?: string; country?: string; search?: string; role?: string } = {}) =>
         get<ApiServiceProvider[]>('/services/providers', q),
@@ -2583,6 +2631,26 @@ export function createApiClient(opts: ApiClientOptions) {
        */
       updateSubcategoryFields: (id: string, fields: AttrField[]) =>
         put<ApiSubcategory>(`/admin/subcategories/${id}/fields`, { fields }),
+      // ── service taxonomy ──
+      /** The whole tree INCLUDING retired nodes — an admin has to see what it can restore. */
+      serviceTaxonomy: () => get<ApiServiceNode[]>('/admin/service-taxonomy'),
+      createServiceNode: (body: {
+        nameEn: string; kind: ApiServiceNodeKind; parentId?: string;
+        nameRu?: string; descriptionEn?: string; countryScope?: string; sortOrder?: number;
+      }) => post<ApiServiceNode>('/admin/service-taxonomy', body),
+      updateServiceNode: (
+        id: string,
+        body: { nameEn?: string; nameRu?: string; descriptionEn?: string; isActive?: boolean; sortOrder?: number; icon?: string },
+      ) => patch<ApiServiceNode>(`/admin/service-taxonomy/${id}`, body),
+      /** Sibling ids in their new order — one write each, in a transaction. */
+      reorderServiceNodes: (order: string[]) =>
+        patch<{ ok: boolean; reordered: number }>('/admin/service-taxonomy/reorder', { order }),
+      /**
+       * Retire or restore a node AND its subtree. There is no delete: a provider
+       * may already have priced a leaf, and the record has to keep resolving.
+       */
+      setServiceNodeActive: (id: string, isActive: boolean) =>
+        patch<{ ok: boolean; affected: number }>(`/admin/service-taxonomy/${id}/active`, { isActive }),
     },
 
     /* ── CHAT SYSTEM 1 — Community (separate from Support) ─────────── */

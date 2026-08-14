@@ -53,6 +53,33 @@ enum ServicePricingBasis {
   per_month
 }
 
+/// Where a node sits in the service taxonomy. Only `SERVICE` nodes are leaves a
+/// provider can select and price — every other kind exists to navigate to one.
+/// `SUBGROUP` and `COUNTRY` are both optional middle levels: the source taxonomy
+/// uses them only where it actually has an intermediate heading, so a group's
+/// leaves may hang directly off it (and, for Customs & Border Logistics, both
+/// shapes occur under the same group).
+enum ServiceNodeKind {
+  SECTION
+  GROUP
+  COUNTRY
+  SUBGROUP
+  SERVICE
+}
+
+/// Which jurisdiction a taxonomy branch applies to. Deliberately NOT the same
+/// list as the countries a provider serves: this is the handful of places the
+/// taxonomy itself forks on (Accounting and Customs split India/Russia/
+/// International), whereas `ServiceCountry` is the wider commercial list a
+/// provider ticks. Merging them would put "Kazakhstan" branches into a taxonomy
+/// that has none.
+enum ServiceCountryScope {
+  GLOBAL
+  INDIA
+  RUSSIA
+  INTERNATIONAL
+}
+
 /// Granular admin capabilities. A staff account (role=admin) is authorized per
 /// module by the permissions it holds; a member with `staff_manage` is treated
 /// as a super-admin (bypasses every per-module check). Legacy admins are
@@ -304,26 +331,26 @@ enum HireStatus {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  name         String
-  role         Role      @default(buyer)
+  id                String            @id @default(cuid())
+  email             String            @unique
+  passwordHash      String
+  name              String
+  role              Role              @default(buyer)
   // Additional approved roles beyond `role`. Effective roles = {role} ∪ roles.
   // Granted by an admin via an approved RoleRequest; drives the console switcher.
-  roles        Role[]    @default([])
+  roles             Role[]            @default([])
   // Staff accounts can be deactivated by an admin without deletion.
-  active       Boolean   @default(true)
+  active            Boolean           @default(true)
   // Per-module admin capabilities (only meaningful for role=admin accounts).
-  adminPermissions AdminPermission[] @default([])
-  country      String?
+  adminPermissions  AdminPermission[] @default([])
+  country           String?
   /// When the account confirmed its email address. Null blocks login — except for
   /// accounts that never self-registered (seeded, admin-created, loader-created
   /// workers who sign in by phone), which are stamped verified at creation.
-  emailVerifiedAt DateTime?
+  emailVerifiedAt   DateTime?
   /// Preferred UI locale (BCP-47, e.g. "ru"). Null = detect from Accept-Language.
-  locale       String?
-  kycStatus    KycStatus @default(pending)
+  locale            String?
+  kycStatus         KycStatus         @default(pending)
   /// Per-user notification channel preferences. Shape:
   /// { categories: Record<category, { email, push, inApp }>, emailUnsubscribedAll }.
   /// Null = all-on defaults (see notification-categories.ts).
@@ -331,38 +358,38 @@ model User {
   // Denormalized rating aggregate over this user's received `visible` reviews
   // (across all roles they act in). Recomputed on every review write; used for
   // sorting/display so we never scan the review table on read paths.
-  ratingAvg    Float?
-  ratingCount  Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  ratingAvg         Float?
+  ratingCount       Int               @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  products          Product[]          @relation("SellerProducts")
-  buyerOrders       Order[]            @relation("BuyerOrders")
-  sellerOrders      Order[]            @relation("SellerOrders")
-  kycRecord         KycRecord?
-  auctionBids       AuctionBid[]
-  auctionAutoBids   AuctionAutoBid[]
-  marketsCreated    Market[]           @relation("MarketCreator")
-  adsReviewed       AdCampaign[]       @relation("AdReviewer")
-  wallet            Wallet?
-  transportRequests TransportRequest[] @relation("RequestCreator")
-  transportQuotes   TransportQuote[]   @relation("QuoteTransporter")
-  trips             Trip[]             @relation("TripTransporter")
-  vehicles          Vehicle[]
-  routes            Route[]
-  teams             Team[]
-  workers           Worker[]           @relation("LoadercoWorkers")
-  workerProfile     Worker?            @relation("WorkerUser")
-  loaderJobsCreated LoaderJob[]        @relation("JobCreator")
-  loaderJobsManaged LoaderJob[]        @relation("JobLoaderco")
-  roleRequests      RoleRequest[]      @relation("RequestUser")
-  roleDecisions     RoleRequest[]      @relation("RequestDecider")
-  payoutRequests    PayoutRequest[]    @relation("PayoutUser")
-  payoutDecisions   PayoutRequest[]    @relation("PayoutDecider")
-  emailTokens       EmailVerificationToken[]
+  products            Product[]                @relation("SellerProducts")
+  buyerOrders         Order[]                  @relation("BuyerOrders")
+  sellerOrders        Order[]                  @relation("SellerOrders")
+  kycRecord           KycRecord?
+  auctionBids         AuctionBid[]
+  auctionAutoBids     AuctionAutoBid[]
+  marketsCreated      Market[]                 @relation("MarketCreator")
+  adsReviewed         AdCampaign[]             @relation("AdReviewer")
+  wallet              Wallet?
+  transportRequests   TransportRequest[]       @relation("RequestCreator")
+  transportQuotes     TransportQuote[]         @relation("QuoteTransporter")
+  trips               Trip[]                   @relation("TripTransporter")
+  vehicles            Vehicle[]
+  routes              Route[]
+  teams               Team[]
+  workers             Worker[]                 @relation("LoadercoWorkers")
+  workerProfile       Worker?                  @relation("WorkerUser")
+  loaderJobsCreated   LoaderJob[]              @relation("JobCreator")
+  loaderJobsManaged   LoaderJob[]              @relation("JobLoaderco")
+  roleRequests        RoleRequest[]            @relation("RequestUser")
+  roleDecisions       RoleRequest[]            @relation("RequestDecider")
+  payoutRequests      PayoutRequest[]          @relation("PayoutUser")
+  payoutDecisions     PayoutRequest[]          @relation("PayoutDecider")
+  emailTokens         EmailVerificationToken[]
   passwordResetTokens PasswordResetToken[]
-  loginOtpTokens    LoginOtpToken[]
-  refreshSessions   RefreshSession[]
+  loginOtpTokens      LoginOtpToken[]
+  refreshSessions     RefreshSession[]
 
   // ── Chat systems (Community + Live Support) back-relations ──
   ownedCommunityGroups     CommunityGroup[]               @relation("CommunityGroupOwner")
@@ -394,8 +421,8 @@ model User {
   // ── Profile / markets / hiring ──
   profile              Profile?
   serviceProvider      ServiceProvider?
-  hireRequestsMade     HireRequest[] @relation("HireRequester")
-  hireRequestsReceived HireRequest[] @relation("HireTarget")
+  hireRequestsMade     HireRequest[]    @relation("HireRequester")
+  hireRequestsReceived HireRequest[]    @relation("HireTarget")
 
   // ── Dashboard features (ads / drivers / crew availability) ──
   adCampaigns      AdCampaign[]       @relation("AdSeller")
@@ -403,10 +430,10 @@ model User {
   crewAvailability CrewAvailability[]
 
   // ── Loader company rate card / reviews / attendance capture ──
-  loaderRates          LoaderRate[]   @relation("LoaderRates")
-  loaderReviewsForCo   LoaderReview[] @relation("LoaderReviewsForCo")
-  loaderReviewsByUser  LoaderReview[] @relation("LoaderReviewsByUser")
-  attendanceRecorded   Attendance[]   @relation("AttendanceRecorder")
+  loaderRates         LoaderRate[]   @relation("LoaderRates")
+  loaderReviewsForCo  LoaderReview[] @relation("LoaderReviewsForCo")
+  loaderReviewsByUser LoaderReview[] @relation("LoaderReviewsByUser")
+  attendanceRecorded  Attendance[]   @relation("AttendanceRecorder")
 
   // ── Order lifecycle / buyer bids / invoicing ──
   orderEvents      OrderEvent[] @relation("OrderEventActor")
@@ -416,12 +443,12 @@ model User {
   invoicesReceived Invoice[]    @relation("InvoiceRecipient")
 
   // ── Unified two-way reviews ──
-  reviewsAuthored  Review[]     @relation("ReviewsAuthored")
-  reviewsReceived  Review[]     @relation("ReviewsReceived")
-  reviewsEdited    Review[]     @relation("ReviewAdminEditor")
+  reviewsAuthored Review[] @relation("ReviewsAuthored")
+  reviewsReceived Review[] @relation("ReviewsReceived")
+  reviewsEdited   Review[] @relation("ReviewAdminEditor")
 
   // ── F02: real per-user wishlist (saved products) ──
-  wishlist         WishlistItem[]
+  wishlist WishlistItem[]
 }
 
 // ── Markets & profiles ──────────────────────────────────────────
@@ -546,23 +573,23 @@ model RefreshSession {
 /// minimum order quantity, turnaround. Rating is NOT stored here — it comes from
 /// the existing unified Review system, so there is one rating pipeline.
 model ServiceProvider {
-  id         String            @id @default(cuid())
-  userId     String            @unique
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /// Trading name, when it differs from the account name.
-  companyName String?
+  companyName  String?
   /// What they actually do. A provider may hold several, and the role only
   /// gates which ones they may pick — a PROCESSOR cannot list `accounting`.
-  categories ServiceCategory[] @default([])
-  citiesServed String[]        @default([])
-  country    String?
+  categories   ServiceCategory[] @default([])
+  citiesServed String[]          @default([])
+  country      String?
 
   /// Throughput in the unit implied by `pricingBasis` (kg/day, ton/day, lots/day).
   capacityPerDay Int?
   /// FSSAI / ISO / HACCP and similar. Free text: certification names vary by
   /// country and a fixed enum would silently exclude valid ones.
-  certifications String[]      @default([])
+  certifications String[] @default([])
   minOrderQty    Int?
   turnaroundDays Int?
 
@@ -570,87 +597,159 @@ model ServiceProvider {
   /// Indicative rate in minor units of `priceCurrency`, matching every other
   /// money column. Null = "on enquiry", which is common in this trade.
   priceFromCents Int?
-  priceCurrency  String        @default("USD")
+  priceCurrency  String               @default("USD")
 
-  photos     String[]          @default([])
+  photos String[] @default([])
   /// Free-text description shown on the provider's public card.
-  blurb      String?
+  blurb  String?
 
   /// Providers are hidden from the directory until they opt in, so a
   /// half-filled profile is never the first thing a buyer sees.
-  listed     Boolean           @default(false)
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @default(now()) @updatedAt
+  listed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([listed])
   @@index([country])
 }
 
+/// One node of the service taxonomy — sections, groups, the optional country and
+/// subgroup levels, and the leaf services themselves, in a single self-relating
+/// table because the tree is uneven (3 to 4 levels deep, different shapes per
+/// branch) and a table per level could not express that.
+///
+/// Adjacency list, deliberately: `Subcategory` already models a far larger tree
+/// (~14k nodes) the same way, and at ~600 nodes the whole thing is one cached
+/// read. `slug` IS the materialized path (`processing/roasting/roasting-types/
+/// dry-roasting`), so ancestor queries need no second column to keep in sync.
+model ServiceNode {
+  id       String        @id @default(cuid())
+  /// Kebab-cased full ancestor path. Stable and deterministic — the seed upserts
+  /// on it, so it is the identity of a node across re-runs.
+  slug     String        @unique
+  parentId String?
+  parent   ServiceNode?  @relation("ServiceNodeChildren", fields: [parentId], references: [id])
+  children ServiceNode[] @relation("ServiceNodeChildren")
+
+  /// Canonical ENGLISH label. Translations live in ServiceNodeTranslation, the
+  /// same split every other translatable taxon uses.
+  nameEn        String
+  descriptionEn String?
+
+  kind         ServiceNodeKind
+  countryScope ServiceCountryScope?
+  /// 1 = section … 4 = deepest leaf. Persisted so a level filter is an index
+  /// lookup rather than a recursive walk.
+  level        Int
+  /// Mirrors `kind == SERVICE`. Persisted because "is this pricable?" is asked on
+  /// every provider write and every facet, and deriving it would join the enum
+  /// on each one.
+  isLeaf       Boolean              @default(false)
+  /// Nodes dropped from the seed JSON are deactivated, never deleted — a
+  /// provider may already have priced one.
+  isActive     Boolean              @default(true)
+  sortOrder    Int                  @default(0)
+  icon         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  translations ServiceNodeTranslation[]
+
+  @@index([parentId])
+  @@index([kind])
+  @@index([isActive, level])
+}
+
+model ServiceNodeTranslation {
+  id          String      @id @default(cuid())
+  nodeId      String
+  locale      String
+  name        String
+  description String?
+  node        ServiceNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@unique([nodeId, locale])
+  @@index([locale])
+}
+
+/// The countries a provider can declare it serves. A reference list, not part of
+/// the taxonomy tree — see the note on `ServiceCountryScope`.
+model ServiceCountry {
+  id        String   @id @default(cuid())
+  /// Stable key used by provider records; the display name is translated.
+  code      String   @unique
+  nameEn    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
 model Profile {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id])
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
   // public
-  bio           String?
-  location      String?
-  availableFrom String?
-  availableTo   String?
-  timezone      String?
-  languages     String?
+  bio                String?
+  location           String?
+  availableFrom      String?
+  availableTo        String?
+  timezone           String?
+  languages          String?
   /// Uploaded photo ("/uploads/avatars/<uuid>.webp"). `avatarEmoji` is the fallback.
-  avatarUrl     String?
-  avatarEmoji   String?
-  marketId      String?
-  market        Market?  @relation(fields: [marketId], references: [id])
+  avatarUrl          String?
+  avatarEmoji        String?
+  marketId           String?
+  market             Market?  @relation(fields: [marketId], references: [id])
   // Operational registration data for transporters & loader companies.
   // Where the provider is based, plus the free-text city/country tags they
   // operate in and supply to (see Product.supplyCountries for the array precedent).
-  originCity          String?
-  originCountry       String?
-  operatingCities     String[] @default([])
-  operatingCountries  String[] @default([])
-  supplyingCities     String[] @default([])
-  supplyingCountries  String[] @default([])
+  originCity         String?
+  originCountry      String?
+  operatingCities    String[] @default([])
+  operatingCountries String[] @default([])
+  supplyingCities    String[] @default([])
+  supplyingCountries String[] @default([])
   /// Minimum job size the provider will accept. minWorkHours: loader companies.
   /// minDistanceKm: transporters. minLoaders: loader companies (crew size).
-  minWorkHours        Int?
-  minDistanceKm       Int?
-  minLoaders          Int?
+  minWorkHours       Int?
+  minDistanceKm      Int?
+  minLoaders         Int?
   // Admin approval to appear in the public transporter/loader directory.
-  listApproved  Boolean  @default(false)
+  listApproved       Boolean  @default(false)
   // private (admin/owner only)
-  phone         String?
-  whatsapp      String?
-  contactEmail  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  phone              String?
+  whatsapp           String?
+  contactEmail       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 /// Direct "hire this transporter/loaderco/worker" request. A thin
 /// negotiation object: on accept it converts into the existing
 /// TransportRequest/Trip or LoaderJob/JobAssignment flows.
 model HireRequest {
-  id            String         @id @default(cuid())
-  reference     String         @unique
-  targetType    HireTargetType
-  status        HireStatus     @default(pending)
-  message       String?
-  fromCity      String?
-  toCity        String?
-  cargo         String?
-  location      String?
-  workersNeeded Int?
-  neededDate    DateTime?
-  budgetCents   Int?
+  id             String         @id @default(cuid())
+  reference      String         @unique
+  targetType     HireTargetType
+  status         HireStatus     @default(pending)
+  message        String?
+  fromCity       String?
+  toCity         String?
+  cargo          String?
+  location       String?
+  workersNeeded  Int?
+  neededDate     DateTime?
+  budgetCents    Int?
   /// Escrow lifecycle for the held budget: null (nothing held) | held | released | refunded.
   /// The requester's wallet is debited on send; released to the provider on
   /// completion, or refunded if the hire is declined/cancelled.
-  escrowState   String?
+  escrowState    String?
   /// BL-15: optional client key — a unique index makes a double-submitted hire
   /// collide on insert (P2002) instead of creating a second hire + escrow hold.
-  idempotencyKey String? @unique
-  createdAt     DateTime       @default(now())
-  decidedAt     DateTime?
+  idempotencyKey String?        @unique
+  createdAt      DateTime       @default(now())
+  decidedAt      DateTime?
 
   requesterId  String
   requester    User    @relation("HireRequester", fields: [requesterId], references: [id])
@@ -729,105 +828,105 @@ model Subcategory {
 }
 
 model Product {
-  id            String    @id @default(cuid())
-  slug          String    @unique
-  name          String
-  emoji         String?
+  id                String        @id @default(cuid())
+  slug              String        @unique
+  name              String
+  emoji             String?
   /// Cover image. Always mirrors `images[0]` when the gallery is non-empty, so
   /// every existing single-image render keeps working untouched.
-  imageUrl      String?
+  imageUrl          String?
   /// Gallery, max 6, ordered — the first entry is the cover.
-  images        String[]  @default([])
-  grade         String?
-  flag          String?
-  origin        String?
-  qty           String?
-  moq           String?
+  images            String[]      @default([])
+  grade             String?
+  flag              String?
+  origin            String?
+  qty               String?
+  moq               String?
   // Where the goods physically sit. `origin` stays the free-text/flag display
   // fallback; `city`/`country` are the structured location captured at listing.
-  city          String?
-  country       String?
+  city              String?
+  country           String?
   /// Countries the seller can supply/ship this product to. Multi-select — a
   /// seller ships to many destinations from one origin.
-  supplyCountries String[] @default([])
-  price         String
+  supplyCountries   String[]      @default([])
+  price             String
   // Numeric baseline (USD cents) for currency conversion; backfilled from
   // `price` where parseable. `price` stays the display fallback.
-  priceCents    Int?
+  priceCents        Int?
   /// The currency the SELLER quoted in. `priceCents` is always the USD baseline
   /// (converted at listing time) so buyer-side conversion and price sorting stay
   /// comparable across listings; this is what we echo back into the edit form.
-  priceCurrency String    @default("USD")
-  unit          String    @default("/MT")
+  priceCurrency     String        @default("USD")
+  unit              String        @default("/MT")
   /// The quoted price excludes VAT — the buyer sees "VAT extra" under it.
-  vatExtra      Boolean   @default(false)
+  vatExtra          Boolean       @default(false)
   /// Free-text seller notes on the listing (packing, loading terms, remarks).
   /// Not translated: it is unconstrained prose the seller may want verbatim.
-  notes         String?
+  notes             String?
   // Legacy display rating (string). Kept in sync with `ratingAvg` when the
   // product has real reviews, otherwise retains its cosmetic default.
-  rating        String    @default("4.8")
-  ratingAvg     Float?
-  ratingCount   Int       @default(0)
-  verified      Boolean   @default(false)
-  safeDeal      Boolean   @default(true)
+  rating            String        @default("4.8")
+  ratingAvg         Float?
+  ratingCount       Int           @default(0)
+  verified          Boolean       @default(false)
+  safeDeal          Boolean       @default(true)
   /// Seller accepts price negotiation. Buyers filter on it; the card/detail
   /// pages label both states so "firm price" is as visible as "negotiable".
-  negotiable    Boolean   @default(false)
-  isOffer       Boolean   @default(false)
-  isAuction     Boolean   @default(false)
-  startBidCents Int?
+  negotiable        Boolean       @default(false)
+  isOffer           Boolean       @default(false)
+  isAuction         Boolean       @default(false)
+  startBidCents     Int?
   // The seller's typed starting bid, in cents of THEIR priceCurrency — kept so
   // the edit form round-trips the exact number; `startBidCents` is the USD
   // baseline the auction engine compares on.
-  startBidSrcCents Int?
+  startBidSrcCents  Int?
   // Open ascending auction knobs. `bidIncrementCents` is the minimum raise (a
   // sensible fallback is derived when null); `reserveCents` is the hidden floor
   // below which the lot doesn't sell (null = no reserve).
   bidIncrementCents Int?
   reserveCents      Int?
-  auctionEndsAt DateTime?
+  auctionEndsAt     DateTime?
   /// BL-09: set once the lot has been closed and its winner/no-bid notifications
   /// sent — by the seller/admin manual `close()` OR the scheduled auto-closer.
   /// The cron only processes lapsed auctions where this is still null, so a lot is
   /// settled exactly once no matter which path fires.
-  auctionSettledAt DateTime?
-  approved      Boolean   @default(true)
+  auctionSettledAt  DateTime?
+  approved          Boolean       @default(true)
   // Moderation lifecycle (source of truth). Kept in sync with `approved`.
-  status          ProductStatus @default(live)
-  rejectionReason String?
-  delivery      String?
+  status            ProductStatus @default(live)
+  rejectionReason   String?
+  delivery          String?
   /// F10: optional inventory. `stockQty` null = unmanaged (unlimited, legacy
   /// behaviour). When set, it is the on-hand whole-unit count; `reservedQty` is
   /// how much is held by open orders. Available = stockQty - reservedQty, and
   /// reservation decrements atomically to prevent oversell.
-  stockQty      Int?
-  reservedQty   Int       @default(0)
+  stockQty          Int?
+  reservedQty       Int           @default(0)
   /// Category/subcategory-specific attributes captured at listing time, keyed by
   /// the field `key` from the shared attribute schema (@agrotraders/types). Scalar
   /// fields store a value; multiselect fields store an array. Buyers filter on it.
-  attributes    Json?
-  createdAt     DateTime  @default(now())
+  attributes        Json?
+  createdAt         DateTime      @default(now())
 
-  categoryId    String
-  category      Category     @relation(fields: [categoryId], references: [id])
-  subcategoryId String?
-  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
-  sellerId      String?
-  seller        User?        @relation("SellerProducts", fields: [sellerId], references: [id])
-  marketId      String?
-  market        Market?      @relation(fields: [marketId], references: [id])
-  orders        Order[]
-  auctionBids   AuctionBid[]
+  categoryId      String
+  category        Category             @relation(fields: [categoryId], references: [id])
+  subcategoryId   String?
+  subcategory     Subcategory?         @relation(fields: [subcategoryId], references: [id])
+  sellerId        String?
+  seller          User?                @relation("SellerProducts", fields: [sellerId], references: [id])
+  marketId        String?
+  market          Market?              @relation(fields: [marketId], references: [id])
+  orders          Order[]
+  auctionBids     AuctionBid[]
   auctionAutoBids AuctionAutoBid[]
-  adCampaigns   AdCampaign[]
-  buyerBids     BuyerBid[]
-  reviews       Review[]     @relation("ProductReviews")
-  wishlistedBy  WishlistItem[]
-  translations  ProductTranslation[]
+  adCampaigns     AdCampaign[]
+  buyerBids       BuyerBid[]
+  reviews         Review[]             @relation("ProductReviews")
+  wishlistedBy    WishlistItem[]
+  translations    ProductTranslation[]
   /// Per-field SHA-1 of the source (English) text at last translation, so the
   /// translation worker skips fields whose source is unchanged. Keyed by field name.
-  sourceHashes  Json?
+  sourceHashes    Json?
 
   // F21: catalog/search hot paths. FKs aren't auto-indexed in Postgres, so
   // filtering by category/subcategory/seller/market or the live-listing +
@@ -857,19 +956,19 @@ model WishlistItem {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  reference String      @unique
+  id             String      @id @default(cuid())
+  reference      String      @unique
   /// F11: optional client idempotency key for order placement. A unique index
   /// makes a replayed "place order" collide instead of creating a duplicate; the
   /// service returns the prior order for the same key.
-  idempotencyKey String? @unique
+  idempotencyKey String?     @unique
   /// Display strings. `me`/`admin` analytics parse these — every money-mutating
   /// path must keep writing them alongside the numeric columns below.
-  amount    String
-  qty       String?
-  status    OrderStatus @default(processing)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @default(now()) @updatedAt
+  amount         String
+  qty            String?
+  status         OrderStatus @default(processing)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @default(now()) @updatedAt
 
   // Numeric source of truth for all new code.
   unitPriceCents Int?
@@ -884,8 +983,8 @@ model Order {
   /// `buyer.country`. The origin side is NOT snapshotted: it is read live off
   /// `product.city`/`country`, so a seller correcting a listing's location fixes
   /// the open orders too.
-  deliveryCity    String?
-  deliveryCountry String?
+  deliveryCity     String?
+  deliveryCountry  String?
   /// The street the goods actually go to. City and country alone route a
   /// shipment to the right town and leave the driver to find the gate, so
   /// dispatch never had a line it could deliver against. Free text like
@@ -900,9 +999,9 @@ model Order {
   /// Who receives the goods. The buyer's account is not the person at the gate —
   /// a trading company orders, a warehouse manager signs for it — so the
   /// consignee is captured per order instead of read off the account.
-  deliveryName  String?
-  deliveryPhone String?
-  deliveryEmail String?
+  deliveryName     String?
+  deliveryPhone    String?
+  deliveryEmail    String?
 
   // Dispatch snapshot — populated for both platform and external dispatch.
   dispatchMode     DispatchMode?
@@ -917,12 +1016,12 @@ model Order {
   /// The `*Attempts` counters meter wrong guesses (F36): a party-visible code
   /// can't be hashed at rest, so brute force is blunted by locking the code
   /// after too many failures until the seller re-dispatches / rotates it.
-  pickupOtp             String?
-  pickupOtpAttempts     Int       @default(0)
-  pickupVerifiedAt      DateTime?
-  deliveryOtp           String?
-  deliveryOtpAttempts   Int       @default(0)
-  deliveryVerifiedAt    DateTime?
+  pickupOtp           String?
+  pickupOtpAttempts   Int       @default(0)
+  pickupVerifiedAt    DateTime?
+  deliveryOtp         String?
+  deliveryOtpAttempts Int       @default(0)
+  deliveryVerifiedAt  DateTime?
 
   // Set for platform dispatch only.
   tripId String? @unique
@@ -1015,26 +1114,26 @@ model BuyerBid {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  categoryId String?
-  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  category      Category?    @relation(fields: [categoryId], references: [id])
   /// The deepest taxonomy node the buyer drilled to — the whole point is a bid
   /// specific enough for sellers to price ("Rice > Basmati > 1121 Steam").
   subcategoryId String?
   subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
-  productId  String?
-  product    Product?  @relation(fields: [productId], references: [id])
+  productId     String?
+  product       Product?     @relation(fields: [productId], references: [id])
   /// Market/mandi the buyer wants to trade this through, when they have one.
-  marketId   String?
-  market     Market?   @relation(fields: [marketId], references: [id])
-  buyerId    String
-  buyer      User      @relation("BuyerBidBuyer", fields: [buyerId], references: [id])
+  marketId      String?
+  market        Market?      @relation(fields: [marketId], references: [id])
+  buyerId       String
+  buyer         User         @relation("BuyerBidBuyer", fields: [buyerId], references: [id])
 
   awardedSellerBidId String? @unique
   /// The Order minted from the awarded seller bid.
   orderId            String? @unique
   order              Order?  @relation("BuyerBidOrder", fields: [orderId], references: [id])
 
-  sellerBids SellerBid[]
+  sellerBids   SellerBid[]
   translations BuyerBidTranslation[]
   /// Per-field source hash for translate-on-write skip logic (see Product.sourceHashes).
   sourceHashes Json?
@@ -1250,17 +1349,17 @@ model EscrowHold {
 }
 
 model WalletTx {
-  id          String   @id @default(cuid())
-  amountCents Int
-  type        TxType
-  note        String?
+  id             String   @id @default(cuid())
+  amountCents    Int
+  type           TxType
+  note           String?
   /// F08/F09: optional idempotency key. A unique index makes a replayed money
   /// operation collide on insert (P2002) instead of applying the balance change
   /// twice, so retries and duplicate settlements are safe.
-  idempotencyKey String? @unique
-  createdAt   DateTime @default(now())
-  walletId    String
-  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
+  walletId       String
+  wallet         Wallet   @relation(fields: [walletId], references: [id])
 
   @@index([walletId])
 }
@@ -1269,16 +1368,16 @@ model WalletTx {
 /// an admin with `finance_manage` approves (debits the wallet + marks paid) or
 /// rejects. Replaces the old instant-withdraw mock.
 model PayoutRequest {
-  id           String       @id @default(cuid())
-  userId       String
-  user         User         @relation("PayoutUser", fields: [userId], references: [id])
-  amountCents  Int
-  status       PayoutStatus @default(pending)
-  note         String?
-  decidedById  String?
-  decidedBy    User?        @relation("PayoutDecider", fields: [decidedById], references: [id])
-  decidedAt    DateTime?
-  createdAt    DateTime     @default(now())
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation("PayoutUser", fields: [userId], references: [id])
+  amountCents Int
+  status      PayoutStatus @default(pending)
+  note        String?
+  decidedById String?
+  decidedBy   User?        @relation("PayoutDecider", fields: [decidedById], references: [id])
+  decidedAt   DateTime?
+  createdAt   DateTime     @default(now())
 
   @@index([userId])
   @@index([status])
@@ -1326,65 +1425,65 @@ enum VehicleType {
 }
 
 model Vehicle {
-  id              String        @id @default(cuid())
+  id            String        @id @default(cuid())
   /// Free text, the transporter's own label. Kept as the display fallback for
   /// every vehicle listed before `vehicleType` existed.
-  type            String
+  type          String
   /// Structured body type. Nullable: legacy rows have only the free text, and
   /// guessing a category from it would put trucks in the wrong filter bucket.
-  vehicleType     VehicleType?
+  vehicleType   VehicleType?
   /// Registration number. NEVER returned unmasked on a public endpoint — see
   /// `maskPlate` in transport/vehicle-public.ts. Owner and admin see it whole.
-  plate           String
+  plate         String
   /// Legacy free-text capacity ("28"). `capacityTons` is the canonical figure;
   /// this is retained as the display fallback for rows that never parsed.
-  capacityMt      String?
-  capacityTons    Float?
+  capacityMt    String?
+  capacityTons  Float?
   /// Load bed length in feet — what decides whether a consignment physically fits.
-  bodyLengthFt    Float?
-  status          VehicleStatus @default(available)
+  bodyLengthFt  Float?
+  status        VehicleStatus @default(available)
   /// First date the vehicle can take a new load. Null = available now.
-  availableFrom   DateTime?
+  availableFrom DateTime?
 
   /// Cover photo. Always mirrors `photos[0]` when the gallery is non-empty, so
   /// every existing single-photo render keeps working untouched — same contract
   /// as `Product.imageUrl`/`Product.images`.
-  photoUrl        String?
-  photos          String[]      @default([])
+  photoUrl String?
+  photos   String[] @default([])
 
-  refrigerated    Boolean       @default(false)
+  refrigerated Boolean @default(false)
   /// Reefer operating range in whole °C. Stored as two numbers rather than the
   /// "-18°C to +4°C" string so a buyer can filter on it; the display string is
   /// derived (`tempRange` in the API response).
-  tempMinC        Int?
-  tempMaxC        Int?
+  tempMinC     Int?
+  tempMaxC     Int?
 
-  gpsTracking     Boolean       @default(false)
-  driverCount     Int?
+  gpsTracking Boolean @default(false)
+  driverCount Int?
 
   /// Where the vehicle is based, and the cities it will run to. `Route` rows on
   /// the same owner carry full from→to lanes; this is the lighter city list a
   /// card can show without a join.
   city            String?
   country         String?
-  servicingCities String[]      @default([])
+  servicingCities String[] @default([])
 
   /// Freight rates in integer minor units of `rateCurrency`, matching every
   /// other money column in the schema (`priceCents`, `amountCents`).
   ratePerKmCents   Int?
   ratePerTripCents Int?
-  rateCurrency     String       @default("USD")
+  rateCurrency     String  @default("USD")
   /// Whether the quoted rate already covers loading and unloading labour.
-  loadingIncluded  Boolean      @default(false)
+  loadingIncluded  Boolean @default(false)
 
   makeModel       String?
   year            Int?
   insuranceExpiry DateTime?
   permitExpiry    DateTime?
   notes           String?
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime  @default(now())
   ownerId         String
-  owner           User          @relation(fields: [ownerId], references: [id])
+  owner           User      @relation(fields: [ownerId], references: [id])
   trips           Trip[]
 
   /// The public transporter profile lists a fleet owner-first; buyers browsing
@@ -1395,19 +1494,19 @@ model Vehicle {
 }
 
 model Route {
-  id           String   @id @default(cuid())
-  name         String
-  fromCity     String
-  toCity       String
-  fromCountry  String?
-  toCountry    String?
-  distanceKm   Int?
+  id            String   @id @default(cuid())
+  name          String
+  fromCity      String
+  toCity        String
+  fromCountry   String?
+  toCountry     String?
+  distanceKm    Int?
   baseRateCents Int?
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  ownerId      String
-  owner        User     @relation(fields: [ownerId], references: [id])
-  trips        Trip[]
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id])
+  trips         Trip[]
 }
 
 model Trip {
@@ -1447,61 +1546,61 @@ model Team {
 }
 
 model Worker {
-  id           String          @id @default(cuid())
-  name         String
-  rating       String?
-  status       WorkerStatus    @default(available)
+  id                 String          @id @default(cuid())
+  name               String
+  rating             String?
+  status             WorkerStatus    @default(available)
   // Loader-captured details for the crew roster.
-  phone          String?
-  skill          String?
-  dailyWageCents Int?
+  phone              String?
+  skill              String?
+  dailyWageCents     Int?
   // Where the worker is based and the free-text city/country tags they work in,
   // plus the minimum job length (hours) they accept. Captured at self-signup and
   // by the loader company when adding crew, so every worker in the directory is
   // filterable by location.
-  originCity          String?
-  originCountry       String?
-  operatingCities     String[]        @default([])
-  operatingCountries  String[]        @default([])
-  minWorkHours        Int?
-  createdAt    DateTime        @default(now())
+  originCity         String?
+  originCountry      String?
+  operatingCities    String[]        @default([])
+  operatingCountries String[]        @default([])
+  minWorkHours       Int?
+  createdAt          DateTime        @default(now())
   // Optional: self-registered workers have no loader company until hired.
-  loadercoId   String?
-  loaderco     User?           @relation("LoadercoWorkers", fields: [loadercoId], references: [id])
-  teamId       String?
-  team         Team?           @relation(fields: [teamId], references: [id])
-  userId       String?         @unique
-  user         User?           @relation("WorkerUser", fields: [userId], references: [id])
-  assignments  JobAssignment[]
-  attendance   Attendance[]
-  hireRequests HireRequest[]
+  loadercoId         String?
+  loaderco           User?           @relation("LoadercoWorkers", fields: [loadercoId], references: [id])
+  teamId             String?
+  team               Team?           @relation(fields: [teamId], references: [id])
+  userId             String?         @unique
+  user               User?           @relation("WorkerUser", fields: [userId], references: [id])
+  assignments        JobAssignment[]
+  attendance         Attendance[]
+  hireRequests       HireRequest[]
 }
 
 model LoaderJob {
-  id            String          @id @default(cuid())
-  reference     String          @unique
-  location      String
-  workersNeeded Int             @default(1)
-  status        JobStatus       @default(open)
-  otp           String?
-  payCents      Int?
+  id             String          @id @default(cuid())
+  reference      String          @unique
+  location       String
+  workersNeeded  Int             @default(1)
+  status         JobStatus       @default(open)
+  otp            String?
+  payCents       Int?
   /// Context carried over from the hire / order so the loader sees what the
   /// job is for. `orderId` links back to the sourcing order when there is one.
-  cargo         String?
-  neededDate    DateTime?
-  notes         String?
-  createdAt     DateTime        @default(now())
-  createdById   String
-  createdBy     User            @relation("JobCreator", fields: [createdById], references: [id])
-  loadercoId    String?
-  loaderco      User?           @relation("JobLoaderco", fields: [loadercoId], references: [id])
-  orderId       String?
-  order         Order?          @relation("LoaderJobOrder", fields: [orderId], references: [id])
-  assignments   JobAssignment[]
-  attendance    Attendance[]
-  invoices      Invoice[]
-  reviews       LoaderReview[]
-  unifiedReviews Review[]       @relation("LoaderJobReviews")
+  cargo          String?
+  neededDate     DateTime?
+  notes          String?
+  createdAt      DateTime        @default(now())
+  createdById    String
+  createdBy      User            @relation("JobCreator", fields: [createdById], references: [id])
+  loadercoId     String?
+  loaderco       User?           @relation("JobLoaderco", fields: [loadercoId], references: [id])
+  orderId        String?
+  order          Order?          @relation("LoaderJobOrder", fields: [orderId], references: [id])
+  assignments    JobAssignment[]
+  attendance     Attendance[]
+  invoices       Invoice[]
+  reviews        LoaderReview[]
+  unifiedReviews Review[]        @relation("LoaderJobReviews")
 }
 
 model JobAssignment {
@@ -1519,17 +1618,17 @@ model JobAssignment {
 }
 
 model Attendance {
-  id         String    @id @default(cuid())
-  checkInAt  DateTime?
-  checkOutAt DateTime?
-  date       DateTime  @default(now())
+  id           String    @id @default(cuid())
+  checkInAt    DateTime?
+  checkOutAt   DateTime?
+  date         DateTime  @default(now())
   /// Loader-company user who captured this row; null when the worker self-checked-in.
   recordedById String?
-  recordedBy   User?   @relation("AttendanceRecorder", fields: [recordedById], references: [id])
-  jobId      String
-  job        LoaderJob @relation(fields: [jobId], references: [id])
-  workerId   String
-  worker     Worker    @relation(fields: [workerId], references: [id])
+  recordedBy   User?     @relation("AttendanceRecorder", fields: [recordedById], references: [id])
+  jobId        String
+  job          LoaderJob @relation(fields: [jobId], references: [id])
+  workerId     String
+  worker       Worker    @relation(fields: [workerId], references: [id])
 
   @@index([workerId])
   @@index([jobId])
@@ -1639,7 +1738,7 @@ model LoaderReview {
 /// the Invoice precedent). Immutable to the reviewee; the author may edit their
 /// own row at any time; only admins can hide/remove/delete (audited).
 model Review {
-  id           String       @id @default(cuid())
+  id           String     @id @default(cuid())
   kind         ReviewKind
   revieweeRole ReviewRole
   /// Scalar mirror of the underlying subject id (order/trip/job/assignment/hire).
@@ -1648,20 +1747,20 @@ model Review {
   stars        Int
   text         String?
 
-  status          ReviewStatus @default(visible)
-  adminNote       String?
-  editedByAdminId String?
-  editedByAdmin   User?        @relation("ReviewAdminEditor", fields: [editedByAdminId], references: [id])
+  status           ReviewStatus @default(visible)
+  adminNote        String?
+  editedByAdminId  String?
+  editedByAdmin    User?        @relation("ReviewAdminEditor", fields: [editedByAdminId], references: [id])
   /// Set whenever the author self-edits (kept distinct from admin edits).
   editedByAuthorAt DateTime?
 
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  raterId      String
-  rater        User         @relation("ReviewsAuthored", fields: [raterId], references: [id])
-  revieweeId   String
-  reviewee     User         @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  raterId    String
+  rater      User   @relation("ReviewsAuthored", fields: [raterId], references: [id])
+  revieweeId String
+  reviewee   User   @relation("ReviewsReceived", fields: [revieweeId], references: [id])
 
   // Typed nullable subject FKs — exactly the one matching `kind` is set.
   orderId         String?
@@ -1677,9 +1776,9 @@ model Review {
   productId       String?
   product         Product?       @relation("ProductReviews", fields: [productId], references: [id])
 
-  translations    ReviewTranslation[]
+  translations ReviewTranslation[]
   /// Per-field source hash for translate-on-write skip logic (see Product.sourceHashes).
-  sourceHashes    Json?
+  sourceHashes Json?
 
   // One review per (subject, author, target-role): allows both directions
   // (different rater) and the order seller+product facets (different role).
@@ -1856,8 +1955,8 @@ model CommunityPost {
   updatedAt DateTime          @updatedAt
   deletedAt DateTime?
 
-  requirement CommunityTradeRequirement?
-  savedBy     CommunitySavedPost[]
+  requirement  CommunityTradeRequirement?
+  savedBy      CommunitySavedPost[]
   translations CommunityPostTranslation[]
   /// Per-field source hash for translate-on-write skip logic (see Product.sourceHashes).
   sourceHashes Json?
@@ -1891,7 +1990,7 @@ model CommunityTradeRequirement {
   expiryDate         DateTime?
   createdAt          DateTime                 @default(now())
 
-  responses CommunityRequirementResponse[]
+  responses    CommunityRequirementResponse[]
   translations CommunityTradeRequirementTranslation[]
   /// Per-field source hash for translate-on-write skip logic (see Product.sourceHashes).
   sourceHashes Json?
@@ -1935,21 +2034,21 @@ model CommunityDirectThread {
 }
 
 model CommunityMessage {
-  id        String                 @id @default(cuid())
-  groupId   String?
-  group     CommunityGroup?        @relation(fields: [groupId], references: [id])
-  threadId  String?
-  thread    CommunityDirectThread? @relation(fields: [threadId], references: [id])
-  senderId  String
-  sender    User                   @relation(fields: [senderId], references: [id])
-  body      String
-  replyToId String?
-  replyTo   CommunityMessage?      @relation("CommunityMessageReplies", fields: [replyToId], references: [id])
-  replies   CommunityMessage[]     @relation("CommunityMessageReplies")
-  pinned    Boolean                @default(false)
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
-  deletedAt DateTime?
+  id         String                 @id @default(cuid())
+  groupId    String?
+  group      CommunityGroup?        @relation(fields: [groupId], references: [id])
+  threadId   String?
+  thread     CommunityDirectThread? @relation(fields: [threadId], references: [id])
+  senderId   String
+  sender     User                   @relation(fields: [senderId], references: [id])
+  body       String
+  replyToId  String?
+  replyTo    CommunityMessage?      @relation("CommunityMessageReplies", fields: [replyToId], references: [id])
+  replies    CommunityMessage[]     @relation("CommunityMessageReplies")
+  pinned     Boolean                @default(false)
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+  deletedAt  DateTime?
   /// Detected source language of `body` (BCP-47-ish), set once on send. Drives
   /// lazy translate-on-read: a viewer whose locale differs gets a cached translation.
   sourceLang String?
@@ -2265,7 +2364,7 @@ model DeviceToken {
   id         String   @id @default(cuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform   String   // 'web' | 'android' | 'ios'
+  platform   String // 'web' | 'android' | 'ios'
   token      String   @unique
   userAgent  String?
   createdAt  DateTime @default(now())
@@ -2378,19 +2477,19 @@ model CommunityGroupTranslation {
 // (via localize() in common/locale.ts).
 
 model ProductTranslation {
-  id        String  @id @default(cuid())
-  productId String
-  locale    String
-  name      String
-  grade     String?
-  origin    String?
-  qty       String?
-  moq       String?
-  delivery  String?
+  id         String  @id @default(cuid())
+  productId  String
+  locale     String
+  name       String
+  grade      String?
+  origin     String?
+  qty        String?
+  moq        String?
+  delivery   String?
   /// Translated human-readable attribute values (text/select/multiselect), keyed
   /// by the same attribute keys as Product.attributes. Non-text values are omitted.
   attributes Json?
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, locale])
   @@index([locale])

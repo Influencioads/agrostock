@@ -38,6 +38,7 @@ const PaymentsPage = lazy(() => import('./pages/PaymentsPage').then((m) => ({ de
 const ReportsPage = lazy(() => import('./pages/ReportsPage').then((m) => ({ default: m.ReportsPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const ServicesPage = lazy(() => import('./pages/ServicesPage').then((m) => ({ default: m.ServicesPage })));
+const ServiceTaxonomyPage = lazy(() => import('./pages/ServiceTaxonomyPage').then((m) => ({ default: m.ServiceTaxonomyPage })));
 
 // ADM-01: the permission that guards each route's sidebar link, keyed by path,
 // so routes and nav stay in lockstep from the single MODULES source of truth.
@@ -77,6 +78,7 @@ export function App() {
         <Route path="/community" element={guard('/community', <CommunityModerationPage />)} />
         <Route path="/transport" element={guard('/transport', <CompaniesPage kind="transport" />)} />
         <Route path="/services" element={guard('/services', <ServicesPage />)} />
+        <Route path="/service-taxonomy" element={guard('/service-taxonomy', <ServiceTaxonomyPage />)} />
         <Route path="/loaders" element={guard('/loaders', <CompaniesPage kind="loaders" />)} />
         <Route path="/cms" element={guard('/cms', <CmsPage />)} />
         <Route path="/email-templates" element={guard('/email-templates', <EmailTemplatesPage />)} />

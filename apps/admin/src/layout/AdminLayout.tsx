@@ -42,6 +42,8 @@ export const MODULES: Mod[] = [
   { to: '/community', key: 'community', icon: 'leaf', group: 'Messaging', perm: 'community_moderate' },
   { to: '/transport', key: 'transport', icon: 'truck', group: 'Logistics', perm: 'transport_manage' },
   { to: '/services', key: 'services', icon: 'store', group: 'Marketplace', perm: 'users_manage' },
+  // Same permission as the product taxonomy — it is the same kind of job.
+  { to: '/service-taxonomy', key: 'serviceTaxonomy', icon: 'grid', group: 'Marketplace', perm: 'products_moderate' },
   { to: '/loaders', key: 'loaders', icon: 'worker', group: 'Logistics', perm: 'loaders_manage' },
   { to: '/cms', key: 'cms', icon: 'file', group: 'Company', perm: 'cms_manage' },
   { to: '/email-templates', key: 'emailTemplates', icon: 'message', group: 'Company', perm: 'email_templates' },

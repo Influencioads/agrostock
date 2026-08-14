@@ -1,0 +1,3144 @@
+{
+  "$schema": "./service-taxonomy.schema.json",
+  "$provenance": "Extracted from Services.pdf (22pp). Edit this file to change the taxonomy; the seed upserts by slug and deactivates anything removed from here.",
+  "countriesServed": [
+    "India",
+    "Russia",
+    "Kazakhstan",
+    "UAE",
+    "Turkey",
+    "China",
+    "EU",
+    "Other International"
+  ],
+  "sections": [
+    {
+      "name": "Financial & Compliance",
+      "slug": "financial-and-compliance",
+      "kind": "SECTION",
+      "children": [
+        {
+          "name": "Accounting",
+          "slug": "financial-and-compliance/accounting",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "India",
+              "slug": "financial-and-compliance/accounting/india",
+              "kind": "COUNTRY",
+              "children": [
+                {
+                  "name": "Bookkeeping",
+                  "slug": "financial-and-compliance/accounting/india/bookkeeping",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "GST Registration",
+                  "slug": "financial-and-compliance/accounting/india/gst-registration",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "GST Return Filing",
+                  "slug": "financial-and-compliance/accounting/india/gst-return-filing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "GST Reconciliation",
+                  "slug": "financial-and-compliance/accounting/india/gst-reconciliation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "GST Advisory",
+                  "slug": "financial-and-compliance/accounting/india/gst-advisory",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "E-Invoicing Support",
+                  "slug": "financial-and-compliance/accounting/india/e-invoicing-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "E-Way Bill Support",
+                  "slug": "financial-and-compliance/accounting/india/e-way-bill-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Income Tax Return Filing",
+                  "slug": "financial-and-compliance/accounting/india/income-tax-return-filing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "TDS Compliance & Returns",
+                  "slug": "financial-and-compliance/accounting/india/tds-compliance-and-returns",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Tax Audit Support",
+                  "slug": "financial-and-compliance/accounting/india/tax-audit-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Financial Statement Preparation",
+                  "slug": "financial-and-compliance/accounting/india/financial-statement-preparation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Balance Sheet & P&L Preparation",
+                  "slug": "financial-and-compliance/accounting/india/balance-sheet-and-p-and-l-preparation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Accounts Payable Management",
+                  "slug": "financial-and-compliance/accounting/india/accounts-payable-management",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Accounts Receivable Management",
+                  "slug": "financial-and-compliance/accounting/india/accounts-receivable-management",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Payroll Accounting",
+                  "slug": "financial-and-compliance/accounting/india/payroll-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Professional Tax Compliance",
+                  "slug": "financial-and-compliance/accounting/india/professional-tax-compliance",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "PF / ESI Accounting Support",
+                  "slug": "financial-and-compliance/accounting/india/pf-esi-accounting-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bank Reconciliation",
+                  "slug": "financial-and-compliance/accounting/india/bank-reconciliation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Inventory Accounting",
+                  "slug": "financial-and-compliance/accounting/india/inventory-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Cost Accounting",
+                  "slug": "financial-and-compliance/accounting/india/cost-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Management Accounting / MIS",
+                  "slug": "financial-and-compliance/accounting/india/management-accounting-mis",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Cash Flow Reporting",
+                  "slug": "financial-and-compliance/accounting/india/cash-flow-reporting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Virtual CFO Services",
+                  "slug": "financial-and-compliance/accounting/india/virtual-cfo-services",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Company Accounting",
+                  "slug": "financial-and-compliance/accounting/india/company-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Startup Accounting",
+                  "slug": "financial-and-compliance/accounting/india/startup-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Import / Export Accounting",
+                  "slug": "financial-and-compliance/accounting/india/import-export-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Foreign Currency Accounting",
+                  "slug": "financial-and-compliance/accounting/india/foreign-currency-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Audit Preparation & Support",
+                  "slug": "financial-and-compliance/accounting/india/audit-preparation-and-support",
+                  "kind": "SERVICE"
+                }
+              ],
+              "countryScope": "INDIA"
+            },
+            {
+              "name": "Russia",
+              "slug": "financial-and-compliance/accounting/russia",
+              "kind": "COUNTRY",
+              "children": [
+                {
+                  "name": "Bookkeeping",
+                  "slug": "financial-and-compliance/accounting/russia/bookkeeping",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Russian Statutory Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/russian-statutory-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "VAT Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/vat-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "VAT Return Preparation",
+                  "slug": "financial-and-compliance/accounting/russia/vat-return-preparation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Tax Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/tax-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Corporate / Profit Tax Support",
+                  "slug": "financial-and-compliance/accounting/russia/corporate-profit-tax-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Payroll Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/payroll-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Employee Tax Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/employee-tax-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Financial Statements",
+                  "slug": "financial-and-compliance/accounting/russia/financial-statements",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Accounts Payable",
+                  "slug": "financial-and-compliance/accounting/russia/accounts-payable",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Accounts Receivable",
+                  "slug": "financial-and-compliance/accounting/russia/accounts-receivable",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bank Reconciliation",
+                  "slug": "financial-and-compliance/accounting/russia/bank-reconciliation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Inventory Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/inventory-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Fixed Asset Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/fixed-asset-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Expense Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/expense-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Management Reporting",
+                  "slug": "financial-and-compliance/accounting/russia/management-reporting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Cash Flow Reporting",
+                  "slug": "financial-and-compliance/accounting/russia/cash-flow-reporting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Tax Reporting",
+                  "slug": "financial-and-compliance/accounting/russia/tax-reporting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Electronic Document Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/electronic-document-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Invoice Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/invoice-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Simplified Tax Regime Support",
+                  "slug": "financial-and-compliance/accounting/russia/simplified-tax-regime-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Foreign Company Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/foreign-company-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Cross-Border Transaction Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/cross-border-transaction-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Import / Export Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/import-export-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Foreign Currency Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/foreign-currency-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Tax Authority Reconciliation",
+                  "slug": "financial-and-compliance/accounting/russia/tax-authority-reconciliation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Accounting Cleanup / Backlog Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/accounting-cleanup-backlog-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Virtual Accountant / Outsourced Accounting",
+                  "slug": "financial-and-compliance/accounting/russia/virtual-accountant-outsourced-accounting",
+                  "kind": "SERVICE"
+                }
+              ],
+              "countryScope": "RUSSIA"
+            },
+            {
+              "name": "International",
+              "slug": "financial-and-compliance/accounting/international",
+              "kind": "COUNTRY",
+              "children": [
+                {
+                  "name": "International Bookkeeping",
+                  "slug": "financial-and-compliance/accounting/international/international-bookkeeping",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Multi-Country Accounting",
+                  "slug": "financial-and-compliance/accounting/international/multi-country-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Consolidated Financial Statements",
+                  "slug": "financial-and-compliance/accounting/international/consolidated-financial-statements",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "IFRS Accounting",
+                  "slug": "financial-and-compliance/accounting/international/ifrs-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Management Reporting",
+                  "slug": "financial-and-compliance/accounting/international/management-reporting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Group Company Accounting",
+                  "slug": "financial-and-compliance/accounting/international/group-company-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Multi-Currency Accounting",
+                  "slug": "financial-and-compliance/accounting/international/multi-currency-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Intercompany Accounting",
+                  "slug": "financial-and-compliance/accounting/international/intercompany-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Accounts Payable",
+                  "slug": "financial-and-compliance/accounting/international/accounts-payable",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Accounts Receivable",
+                  "slug": "financial-and-compliance/accounting/international/accounts-receivable",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Payroll Accounting",
+                  "slug": "financial-and-compliance/accounting/international/payroll-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "International VAT / GST Support",
+                  "slug": "financial-and-compliance/accounting/international/international-vat-gst-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "VAT / GST Registration Support",
+                  "slug": "financial-and-compliance/accounting/international/vat-gst-registration-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Cross-Border VAT / GST",
+                  "slug": "financial-and-compliance/accounting/international/cross-border-vat-gst",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Import / Export Accounting",
+                  "slug": "financial-and-compliance/accounting/international/import-export-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Customs Accounting",
+                  "slug": "financial-and-compliance/accounting/international/customs-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Transfer Pricing Support",
+                  "slug": "financial-and-compliance/accounting/international/transfer-pricing-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Intercompany Reconciliation",
+                  "slug": "financial-and-compliance/accounting/international/intercompany-reconciliation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "International Tax Accounting",
+                  "slug": "financial-and-compliance/accounting/international/international-tax-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Withholding Tax Support",
+                  "slug": "financial-and-compliance/accounting/international/withholding-tax-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Double-Taxation Documentation Support",
+                  "slug": "financial-and-compliance/accounting/international/double-taxation-documentation-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Permanent Establishment Accounting Support",
+                  "slug": "financial-and-compliance/accounting/international/permanent-establishment-accounting-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Foreign Subsidiary Accounting",
+                  "slug": "financial-and-compliance/accounting/international/foreign-subsidiary-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Branch Accounting",
+                  "slug": "financial-and-compliance/accounting/international/branch-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Marketplace / E-commerce Accounting",
+                  "slug": "financial-and-compliance/accounting/international/marketplace-e-commerce-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "International Seller Accounting",
+                  "slug": "financial-and-compliance/accounting/international/international-seller-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Cross-Border E-commerce Accounting",
+                  "slug": "financial-and-compliance/accounting/international/cross-border-e-commerce-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "SaaS / Digital Services Accounting",
+                  "slug": "financial-and-compliance/accounting/international/saas-digital-services-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Royalty Accounting",
+                  "slug": "financial-and-compliance/accounting/international/royalty-accounting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "International Invoice Management",
+                  "slug": "financial-and-compliance/accounting/international/international-invoice-management",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Foreign Exchange Reconciliation",
+                  "slug": "financial-and-compliance/accounting/international/foreign-exchange-reconciliation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Consolidation & Group Reporting",
+                  "slug": "financial-and-compliance/accounting/international/consolidation-and-group-reporting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Audit Support",
+                  "slug": "financial-and-compliance/accounting/international/audit-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Virtual CFO",
+                  "slug": "financial-and-compliance/accounting/international/virtual-cfo",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Outsourced Finance Department",
+                  "slug": "financial-and-compliance/accounting/international/outsourced-finance-department",
+                  "kind": "SERVICE"
+                }
+              ],
+              "countryScope": "INTERNATIONAL"
+            }
+          ]
+        },
+        {
+          "name": "Taxation",
+          "slug": "financial-and-compliance/taxation",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Customs Clearance",
+          "slug": "financial-and-compliance/customs-clearance",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Financial Services",
+          "slug": "financial-and-compliance/financial-services",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Audit & Certification",
+          "slug": "financial-and-compliance/audit-and-certification",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Insurance",
+          "slug": "financial-and-compliance/insurance",
+          "kind": "GROUP",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Logistics & Handling",
+      "slug": "logistics-and-handling",
+      "kind": "SECTION",
+      "children": [
+        {
+          "name": "Customs & Border Logistics",
+          "slug": "logistics-and-handling/customs-and-border-logistics",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "India",
+              "slug": "logistics-and-handling/customs-and-border-logistics/india",
+              "kind": "COUNTRY",
+              "children": [
+                {
+                  "name": "Indian Customs",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/india/indian-customs",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Port Handling",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/india/port-handling",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "ICD Handling",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/india/icd-handling",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "CFS Handling",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/india/cfs-handling",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "GST-related logistics documentation",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/india/gst-related-logistics-documentation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "E-way bill support",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/india/e-way-bill-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Export documentation",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/india/export-documentation",
+                  "kind": "SERVICE"
+                }
+              ],
+              "countryScope": "INDIA"
+            },
+            {
+              "name": "Russia",
+              "slug": "logistics-and-handling/customs-and-border-logistics/russia",
+              "kind": "COUNTRY",
+              "children": [
+                {
+                  "name": "Russian Customs",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/russia/russian-customs",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Eurasian Economic Union / EAEU-related support",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/russia/eurasian-economic-union-eaeu-related-support",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Import documentation",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/russia/import-documentation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Export documentation",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/russia/export-documentation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Border logistics",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/russia/border-logistics",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Customs warehouse handling",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/russia/customs-warehouse-handling",
+                  "kind": "SERVICE"
+                }
+              ],
+              "countryScope": "RUSSIA"
+            },
+            {
+              "name": "International",
+              "slug": "logistics-and-handling/customs-and-border-logistics/international",
+              "kind": "COUNTRY",
+              "children": [
+                {
+                  "name": "Cross-Border Customs",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/international/cross-border-customs",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Import / Export Documentation",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/international/import-export-documentation",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Multimodal Freight",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/international/multimodal-freight",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "International Freight Forwarding",
+                  "slug": "logistics-and-handling/customs-and-border-logistics/international/international-freight-forwarding",
+                  "kind": "SERVICE"
+                }
+              ],
+              "countryScope": "INTERNATIONAL"
+            },
+            {
+              "name": "Import Customs Clearance",
+              "slug": "logistics-and-handling/customs-and-border-logistics/import-customs-clearance",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Export Customs Clearance",
+              "slug": "logistics-and-handling/customs-and-border-logistics/export-customs-clearance",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Customs Documentation",
+              "slug": "logistics-and-handling/customs-and-border-logistics/customs-documentation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Customs Brokerage",
+              "slug": "logistics-and-handling/customs-and-border-logistics/customs-brokerage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "HS Code Assistance",
+              "slug": "logistics-and-handling/customs-and-border-logistics/hs-code-assistance",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Duty Calculation Assistance",
+              "slug": "logistics-and-handling/customs-and-border-logistics/duty-calculation-assistance",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Import Documentation",
+              "slug": "logistics-and-handling/customs-and-border-logistics/import-documentation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Export Documentation",
+              "slug": "logistics-and-handling/customs-and-border-logistics/export-documentation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Certificate Documentation",
+              "slug": "logistics-and-handling/customs-and-border-logistics/certificate-documentation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Country of Origin Documentation",
+              "slug": "logistics-and-handling/customs-and-border-logistics/country-of-origin-documentation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Bill of Entry Support",
+              "slug": "logistics-and-handling/customs-and-border-logistics/bill-of-entry-support",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Shipping Bill Support",
+              "slug": "logistics-and-handling/customs-and-border-logistics/shipping-bill-support",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Transit Documentation",
+              "slug": "logistics-and-handling/customs-and-border-logistics/transit-documentation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Customs Inspection Coordination",
+              "slug": "logistics-and-handling/customs-and-border-logistics/customs-inspection-coordination",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Port Clearance",
+              "slug": "logistics-and-handling/customs-and-border-logistics/port-clearance",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Airport Clearance",
+              "slug": "logistics-and-handling/customs-and-border-logistics/airport-clearance",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Border Clearance",
+              "slug": "logistics-and-handling/customs-and-border-logistics/border-clearance",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Temporary Import Handling",
+              "slug": "logistics-and-handling/customs-and-border-logistics/temporary-import-handling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Re-export Handling",
+              "slug": "logistics-and-handling/customs-and-border-logistics/re-export-handling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Bonded Cargo Handling",
+              "slug": "logistics-and-handling/customs-and-border-logistics/bonded-cargo-handling",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Fulfilment",
+          "slug": "logistics-and-handling/fulfilment",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Order Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/order-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "B2B Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/b2b-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "B2C Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/b2c-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "E-commerce Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/e-commerce-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Marketplace Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/marketplace-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Amazon / Flipkart / Ozon / Wildberries Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/amazon-flipkart-ozon-wildberries-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pick & Pack",
+              "slug": "logistics-and-handling/fulfilment/pick-and-pack",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Order Processing",
+              "slug": "logistics-and-handling/fulfilment/order-processing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Inventory Storage",
+              "slug": "logistics-and-handling/fulfilment/inventory-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Inventory Management",
+              "slug": "logistics-and-handling/fulfilment/inventory-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Warehouse Management",
+              "slug": "logistics-and-handling/fulfilment/warehouse-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Receiving & Inbound Handling",
+              "slug": "logistics-and-handling/fulfilment/receiving-and-inbound-handling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Outbound Handling",
+              "slug": "logistics-and-handling/fulfilment/outbound-handling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Dispatch Management",
+              "slug": "logistics-and-handling/fulfilment/dispatch-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Same-Day Dispatch",
+              "slug": "logistics-and-handling/fulfilment/same-day-dispatch",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Next-Day Dispatch",
+              "slug": "logistics-and-handling/fulfilment/next-day-dispatch",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cross-Docking",
+              "slug": "logistics-and-handling/fulfilment/cross-docking",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Palletisation",
+              "slug": "logistics-and-handling/fulfilment/palletisation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "De-palletisation",
+              "slug": "logistics-and-handling/fulfilment/de-palletisation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Container Stuffing",
+              "slug": "logistics-and-handling/fulfilment/container-stuffing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Container Destuffing",
+              "slug": "logistics-and-handling/fulfilment/container-destuffing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Kitting",
+              "slug": "logistics-and-handling/fulfilment/kitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Bundling",
+              "slug": "logistics-and-handling/fulfilment/bundling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Labelling",
+              "slug": "logistics-and-handling/fulfilment/labelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Barcoding",
+              "slug": "logistics-and-handling/fulfilment/barcoding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "QR Code Labelling",
+              "slug": "logistics-and-handling/fulfilment/qr-code-labelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "SKU Management",
+              "slug": "logistics-and-handling/fulfilment/sku-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Batch Management",
+              "slug": "logistics-and-handling/fulfilment/batch-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Lot Management",
+              "slug": "logistics-and-handling/fulfilment/lot-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Expiry-Date Management",
+              "slug": "logistics-and-handling/fulfilment/expiry-date-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Returns Management",
+              "slug": "logistics-and-handling/fulfilment/returns-management",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Reverse Logistics",
+              "slug": "logistics-and-handling/fulfilment/reverse-logistics",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Quality Check Before Dispatch",
+              "slug": "logistics-and-handling/fulfilment/quality-check-before-dispatch",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Repacking",
+              "slug": "logistics-and-handling/fulfilment/repacking",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Subscription Box Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/subscription-box-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Sample Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/sample-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Promotional Kit Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/promotional-kit-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Export Order Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/export-order-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Import Order Handling",
+              "slug": "logistics-and-handling/fulfilment/import-order-handling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Temperature-Controlled Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/temperature-controlled-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Food Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/food-fulfilment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Agricultural Product Fulfilment",
+              "slug": "logistics-and-handling/fulfilment/agricultural-product-fulfilment",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Warehousing",
+          "slug": "logistics-and-handling/warehousing",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "General Warehousing",
+              "slug": "logistics-and-handling/warehousing/general-warehousing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Food-Grade Warehousing",
+              "slug": "logistics-and-handling/warehousing/food-grade-warehousing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Agricultural Warehousing",
+              "slug": "logistics-and-handling/warehousing/agricultural-warehousing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cold Storage",
+              "slug": "logistics-and-handling/warehousing/cold-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Frozen Storage",
+              "slug": "logistics-and-handling/warehousing/frozen-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Chilled Storage",
+              "slug": "logistics-and-handling/warehousing/chilled-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Ambient Storage",
+              "slug": "logistics-and-handling/warehousing/ambient-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Bonded Warehousing",
+              "slug": "logistics-and-handling/warehousing/bonded-warehousing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Customs-Bonded Storage",
+              "slug": "logistics-and-handling/warehousing/customs-bonded-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Temporary Storage",
+              "slug": "logistics-and-handling/warehousing/temporary-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Long-Term Storage",
+              "slug": "logistics-and-handling/warehousing/long-term-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Bulk Storage",
+              "slug": "logistics-and-handling/warehousing/bulk-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pallet Storage",
+              "slug": "logistics-and-handling/warehousing/pallet-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Rack Storage",
+              "slug": "logistics-and-handling/warehousing/rack-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Container Storage",
+              "slug": "logistics-and-handling/warehousing/container-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Raw Material Storage",
+              "slug": "logistics-and-handling/warehousing/raw-material-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Finished Goods Storage",
+              "slug": "logistics-and-handling/warehousing/finished-goods-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "FMCG Warehousing",
+              "slug": "logistics-and-handling/warehousing/fmcg-warehousing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "E-commerce Warehousing",
+              "slug": "logistics-and-handling/warehousing/e-commerce-warehousing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Hazard-Sensitive Storage",
+              "slug": "logistics-and-handling/warehousing/hazard-sensitive-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Temperature Monitoring",
+              "slug": "logistics-and-handling/warehousing/temperature-monitoring",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Humidity-Controlled Storage",
+              "slug": "logistics-and-handling/warehousing/humidity-controlled-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Warehouse Inventory Audit",
+              "slug": "logistics-and-handling/warehousing/warehouse-inventory-audit",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Packing",
+          "slug": "logistics-and-handling/packing",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Primary Packing",
+              "slug": "logistics-and-handling/packing/primary-packing",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Product Packing",
+                  "slug": "logistics-and-handling/packing/primary-packing/product-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Food Packing",
+                  "slug": "logistics-and-handling/packing/primary-packing/food-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Agricultural Product Packing",
+                  "slug": "logistics-and-handling/packing/primary-packing/agricultural-product-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Retail Packing",
+                  "slug": "logistics-and-handling/packing/primary-packing/retail-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Export Packing",
+                  "slug": "logistics-and-handling/packing/primary-packing/export-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Industrial Packing",
+                  "slug": "logistics-and-handling/packing/primary-packing/industrial-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bulk Packing",
+                  "slug": "logistics-and-handling/packing/primary-packing/bulk-packing",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Packaging Types",
+              "slug": "logistics-and-handling/packing/packaging-types",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Pouch Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/pouch-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Vacuum Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/vacuum-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Modified Atmosphere Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/modified-atmosphere-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Shrink Wrapping",
+                  "slug": "logistics-and-handling/packing/packaging-types/shrink-wrapping",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Stretch Wrapping",
+                  "slug": "logistics-and-handling/packing/packaging-types/stretch-wrapping",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Carton Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/carton-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Box Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/box-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bag Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/bag-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Sack Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/sack-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Jute Bag Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/jute-bag-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Paper Bag Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/paper-bag-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Plastic Bag Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/plastic-bag-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Tin Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/tin-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Jar Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/jar-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bottle Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/bottle-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Can Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/can-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Drum Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/drum-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Barrel Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/barrel-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Pallet Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/pallet-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Crate Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/crate-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Wooden Box Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/wooden-box-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Container Packing",
+                  "slug": "logistics-and-handling/packing/packaging-types/container-packing",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Special Packing",
+              "slug": "logistics-and-handling/packing/special-packing",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Private Label Packing",
+                  "slug": "logistics-and-handling/packing/special-packing/private-label-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "White Label Packing",
+                  "slug": "logistics-and-handling/packing/special-packing/white-label-packing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Retail Ready Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/retail-ready-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Gift Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/gift-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Premium Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/premium-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Export-Standard Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/export-standard-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Food-Grade Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/food-grade-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Moisture-Proof Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/moisture-proof-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Tamper-Evident Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/tamper-evident-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Temperature-Controlled Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/temperature-controlled-packaging",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Fragile Product Packaging",
+                  "slug": "logistics-and-handling/packing/special-packing/fragile-product-packaging",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Packing Support",
+              "slug": "logistics-and-handling/packing/packing-support",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Weighing",
+                  "slug": "logistics-and-handling/packing/packing-support/weighing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Filling",
+                  "slug": "logistics-and-handling/packing/packing-support/filling",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Sealing",
+                  "slug": "logistics-and-handling/packing/packing-support/sealing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Coding",
+                  "slug": "logistics-and-handling/packing/packing-support/coding",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Batch Printing",
+                  "slug": "logistics-and-handling/packing/packing-support/batch-printing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Date Printing",
+                  "slug": "logistics-and-handling/packing/packing-support/date-printing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Barcode Printing",
+                  "slug": "logistics-and-handling/packing/packing-support/barcode-printing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "QR Code Printing",
+                  "slug": "logistics-and-handling/packing/packing-support/qr-code-printing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Labelling",
+                  "slug": "logistics-and-handling/packing/packing-support/labelling",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Relabelling",
+                  "slug": "logistics-and-handling/packing/packing-support/relabelling",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Stickering",
+                  "slug": "logistics-and-handling/packing/packing-support/stickering",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Product Inserts",
+                  "slug": "logistics-and-handling/packing/packing-support/product-inserts",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Packaging Inspection",
+                  "slug": "logistics-and-handling/packing/packing-support/packaging-inspection",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Repacking",
+                  "slug": "logistics-and-handling/packing/packing-support/repacking",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Packaging Material Sourcing",
+                  "slug": "logistics-and-handling/packing/packing-support/packaging-material-sourcing",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Custom Packaging Design",
+                  "slug": "logistics-and-handling/packing/packing-support/custom-packaging-design",
+                  "kind": "SERVICE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Transportation",
+          "slug": "logistics-and-handling/transportation",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Road Transport",
+              "slug": "logistics-and-handling/transportation/road-transport",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Local Transport",
+                  "slug": "logistics-and-handling/transportation/road-transport/local-transport",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Intercity Transport",
+                  "slug": "logistics-and-handling/transportation/road-transport/intercity-transport",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Interstate Transport",
+                  "slug": "logistics-and-handling/transportation/road-transport/interstate-transport",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Full Truck Load — FTL",
+                  "slug": "logistics-and-handling/transportation/road-transport/full-truck-load-ftl",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Less Than Truck Load — LTL",
+                  "slug": "logistics-and-handling/transportation/road-transport/less-than-truck-load-ltl",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Part Load",
+                  "slug": "logistics-and-handling/transportation/road-transport/part-load",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Container Transport",
+                  "slug": "logistics-and-handling/transportation/road-transport/container-transport",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Refrigerated Truck Transport",
+                  "slug": "logistics-and-handling/transportation/road-transport/refrigerated-truck-transport",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Agricultural Produce Transport",
+                  "slug": "logistics-and-handling/transportation/road-transport/agricultural-produce-transport",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bulk Cargo Transport",
+                  "slug": "logistics-and-handling/transportation/road-transport/bulk-cargo-transport",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "International Transport",
+              "slug": "logistics-and-handling/transportation/international-transport",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "International Road Freight",
+                  "slug": "logistics-and-handling/transportation/international-transport/international-road-freight",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Air Freight",
+                  "slug": "logistics-and-handling/transportation/international-transport/air-freight",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Sea Freight",
+                  "slug": "logistics-and-handling/transportation/international-transport/sea-freight",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Rail Freight",
+                  "slug": "logistics-and-handling/transportation/international-transport/rail-freight",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Multimodal Transport",
+                  "slug": "logistics-and-handling/transportation/international-transport/multimodal-transport",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Shipping Types",
+              "slug": "logistics-and-handling/transportation/shipping-types",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "FCL — Full Container Load",
+                  "slug": "logistics-and-handling/transportation/shipping-types/fcl-full-container-load",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "LCL — Less Container Load",
+                  "slug": "logistics-and-handling/transportation/shipping-types/lcl-less-container-load",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Reefer Container",
+                  "slug": "logistics-and-handling/transportation/shipping-types/reefer-container",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Dry Container",
+                  "slug": "logistics-and-handling/transportation/shipping-types/dry-container",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Open Top Container",
+                  "slug": "logistics-and-handling/transportation/shipping-types/open-top-container",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Flat Rack Container",
+                  "slug": "logistics-and-handling/transportation/shipping-types/flat-rack-container",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bulk Cargo",
+                  "slug": "logistics-and-handling/transportation/shipping-types/bulk-cargo",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Break Bulk Cargo",
+                  "slug": "logistics-and-handling/transportation/shipping-types/break-bulk-cargo",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Last Mile",
+              "slug": "logistics-and-handling/transportation/last-mile",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Last-Mile Delivery",
+                  "slug": "logistics-and-handling/transportation/last-mile/last-mile-delivery",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Same-Day Delivery",
+                  "slug": "logistics-and-handling/transportation/last-mile/same-day-delivery",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Express Delivery",
+                  "slug": "logistics-and-handling/transportation/last-mile/express-delivery",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Scheduled Delivery",
+                  "slug": "logistics-and-handling/transportation/last-mile/scheduled-delivery",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "B2B Delivery",
+                  "slug": "logistics-and-handling/transportation/last-mile/b2b-delivery",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "B2C Delivery",
+                  "slug": "logistics-and-handling/transportation/last-mile/b2c-delivery",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Hyperlocal Delivery",
+                  "slug": "logistics-and-handling/transportation/last-mile/hyperlocal-delivery",
+                  "kind": "SERVICE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Freight Forwarding",
+          "slug": "logistics-and-handling/freight-forwarding",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Domestic Freight Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/domestic-freight-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "International Freight Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/international-freight-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Air Freight Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/air-freight-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Sea Freight Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/sea-freight-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Road Freight Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/road-freight-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Rail Freight Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/rail-freight-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Multimodal Freight",
+              "slug": "logistics-and-handling/freight-forwarding/multimodal-freight",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "FCL Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/fcl-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "LCL Forwarding",
+              "slug": "logistics-and-handling/freight-forwarding/lcl-forwarding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Reefer Freight",
+              "slug": "logistics-and-handling/freight-forwarding/reefer-freight",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Project Cargo",
+              "slug": "logistics-and-handling/freight-forwarding/project-cargo",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Door-to-Door Freight",
+              "slug": "logistics-and-handling/freight-forwarding/door-to-door-freight",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Port-to-Port Freight",
+              "slug": "logistics-and-handling/freight-forwarding/port-to-port-freight",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Airport-to-Airport Freight",
+              "slug": "logistics-and-handling/freight-forwarding/airport-to-airport-freight",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Door-to-Port Freight",
+              "slug": "logistics-and-handling/freight-forwarding/door-to-port-freight",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Freight Consolidation",
+              "slug": "logistics-and-handling/freight-forwarding/freight-consolidation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cargo Consolidation",
+              "slug": "logistics-and-handling/freight-forwarding/cargo-consolidation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Freight Documentation",
+              "slug": "logistics-and-handling/freight-forwarding/freight-documentation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Shipment Tracking",
+              "slug": "logistics-and-handling/freight-forwarding/shipment-tracking",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Freight Insurance Assistance",
+              "slug": "logistics-and-handling/freight-forwarding/freight-insurance-assistance",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Cold Chain",
+          "slug": "logistics-and-handling/cold-chain",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Loading & Unloading",
+          "slug": "logistics-and-handling/loading-and-unloading",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Container Handling",
+          "slug": "logistics-and-handling/container-handling",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Last-Mile Delivery",
+          "slug": "logistics-and-handling/last-mile-delivery",
+          "kind": "GROUP",
+          "children": []
+        },
+        {
+          "name": "Inspection",
+          "slug": "logistics-and-handling/inspection",
+          "kind": "GROUP",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Processing",
+      "slug": "processing",
+      "kind": "SECTION",
+      "children": [
+        {
+          "name": "Sorting & Grading",
+          "slug": "processing/sorting-and-grading",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Sorting",
+              "slug": "processing/sorting-and-grading/sorting",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Manual Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/manual-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Machine Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/machine-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Optical Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/optical-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Colour Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/colour-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Size Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/size-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Weight Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/weight-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Shape Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/shape-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Defect Sorting",
+                  "slug": "processing/sorting-and-grading/sorting/defect-sorting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Foreign Material Removal",
+                  "slug": "processing/sorting-and-grading/sorting/foreign-material-removal",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Grading",
+              "slug": "processing/sorting-and-grading/grading",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Quality Grading",
+                  "slug": "processing/sorting-and-grading/grading/quality-grading",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Size Grading",
+                  "slug": "processing/sorting-and-grading/grading/size-grading",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Colour Grading",
+                  "slug": "processing/sorting-and-grading/grading/colour-grading",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Weight Grading",
+                  "slug": "processing/sorting-and-grading/grading/weight-grading",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Moisture Grading",
+                  "slug": "processing/sorting-and-grading/grading/moisture-grading",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Export Grade Classification",
+                  "slug": "processing/sorting-and-grading/grading/export-grade-classification",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Premium Grade Selection",
+                  "slug": "processing/sorting-and-grading/grading/premium-grade-selection",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Commercial Grade Selection",
+                  "slug": "processing/sorting-and-grading/grading/commercial-grade-selection",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Additional",
+              "slug": "processing/sorting-and-grading/additional",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Cleaning",
+                  "slug": "processing/sorting-and-grading/additional/cleaning",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Screening",
+                  "slug": "processing/sorting-and-grading/additional/screening",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Sieving",
+                  "slug": "processing/sorting-and-grading/additional/sieving",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "De-stoning",
+                  "slug": "processing/sorting-and-grading/additional/de-stoning",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "De-dusting",
+                  "slug": "processing/sorting-and-grading/additional/de-dusting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Foreign Material Removal",
+                  "slug": "processing/sorting-and-grading/additional/foreign-material-removal",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Metal Detection",
+                  "slug": "processing/sorting-and-grading/additional/metal-detection",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Quality Inspection",
+                  "slug": "processing/sorting-and-grading/additional/quality-inspection",
+                  "kind": "SERVICE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "slug": "processing/cleaning",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Dry Cleaning",
+              "slug": "processing/cleaning/dry-cleaning",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Wet Cleaning",
+              "slug": "processing/cleaning/wet-cleaning",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Air Cleaning",
+              "slug": "processing/cleaning/air-cleaning",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Water Washing",
+              "slug": "processing/cleaning/water-washing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Brush Cleaning",
+              "slug": "processing/cleaning/brush-cleaning",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Dust Removal",
+              "slug": "processing/cleaning/dust-removal",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Mud Removal",
+              "slug": "processing/cleaning/mud-removal",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Stone Removal",
+              "slug": "processing/cleaning/stone-removal",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Foreign Matter Removal",
+              "slug": "processing/cleaning/foreign-matter-removal",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Sanitisation",
+              "slug": "processing/cleaning/sanitisation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Food-Safe Cleaning",
+              "slug": "processing/cleaning/food-safe-cleaning",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Steam Cleaning",
+              "slug": "processing/cleaning/steam-cleaning",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Roasting",
+          "slug": "processing/roasting",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Roasting Types",
+              "slug": "processing/roasting/roasting-types",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Dry Roasting",
+                  "slug": "processing/roasting/roasting-types/dry-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Oil Roasting",
+                  "slug": "processing/roasting/roasting-types/oil-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Hot Air Roasting",
+                  "slug": "processing/roasting/roasting-types/hot-air-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Drum Roasting",
+                  "slug": "processing/roasting/roasting-types/drum-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Continuous Roasting",
+                  "slug": "processing/roasting/roasting-types/continuous-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Batch Roasting",
+                  "slug": "processing/roasting/roasting-types/batch-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Light Roasting",
+                  "slug": "processing/roasting/roasting-types/light-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Medium Roasting",
+                  "slug": "processing/roasting/roasting-types/medium-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Dark Roasting",
+                  "slug": "processing/roasting/roasting-types/dark-roasting",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Product-Specific",
+              "slug": "processing/roasting/product-specific",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Nut Roasting",
+                  "slug": "processing/roasting/product-specific/nut-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Cashew Roasting",
+                  "slug": "processing/roasting/product-specific/cashew-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Almond Roasting",
+                  "slug": "processing/roasting/product-specific/almond-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Peanut Roasting",
+                  "slug": "processing/roasting/product-specific/peanut-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Pistachio Roasting",
+                  "slug": "processing/roasting/product-specific/pistachio-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Seed Roasting",
+                  "slug": "processing/roasting/product-specific/seed-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Coffee Roasting",
+                  "slug": "processing/roasting/product-specific/coffee-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Grain Roasting",
+                  "slug": "processing/roasting/product-specific/grain-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Spice Roasting",
+                  "slug": "processing/roasting/product-specific/spice-roasting",
+                  "kind": "SERVICE"
+                }
+              ]
+            },
+            {
+              "name": "Additional",
+              "slug": "processing/roasting/additional",
+              "kind": "SUBGROUP",
+              "children": [
+                {
+                  "name": "Custom Roast Profile",
+                  "slug": "processing/roasting/additional/custom-roast-profile",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Contract Roasting",
+                  "slug": "processing/roasting/additional/contract-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Private Label Roasting",
+                  "slug": "processing/roasting/additional/private-label-roasting",
+                  "kind": "SERVICE"
+                },
+                {
+                  "name": "Bulk Roasting",
+                  "slug": "processing/roasting/additional/bulk-roasting",
+                  "kind": "SERVICE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Roasting & Salting",
+          "slug": "processing/roasting-and-salting",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Dry Salted",
+              "slug": "processing/roasting-and-salting/dry-salted",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Oil Roasted & Salted",
+              "slug": "processing/roasting-and-salting/oil-roasted-and-salted",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Light Salt",
+              "slug": "processing/roasting-and-salting/light-salt",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Medium Salt",
+              "slug": "processing/roasting-and-salting/medium-salt",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Extra Salt",
+              "slug": "processing/roasting-and-salting/extra-salt",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Sea Salt",
+              "slug": "processing/roasting-and-salting/sea-salt",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Rock Salt",
+              "slug": "processing/roasting-and-salting/rock-salt",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Flavoured Salt",
+              "slug": "processing/roasting-and-salting/flavoured-salt",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Seasoned Roasting",
+              "slug": "processing/roasting-and-salting/seasoned-roasting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Masala Roasting",
+              "slug": "processing/roasting-and-salting/masala-roasting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Chilli Roasting",
+              "slug": "processing/roasting-and-salting/chilli-roasting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pepper Roasting",
+              "slug": "processing/roasting-and-salting/pepper-roasting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Honey Roasting",
+              "slug": "processing/roasting-and-salting/honey-roasting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Sweet & Salted",
+              "slug": "processing/roasting-and-salting/sweet-and-salted",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Seasoning",
+              "slug": "processing/roasting-and-salting/custom-seasoning",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Cutting / Chopping",
+          "slug": "processing/cutting-chopping",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Hand Cutting",
+              "slug": "processing/cutting-chopping/hand-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Machine Cutting",
+              "slug": "processing/cutting-chopping/machine-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Slicing",
+              "slug": "processing/cutting-chopping/slicing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Dicing",
+              "slug": "processing/cutting-chopping/dicing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cubing",
+              "slug": "processing/cutting-chopping/cubing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Julienne Cutting",
+              "slug": "processing/cutting-chopping/julienne-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fine Chopping",
+              "slug": "processing/cutting-chopping/fine-chopping",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Rough Chopping",
+              "slug": "processing/cutting-chopping/rough-chopping",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Shredding",
+              "slug": "processing/cutting-chopping/shredding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Strip Cutting",
+              "slug": "processing/cutting-chopping/strip-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Ring Cutting",
+              "slug": "processing/cutting-chopping/ring-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Halving",
+              "slug": "processing/cutting-chopping/halving",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Quartering",
+              "slug": "processing/cutting-chopping/quartering",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Size Cutting",
+              "slug": "processing/cutting-chopping/custom-size-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Vegetable Cutting",
+              "slug": "processing/cutting-chopping/vegetable-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fruit Cutting",
+              "slug": "processing/cutting-chopping/fruit-cutting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Nut Chopping",
+              "slug": "processing/cutting-chopping/nut-chopping",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Herb Chopping",
+              "slug": "processing/cutting-chopping/herb-chopping",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Blanching",
+          "slug": "processing/blanching",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Water Blanching",
+              "slug": "processing/blanching/water-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Steam Blanching",
+              "slug": "processing/blanching/steam-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Hot Water Blanching",
+              "slug": "processing/blanching/hot-water-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Continuous Blanching",
+              "slug": "processing/blanching/continuous-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Batch Blanching",
+              "slug": "processing/blanching/batch-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Vegetable Blanching",
+              "slug": "processing/blanching/vegetable-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Nut Blanching",
+              "slug": "processing/blanching/nut-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Almond Blanching",
+              "slug": "processing/blanching/almond-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Peanut Blanching",
+              "slug": "processing/blanching/peanut-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fruit Blanching",
+              "slug": "processing/blanching/fruit-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Temperature Blanching",
+              "slug": "processing/blanching/custom-temperature-blanching",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Time Blanching",
+              "slug": "processing/blanching/custom-time-blanching",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Pitting",
+          "slug": "processing/pitting",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Fruit Pitting",
+              "slug": "processing/pitting/fruit-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Date Pitting",
+              "slug": "processing/pitting/date-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Olive Pitting",
+              "slug": "processing/pitting/olive-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cherry Pitting",
+              "slug": "processing/pitting/cherry-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Apricot Pitting",
+              "slug": "processing/pitting/apricot-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Peach Pitting",
+              "slug": "processing/pitting/peach-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Plum Pitting",
+              "slug": "processing/pitting/plum-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Manual Pitting",
+              "slug": "processing/pitting/manual-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Machine Pitting",
+              "slug": "processing/pitting/machine-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Bulk Pitting",
+              "slug": "processing/pitting/bulk-pitting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Pitting",
+              "slug": "processing/pitting/custom-pitting",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Peeling",
+          "slug": "processing/peeling",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Manual Peeling",
+              "slug": "processing/peeling/manual-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Mechanical Peeling",
+              "slug": "processing/peeling/mechanical-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Steam Peeling",
+              "slug": "processing/peeling/steam-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Chemical Peeling",
+              "slug": "processing/peeling/chemical-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Dry Peeling",
+              "slug": "processing/peeling/dry-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Wet Peeling",
+              "slug": "processing/peeling/wet-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Nut Peeling",
+              "slug": "processing/peeling/nut-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fruit Peeling",
+              "slug": "processing/peeling/fruit-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Vegetable Peeling",
+              "slug": "processing/peeling/vegetable-peeling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Almond Skin Removal",
+              "slug": "processing/peeling/almond-skin-removal",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Peanut Skin Removal",
+              "slug": "processing/peeling/peanut-skin-removal",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Shelling",
+          "slug": "processing/shelling",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Nut Shelling",
+              "slug": "processing/shelling/nut-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cashew Shelling",
+              "slug": "processing/shelling/cashew-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Almond Shelling",
+              "slug": "processing/shelling/almond-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Peanut Shelling",
+              "slug": "processing/shelling/peanut-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pistachio Shelling",
+              "slug": "processing/shelling/pistachio-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Walnut Shelling",
+              "slug": "processing/shelling/walnut-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Seed Shelling",
+              "slug": "processing/shelling/seed-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Manual Shelling",
+              "slug": "processing/shelling/manual-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Machine Shelling",
+              "slug": "processing/shelling/machine-shelling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cracking",
+              "slug": "processing/shelling/cracking",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Kernel Separation",
+              "slug": "processing/shelling/kernel-separation",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Drying",
+          "slug": "processing/drying",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Sun Drying",
+              "slug": "processing/drying/sun-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Solar Drying",
+              "slug": "processing/drying/solar-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Hot Air Drying",
+              "slug": "processing/drying/hot-air-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Tray Drying",
+              "slug": "processing/drying/tray-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Tunnel Drying",
+              "slug": "processing/drying/tunnel-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Vacuum Drying",
+              "slug": "processing/drying/vacuum-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Freeze Drying",
+              "slug": "processing/drying/freeze-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Spray Drying",
+              "slug": "processing/drying/spray-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Drum Drying",
+              "slug": "processing/drying/drum-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Dehydration",
+              "slug": "processing/drying/dehydration",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Low-Temperature Drying",
+              "slug": "processing/drying/low-temperature-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fruit Drying",
+              "slug": "processing/drying/fruit-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Vegetable Drying",
+              "slug": "processing/drying/vegetable-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Herb Drying",
+              "slug": "processing/drying/herb-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Spice Drying",
+              "slug": "processing/drying/spice-drying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Nut Drying",
+              "slug": "processing/drying/nut-drying",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Freezing / IQF",
+          "slug": "processing/freezing-iqf",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Standard Freezing",
+              "slug": "processing/freezing-iqf/standard-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Blast Freezing",
+              "slug": "processing/freezing-iqf/blast-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "IQF — Individual Quick Freezing",
+              "slug": "processing/freezing-iqf/iqf-individual-quick-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cryogenic Freezing",
+              "slug": "processing/freezing-iqf/cryogenic-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Frozen Storage",
+              "slug": "processing/freezing-iqf/frozen-storage",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fruit Freezing",
+              "slug": "processing/freezing-iqf/fruit-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Vegetable Freezing",
+              "slug": "processing/freezing-iqf/vegetable-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Food Freezing",
+              "slug": "processing/freezing-iqf/food-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pre-Freezing",
+              "slug": "processing/freezing-iqf/pre-freezing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Thawing",
+              "slug": "processing/freezing-iqf/thawing",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Grinding & Milling",
+          "slug": "processing/grinding-and-milling",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Grinding",
+              "slug": "processing/grinding-and-milling/grinding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fine Grinding",
+              "slug": "processing/grinding-and-milling/fine-grinding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Coarse Grinding",
+              "slug": "processing/grinding-and-milling/coarse-grinding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Powdering",
+              "slug": "processing/grinding-and-milling/powdering",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pulverising",
+              "slug": "processing/grinding-and-milling/pulverising",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Milling",
+              "slug": "processing/grinding-and-milling/milling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Flour Milling",
+              "slug": "processing/grinding-and-milling/flour-milling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Spice Grinding",
+              "slug": "processing/grinding-and-milling/spice-grinding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Coffee Grinding",
+              "slug": "processing/grinding-and-milling/coffee-grinding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Grain Milling",
+              "slug": "processing/grinding-and-milling/grain-milling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Nut Grinding",
+              "slug": "processing/grinding-and-milling/nut-grinding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Seed Grinding",
+              "slug": "processing/grinding-and-milling/seed-grinding",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Mesh Size Grinding",
+              "slug": "processing/grinding-and-milling/custom-mesh-size-grinding",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Crushing",
+          "slug": "processing/crushing",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Fruit Crushing",
+              "slug": "processing/crushing/fruit-crushing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Seed Crushing",
+              "slug": "processing/crushing/seed-crushing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Nut Crushing",
+              "slug": "processing/crushing/nut-crushing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Spice Crushing",
+              "slug": "processing/crushing/spice-crushing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Grain Crushing",
+              "slug": "processing/crushing/grain-crushing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Coarse Crushing",
+              "slug": "processing/crushing/coarse-crushing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fine Crushing",
+              "slug": "processing/crushing/fine-crushing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Industrial Crushing",
+              "slug": "processing/crushing/industrial-crushing",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Mixing & Blending",
+          "slug": "processing/mixing-and-blending",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Ingredient Mixing",
+              "slug": "processing/mixing-and-blending/ingredient-mixing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Dry Blending",
+              "slug": "processing/mixing-and-blending/dry-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Wet Blending",
+              "slug": "processing/mixing-and-blending/wet-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Powder Blending",
+              "slug": "processing/mixing-and-blending/powder-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Spice Blending",
+              "slug": "processing/mixing-and-blending/spice-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Seasoning Blending",
+              "slug": "processing/mixing-and-blending/seasoning-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Nut Mixing",
+              "slug": "processing/mixing-and-blending/nut-mixing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Grain Mixing",
+              "slug": "processing/mixing-and-blending/grain-mixing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Tea Blending",
+              "slug": "processing/mixing-and-blending/tea-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Coffee Blending",
+              "slug": "processing/mixing-and-blending/coffee-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Recipe Blending",
+              "slug": "processing/mixing-and-blending/custom-recipe-blending",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Contract Blending",
+              "slug": "processing/mixing-and-blending/contract-blending",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Seasoning",
+          "slug": "processing/seasoning",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Salt Seasoning",
+              "slug": "processing/seasoning/salt-seasoning",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Spice Seasoning",
+              "slug": "processing/seasoning/spice-seasoning",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Masala Coating",
+              "slug": "processing/seasoning/masala-coating",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Chilli Coating",
+              "slug": "processing/seasoning/chilli-coating",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pepper Coating",
+              "slug": "processing/seasoning/pepper-coating",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cheese Flavouring",
+              "slug": "processing/seasoning/cheese-flavouring",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "BBQ Flavouring",
+              "slug": "processing/seasoning/bbq-flavouring",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Sweet Coating",
+              "slug": "processing/seasoning/sweet-coating",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Honey Coating",
+              "slug": "processing/seasoning/honey-coating",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Chocolate Coating",
+              "slug": "processing/seasoning/chocolate-coating",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Custom Flavouring",
+              "slug": "processing/seasoning/custom-flavouring",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Private Label Flavouring",
+              "slug": "processing/seasoning/private-label-flavouring",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Cooking / Heat Treatment",
+          "slug": "processing/cooking-heat-treatment",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Boiling",
+              "slug": "processing/cooking-heat-treatment/boiling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Steaming",
+              "slug": "processing/cooking-heat-treatment/steaming",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Baking",
+              "slug": "processing/cooking-heat-treatment/baking",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Frying",
+              "slug": "processing/cooking-heat-treatment/frying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Deep Frying",
+              "slug": "processing/cooking-heat-treatment/deep-frying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Air Frying",
+              "slug": "processing/cooking-heat-treatment/air-frying",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Roasting",
+              "slug": "processing/cooking-heat-treatment/roasting",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pasteurisation",
+              "slug": "processing/cooking-heat-treatment/pasteurisation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Sterilisation",
+              "slug": "processing/cooking-heat-treatment/sterilisation",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Heat Treatment",
+              "slug": "processing/cooking-heat-treatment/heat-treatment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Steam Treatment",
+              "slug": "processing/cooking-heat-treatment/steam-treatment",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Precooking",
+              "slug": "processing/cooking-heat-treatment/precooking",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Extraction",
+          "slug": "processing/extraction",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Juice Extraction",
+              "slug": "processing/extraction/juice-extraction",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Fruit Pulping",
+              "slug": "processing/extraction/fruit-pulping",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Vegetable Pulping",
+              "slug": "processing/extraction/vegetable-pulping",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Puree Production",
+              "slug": "processing/extraction/puree-production",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Concentrate Production",
+              "slug": "processing/extraction/concentrate-production",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Oil Extraction",
+              "slug": "processing/extraction/oil-extraction",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Cold Pressing",
+              "slug": "processing/extraction/cold-pressing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Hot Pressing",
+              "slug": "processing/extraction/hot-pressing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Seed Oil Extraction",
+              "slug": "processing/extraction/seed-oil-extraction",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Essential Oil Extraction",
+              "slug": "processing/extraction/essential-oil-extraction",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Filtering",
+              "slug": "processing/extraction/filtering",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Clarification",
+              "slug": "processing/extraction/clarification",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Quality Testing",
+          "slug": "processing/quality-testing",
+          "kind": "GROUP",
+          "children": [
+            {
+              "name": "Quality Inspection",
+              "slug": "processing/quality-testing/quality-inspection",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Moisture Testing",
+              "slug": "processing/quality-testing/moisture-testing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Size Testing",
+              "slug": "processing/quality-testing/size-testing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Colour Testing",
+              "slug": "processing/quality-testing/colour-testing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Foreign Matter Inspection",
+              "slug": "processing/quality-testing/foreign-matter-inspection",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Metal Detection",
+              "slug": "processing/quality-testing/metal-detection",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "X-Ray Inspection",
+              "slug": "processing/quality-testing/x-ray-inspection",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Microbiological Testing",
+              "slug": "processing/quality-testing/microbiological-testing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Residue Testing",
+              "slug": "processing/quality-testing/residue-testing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Product Sampling",
+              "slug": "processing/quality-testing/product-sampling",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Batch Testing",
+              "slug": "processing/quality-testing/batch-testing",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Pre-Shipment Inspection",
+              "slug": "processing/quality-testing/pre-shipment-inspection",
+              "kind": "SERVICE"
+            },
+            {
+              "name": "Export Quality Inspection",
+              "slug": "processing/quality-testing/export-quality-inspection",
+              "kind": "SERVICE"
+            }
+          ]
+        },
+        {
+          "name": "Packaging",
+          "slug": "processing/packaging",
+          "kind": "GROUP",
+          "children": []
+        }
+      ]
+    }
+  ]
+}
