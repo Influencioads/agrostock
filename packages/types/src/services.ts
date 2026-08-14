@@ -87,6 +87,79 @@ export function allowedCategories(role: string, requested: readonly string[]): S
   return SERVICE_CATEGORIES.filter((c) => allowed.has(c) && requested.includes(c));
 }
 
-/** How a provider's price is measured. */
-export const SERVICE_PRICING_BASES = ['per_kg', 'per_ton', 'per_lot', 'per_hour', 'per_month'] as const;
+/**
+ * How a provider's price is measured.
+ *
+ * The first five are the original set and are already stored on
+ * `ServiceProvider.pricingBasis`; the rest were added for per-service pricing,
+ * where a customs filing is quoted per shipment and an audit as a percentage.
+ * Order is the display order, so the common ones stay at the top of a picker.
+ */
+export const SERVICE_PRICING_BASES = [
+  'per_kg', 'per_ton', 'per_lot', 'per_hour', 'per_month',
+  'per_unit', 'per_piece', 'per_order', 'per_shipment', 'per_container',
+  'per_pallet', 'per_day', 'per_sqft', 'percentage', 'on_request',
+] as const;
 export type ServicePricingBasis = (typeof SERVICE_PRICING_BASES)[number];
+
+/** The one basis that may carry no price at all. */
+export const ON_REQUEST_BASIS = 'on_request';
+
+/**
+ * Which taxonomy branches each service role may price, as slug prefixes.
+ *
+ * This is the taxonomy-era twin of `ROLE_CATEGORIES`, derived from it rather
+ * than invented: every role keeps exactly the reach it already had, expressed
+ * against the new tree. Nothing is broadened.
+ *
+ * The one judgement call is `accountant`, which holds `customs_clearance` today.
+ * That name exists twice in the new taxonomy — as an (empty) Financial group and
+ * as the 37-leaf `customs-and-border-logistics` under Logistics. Only the
+ * Financial one is granted here: handing an accountant the Logistics branch
+ * would let them list port handling and border clearance, which is a broader
+ * permission than they have today and a decision for the client, not a mapping.
+ */
+export const ROLE_SERVICE_BRANCHES = {
+  accountant: [
+    'financial-and-compliance/accounting',
+    'financial-and-compliance/taxation',
+    'financial-and-compliance/customs-clearance',
+    'financial-and-compliance/audit-and-certification',
+  ],
+  finance_partner: [
+    'financial-and-compliance/financial-services',
+    'financial-and-compliance/insurance',
+  ],
+  fulfillment_partner: [
+    'logistics-and-handling/fulfilment',
+    'logistics-and-handling/warehousing',
+    'logistics-and-handling/transportation',
+    'logistics-and-handling/freight-forwarding',
+    'logistics-and-handling/cold-chain',
+    'logistics-and-handling/loading-and-unloading',
+    'logistics-and-handling/container-handling',
+    'logistics-and-handling/last-mile-delivery',
+    'logistics-and-handling/inspection',
+  ],
+  packer: [
+    'logistics-and-handling/packing',
+    'logistics-and-handling/fulfilment',
+    'processing/packaging',
+  ],
+  // `processor` covers every processing trade for the same reason it covers all
+  // six legacy processing categories: one business, different equipment.
+  processor: ['processing'],
+} as const satisfies Record<ServiceRole, readonly string[]>;
+
+/** The branch prefixes this role may price — empty for any non-service role. */
+export function branchesForRole(role: string): readonly string[] {
+  return isServiceRole(role) ? ROLE_SERVICE_BRANCHES[role] : [];
+}
+
+/**
+ * May this role price this leaf? Slug is the materialized path, so reach is a
+ * prefix test — no tree walk, and it holds however deep the leaf sits.
+ */
+export function canRolePriceService(role: string, slug: string): boolean {
+  return branchesForRole(role).some((prefix) => slug === prefix || slug.startsWith(`${prefix}/`));
+}

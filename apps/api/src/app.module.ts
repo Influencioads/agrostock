@@ -43,6 +43,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { ServiceProvidersModule } from './services/service-providers.module';
 import { ServiceTaxonomyModule } from './services/service-taxonomy.module';
+import { ProviderServicesModule } from './services/provider-services.module';
 import { TranslationModule } from './translation/translation.module';
 
 @Module({
@@ -94,6 +95,7 @@ import { TranslationModule } from './translation/translation.module';
     WishlistModule,
     ServiceProvidersModule,
     ServiceTaxonomyModule,
+    ProviderServicesModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

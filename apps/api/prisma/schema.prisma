@@ -45,12 +45,28 @@ enum ServiceCategory {
 }
 
 /// What a provider's quoted price is measured in.
+///
+/// EXTENDED rather than replaced by a parallel enum: the first five values are
+/// already stored on `ServiceProvider.pricingBasis` and must keep meaning what
+/// they mean. The rest are what per-service pricing needs — a customs filing is
+/// quoted per shipment, a warehouse per pallet, an audit as a percentage, and a
+/// good deal of this trade simply quotes on request.
 enum ServicePricingBasis {
   per_kg
   per_ton
   per_lot
   per_hour
   per_month
+  per_unit
+  per_piece
+  per_order
+  per_shipment
+  per_container
+  per_pallet
+  per_day
+  per_sqft
+  percentage
+  on_request
 }
 
 /// Where a node sits in the service taxonomy. Only `SERVICE` nodes are leaves a
@@ -605,12 +621,36 @@ model ServiceProvider {
 
   /// Providers are hidden from the directory until they opt in, so a
   /// half-filled profile is never the first thing a buyer sees.
-  listed    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  listed Boolean @default(false)
+
+  /// Countries this provider will work in, from the `ServiceCountry` reference
+  /// list. Distinct from `country`, which is where they are registered — an
+  /// Indian firm serving the UAE is the normal case, not the exception.
+  countriesServed            String[] @default([])
+  /// The goods they handle: Cashew, Almond, Peanut … Free text for the same
+  /// reason `certifications` is — the list varies by trade and a fixed enum
+  /// would silently exclude a real answer.
+  productsHandled            String[] @default([])
+  acceptsInternationalOrders Boolean  @default(false)
+  /// Admin gate on the public listing, mirroring `Profile.listApproved` which
+  /// already gates transporters and loader companies. `listed` stays the
+  /// provider's own opt-in; both must be true to appear.
+  ///
+  /// Defaults TRUE deliberately: every provider listed today must stay listed
+  /// when this column lands. A `false` default would silently delist the whole
+  /// directory the moment the migration ran.
+  listApproved               Boolean  @default(true)
+  /// Why an admin rejected the listing, so the provider is told rather than
+  /// silently vanishing.
+  listRejectedReason         String?
+
+  services  ProviderService[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now()) @updatedAt
 
   @@index([listed])
   @@index([country])
+  @@index([listApproved, listed])
 }
 
 /// One node of the service taxonomy — sections, groups, the optional country and
@@ -654,7 +694,8 @@ model ServiceNode {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  translations ServiceNodeTranslation[]
+  translations     ServiceNodeTranslation[]
+  providerServices ProviderService[]
 
   @@index([parentId])
   @@index([kind])
@@ -671,6 +712,54 @@ model ServiceNodeTranslation {
 
   @@unique([nodeId, locale])
   @@index([locale])
+}
+
+/// One provider's price for one leaf service — the row the whole Services module
+/// exists to produce.
+///
+/// A provider holds many of these, one per service they actually offer, because
+/// a single rate across "Roasting" and "Customs Documentation" describes nothing.
+/// `ServiceProvider.pricingBasis`/`priceFromCents` stay exactly as they are and
+/// keep driving the current directory card: this is the finer-grained layer
+/// beside them, not a replacement, so nothing that reads the old fields changes.
+model ProviderService {
+  id            String          @id @default(cuid())
+  providerId    String
+  provider      ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  /// MUST be a leaf (`ServiceNode.isLeaf`). Enforced in the service layer, which
+  /// is where the taxonomy is already loaded — a DB check constraint cannot see
+  /// across the FK without a trigger.
+  serviceNodeId String
+  serviceNode   ServiceNode     @relation(fields: [serviceNodeId], references: [id])
+
+  pricingBasis  ServicePricingBasis
+  /// Minor units of `currency`, matching every other money column on the
+  /// platform (`priceFromCents`, `budgetCents`). Both null only when the basis
+  /// is `on_request`, which is a real answer in this trade.
+  priceMinCents Int?
+  priceMaxCents Int?
+  currency      String              @default("USD")
+
+  minOrderQty  Int?
+  minOrderUnit String?
+  leadTimeDays Int?
+  capacityNote String?
+  notes        String?
+  /// Set only when the provider offers THIS service in one jurisdiction while
+  /// serving others generally. Null = wherever they operate.
+  countryScope ServiceCountryScope?
+
+  isNegotiable Boolean @default(false)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  /// One price per service per provider — a second row for the same leaf is an
+  /// edit, not an addition.
+  @@unique([providerId, serviceNodeId])
+  @@index([serviceNodeId, isActive])
+  @@index([providerId, isActive])
 }
 
 /// The countries a provider can declare it serves. A reference list, not part of

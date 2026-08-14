@@ -73,11 +73,24 @@ export class UpdateServiceProfileDto {
 
   /** Opt in to appearing in the directory. Rejected while the profile is empty. */
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() listed?: boolean;
+
+  /** Countries this provider will work in — distinct from `country`, where it is registered. */
+  @ApiProperty({ required: false, isArray: true })
+  @IsOptional() @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) @MaxLength(80, { each: true })
+  countriesServed?: string[];
+
+  @ApiProperty({ required: false, isArray: true, description: 'Cashew, Almond, Peanut …' })
+  @IsOptional() @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) @MaxLength(80, { each: true })
+  productsHandled?: string[];
+
+  @ApiProperty({ required: false })
+  @IsOptional() @IsBoolean() acceptsInternationalOrders?: boolean;
 }
 
 /** Public columns. An allow-list, so a column added later stays private by default. */
 const PUBLIC_SELECT = {
   id: true, companyName: true, categories: true, citiesServed: true, country: true,
+  countriesServed: true, productsHandled: true, acceptsInternationalOrders: true,
   capacityPerDay: true, certifications: true, minOrderQty: true, turnaroundDays: true,
   pricingBasis: true, priceFromCents: true, priceCurrency: true, photos: true, blurb: true,
   createdAt: true,
@@ -139,6 +152,9 @@ export class ServiceProvidersService {
         photos: dto.photos,
         blurb: dto.blurb,
         listed: dto.listed,
+        countriesServed: dto.countriesServed,
+        productsHandled: dto.productsHandled,
+        acceptsInternationalOrders: dto.acceptsInternationalOrders,
       },
     });
   }
@@ -150,6 +166,9 @@ export class ServiceProvidersService {
   async list(q: { category?: string; city?: string; country?: string; search?: string; role?: string }) {
     const where: Prisma.ServiceProviderWhereInput = {
       listed: true,
+      // Admin gate, mirroring Profile.listApproved. Defaults true, so this
+      // narrows nothing for providers already in the directory.
+      listApproved: true,
       user: { active: true, ...(q.role && isServiceRole(q.role) ? { role: q.role as never } : {}) },
       ...(q.category ? { categories: { has: q.category as never } } : {}),
       ...(q.city ? { citiesServed: { has: q.city } } : {}),
@@ -173,7 +192,7 @@ export class ServiceProvidersService {
 
   async publicOne(userId: string) {
     const row = await this.prisma.serviceProvider.findFirst({
-      where: { userId, listed: true, user: { active: true } },
+      where: { userId, listed: true, listApproved: true, user: { active: true } },
       select: PUBLIC_SELECT,
     });
     if (!row) throw new NotFoundException('Service provider not found');

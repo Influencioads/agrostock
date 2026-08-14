@@ -834,6 +834,53 @@ export interface ApiServiceNodeDetail extends ApiServiceNode {
   ancestors: ApiServiceNode[];
 }
 
+/** What a provider charges for one leaf service. Money is minor units, as everywhere. */
+export interface ApiProviderService {
+  id: string;
+  serviceNodeId: string;
+  pricingBasis: string;
+  /** Minor units of `currency`. Both null only when the basis is `on_request`. */
+  priceMinCents: number | null;
+  priceMaxCents: number | null;
+  currency: string;
+  minOrderQty: number | null;
+  minOrderUnit: string | null;
+  leadTimeDays: number | null;
+  capacityNote: string | null;
+  notes: string | null;
+  countryScope: string | null;
+  isNegotiable: boolean;
+  isActive: boolean;
+  createdAt: string;
+  serviceNode: { id: string; slug: string; nameEn: string; name?: string; kind: string; level: number; isActive: boolean };
+}
+
+/** The editable fields of a priced service. */
+export interface ProviderServiceInput {
+  pricingBasis: string;
+  priceMinCents?: number;
+  priceMaxCents?: number;
+  currency?: string;
+  minOrderQty?: number;
+  minOrderUnit?: string;
+  leadTimeDays?: number;
+  capacityNote?: string;
+  notes?: string;
+  countryScope?: string;
+  isNegotiable?: boolean;
+  isActive?: boolean;
+}
+
+/**
+ * Outcome of a bulk add. `rejected` is reported rather than silently dropped —
+ * a provider who ticked 40 boxes and got 32 rows needs to know which 8 and why.
+ */
+export interface ApiBulkAddResult {
+  created: number;
+  skippedExisting: number;
+  rejected: { serviceNodeId: string; reason: 'not_found' | 'not_a_leaf' | 'not_allowed_for_role' }[];
+}
+
 export interface ApiServiceProvider {
   id: string;
   companyName: string | null;
@@ -2018,6 +2065,23 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Public: listed service providers, optionally filtered. */
       providers: (q: { category?: string; city?: string; country?: string; search?: string; role?: string } = {}) =>
         get<ApiServiceProvider[]>('/services/providers', q),
+      /** A listed provider's priced services, for the profile page. */
+      providerServices: (userId: string) =>
+        get<ApiProviderService[]>(`/service-providers/${userId}/services`),
+      /** The signed-in provider's own priced services, including inactive ones. */
+      myServices: () => get<ApiProviderService[]>('/me/service-provider/services'),
+      addMyService: (body: ProviderServiceInput & { serviceNodeId: string }) =>
+        post<ApiProviderService>('/me/service-provider/services', body),
+      updateMyService: (id: string, body: Partial<ProviderServiceInput>) =>
+        patch<ApiProviderService>(`/me/service-provider/services/${id}`, body),
+      removeMyService: (id: string) => del(`/me/service-provider/services/${id}`),
+      /**
+       * Price many leaves at once with one shared basis, then tune individually.
+       * Leaves already priced are SKIPPED, never overwritten, and anything
+       * rejected comes back with a reason rather than vanishing.
+       */
+      bulkAddMyServices: (body: ProviderServiceInput & { serviceNodeIds: string[] }) =>
+        post<ApiBulkAddResult>('/me/service-provider/services/bulk', body),
       provider: (userId: string) => get<ApiServiceProvider>(`/services/providers/${userId}`),
       /** The signed-in provider's own profile. */
       myProfile: () => get<ApiMyServiceProfile>('/me/service-profile'),

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SERVICE_TAXONOMY_RU } from '../prisma/seeds/service-taxonomy-ru';
+import { canRolePriceService, ROLE_SERVICE_BRANCHES, SERVICE_ROLES } from '@agrotraders/types';
 
 /**
  * The taxonomy JSON is the seed's only input, and the seed is the only thing
@@ -155,5 +156,35 @@ describe('russian translations', () => {
     const translated = leaves.filter((s) => SERVICE_TAXONOMY_RU[s]).length;
     expect(translated).toBeGreaterThan(0);
     expect(translated).toBeLessThan(leaves.length);
+  });
+});
+
+describe('role gating against the real taxonomy', () => {
+  it('points every role branch at a node that exists', () => {
+    // A prefix with a typo would silently grant nothing, and the provider would
+    // see an empty picker with no error to explain it.
+    const slugs = new Set(ALL.map((e) => e.node.slug));
+    const missing: string[] = [];
+    for (const [role, branches] of Object.entries(ROLE_SERVICE_BRANCHES)) {
+      for (const b of branches) if (!slugs.has(b)) missing.push(`${role} → ${b}`);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('leaves exactly ONE branch unreachable — the customs decision, still open', () => {
+    // Not a bug: `customs_clearance` exists twice in the new tree, and only the
+    // Financial one was granted to accountants. Handing them the 37-leaf
+    // Logistics branch would broaden a permission they do not hold today, so it
+    // waits on the client.
+    //
+    // Pinned rather than skipped: if the gap ever widens beyond this branch,
+    // that IS a mapping bug and this fails. When the decision lands, the fix is
+    // to add the branch to a role and shrink this list to [].
+    const orphaned = byKind('SERVICE')
+      .map((e) => e.node.slug)
+      .filter((slug) => !SERVICE_ROLES.some((r) => canRolePriceService(r, slug)));
+    const customs = 'logistics-and-handling/customs-and-border-logistics';
+    expect(orphaned.every((s) => s.startsWith(`${customs}/`))).toBe(true);
+    expect(orphaned).toHaveLength(37);
   });
 });
