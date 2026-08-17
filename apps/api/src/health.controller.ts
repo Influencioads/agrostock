@@ -20,7 +20,7 @@ export class HealthController {
         uploads: true,
         directory: true,
         workers: true,
-        roles: ['buyer', 'seller', 'transporter', 'loaderco', 'worker'],
+        roles: ['buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker'],
       },
       time: new Date().toISOString(),
     };

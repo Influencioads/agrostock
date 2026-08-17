@@ -20,6 +20,11 @@
     "rejected": "Отклонён",
     "verified": "Подтверждён"
   },
+  "labourRateBasis": {
+    "on_request": "по запросу",
+    "per_day": "в день",
+    "per_hour": "в час"
+  },
   "order_status": {
     "cancelled": "Отменено",
     "delivered": "Доставлено",
@@ -38,12 +43,18 @@
     "within_3_months": "В течение 3 месяцев"
   },
   "role": {
+    "accountant": "Бухгалтер",
     "admin": "Администратор",
     "buyer": "Покупатель",
+    "finance_partner": "Финансовые услуги",
+    "fulfillment_partner": "Партнер по фулфилменту",
     "loaderco": "Погрузочная компания",
+    "packer": "Партнер по упаковке",
+    "processor": "Партнер по переработке",
     "seller": "Продавец",
     "transporter": "Перевозчик",
-    "worker": "Рабочий"
+    "worker": "Рабочий",
+    "workerco": "Компания-подрядчик"
   },
   "serviceCategory": {
     "accounting": "Бухгалтерия",
@@ -59,11 +70,21 @@
     "sorting_grading": "Сортировка и калибровка"
   },
   "servicePricingBasis": {
+    "on_request": "по запросу",
+    "per_container": "за контейнер",
+    "per_day": "за день",
     "per_hour": "за час",
     "per_kg": "за кг",
     "per_lot": "за партию",
     "per_month": "в месяц",
-    "per_ton": "за тонну"
+    "per_order": "за заказ",
+    "per_pallet": "за паллету",
+    "per_piece": "за штуку",
+    "per_shipment": "за отправку",
+    "per_sqft": "за кв. фут",
+    "per_ton": "за тонну",
+    "per_unit": "за единицу",
+    "percentage": "%"
   },
   "serviceRole": {
     "accountant": "Бухгалтер",
@@ -128,5 +149,14 @@
     "tanker": "Автоцистерна",
     "tipper": "Самосвал",
     "trailer": "Прицеп"
+  },
+  "workerTypeGroup": {
+    "field_to_gate": "От поля до ворот",
+    "loading_handling": "Погрузка и обработка",
+    "packing": "Упаковка",
+    "processing_line": "Переработка",
+    "sorting_grading": "Сортировка и калибровка",
+    "transport": "Транспорт",
+    "warehouse": "Склад и хранение"
   }
 }

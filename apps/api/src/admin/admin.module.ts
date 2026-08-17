@@ -273,7 +273,7 @@ export class AdminService {
     const and: Prisma.UserWhereInput[] = [];
     // A user's effective roles are {role} ∪ roles, so the per-role tabs must
     // match secondary roles too or multi-role users vanish from those tabs.
-    const known = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'];
+    const known = ['buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker'];
     if (role && known.includes(role))
       and.push({ OR: [{ role: role as Role }, { roles: { has: role as Role } }] });
     if (search)

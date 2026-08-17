@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Button, Icon, Input } from '@agrotraders/ui';
+import type { ApiHireTargetType } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
 import { CityInput } from '../GeoInputs';
 
 export interface HireTarget {
-  targetType: 'transporter' | 'loaderco' | 'worker';
+  targetType: ApiHireTargetType;
   targetUserId: string;
   workerId?: string;
   name: string;
@@ -17,7 +18,9 @@ export interface HireTarget {
 const TITLE_KEY = {
   transporter: 'site.hireTransporter',
   loaderco: 'site.hireLoader',
+  workerco: 'site.hireWorkerCo',
   worker: 'site.hireWorker',
+  service_provider: 'site.hireService',
 } as const;
 
 const BLANK = { message: '', fromCity: '', toCity: '', cargo: '', location: '', workersNeeded: '1', neededDate: '', budget: '' };
@@ -109,7 +112,7 @@ export function HireModal({
             ) : (
               <>
                 <Input label={t('site.location')} placeholder={t('site.ph.location')} value={f.location} onChange={set('location')} />
-                {target.targetType === 'loaderco' && (
+                {(target.targetType === 'loaderco' || target.targetType === 'workerco') && (
                   <Input label={t('site.workersNeeded')} type="number" value={f.workersNeeded} onChange={set('workersNeeded')} />
                 )}
               </>

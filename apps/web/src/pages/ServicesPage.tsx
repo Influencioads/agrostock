@@ -1,9 +1,11 @@
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import type { ApiServiceProvider } from '@agrotraders/api-client';
-import { SERVICE_CATEGORIES, SERVICE_GROUPS } from '@agrotraders/types';
+import { SERVICE_GROUPS } from '@agrotraders/types';
 import { useNavigate } from 'react-router-dom';
+import { HireModal, type HireTarget } from '../components/site/HireModal';
 import { api } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { useCurrency } from '../currency/CurrencyContext';
@@ -24,6 +26,7 @@ export function ServicesPage() {
   const { fmtCents } = useCurrency();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const [hire, setHire] = useState<HireTarget | null>(null);
   useDocumentTitle(t('service.providers'));
 
   const category = params.get('category') ?? '';
@@ -91,15 +94,18 @@ export function ServicesPage() {
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {providers.map((p) => (
             <Card key={p.id} className="flex h-full flex-col gap-2">
-              <div className="flex items-start justify-between gap-2">
+              {/* The whole identity block opens the profile — the card is a
+                  summary, and every field it truncates lives on that page. */}
+              <Link to={`/u/${p.user.id}`} className="group flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 font-display text-base font-bold text-ink">
+                  <div className="flex items-center gap-1.5 font-display text-base font-bold text-ink group-hover:text-brand-dark">
                     <span className="truncate">{p.companyName || p.user.name}</span>
                     {p.user.kycStatus === 'verified' && <Icon name="shield" size={14} className="shrink-0 text-brand" />}
                   </div>
                   <div className="text-xs text-ink-soft">{t(`enums:serviceRole.${p.user.role}`, { defaultValue: p.user.role })}</div>
                 </div>
-              </div>
+                <Icon name="chevronRight" size={16} className="mt-1 shrink-0 text-ink-soft group-hover:text-brand" />
+              </Link>
 
               <div className="flex flex-wrap gap-1.5">
                 {p.categories.slice(0, 3).map((c) => (
@@ -125,7 +131,7 @@ export function ServicesPage() {
                 )}
               </dl>
 
-              <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+              <div className="mt-auto pt-2">
                 <div className="font-display text-sm font-extrabold text-ink">
                   {p.priceFromCents != null && p.pricingBasis
                     ? t('service.priceFrom', {
@@ -134,18 +140,42 @@ export function ServicesPage() {
                       })
                     : t('service.onEnquiry')}
                 </div>
-                {/* Browsing is open; sending the enquiry is the gated step. */}
-                <Button
-                  size="sm"
-                  onClick={() => (user ? chatBus.openCommunityDm(p.user.id, p.companyName || p.user.name) : navigate('/login'))}
-                >
-                  {t('service.contact')}
-                </Button>
+                {/* Browsing is open; both actions are the gated step. Hire books
+                    the job through the same HireRequest flow a transporter uses
+                    (escrow, notifications, invoicing); enquiry is just a chat. */}
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="accent"
+                    className="flex-1"
+                    // No auth check: HireModal shows its own sign-in prompt, which
+                    // keeps the chosen provider in view instead of bouncing to /login.
+                    onClick={() =>
+                      setHire({
+                        targetType: 'service_provider',
+                        targetUserId: p.user.id,
+                        name: p.companyName || p.user.name,
+                      })
+                    }
+                  >
+                    {t('service.hire')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => (user ? chatBus.openCommunityDm(p.user.id, p.companyName || p.user.name) : navigate('/login'))}
+                  >
+                    {t('service.contact')}
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
         </div>
       )}
+
+      {hire && <HireModal target={hire} onClose={() => setHire(null)} />}
     </div>
   );
 }

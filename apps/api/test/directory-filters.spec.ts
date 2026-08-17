@@ -66,13 +66,16 @@ describe('DirectoryService multi-select facets', () => {
     expect(profile.market).toEqual({ slug: { in: ['kandla', 'mundra'] } });
   });
 
+  // The public worker directory lists ACCOUNTS now, not `Worker` crew rows, so
+  // availability is reached through the worker's own record rather than being a
+  // column on the queried table.
   it('ORs worker availability across the ticked states and ignores unknown ones', async () => {
     const { svc, prisma } = serviceForDirectory();
 
     await svc.workers({ status: 'available,on_site,bogus' });
 
-    const where = (prisma.worker.findMany.mock.calls[0][0] as { where: Prisma.WorkerWhereInput }).where;
-    expect(where.status).toEqual({ in: ['available', 'on_site'] });
+    const and = whereOf(prisma.user.findMany).AND as Prisma.UserWhereInput[];
+    expect(and).toContainEqual({ workerProfile: { is: { status: { in: ['available', 'on_site'] } } } });
   });
 
   it('matches a worker against any of several countries', async () => {
@@ -80,8 +83,9 @@ describe('DirectoryService multi-select facets', () => {
 
     await svc.workers({ country: 'India,Nepal' });
 
-    const where = (prisma.worker.findMany.mock.calls[0][0] as { where: Prisma.WorkerWhereInput }).where;
-    expect(where.user).toEqual({
+    const and = whereOf(prisma.user.findMany).AND as Prisma.UserWhereInput[];
+    // Country is a column on the account itself now, not a hop through `user`.
+    expect(and).toContainEqual({
       OR: [
         { country: { contains: 'India', mode: 'insensitive' } },
         { country: { contains: 'Nepal', mode: 'insensitive' } },

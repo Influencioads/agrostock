@@ -8,6 +8,7 @@ describe('mobile signup roles', () => {
       'seller',
       'transporter',
       'loaderco',
+      'workerco',
       'worker',
     ]);
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  allowedCategories, categoriesForRole, isServiceRole,
+  allowedCategories, categoriesForRole, hireTargetForRoles, isServiceRole,
   ROLE_CATEGORIES, SERVICE_CATEGORIES, SERVICE_GROUPS, SERVICE_ROLES,
 } from './services';
 
@@ -50,5 +50,29 @@ describe('allowedCategories', () => {
 
   it('allows a packer to also offer fulfilment', () => {
     expect(allowedCategories('packer', ['packing', 'fulfillment'])).toEqual(['fulfillment', 'packing']);
+  });
+});
+
+describe('hireTargetForRoles', () => {
+  it('maps each provider role to its own hire flow', () => {
+    expect(hireTargetForRoles(['transporter'])).toBe('transporter');
+    expect(hireTargetForRoles(['loaderco'])).toBe('loaderco');
+    expect(hireTargetForRoles(['workerco'])).toBe('workerco');
+    expect(hireTargetForRoles(['worker'])).toBe('worker');
+  });
+
+  it('folds all five service roles into one flow', () => {
+    for (const role of SERVICE_ROLES) expect(hireTargetForRoles([role])).toBe('service_provider');
+  });
+
+  it('reads a worker company as a company, not an individual', () => {
+    // The regression this guards: hired as `worker`, a company's job is minted
+    // with no loaderco attached, so its own dashboard never sees the work.
+    expect(hireTargetForRoles(['worker', 'workerco'])).toBe('workerco');
+  });
+
+  it('has nothing to hire for a buyer or seller', () => {
+    expect(hireTargetForRoles(['buyer', 'seller'])).toBeNull();
+    expect(hireTargetForRoles([null, undefined])).toBeNull();
   });
 });

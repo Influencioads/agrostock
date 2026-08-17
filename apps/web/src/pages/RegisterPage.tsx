@@ -14,7 +14,7 @@ import { TagInput } from '../components/TagInput';
 
 /** Roles that fill in operational details (where they operate / supply, thresholds). */
 // Roles that get the extra onboarding fields (location, market) at signup.
-const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker', ...SERVICE_ROLES]);
+const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'workerco', 'worker', ...SERVICE_ROLES]);
 
 // Self-registerable roles must match the API's PUBLIC_ROLES (admin is provisioned).
 // Labels/descriptions are translated at render (console.role.<id> / page.register.roleDesc.<id>).
@@ -22,6 +22,7 @@ const roles: { id: string; icon: IconName }[] = [
   { id: 'buyer_seller', icon: 'store' },
   { id: 'transporter', icon: 'truck' },
   { id: 'loaderco', icon: 'worker' },
+  { id: 'workerco', icon: 'grid' },
   { id: 'worker', icon: 'user' },
   // One public card keeps signup simple; the select below maps it to the real
   // role so dashboards and RBAC remain unchanged.
@@ -86,7 +87,8 @@ export function RegisterPage() {
       const selectedRole = form.role === 'service_provider' ? serviceRole : form.role;
       const isProvider = PROVIDER_ROLES.has(selectedRole);
       const isTransporter = selectedRole === 'transporter';
-      const isLoaderco = selectedRole === 'loaderco';
+      // Both labour companies collect the same operational fields.
+      const isLoaderco = selectedRole === 'loaderco' || selectedRole === 'workerco';
       const isWorker = selectedRole === 'worker';
       const numOrUndef = (v: string) => {
         const n = Number(v);
@@ -350,7 +352,7 @@ export function RegisterPage() {
                   options={tagCities}
                   onDraftChange={setCityDraft}
                 />
-                {(form.role === 'transporter' || form.role === 'loaderco') && (
+                {(form.role === 'transporter' || form.role === 'loaderco' || form.role === 'workerco') && (
                   <>
                     <TagInput
                       label={t('page.register.supplyingCountries')}

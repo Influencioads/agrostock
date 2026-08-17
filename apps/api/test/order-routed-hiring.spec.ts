@@ -60,20 +60,32 @@ describe('directory serves filter', () => {
     expect(where.profile).toEqual({ listApproved: true });
   });
 
+  // Workers are ACCOUNTS in the public directory now, not `Worker` crew rows, so
+  // their areas and thresholds come off the shared `Profile` the other provider
+  // types already use — including the supplying* columns a crew row never had.
   it('keeps the worker minWorkHours threshold when a route filter is also applied', async () => {
     const { svc, prisma } = directoryService();
 
     await svc.workers({ servesCity: 'Mundra', minWorkHours: '8' });
 
-    const where = prisma.worker.findMany.mock.calls[0][0].where;
-    // Both predicates carry an OR — a `where.OR` for one would drop the other.
-    expect(where.OR).toBeUndefined();
-    const preds = leaves(where.AND);
+    const where = prisma.user.findMany.mock.calls[0][0].where;
+    // The role match owns the top-level OR; everything else has to go under AND.
+    // Unfiltered, the labour directory holds worker COMPANIES and individuals,
+    // so the role match covers both. Loading companies have their own list.
+    expect(where.OR).toEqual([
+      { role: 'workerco' },
+      { roles: { has: 'workerco' } },
+      { role: 'worker' },
+      { roles: { has: 'worker' } },
+    ]);
+    const preds = leaves(where.profile);
     expect(preds).toContainEqual({ minWorkHours: null });
     expect(preds).toContainEqual({ minWorkHours: { lte: 8 } });
     expect(preds).toContainEqual({ originCity: { contains: 'Mundra', mode: 'insensitive' } });
-    // Worker rows have no supplying* columns.
-    expect(preds.some((p) => 'supplyingCities' in p)).toBe(false);
+    // Employed crew stay private no matter what else is filtered on.
+    expect(where.AND).toContainEqual({
+      OR: [{ workerProfile: { is: null } }, { workerProfile: { is: { loadercoId: null } } }],
+    });
   });
 });
 

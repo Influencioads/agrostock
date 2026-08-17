@@ -8,6 +8,7 @@ export const SIGNUP_ROLES = [
   { id: 'seller', labelKey: 'seller' },
   { id: 'transporter', labelKey: 'transporter' },
   { id: 'loaderco', labelKey: 'loaderco' },
+  { id: 'workerco', labelKey: 'workerco' },
   { id: 'worker', labelKey: 'worker' },
 ] as const;
 

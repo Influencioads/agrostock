@@ -22,4 +22,10 @@ export default defineConfig({
   preview: {
     port: Number(process.env.WEB_PORT) || 5173,
   },
+  test: {
+    // `e2e/` is Playwright, which brings its own runner and its own `test`
+    // export. Vitest picking those files up fails the unit run on an import it
+    // was never meant to resolve — they are driven by `pnpm e2e`.
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
+  },
 });

@@ -26,12 +26,21 @@ import { TextTranslationService } from '../translation/text-translation.service'
 import { WalletService } from '../wallet/wallet.service';
 import { secureOtp, secureReference } from '../common/secure-random';
 
+/**
+ * Every value the schema enum carries, rather than a hand-kept copy.
+ *
+ * The copy is what broke: `service_provider` was added to the enum and handled
+ * throughout `create()`, but this validator still listed only the original
+ * three, so every service-provider enquiry 400ed before reaching that code.
+ */
+const HIRE_TARGET_TYPES = Object.values(HireTargetType);
+
 export class CreateHireDto {
-  @ApiProperty({ enum: ['transporter', 'loaderco', 'worker'] })
-  @IsIn(['transporter', 'loaderco', 'worker'])
+  @ApiProperty({ enum: HIRE_TARGET_TYPES })
+  @IsIn(HIRE_TARGET_TYPES)
   targetType!: HireTargetType;
 
-  @ApiProperty({ description: 'User id of the transporter / loader company / worker to hire' })
+  @ApiProperty({ description: 'User id of the transporter / loader company / service provider to hire' })
   @IsString()
   targetUserId!: string;
 
@@ -376,7 +385,12 @@ export class HiresService {
           notes: hire.message,
           orderId: hire.orderId,
           createdById: hire.requesterId,
-          loadercoId: hire.targetType === 'loaderco' ? hire.targetUserId : worker?.loadercoId ?? null,
+          // Both labour companies mint the same job; they differ only in which
+          // trades they supply, which the offering rows already record.
+          loadercoId:
+            hire.targetType === 'loaderco' || hire.targetType === 'workerco'
+              ? hire.targetUserId
+              : worker?.loadercoId ?? null,
         },
       });
       if (hire.targetType === 'worker' && worker) {
@@ -504,25 +518,23 @@ export class HiresController {
     @Query('targetType') targetType?: string,
     @Query('orderId') orderId?: string,
   ) {
-    const valid =
-      targetType === 'transporter' || targetType === 'loaderco' ||
-      targetType === 'worker' || targetType === 'service_provider';
+    const valid = HIRE_TARGET_TYPES.includes(targetType as HireTargetType);
     return this.hires.mine(user.id, { targetType: valid ? (targetType as HireTargetType) : undefined, orderId }, locale);
   }
 
-  @Roles('transporter', 'loaderco', 'worker', ...SERVICE_ROLES)
+  @Roles('transporter', 'loaderco', 'workerco', 'worker', ...SERVICE_ROLES)
   @Get('incoming')
   incoming(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
     return this.hires.incoming(user.id, locale);
   }
 
-  @Roles('transporter', 'loaderco', 'worker', ...SERVICE_ROLES)
+  @Roles('transporter', 'loaderco', 'workerco', 'worker', ...SERVICE_ROLES)
   @Post(':id/accept')
   accept(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.hires.accept(user, id);
   }
 
-  @Roles('transporter', 'loaderco', 'worker', ...SERVICE_ROLES)
+  @Roles('transporter', 'loaderco', 'workerco', 'worker', ...SERVICE_ROLES)
   @Post(':id/decline')
   decline(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.hires.decline(user, id);

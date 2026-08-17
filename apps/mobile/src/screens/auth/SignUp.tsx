@@ -16,7 +16,7 @@ import { SIGNUP_ROLES } from './signupRoles';
 import { TagInput } from '../components/TagInput';
 import { PickerField } from '../components/PickerSheet';
 
-const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'worker']);
+const PROVIDER_ROLES = new Set(['transporter', 'loaderco', 'workerco', 'worker']);
 
 /** Glyph per role, matching the prototype's role-card grid. */
 const ROLE_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -65,7 +65,8 @@ export function SignUp() {
   const cityOptions = cities.map((c) => ({ value: c }));
 
   const isTransporter = form.role === 'transporter';
-  const isLoaderco = form.role === 'loaderco';
+  // Both labour companies collect the same operational fields.
+  const isLoaderco = form.role === 'loaderco' || form.role === 'workerco';
   const isWorker = form.role === 'worker';
   const isProvider = PROVIDER_ROLES.has(form.role);
 

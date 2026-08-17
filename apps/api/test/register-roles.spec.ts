@@ -28,6 +28,7 @@ describe('public self-registration roles', () => {
       'seller',
       'transporter',
       'worker',
+      'workerco',
     ]);
   });
 

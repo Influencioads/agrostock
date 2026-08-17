@@ -14,7 +14,15 @@ enum Role {
   buyer
   seller
   transporter
+  /// A LOADING company specifically — it supplies loading and material-handling
+  /// crew and nothing else. The narrower of the two labour companies; the group
+  /// restriction is enforced in `workforce.module.ts`, not just by convention.
   loaderco
+  /// A general labour company — packers, sorters, processing line, warehouse,
+  /// transport-side, harvest gangs, and loaders too. A loading company is the
+  /// specialist case of this one.
+  workerco
+  /// One individual selling their own labour, in any of the seven groups.
   worker
   // Service providers. Each self-registers like a transporter does and receives
   // customer enquiries through the same HireRequest flow; the role decides which
@@ -81,6 +89,29 @@ enum ServiceNodeKind {
   COUNTRY
   SUBGROUP
   SERVICE
+}
+
+/// The seven families of physical labour an agri-exporter hires, from the
+/// packhouse floor to the container door. Deliberately a small fixed enum rather
+/// than a node tree like ServiceNode: the whole taxonomy is ~45 types two levels
+/// deep, so a parent table would be 7 rows joined on every read for nothing.
+enum WorkerTypeGroup {
+  loading_handling
+  packing
+  sorting_grading
+  processing_line
+  warehouse
+  transport
+  field_to_gate
+}
+
+/// How labour is quoted. Narrower than `ServicePricingBasis` on purpose — crews
+/// are sold by time or not priced publicly at all, and offering `per_kg` here
+/// would invite a rate nobody can compare against another provider's.
+enum LabourRateBasis {
+  per_hour
+  per_day
+  on_request
 }
 
 /// Which jurisdiction a taxonomy branch applies to. Deliberately NOT the same
@@ -332,6 +363,9 @@ enum TxType {
 enum HireTargetType {
   transporter
   loaderco
+  /// A general labour company. Separate from `loaderco` because the two supply
+  /// different trades, but handled identically everywhere downstream.
+  workerco
   worker
   /// A service provider of any of the five service roles. One value rather than
   /// five, because the specific role is already on the target user — splitting it
@@ -395,6 +429,10 @@ model User {
   routes              Route[]
   teams               Team[]
   workers             Worker[]                 @relation("LoadercoWorkers")
+  /// What kinds of labour this account supplies publicly. Held on User rather
+  /// than on a labour-specific profile because BOTH a loading company and an
+  /// independent worker publish these, and they already share `Profile`.
+  workerOfferings     WorkerOffering[]
   workerProfile       Worker?                  @relation("WorkerUser")
   loaderJobsCreated   LoaderJob[]              @relation("JobCreator")
   loaderJobsManaged   LoaderJob[]              @relation("JobLoaderco")
@@ -700,6 +738,75 @@ model ServiceNode {
   @@index([parentId])
   @@index([kind])
   @@index([isActive, level])
+}
+
+/// One kind of physical worker — "Forklift operator", "Sorter", "Bagging
+/// operator". The public face of the labour side: a loading company's actual
+/// crew is private, and what a buyer browses instead is the TYPES it supplies.
+model WorkerType {
+  id     String          @id @default(cuid())
+  /// Kebab-cased and stable — the seed upserts on it, so it is the node identity
+  /// across re-runs, exactly as `ServiceNode.slug` is.
+  slug   String          @unique
+  nameEn String
+  group  WorkerTypeGroup
+
+  /// Types dropped from the seed are deactivated, never deleted — a provider may
+  /// already price one, and a hard delete would take their rate with it.
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  translations WorkerTypeTranslation[]
+  offerings    WorkerOffering[]
+
+  @@index([group, sortOrder])
+}
+
+model WorkerTypeTranslation {
+  id           String     @id @default(cuid())
+  workerTypeId String
+  locale       String
+  name         String
+  workerType   WorkerType @relation(fields: [workerTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([workerTypeId, locale])
+  @@index([locale])
+}
+
+/// One provider's rate for one kind of worker — the labour twin of
+/// `ProviderService`, and the row the public labour directory is built from.
+///
+/// `headcount` is what makes a company offering different from an individual's:
+/// a loading company supplying 30 loaders and an independent forklift operator
+/// supplying himself are the same shape, differing only in that number.
+model WorkerOffering {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workerTypeId String
+  workerType   WorkerType @relation(fields: [workerTypeId], references: [id])
+
+  rateBasis    LabourRateBasis @default(per_hour)
+  /// Minor units of `currency`. Both null only when the basis is `on_request`.
+  rateMinCents Int?
+  rateMaxCents Int?
+  currency     String          @default("USD")
+
+  /// How many of this type can be fielded at once. Null = not stated.
+  headcount    Int?
+  minHours     Int?
+  notes        String?
+  isNegotiable Boolean         @default(false)
+  isActive     Boolean         @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  /// One rate per type per account — a second row for the same type is an edit.
+  @@unique([userId, workerTypeId])
+  @@index([workerTypeId, isActive])
 }
 
 model ServiceNodeTranslation {

@@ -52,7 +52,16 @@ export function ArrangeLogisticsSheet({ order, onClose }: { order: ApiOrder; onC
     queryFn: async () => {
       if (tab === 'worker') {
         const workers = await api.directory.workers(serves);
-        return workers.map((w) => ({ id: w.id, userId: w.user?.id, name: w.name, detail: `${w.rating ?? '—'} ★ · ${w.status}`, workerId: w.id }));
+        // The directory now returns the worker's ACCOUNT, not their crew row:
+        // `w.id` is the user id and the Worker record hangs off `workerProfile`.
+        // Both still travel, because a hire needs the user AND the worker id.
+        return workers.map((w) => ({
+          id: w.id,
+          userId: w.id,
+          name: w.name,
+          detail: `${w.workerProfile?.rating ?? '—'} ★ · ${w.workerProfile?.status ?? ''}`,
+          workerId: w.workerProfile?.id,
+        }));
       }
       const list = tab === 'transporter' ? await api.directory.transporters(serves) : await api.directory.loaders(serves);
       return list.map((d) => ({ id: d.id, userId: d.id, name: d.name, detail: [d.country, d.kycStatus].filter(Boolean).join(' · ') }));

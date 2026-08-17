@@ -4,9 +4,18 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiDirectoryEntry, ApiMarket, ApiWorkerEntry } from '@agrotraders/api-client';
+import {
+  LABOUR_ON_REQUEST,
+  type ApiDirectoryEntry,
+  type ApiMarket,
+  type ApiWorkerEntry,
+  type ApiWorkerOffering,
+  type ApiWorkerType,
+} from '@agrotraders/api-client';
+import { hireTargetForRoles } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Button, Card, Chip, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from '../components/HireModal';
@@ -24,10 +33,30 @@ const HIRE_TYPE: Record<DirectoryType, HireTarget['targetType'] | null> = {
   workers: 'worker',
 };
 
+/**
+ * The lowest published rate a provider offers, for the card's headline figure.
+ *
+ * "On request" rows carry no number and are skipped rather than sorted as zero —
+ * a provider whose cheapest quotable job is $6/hr must not advertise "from $0"
+ * because one of their types is quote-only.
+ */
+function cheapestRate(
+  offerings: ApiWorkerOffering[],
+  t: (k: string, o?: Record<string, unknown>) => string,
+  fmtCents: (c: number | null | undefined) => string,
+): string {
+  const priced = offerings.filter((o) => o.rateBasis !== LABOUR_ON_REQUEST && o.rateMinCents != null);
+  if (!priced.length) return t('labour.onRequest');
+  const best = priced.reduce((a, b) => (b.rateMinCents! < a.rateMinCents! ? b : a));
+  const basis = t(`enums:labourRateBasis.${best.rateBasis}`, { defaultValue: best.rateBasis });
+  return `${fmtCents(best.rateMinCents)} ${basis}`;
+}
+
 export function Directory({ type }: { type: DirectoryType }) {
   const nav = useNavigation<Nav>();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const [search, setSearch] = useState('');
   const [market, setMarket] = useState('');
   const [verified, setVerified] = useState(false);
@@ -38,9 +67,13 @@ export function Directory({ type }: { type: DirectoryType }) {
   const [minWorkHours, setMinWorkHours] = useState('');
   const [minDistanceKm, setMinDistanceKm] = useState('');
   const [minLoaders, setMinLoaders] = useState('');
+  const [workerTypes, setWorkerTypes] = useState<string[]>([]);
+  const [providerKind, setProviderKind] = useState<'company' | 'individual' | ''>('');
   const [hire, setHire] = useState<HireTarget | null>(null);
 
   const num = (v: string) => (v.trim() && Number.isFinite(Number(v)) ? Number(v) : undefined);
+  const toggleWorkerType = (slug: string) =>
+    setWorkerTypes((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]));
 
   const { data: markets = [] } = useQuery<ApiMarket[]>({
     queryKey: ['markets'],
@@ -49,8 +82,22 @@ export function Directory({ type }: { type: DirectoryType }) {
     enabled: type === 'sellers',
   });
 
+  // The worker-type list is the taxonomy, not a facet: small, fixed and shared by
+  // both labour directories, so it is fetched once and cached rather than derived
+  // from the current results the way the country chips are.
+  const { data: labourTypes = [] } = useQuery<ApiWorkerType[]>({
+    queryKey: ['labour-types'],
+    queryFn: () => api.labour.types(),
+    staleTime: 5 * 60_000,
+    enabled: type === 'workers' || type === 'loaders',
+  });
+  const labourTypeOpts = useMemo(
+    () => labourTypes.filter((wt) => wt.providerCount > 0 || workerTypes.includes(wt.slug)),
+    [labourTypes, workerTypes],
+  );
+
   const { data: raw = [], isLoading } = useQuery<(ApiDirectoryEntry | ApiWorkerEntry)[]>({
-    queryKey: ['directory', type, search, market, verified, status, operatingCountry, operatingCity, supplyingCountry, minWorkHours, minDistanceKm, minLoaders],
+    queryKey: ['directory', type, search, market, verified, status, operatingCountry, operatingCity, supplyingCountry, minWorkHours, minDistanceKm, minLoaders, workerTypes, providerKind],
     queryFn: async () => {
       const q = {
         search: search || undefined,
@@ -60,11 +107,12 @@ export function Directory({ type }: { type: DirectoryType }) {
         operatingCity: operatingCity || undefined,
         supplyingCountry: supplyingCountry || undefined,
         minWorkHours: num(minWorkHours),
+        workerType: workerTypes.length ? workerTypes : undefined,
       };
       if (type === 'sellers') return api.directory.sellers(q);
       if (type === 'transporters') return api.directory.transporters({ ...q, minDistanceKm: num(minDistanceKm) });
       if (type === 'loaders') return api.directory.loaders({ ...q, minLoaders: num(minLoaders) });
-      return api.directory.workers({ ...q, status: status || undefined });
+      return api.directory.workers({ ...q, status: status || undefined, providerKind: providerKind || undefined });
     },
   });
 
@@ -75,12 +123,12 @@ export function Directory({ type }: { type: DirectoryType }) {
     () =>
       Array.from(
         new Set(
-          entries.flatMap((e) =>
-            type === 'workers' ? (e as ApiWorkerEntry).operatingCountries ?? [] : (e as ApiDirectoryEntry).profile?.operatingCountries ?? [],
-          ),
+          // Workers now carry their areas on `profile` like every other entry
+          // does, so both directory shapes read from the same place.
+          entries.flatMap((e) => e.profile?.operatingCountries ?? []),
         ),
       ).sort(),
-    [entries, type],
+    [entries],
   );
   const supplyingCountryOpts = useMemo(
     () => Array.from(new Set(entries.flatMap((e) => (e as ApiDirectoryEntry).profile?.supplyingCountries ?? []))).sort(),
@@ -104,7 +152,40 @@ export function Directory({ type }: { type: DirectoryType }) {
             markets.map((m) => (
               <Chip key={m.id} label={`${m.flag} ${m.name}`} active={market === m.slug} onPress={() => setMarket(market === m.slug ? '' : m.slug)} />
             ))}
+          {/* Worker COMPANIES and individuals share this directory; loading
+              companies have their own, because they supply only loading crew. */}
+          {type === 'workers' && (
+            <>
+              <Chip
+                label={t('labour.company')}
+                active={providerKind === 'company'}
+                onPress={() => setProviderKind(providerKind === 'company' ? '' : 'company')}
+              />
+              <Chip
+                label={t('labour.individual')}
+                active={providerKind === 'individual'}
+                onPress={() => setProviderKind(providerKind === 'individual' ? '' : 'individual')}
+              />
+            </>
+          )}
         </ScrollView>
+
+        {/* Which KIND of worker is on offer — the question that replaced browsing
+            a loading company's individual staff. Counts come from the taxonomy,
+            so a type nobody supplies reads as zero rather than vanishing. */}
+        {labourTypeOpts.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {labourTypeOpts.map((wt) => (
+              <Chip
+                key={wt.slug}
+                label={wt.name}
+                count={wt.providerCount}
+                active={workerTypes.includes(wt.slug)}
+                onPress={() => toggleWorkerType(wt.slug)}
+              />
+            ))}
+          </ScrollView>
+        ) : null}
 
         {/* Operational filters (transporters / loaders / workers). */}
         {type !== 'sellers' && operatingCountryOpts.length > 0 ? (
@@ -154,12 +235,18 @@ export function Directory({ type }: { type: DirectoryType }) {
           const isWorker = type === 'workers';
           const w = e as ApiWorkerEntry;
           const d = e as ApiDirectoryEntry;
-          const profile = isWorker ? w.user?.profile : d.profile;
-          const country = isWorker ? w.user?.country : d.country;
-          const kyc = isWorker ? w.user?.kycStatus : d.kycStatus;
-          const userId = isWorker ? w.user?.id : d.id;
+          const profile = isWorker ? w.profile : d.profile;
+          const country = isWorker ? w.country : d.country;
+          const kyc = isWorker ? w.kycStatus : d.kycStatus;
+          const userId = e.id;
           const counts = (e._count ?? {}) as Record<string, number>;
-          const hireType = HIRE_TYPE[type];
+          // A worker COMPANY and an individual share this directory, so the flow
+          // comes from the account's own roles: hired as `worker`, a company's
+          // job is minted with no company attached and never reaches its board.
+          // The other directories are single-role by construction.
+          const hireType = isWorker
+            ? hireTargetForRoles([w.role, ...(w.roles ?? [])]) ?? 'worker'
+            : HIRE_TYPE[type];
           const statLine =
             type === 'sellers'
               ? `${t('pubX.dir.products', { count: counts.products ?? 0 })} · ${t('pubX.dir.orders', { count: counts.sellerOrders ?? 0 })}`
@@ -183,15 +270,39 @@ export function Directory({ type }: { type: DirectoryType }) {
               <Row gap={6} style={{ flexWrap: 'wrap' }}>
                 {profile?.market ? <Badge label={`${profile.market.flag} ${profile.market.name}`} tone="mango" /> : null}
                 {profile?.availableFrom && profile?.availableTo ? <Badge label={`${profile.availableFrom}–${profile.availableTo}`} tone="slate" /> : null}
-                {isWorker ? <Badge label={w.status.replace('_', ' ')} tone={w.status === 'available' ? 'green' : 'slate'} /> : null}
-                {isWorker && w.rating ? <Badge label={`★ ${w.rating}`} tone="mango" /> : null}
-                {isWorker && w.independent ? <Badge label={t('pubX.dir.independent')} tone="info" /> : null}
+                {isWorker && w.workerProfile ? <Badge label={w.workerProfile.status.replace('_', ' ')} tone={w.workerProfile.status === 'available' ? 'green' : 'slate'} /> : null}
+                {isWorker && w.workerProfile?.rating ? <Badge label={`★ ${w.workerProfile.rating}`} tone="mango" /> : null}
+                {/* Everyone listed here answers for themselves, so `independent`
+                    is true for a company too — the useful distinction is which
+                    of the two it is. */}
+                {isWorker ? (
+                  <Badge
+                    label={w.providerKind === 'company' ? t('labour.company') : t('pubX.dir.independent')}
+                    tone="info"
+                  />
+                ) : null}
               </Row>
+              {/* Which KINDS of worker this provider supplies, and the cheapest
+                  rate. For a loading company this is what replaced browsing its
+                  individual crew. */}
+              {(e.workerOfferings?.length ?? 0) > 0 ? (
+                <View style={{ gap: 6 }}>
+                  <Row gap={6} style={{ flexWrap: 'wrap' }}>
+                    {e.workerOfferings!.slice(0, 3).map((o) => (
+                      <Badge key={o.id} label={o.workerType.name} tone="green" />
+                    ))}
+                    {e.workerOfferings!.length > 3 ? (
+                      <Badge label={`+${e.workerOfferings!.length - 3}`} tone="slate" />
+                    ) : null}
+                  </Row>
+                  <Txt variant="title">{t('labour.ratesFrom')}: {cheapestRate(e.workerOfferings!, t, fmtCents)}</Txt>
+                </View>
+              ) : null}
               {(() => {
-                const opCountries = isWorker ? w.operatingCountries : d.profile?.operatingCountries;
-                const opCities = isWorker ? w.operatingCities : d.profile?.operatingCities;
+                const opCountries = isWorker ? w.profile?.operatingCountries : d.profile?.operatingCountries;
+                const opCities = isWorker ? w.profile?.operatingCities : d.profile?.operatingCities;
                 const supCountries = d.profile?.supplyingCountries;
-                const minHrs = isWorker ? w.minWorkHours : d.profile?.minWorkHours;
+                const minHrs = isWorker ? w.workerProfile?.minWorkHours : d.profile?.minWorkHours;
                 const minDist = d.profile?.minDistanceKm;
                 const minCrew = d.profile?.minLoaders;
                 const operates = [...(opCities ?? []), ...(opCountries ?? [])];
@@ -228,7 +339,9 @@ export function Directory({ type }: { type: DirectoryType }) {
                       icon="checkmark"
                       full
                       disabled={!userId || userId === user?.id}
-                      onPress={() => userId && setHire({ targetType: hireType, targetUserId: userId, workerId: isWorker ? w.id : undefined, name: e.name })}
+                      // `w.id` is the USER id now — the Worker record hangs off
+                      // `workerProfile`, and a hire needs both.
+                      onPress={() => userId && setHire({ targetType: hireType, targetUserId: userId, workerId: w.workerProfile?.id, name: e.name })}
                     />
                   </View>
                 ) : null}

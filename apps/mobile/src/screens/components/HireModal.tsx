@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import type { ApiHireTargetType } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { Button, Card, Input, Row, Txt } from '../../ui';
@@ -13,7 +14,7 @@ import { useI18n } from '../../i18n';
 import { CityField } from './GeoFields';
 
 export interface HireTarget {
-  targetType: 'transporter' | 'loaderco' | 'worker';
+  targetType: ApiHireTargetType;
   targetUserId: string;
   workerId?: string;
   name: string;
@@ -105,7 +106,7 @@ export function HireModal({
               ) : (
                 <>
                   <Input label={t('compX.hire.location')} placeholder={t('pubX.ph.locationTerminal')} value={f.location} onChangeText={set('location')} />
-                  {target.targetType === 'loaderco' && (
+                  {(target.targetType === 'loaderco' || target.targetType === 'workerco') && (
                     <Input label={t('compX.hire.workersNeeded')} keyboardType="numeric" value={f.workersNeeded} onChangeText={set('workersNeeded')} />
                   )}
                 </>

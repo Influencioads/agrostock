@@ -24,6 +24,7 @@ import { LoaderWorkers } from '../screens/loaderco/Workers';
 import { WorkerDashboard } from '../screens/worker/Dashboard';
 import { WorkerJobs } from '../screens/worker/Jobs';
 import { WorkerEarnings } from '../screens/worker/Earnings';
+import { ServiceDashboard, ServiceEnquiries } from '../screens/service/ServiceProvider';
 
 const Tab = createBottomTabNavigator();
 
@@ -198,6 +199,24 @@ export function LoaderTabs() {
       <Tab.Screen name="Jobs" component={LoaderJobs} options={tab('briefcase', 'Jobs')} />
       <Tab.Screen name="Workers" component={LoaderWorkers} options={tab('people', 'Workers')} />
       <Tab.Screen name="More" component={MoreHub} options={hub} />
+    </Tab.Navigator>
+  );
+}
+
+/**
+ * One tab stack for all five service roles — an accountant and a packing partner
+ * run the same console, differing only in which categories they may offer.
+ * Everything else (profile, invoices, wallet) hangs off the Account hub.
+ */
+export function ServiceTabs() {
+  const tab = useTabOptions();
+  const hub = useHubTabOptions('person', 'Account');
+  return (
+    <Tab.Navigator screenOptions={useTabScreenOptions()}>
+      <Tab.Screen name="Home" component={Home} options={tab('home', 'Home')} />
+      <Tab.Screen name="Dashboard" component={ServiceDashboard} options={tab('speedometer', 'Dashboard')} />
+      <Tab.Screen name="Enquiries" component={ServiceEnquiries} options={tab('mail', 'Enquiries')} />
+      <Tab.Screen name="Account" component={MoreHub} options={hub} />
     </Tab.Navigator>
   );
 }

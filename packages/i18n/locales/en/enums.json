@@ -20,6 +20,11 @@
     "rejected": "Rejected",
     "verified": "Verified"
   },
+  "labourRateBasis": {
+    "on_request": "on request",
+    "per_day": "per day",
+    "per_hour": "per hour"
+  },
   "order_status": {
     "cancelled": "Cancelled",
     "delivered": "Delivered",
@@ -38,12 +43,18 @@
     "within_3_months": "Within 3 months"
   },
   "role": {
+    "accountant": "Accountant",
     "admin": "Admin",
     "buyer": "Buyer",
+    "finance_partner": "Financial services",
+    "fulfillment_partner": "Fulfilment partner",
     "loaderco": "Loader Co",
+    "packer": "Packing partner",
+    "processor": "Processing partner",
     "seller": "Seller",
     "transporter": "Transporter",
-    "worker": "Worker"
+    "worker": "Worker",
+    "workerco": "Worker Company"
   },
   "serviceCategory": {
     "accounting": "Accounting",
@@ -59,11 +70,21 @@
     "sorting_grading": "Sorting & grading"
   },
   "servicePricingBasis": {
+    "on_request": "on request",
+    "per_container": "per container",
+    "per_day": "per day",
     "per_hour": "per hour",
     "per_kg": "per kg",
     "per_lot": "per lot",
     "per_month": "per month",
-    "per_ton": "per ton"
+    "per_order": "per order",
+    "per_pallet": "per pallet",
+    "per_piece": "per piece",
+    "per_shipment": "per shipment",
+    "per_sqft": "per sq ft",
+    "per_ton": "per ton",
+    "per_unit": "per unit",
+    "percentage": "%"
   },
   "serviceRole": {
     "accountant": "Accountant",
@@ -128,5 +149,14 @@
     "tanker": "Tanker",
     "tipper": "Tipper",
     "trailer": "Trailer"
+  },
+  "workerTypeGroup": {
+    "field_to_gate": "Field-to-gate & sampling",
+    "loading_handling": "Loading & handling",
+    "packing": "Packing & packhouse",
+    "processing_line": "Processing line",
+    "sorting_grading": "Sorting & grading",
+    "transport": "Transport-side",
+    "warehouse": "Warehouse & storage"
   }
 }

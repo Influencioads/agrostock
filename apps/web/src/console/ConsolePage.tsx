@@ -30,6 +30,7 @@ import { KycSection } from './sections/KycSection';
 import { ProfileForm } from '../pages/ProfileFormPage';
 import { isServiceRole, SERVICE_ROLES } from '@agrotraders/types';
 import { ServiceEnquiries, ServiceProfile, ServiceProviderDashboard } from './sections/ServiceProvider';
+import { LabourOfferings } from './sections/LabourOfferings';
 
 // Nav items carry only `id` + `icon`; labels are translated at render from
 // `web:console.nav.<id>` in ConsoleLayout (never store the English label here).
@@ -89,6 +90,7 @@ const NAV: Record<string, ConsoleNavItem[]> = {
     { id: 'activejobs', icon: 'worker' },
     { id: 'workers', icon: 'user' },
     { id: 'teams', icon: 'grid' },
+    { id: 'labour', icon: 'store' },
     { id: 'availability', icon: 'clock' },
     { id: 'pricing', icon: 'chart' },
     { id: 'attendance', icon: 'check' },
@@ -100,6 +102,7 @@ const NAV: Record<string, ConsoleNavItem[]> = {
   worker: [
     dash,
     { id: 'jobs', icon: 'worker' },
+    { id: 'labour', icon: 'store' },
     { id: 'earnings', icon: 'wallet' },
     { id: 'wallet', icon: 'wallet' },
     { id: 'attendance', icon: 'clock' },
@@ -121,8 +124,14 @@ const SERVICE_NAV: ConsoleNavItem[] = [
 ];
 for (const role of SERVICE_ROLES) NAV[role] = SERVICE_NAV;
 
+// A general labour company runs the same console as a loading company — same
+// jobs, crew, attendance and rates. They differ only in which worker types they
+// may publish, which the workforce module enforces.
+NAV.workerco = NAV.loaderco;
+
+
 /** Roles with a dedicated dashboard title; others fall back to `console.title.fallback`. */
-const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'worker']);
+const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker']);
 
 /**
  * F05: map the section slug in a notification deep link (/console/<slug>) to the
@@ -187,7 +196,7 @@ export function ConsolePage() {
       if (role === 'buyer') return <BuyerDashboard name={greetName} onNavigate={setActive} />;
       if (role === 'seller') return <SellerDashboard name={greetName} onNavigate={setActive} />;
       if (role === 'transporter') return <TransporterDashboard name={greetName} onNavigate={setActive} />;
-      if (role === 'loaderco') return <LoaderDashboard name={greetName} onNavigate={setActive} />;
+      if (role === 'loaderco' || role === 'workerco') return <LoaderDashboard name={greetName} onNavigate={setActive} />;
       if (role === 'worker') return <WorkerDashboard />;
       // One dashboard for every service role — see ServiceProvider.tsx.
       if (isServiceRole(role)) return <ServiceProviderDashboard name={greetName} />;
@@ -232,7 +241,7 @@ export function ConsolePage() {
       if (active === 'invoices') return <TransporterInvoices />;
       if (active === 'ratings') return <TransporterRatings />;
     }
-    if (role === 'loaderco') {
+    if (role === 'loaderco' || role === 'workerco') {
       if (active === 'jobrequests') return <LoaderJobRequests />;
       if (active === 'activejobs') return <LoaderActiveJobs />;
       if (active === 'workers') return <LoaderWorkers />;
@@ -247,6 +256,9 @@ export function ConsolePage() {
       if (active === 'enquiries') return <ServiceEnquiries />;
       if (active === 'serviceProfile') return <ServiceProfile />;
     }
+    // One screen for both: a loading company and an independent worker publish
+    // the same thing, differing only in headcount.
+    if ((role === 'loaderco' || role === 'workerco' || role === 'worker') && active === 'labour') return <LabourOfferings />;
     if (role === 'worker' && active === 'jobs') return <WorkerJobs />;
     if (role === 'worker' && active === 'attendance') return <WorkerAttendance />;
     if (role === 'worker' && active === 'reviews') return <WorkerReviews />;

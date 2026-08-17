@@ -30,6 +30,9 @@ import { WorkerReviews } from './worker/Reviews';
 import { WalletScreen, EarningsScreen } from './components/MoneyScreens';
 import { InvoiceCenter } from './components/InvoiceCenter';
 import { HiresScreen } from './HiresScreen';
+import { LabourOfferings } from './components/LabourOfferings';
+import { ServiceEnquiries, ServiceProfile } from './service/ServiceProvider';
+import { ROLE_ALIAS } from './sectionRegistryKeys';
 import { Kyc } from './auth/Kyc';
 
 /** Section-routed earnings sit under a navigator header — no internal heading. */
@@ -48,6 +51,7 @@ export const sectionRegistry: Record<string, SectionComponent> = {
   'transporter:verify': Kyc,
   'loaderco:verify': Kyc,
   'worker:verify': Kyc,
+  'service:verify': Kyc,
   // Seller
   'seller:add': SellerAddProduct,
   'seller:bids': SellerBids,
@@ -85,6 +89,10 @@ export const sectionRegistry: Record<string, SectionComponent> = {
   'transporter:tracking': TransporterTracking,
   // Loader company
   'loaderco:teams': LoaderTeams,
+  // One screen for both: a company and an independent worker publish the same
+  // thing, differing only in headcount. `workerco` reaches this via ROLE_ALIAS.
+  'loaderco:labour': LabourOfferings,
+  'worker:labour': LabourOfferings,
   'loaderco:availability': LoaderAvailability,
   'loaderco:attendance': LoaderAttendance,
   'loaderco:pricing': LoaderPricing,
@@ -100,8 +108,19 @@ export const sectionRegistry: Record<string, SectionComponent> = {
   'worker:reviews': WorkerReviews,
   'worker:invoices': InvoiceCenter,
   'worker:hires': HiresScreen,
+  // Service providers — one set for all five roles, which ROLE_ALIAS points here.
+  'service:enquiries': ServiceEnquiries,
+  'service:serviceProfile': ServiceProfile,
+  'service:invoices': InvoiceCenter,
+  'service:earnings': SectionEarnings,
+  'service:wallet': WalletScreen,
+  'service:hires': HiresScreen,
 };
 
 export function getSection(role: string, section: string): SectionComponent | null {
-  return sectionRegistry[`${role}:${section}`] ?? null;
+  return (
+    sectionRegistry[`${role}:${section}`] ??
+    sectionRegistry[`${ROLE_ALIAS[role] ?? role}:${section}`] ??
+    null
+  );
 }

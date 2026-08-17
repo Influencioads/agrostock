@@ -12,7 +12,7 @@ import { ApiProperty } from '@nestjs/swagger';
 // providers register directly like transporters do — kycStatus stays 'pending'
 // until an admin verifies them, which is the existing gate.
 export const PUBLIC_ROLES = [
-  'buyer', 'seller', 'transporter', 'loaderco', 'worker',
+  'buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker',
   ...SERVICE_ROLES,
 ] as const;
 

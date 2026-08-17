@@ -2,6 +2,7 @@
   "directory": {
     "loaders": "Loading Companies",
     "sellers": "Sellers",
+    "services": "Service providers",
     "transporters": "Transporters",
     "workers": "Workers"
   },
@@ -30,8 +31,10 @@
     "disputes": "Disputes",
     "drivers": "Drivers",
     "earnings": "Earnings",
+    "enquiries": "Customer enquiries",
     "hires": "My Hires",
     "invoices": "Invoices",
+    "labour": "Worker types & rates",
     "loaders": "Loaders",
     "loads": "My Loads",
     "messages": "Messages",
@@ -50,6 +53,7 @@
     "routes": "Routes",
     "safedeal": "Safe Deal",
     "saved": "Saved",
+    "serviceProfile": "Service profile",
     "staff": "Team",
     "teams": "Teams",
     "tracking": "Live Tracking",
@@ -75,6 +79,7 @@
     "Requirements": "Buyer Requirements",
     "RolesAccess": "Roles & Access",
     "Search": "Search",
+    "Services": "Service providers",
     "SignIn": "Sign in",
     "SignUp": "Create account"
   },
@@ -84,6 +89,7 @@
     "Browse": "Browse",
     "Dashboard": "Dashboard",
     "Earnings": "Earnings",
+    "Enquiries": "Enquiries",
     "Home": "Home",
     "Inventory": "Inventory",
     "Jobs": "Jobs",

@@ -21,6 +21,7 @@ import { RolesAccess } from '../screens/RolesAccess';
 import { Community } from '../screens/community/Community';
 import { Support } from '../screens/support/Support';
 import { Directory } from '../screens/public/Directory';
+import { Services } from '../screens/public/Services';
 import { PublicProfile } from '../screens/public/PublicProfile';
 import { AuctionsBoard } from '../screens/public/AuctionsBoard';
 import { BuyerBidsBoard } from '../screens/public/BuyerBidsBoard';
@@ -79,6 +80,7 @@ export function RootNavigator() {
       >
         {({ route }) => <Directory type={route.params.type} />}
       </Stack.Screen>
+      <Stack.Screen name="Services" component={Services} options={title('Services')} />
       <Stack.Screen name="PublicProfile" component={PublicProfile} options={title('PublicProfile')} />
       <Stack.Screen name="AuctionsBoard" component={AuctionsBoard} options={title('AuctionsBoard')} />
       <Stack.Screen name="BuyerBidsBoard" component={BuyerBidsBoard} options={title('BuyerBidsBoard')} />

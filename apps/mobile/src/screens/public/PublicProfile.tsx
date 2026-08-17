@@ -11,9 +11,10 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Button, Card, Loading, Row, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from '../components/HireModal';
+import { rateLabel } from '../components/LabourOfferings';
 import type { RootStackParamList } from '../../navigation/types';
 import { forwardChevron } from '../../lib/rtl';
-import { unitSuffix } from '@agrotraders/types';
+import { hireTargetForRoles, isServiceRole, servicePriceLabel, unitSuffix } from '@agrotraders/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, 'PublicProfile'>;
@@ -24,7 +25,7 @@ export function PublicProfile() {
   const { params } = useRoute<R>();
   const { t } = useI18n();
   const { user: me } = useAuth();
-  const { fmtPrice } = useCurrency();
+  const { fmtPrice, fmtCents } = useCurrency();
   const [hire, setHire] = useState<HireTarget | null>(null);
 
   const { data: p, isLoading } = useQuery({
@@ -32,16 +33,41 @@ export function PublicProfile() {
     queryFn: () => api.directory.profile(params.userId),
   });
 
+  const profileRoles = p ? [p.role, ...(p.roles ?? [])] : [];
+
+  // Service-provider extras. Both endpoints 404 for a user who is not a LISTED
+  // provider, so they are only asked for once the roles say it is worth asking —
+  // and a 404 on either still leaves the rest of the profile rendering.
+  const isProvider = profileRoles.some(isServiceRole);
+  const { data: provider } = useQuery({
+    queryKey: ['service-provider', params.userId],
+    queryFn: () => api.services.provider(params.userId),
+    enabled: isProvider,
+    retry: false,
+  });
+  const { data: providerServices = [] } = useQuery({
+    queryKey: ['service-provider-services', params.userId],
+    queryFn: () => api.services.providerServices(params.userId),
+    enabled: isProvider,
+    retry: false,
+  });
+
+  // Labour. A loading company's crew roster is private, so what it publishes —
+  // and what shows here — is which KINDS of worker it supplies, and the rates.
+  const suppliesLabour = profileRoles.some((r) => r === 'loaderco' || r === 'workerco' || r === 'worker');
+  const { data: offerings = [] } = useQuery({
+    queryKey: ['labour-offerings', params.userId],
+    queryFn: () => api.labour.offerings(params.userId),
+    enabled: suppliesLabour,
+    retry: false,
+  });
+
   if (isLoading || !p) return <View style={{ flex: 1, backgroundColor: C.bg }}><Loading label={t('compX.profile.loading')} /></View>;
 
-  const roles = Array.from(new Set([p.role, ...(p.roles ?? [])]));
-  const hireType: HireTarget['targetType'] | null = roles.includes('transporter')
-    ? 'transporter'
-    : roles.includes('loaderco')
-      ? 'loaderco'
-      : roles.includes('worker')
-        ? 'worker'
-        : null;
+  const roles = Array.from(new Set(profileRoles));
+  // Shared with the directory and with web — this chain had drifted three ways,
+  // and `workerco` was missing from every copy of it.
+  const hireType: HireTarget['targetType'] | null = hireTargetForRoles(roles);
   const isMe = me?.id === p.id;
 
   return (
@@ -100,6 +126,105 @@ export function PublicProfile() {
           <Txt variant="small" style={{ flex: 1 }}>{t('pubX.profile.privacyNote')}</Txt>
         </Card>
 
+        {/* labour — what kinds of worker this account supplies, and the rates.
+            For a loading company this REPLACED a published list of its individual
+            staff: the crew count is the capacity signal, the people are the
+            company's own and are never named here. */}
+        {offerings.length > 0 && (
+          <View style={{ gap: 10 }}>
+            <Txt variant="h3">{t('labour.types')}</Txt>
+            {roles.includes('loaderco') || roles.includes('workerco') ? (
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.surface }}>
+                <Ionicons name="shield-checkmark" size={18} color={C.dark} />
+                <Txt variant="small" style={{ flex: 1 }}>{t('labour.rosterPrivate')}</Txt>
+              </Card>
+            ) : null}
+            {offerings.map((o) => (
+              <Card key={o.id} style={{ gap: 4 }}>
+                <Row gap={6} style={{ flexWrap: 'wrap' }}>
+                  <Txt variant="title" style={{ flex: 1 }}>{o.workerType.name}</Txt>
+                  {o.isNegotiable ? <Badge label={t('labour.negotiable')} tone="mango" /> : null}
+                </Row>
+                <Txt variant="title">{rateLabel(o, t, fmtCents)}</Txt>
+                <Txt variant="muted">
+                  {[
+                    o.headcount != null ? t('labour.upTo', { count: o.headcount }) : null,
+                    o.minHours != null ? t('labour.minHoursShort', { count: o.minHours }) : null,
+                  ].filter(Boolean).join(' · ')}
+                </Txt>
+                {o.notes ? <Txt variant="small">{o.notes}</Txt> : null}
+              </Card>
+            ))}
+          </View>
+        )}
+
+        {/* service provider — the business card, then every service it prices.
+            A card in the directory truncates all of this; here it is in full. */}
+        {provider && (
+          <View style={{ gap: 10 }}>
+            <Txt variant="h3">{t('service.about')}</Txt>
+            <Card style={{ gap: 10 }}>
+              {provider.blurb ? <Txt variant="muted">{provider.blurb}</Txt> : null}
+              {provider.categories.length > 0 ? (
+                <Row gap={6} style={{ flexWrap: 'wrap' }}>
+                  {provider.categories.map((c) => (
+                    <Badge key={c} label={t(`enums:serviceCategory.${c}`, { defaultValue: c })} tone="green" />
+                  ))}
+                </Row>
+              ) : null}
+              <Field label={t('service.basedIn')} value={provider.country} />
+              <Field label={t('service.cities')} value={provider.citiesServed.join(', ')} />
+              <Field label={t('service.countriesServed')} value={provider.countriesServed.join(', ')} />
+              <Field label={t('service.productsHandled')} value={provider.productsHandled.join(', ')} />
+              <Field label={t('service.capacity')} value={provider.capacityPerDay} />
+              <Field
+                label={t('service.turnaround')}
+                value={provider.turnaroundDays != null ? t('service.turnaroundDays', { count: provider.turnaroundDays }) : null}
+              />
+              <Field label={t('service.minOrder')} value={provider.minOrderQty} />
+              <Field label={t('service.certifications')} value={provider.certifications.join(', ')} />
+              <Field
+                label={t('service.international')}
+                value={provider.acceptsInternationalOrders ? t('common:yes') : t('common:no')}
+              />
+              <Field
+                label={t('service.pricing')}
+                value={
+                  provider.priceFromCents != null && provider.pricingBasis
+                    ? t('service.priceFrom', {
+                        amount: fmtCents(provider.priceFromCents),
+                        basis: t(`enums:servicePricingBasis.${provider.pricingBasis}`, { defaultValue: provider.pricingBasis }),
+                      })
+                    : t('service.onEnquiry')
+                }
+              />
+            </Card>
+
+            <Txt variant="h3">{t('service.priceList', { count: providerServices.length })}</Txt>
+            {providerServices.length === 0 ? (
+              <Card><Txt variant="muted">{t('service.noPriceList')}</Txt></Card>
+            ) : (
+              providerServices.map((s) => (
+                <Card key={s.id} style={{ gap: 4 }}>
+                  <Row gap={6} style={{ flexWrap: 'wrap' }}>
+                    <Txt variant="title" style={{ flex: 1 }}>{s.serviceNode.name ?? s.serviceNode.nameEn}</Txt>
+                    {s.isNegotiable ? <Badge label={t('service.negotiable')} tone="mango" /> : null}
+                  </Row>
+                  <Txt variant="title">{servicePriceLabel(s, t, fmtCents)}</Txt>
+                  <Txt variant="muted">
+                    {[
+                      s.minOrderQty != null ? `${t('service.minOrder')}: ${s.minOrderQty}${s.minOrderUnit ? ` ${s.minOrderUnit}` : ''}` : null,
+                      s.leadTimeDays != null ? t('service.turnaroundDays', { count: s.leadTimeDays }) : null,
+                    ].filter(Boolean).join(' · ')}
+                  </Txt>
+                  {s.notes ? <Txt variant="small">{s.notes}</Txt> : null}
+                  {s.capacityNote ? <Txt variant="small">{s.capacityNote}</Txt> : null}
+                </Card>
+              ))
+            )}
+          </View>
+        )}
+
         {(p.products?.length ?? 0) > 0 && (
           <View style={{ gap: 10 }}>
             <Txt variant="h3">{t('pubX.profile.listings')}</Txt>
@@ -137,5 +262,16 @@ export function PublicProfile() {
       </ScrollView>
       {hire && <HireModal target={hire} onClose={() => setHire(null)} />}
     </View>
+  );
+}
+
+/** One label/value row, dropped entirely when the provider left the field blank. */
+function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
+  if (value == null || value === '') return null;
+  return (
+    <Row gap={8} style={{ alignItems: 'flex-start' }}>
+      <Txt variant="muted" style={{ flex: 1 }}>{label}</Txt>
+      <Txt style={{ flex: 1, textAlign: 'right' }}>{value}</Txt>
+    </Row>
   );
 }

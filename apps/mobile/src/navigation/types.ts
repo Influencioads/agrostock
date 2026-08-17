@@ -23,6 +23,8 @@ export type RootStackParamList = {
   Community: { dmUserId?: string; dmName?: string; dmDraft?: string } | undefined;
   Support: undefined;
   Directory: { type: 'sellers' | 'transporters' | 'loaders' | 'workers'; title: string };
+  /** Public directory of service providers — the mobile twin of web's `/services`. */
+  Services: undefined;
   PublicProfile: { userId: string };
   AuctionsBoard: undefined;
   /** Public board of live buyer bids (reverse auctions). Not the community `Requirements` board. */

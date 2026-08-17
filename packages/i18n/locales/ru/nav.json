@@ -2,6 +2,7 @@
   "directory": {
     "loaders": "Погрузочные компании",
     "sellers": "Продавцы",
+    "services": "Поставщики услуг",
     "transporters": "Перевозчики",
     "workers": "Рабочие"
   },
@@ -30,8 +31,10 @@
     "disputes": "Споры",
     "drivers": "Водители",
     "earnings": "Доход",
+    "enquiries": "Запросы клиентов",
     "hires": "Мои наймы",
     "invoices": "Счета",
+    "labour": "Типы работников и ставки",
     "loaders": "Погрузка",
     "loads": "Мои грузы",
     "messages": "Сообщения",
@@ -50,6 +53,7 @@
     "routes": "Маршруты",
     "safedeal": "Безопасная сделка",
     "saved": "Избранное",
+    "serviceProfile": "Профиль услуг",
     "staff": "Команда",
     "teams": "Бригады",
     "tracking": "Отслеживание",
@@ -75,6 +79,7 @@
     "Requirements": "Заявки покупателей",
     "RolesAccess": "Роли и доступ",
     "Search": "Поиск",
+    "Services": "Поставщики услуг",
     "SignIn": "Вход",
     "SignUp": "Регистрация"
   },
@@ -84,6 +89,7 @@
     "Browse": "Каталог",
     "Dashboard": "Панель",
     "Earnings": "Доход",
+    "Enquiries": "Запросы",
     "Home": "Главная",
     "Inventory": "Склад",
     "Jobs": "Работы",

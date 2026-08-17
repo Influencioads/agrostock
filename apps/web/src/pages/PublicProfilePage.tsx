@@ -10,7 +10,8 @@ import { VehicleCard } from '../components/site/VehicleCard';
 import { chatBus } from '../chat/chatBus';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
 import { ReviewList } from '../console/components/ReviewList';
-import { unitSuffix } from '@agrotraders/types';
+import { rateLabel } from '../console/sections/LabourOfferings';
+import { hireTargetForRoles, isServiceRole, servicePriceLabel, unitSuffix } from '@agrotraders/types';
 
 function locationLabel(city: string | null | undefined, country: string | null | undefined): string {
   const place = city?.trim();
@@ -27,7 +28,7 @@ export function PublicProfilePage() {
   const { t } = useI18n();
   const { userId } = useParams();
   const { user: me } = useAuth();
-  const { fmtPrice } = useCurrency();
+  const { fmtPrice, fmtCents } = useCurrency();
   const [hire, setHire] = useState<HireTarget | null>(null);
 
   const { data: p, isLoading } = useQuery({
@@ -42,18 +43,42 @@ export function PublicProfilePage() {
     enabled: !!userId,
   });
 
+  // Service-provider extras. Both endpoints 404 for a user who is not a LISTED
+  // provider, so they are only asked for once the roles say it is worth asking —
+  // and a 404 on either still leaves the rest of the profile rendering.
+  const isProvider = !!p && [p.role, ...(p.roles ?? [])].some(isServiceRole);
+  const { data: provider } = useQuery({
+    queryKey: ['service-provider', userId],
+    queryFn: () => api.services.provider(userId!),
+    enabled: !!userId && isProvider,
+    retry: false,
+  });
+  const { data: providerServices = [] } = useQuery({
+    queryKey: ['service-provider-services', userId],
+    queryFn: () => api.services.providerServices(userId!),
+    enabled: !!userId && isProvider,
+    retry: false,
+  });
+
+  // Labour. A loading company's crew roster is private, so what it publishes —
+  // and what shows here — is which KINDS of worker it supplies and the rates.
+  const suppliesLabour =
+    !!p && [p.role, ...(p.roles ?? [])].some((r) => r === 'loaderco' || r === 'workerco' || r === 'worker');
+  const { data: offerings = [] } = useQuery({
+    queryKey: ['labour-offerings', userId],
+    queryFn: () => api.labour.offerings(userId!),
+    enabled: !!userId && suppliesLabour,
+    retry: false,
+  });
+
   if (isLoading || !p) {
     return <div className="mx-auto max-w-5xl px-4 py-16 text-center text-ink-soft">{isLoading ? t('page.profile.loading') : t('page.profile.notFound')}</div>;
   }
 
   const roles = Array.from(new Set([p.role, ...(p.roles ?? [])]));
-  const hireType: HireTarget['targetType'] | null = roles.includes('transporter')
-    ? 'transporter'
-    : roles.includes('loaderco')
-      ? 'loaderco'
-      : roles.includes('worker')
-        ? 'worker'
-        : null;
+  // Shared with the directory and with mobile — this chain had already drifted
+  // three ways, and `workerco` was missing from every copy of it.
+  const hireType: HireTarget['targetType'] | null = hireTargetForRoles(roles);
   const counts = p._count ?? {};
   const isMe = me?.id === p.id;
   const homeLocation = locationLabel(
@@ -167,6 +192,144 @@ export function PublicProfilePage() {
         <Stat label={t('page.profile.memberSince')} value={new Date(p.createdAt).getFullYear()} />
       </div>
 
+      {/* labour — what kinds of worker this account supplies, and the rates.
+          For a loading company this REPLACED a published list of its individual
+          staff: the crew count above is the capacity signal, the people are the
+          company's own and are never named here. */}
+      {offerings.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 font-display text-xl font-extrabold text-ink">{t('labour.types')}</h2>
+          {(roles.includes('loaderco') || roles.includes('workerco')) && (
+            <div className="mb-3 rounded-md bg-brand-surface px-4 py-2.5 text-xs text-ink-soft">
+              <Icon name="shield" size={13} className="me-1.5 inline text-brand-dark" />
+              {t('labour.rosterPrivate')}
+            </div>
+          )}
+          <Card className="overflow-x-auto p-0">
+            <table className="w-full min-w-[32rem] text-start text-sm">
+              <thead className="border-b border-surface-border text-xs uppercase tracking-wide text-ink-soft">
+                <tr>
+                  <th className="px-4 py-3 text-start font-semibold">{t('labour.types')}</th>
+                  <th className="px-4 py-3 text-start font-semibold">{t('service.priceCol')}</th>
+                  <th className="px-4 py-3 text-start font-semibold">{t('labour.headcount')}</th>
+                  <th className="px-4 py-3 text-start font-semibold">{t('labour.minHours')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {offerings.map((o) => (
+                  <tr key={o.id} className="border-b border-surface-border align-top last:border-0">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-ink">{o.workerType.name}</div>
+                      {o.notes && <div className="mt-0.5 text-xs text-ink-soft">{o.notes}</div>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-display font-bold text-ink">{rateLabel(o, t, fmtCents)}</div>
+                      {o.isNegotiable && <Badge tone="mango">{t('labour.negotiable')}</Badge>}
+                    </td>
+                    <td className="px-4 py-3 text-ink-soft">{o.headcount ?? '—'}</td>
+                    <td className="px-4 py-3 text-ink-soft">
+                      {o.minHours != null ? t('labour.minHoursShort', { count: o.minHours }) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      )}
+
+      {/* service provider — the business card, then every service it prices.
+          A card in the directory truncates all of this; here it is in full. */}
+      {provider && (
+        <div className="mt-8">
+          <h2 className="mb-4 font-display text-xl font-extrabold text-ink">{t('service.about')}</h2>
+          <Card className="space-y-4">
+            {provider.blurb && <p className="text-sm text-ink-soft">{provider.blurb}</p>}
+
+            {provider.categories.length > 0 && (
+              <div>
+                <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">{t('service.categories')}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {provider.categories.map((c) => (
+                    <Badge key={c} tone="green">{t(`enums:serviceCategory.${c}`, { defaultValue: c })}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <dl className="grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+              <Field label={t('service.basedIn')} value={provider.country} />
+              <Field label={t('service.cities')} value={provider.citiesServed.join(', ')} />
+              <Field label={t('service.countriesServed')} value={provider.countriesServed.join(', ')} />
+              <Field label={t('service.productsHandled')} value={provider.productsHandled.join(', ')} />
+              <Field label={t('service.capacity')} value={provider.capacityPerDay} />
+              <Field
+                label={t('service.turnaround')}
+                value={provider.turnaroundDays != null ? t('service.turnaroundDays', { count: provider.turnaroundDays }) : null}
+              />
+              <Field label={t('service.minOrder')} value={provider.minOrderQty} />
+              <Field label={t('service.certifications')} value={provider.certifications.join(', ')} />
+              <Field
+                label={t('service.international')}
+                value={provider.acceptsInternationalOrders ? t('common:yes') : t('common:no')}
+              />
+              <Field
+                label={t('service.pricing')}
+                value={
+                  provider.priceFromCents != null && provider.pricingBasis
+                    ? t('service.priceFrom', {
+                        amount: fmtCents(provider.priceFromCents),
+                        basis: t(`enums:servicePricingBasis.${provider.pricingBasis}`, { defaultValue: provider.pricingBasis }),
+                      })
+                    : t('service.onEnquiry')
+                }
+              />
+            </dl>
+          </Card>
+
+          <h2 className="mb-4 mt-8 font-display text-xl font-extrabold text-ink">
+            {t('service.priceList', { count: providerServices.length })}
+          </h2>
+          {providerServices.length === 0 ? (
+            <Card className="py-10 text-center text-sm text-ink-soft">{t('service.noPriceList')}</Card>
+          ) : (
+            <Card className="overflow-x-auto p-0">
+              <table className="w-full min-w-[34rem] text-start text-sm">
+                <thead className="border-b border-surface-border text-xs uppercase tracking-wide text-ink-soft">
+                  <tr>
+                    <th className="px-4 py-3 text-start font-semibold">{t('service.serviceCol')}</th>
+                    <th className="px-4 py-3 text-start font-semibold">{t('service.priceCol')}</th>
+                    <th className="px-4 py-3 text-start font-semibold">{t('service.minOrder')}</th>
+                    <th className="px-4 py-3 text-start font-semibold">{t('service.leadTime')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {providerServices.map((s) => (
+                    <tr key={s.id} className="border-b border-surface-border last:border-0 align-top">
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-ink">{s.serviceNode.name ?? s.serviceNode.nameEn}</div>
+                        {s.notes && <div className="mt-0.5 text-xs text-ink-soft">{s.notes}</div>}
+                        {s.capacityNote && <div className="mt-0.5 text-xs text-ink-soft">{s.capacityNote}</div>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-display font-bold text-ink">{servicePriceLabel(s, t, fmtCents)}</div>
+                        {s.isNegotiable && <Badge tone="mango">{t('service.negotiable')}</Badge>}
+                      </td>
+                      <td className="px-4 py-3 text-ink-soft">
+                        {s.minOrderQty != null ? `${s.minOrderQty}${s.minOrderUnit ? ` ${s.minOrderUnit}` : ''}` : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-ink-soft">
+                        {s.leadTimeDays != null ? t('service.turnaroundDays', { count: s.leadTimeDays }) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* seller listings */}
       {(p.products?.length ?? 0) > 0 && (
         <div className="mt-8">
@@ -237,6 +400,17 @@ export function PublicProfilePage() {
       </div>
 
       {hire && <HireModal target={hire} onClose={() => setHire(null)} />}
+    </div>
+  );
+}
+
+/** One label/value row, dropped entirely when the provider left the field blank. */
+function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
+  if (value == null || value === '') return null;
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">{label}</dt>
+      <dd className="text-ink">{value}</dd>
     </div>
   );
 }

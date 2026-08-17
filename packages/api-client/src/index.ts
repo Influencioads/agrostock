@@ -584,24 +584,43 @@ export interface ApiDirectoryEntry {
   type: 'seller' | 'transporter' | 'loaderco' | 'worker';
   profile?: ApiProfile | null;
   routes?: { name: string; fromCity: string; toCity: string }[];
+  /** Kinds of worker this provider supplies. Capped for the card; the full list
+   *  comes from `api.labour.offerings(userId)`. Loader companies only. */
+  workerOfferings?: ApiWorkerOffering[];
   _count?: Record<string, number>;
 }
 
+/**
+ * An INDEPENDENT worker in the public directory.
+ *
+ * This used to be a `Worker` crew row, which published the individual staff of
+ * every loading company. It is now the worker's own account: anyone employed by
+ * a loading company is excluded, and that company is listed instead by the
+ * kinds of worker it supplies.
+ */
 export interface ApiWorkerEntry {
   id: string;
   name: string;
-  rating: string | null;
-  status: string;
+  country: string | null;
+  kycStatus: string;
+  createdAt: string;
   type: 'worker';
+  /** Answers for themselves — true for a worker company and a solo worker alike,
+   *  since crew employed by a loading company never reach this list. */
   independent?: boolean;
-  originCity?: string | null;
-  originCountry?: string | null;
-  operatingCities?: string[];
-  operatingCountries?: string[];
-  minWorkHours?: number | null;
-  loaderco?: { id: string; name: string } | null;
-  user?: { id: string; country: string | null; kycStatus: string; profile?: ApiProfile | null } | null;
-  _count?: { assignments: number };
+  /** Which of the two this row is, for the card's label and the filter. */
+  providerKind?: 'company' | 'individual';
+  role?: string;
+  roles?: string[];
+  profile?: ApiProfile | null;
+  workerProfile?: {
+    id: string;
+    rating: string | null;
+    status: string;
+    minWorkHours: number | null;
+  } | null;
+  workerOfferings?: ApiWorkerOffering[];
+  _count?: { hireRequestsReceived: number };
 }
 
 // ── Loader company (loaderco) dashboard ──
@@ -881,12 +900,81 @@ export interface ApiBulkAddResult {
   rejected: { serviceNodeId: string; reason: 'not_found' | 'not_a_leaf' | 'not_allowed_for_role' }[];
 }
 
+/** The seven families of physical labour, in export-chain order. */
+export const WORKER_TYPE_GROUPS = [
+  'loading_handling', 'packing', 'sorting_grading', 'processing_line',
+  'warehouse', 'transport', 'field_to_gate',
+] as const;
+export type WorkerTypeGroup = (typeof WORKER_TYPE_GROUPS)[number];
+
+/** How labour is quoted. Narrower than service pricing — crews sell by time. */
+export const LABOUR_RATE_BASES = ['per_hour', 'per_day', 'on_request'] as const;
+export type LabourRateBasis = (typeof LABOUR_RATE_BASES)[number];
+
+/** The one basis that may carry no rate at all. */
+export const LABOUR_ON_REQUEST: LabourRateBasis = 'on_request';
+
+export interface ApiWorkerType {
+  id: string;
+  slug: string;
+  nameEn: string;
+  /** Localised label; falls back to `nameEn` when the locale has no translation. */
+  name: string;
+  group: WorkerTypeGroup;
+  isActive: boolean;
+  sortOrder: number;
+  /** How many listed providers currently publish a rate for this type. */
+  providerCount: number;
+}
+
+export interface ApiWorkerOffering {
+  id: string;
+  workerTypeId: string;
+  rateBasis: LabourRateBasis;
+  /** Minor units of `currency`. Both null only when the basis is `on_request`. */
+  rateMinCents: number | null;
+  rateMaxCents: number | null;
+  currency: string;
+  /** How many of this type can be fielded at once. 1 for an individual. */
+  headcount: number | null;
+  minHours: number | null;
+  notes: string | null;
+  isNegotiable: boolean;
+  isActive: boolean;
+  createdAt: string;
+  workerType: Pick<ApiWorkerType, 'id' | 'slug' | 'nameEn' | 'name' | 'group'> & { isActive?: boolean };
+}
+
+/** The editable fields of an offering. */
+export interface WorkerOfferingInput {
+  rateBasis: LabourRateBasis;
+  rateMinCents?: number;
+  rateMaxCents?: number;
+  currency?: string;
+  headcount?: number;
+  minHours?: number;
+  notes?: string;
+  isNegotiable?: boolean;
+  isActive?: boolean;
+}
+
+export interface ApiLabourBulkResult {
+  created: number;
+  skippedExisting: number;
+  /** Type ids that did not exist or were inactive — reported, never dropped. */
+  rejected: string[];
+}
+
 export interface ApiServiceProvider {
   id: string;
   companyName: string | null;
   categories: string[];
   citiesServed: string[];
+  /** Where the business is registered. `countriesServed` is where it will work. */
   country: string | null;
+  countriesServed: string[];
+  productsHandled: string[];
+  acceptsInternationalOrders: boolean;
   capacityPerDay: number | null;
   certifications: string[];
   minOrderQty: number | null;
@@ -913,10 +1001,23 @@ export interface ApiMyServiceProfile extends Omit<ApiServiceProvider, 'user'> {
   updatedAt: string;
 }
 
+/**
+ * Who a hire request is aimed at. `service_provider` is an umbrella over the
+ * five service roles — the API keeps one value rather than five because the
+ * specific role is already on the target user (see `HireTargetType` in the
+ * schema), so accept/decline/escrow never fork.
+ */
+export type ApiHireTargetType =
+  | 'transporter'
+  | 'loaderco'
+  | 'workerco'
+  | 'worker'
+  | 'service_provider';
+
 export interface ApiHireRequest {
   id: string;
   reference: string;
-  targetType: 'transporter' | 'loaderco' | 'worker';
+  targetType: ApiHireTargetType;
   status: 'pending' | 'accepted' | 'declined' | 'cancelled';
   message: string | null;
   fromCity: string | null;
@@ -1761,6 +1862,10 @@ export interface DirectoryQuery {
   sort?: string;
   /** Worker availability. Several values OR together. */
   status?: MultiFilter;
+  /** Worker-type slugs. Matches providers publishing an active rate for any of them. */
+  workerType?: MultiFilter;
+  /** Narrow the labour directory to worker COMPANIES or to individuals. */
+  providerKind?: 'company' | 'individual';
   // Operational filters. operating*/supplying* match the stored tags exactly;
   // several values match any of them.
   originCity?: MultiFilter;
@@ -1836,12 +1941,13 @@ export interface ApiDirectoryFacets {
 
 /** Serialize a DirectoryQuery, flattening the multi-select facets to CSV. */
 function directoryQueryParams(q: DirectoryQuery): Record<string, string | number | undefined> {
-  const { country, market, status, originCity, originCountry, operatingCity, operatingCountry, supplyingCity, supplyingCountry, verified, ...rest } = q;
+  const { country, market, status, workerType, originCity, originCountry, operatingCity, operatingCountry, supplyingCity, supplyingCountry, verified, ...rest } = q;
   return {
     ...rest,
     country: multi(country),
     market: multi(market),
     status: multi(status),
+    workerType: multi(workerType),
     originCity: multi(originCity),
     originCountry: multi(originCountry),
     operatingCity: multi(operatingCity),
@@ -2087,9 +2193,33 @@ export function createApiClient(opts: ApiClientOptions) {
       myProfile: () => get<ApiMyServiceProfile>('/me/service-profile'),
       updateMyProfile: (b: Record<string, unknown>) => patch<ApiMyServiceProfile>('/me/service-profile', b),
     },
+    /**
+     * Physical labour. A loading company's crew is private; what is public is
+     * the KINDS of worker it supplies and the rates — the same shape an
+     * independent worker publishes for themselves.
+     */
+    labour: {
+      /** The worker-type taxonomy, grouped, with a provider count per type.
+       *  Pass a role to scope it — a loading company may only supply loading types. */
+      types: (role?: string) => get<ApiWorkerType[]>('/labour/types', role ? { role } : undefined),
+      /** The catalogue the signed-in account may price, already role-narrowed. */
+      availableTypes: () => get<ApiWorkerType[]>('/me/labour/offerings/available-types'),
+      /** One provider's published rate list. */
+      offerings: (userId: string) => get<ApiWorkerOffering[]>(`/labour/providers/${userId}/offerings`),
+      /** The signed-in provider's own rows, inactive ones included. */
+      mine: () => get<ApiWorkerOffering[]>('/me/labour/offerings'),
+      add: (body: WorkerOfferingInput & { workerTypeId: string }) =>
+        post<ApiWorkerOffering>('/me/labour/offerings', body),
+      update: (id: string, body: Partial<WorkerOfferingInput>) =>
+        patch<ApiWorkerOffering>(`/me/labour/offerings/${id}`, body),
+      remove: (id: string) => del(`/me/labour/offerings/${id}`),
+      /** Price many types at once; already-priced ones are skipped, never reset. */
+      bulkAdd: (body: WorkerOfferingInput & { workerTypeIds: string[] }) =>
+        post<ApiLabourBulkResult>('/me/labour/offerings/bulk', body),
+    },
     hires: {
       create: (body: {
-        targetType: 'transporter' | 'loaderco' | 'worker';
+        targetType: ApiHireTargetType;
         targetUserId: string;
         workerId?: string;
         message?: string;
@@ -2104,7 +2234,7 @@ export function createApiClient(opts: ApiClientOptions) {
         orderId?: string;
       }) => post<ApiHireRequest>('/hires', body),
       /** Hires you SENT, optionally narrowed to a target type or one order. */
-      mine: (q?: { targetType?: 'transporter' | 'loaderco' | 'worker'; orderId?: string }) =>
+      mine: (q?: { targetType?: ApiHireTargetType; orderId?: string }) =>
         get<ApiHireRequest[]>('/hires/mine', q as Record<string, string> | undefined),
       incoming: () => get<ApiHireRequest[]>('/hires/incoming'),
       accept: (id: string) => post<ApiHireRequest>(`/hires/${id}/accept`),

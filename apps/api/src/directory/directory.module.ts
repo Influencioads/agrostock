@@ -16,6 +16,54 @@ import { maskEmail, maskPhone } from '../common/sanitize';
  * (GET /admin/users/:id) or shared voluntarily via chat.
  */
 
+/**
+ * The labour a provider publishes, as it appears on a directory card.
+ *
+ * Capped deliberately: a company supplying thirty worker types would otherwise
+ * push thirty rows into every row of the list. The card shows the first few and
+ * the full set lives on the provider's profile.
+ */
+const LABOUR_OFFERING_SELECT = {
+  where: { isActive: true, workerType: { isActive: true } },
+  orderBy: [{ workerType: { group: 'asc' } }, { workerType: { sortOrder: 'asc' } }],
+  take: 6,
+  select: {
+    id: true,
+    rateBasis: true,
+    rateMinCents: true,
+    rateMaxCents: true,
+    currency: true,
+    headcount: true,
+    minHours: true,
+    isNegotiable: true,
+    workerType: {
+      select: {
+        id: true,
+        slug: true,
+        nameEn: true,
+        group: true,
+        translations: { select: { locale: true, name: true } },
+      },
+    },
+  },
+} satisfies Prisma.User$workerOfferingsArgs;
+
+type DirectoryOffering = {
+  workerType: { nameEn: string; translations: { locale: string; name: string }[] };
+};
+
+/** Fold the translation rows down to the single label the caller's locale wants. */
+function localizeOffering<T extends DirectoryOffering>(offering: T, locale: Lang) {
+  const { translations, ...workerType } = offering.workerType;
+  return {
+    ...offering,
+    workerType: {
+      ...workerType,
+      name: translations.find((t) => t.locale === locale)?.name ?? workerType.nameEn,
+    },
+  };
+}
+
 const PUBLIC_PROFILE_SELECT = {
   bio: true,
   location: true,
@@ -245,7 +293,7 @@ export class DirectoryService {
     });
   }
 
-  private roleWhere(role: 'seller' | 'transporter' | 'loaderco', q: DirectoryQuery): Prisma.UserWhereInput {
+  private roleWhere(role: 'seller' | 'transporter' | 'loaderco' | 'workerco' | 'worker', q: DirectoryQuery): Prisma.UserWhereInput {
     const where: Prisma.UserWhereInput = {
       active: true,
       OR: [{ role }, { roles: { has: role } }],
@@ -265,7 +313,7 @@ export class DirectoryService {
     if (marketSlugs.length) profileWhere.market = { slug: eqOrIn(marketSlugs) };
     // Transporters & loader companies only appear once an admin approves the listing
     // (the seller directory is not gated on this flag).
-    if (role === 'transporter' || role === 'loaderco') profileWhere.listApproved = true;
+    if (role !== 'seller') profileWhere.listApproved = true;
     // Location filters. The `operating*`/`supplying*` pairs are stored tag arrays,
     // so several picks are a `hasSome` — "works in any of these", not "in all".
     const operatingCities = tagMatch(csv(q.operatingCity));
@@ -332,9 +380,19 @@ export class DirectoryService {
     return users.map((u) => ({ ...u, type: 'transporter' as const }));
   }
 
-  async loaders(q: DirectoryQuery, locale: Lang = 'en') {
+  async loaders(q: DirectoryQuery & { workerType?: string }, locale: Lang = 'en') {
+    const where = this.roleWhere('loaderco', q);
+    // The type filter has to bite here too. Without it, picking "Sorter" left
+    // every loading company in the list — offering a filter that does nothing
+    // is worse than not offering it.
+    const typeSlugs = csv(q.workerType);
+    if (typeSlugs.length) {
+      const and = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
+      and.push({ workerOfferings: { some: { isActive: true, workerType: { slug: eqOrIn(typeSlugs) } } } });
+      where.AND = and;
+    }
     const users = await this.prisma.user.findMany({
-      where: this.roleWhere('loaderco', q),
+      where,
       orderBy: q.sort === 'name' ? { name: 'asc' } : { createdAt: 'desc' },
       ...pageArgs(q),
       select: {
@@ -344,6 +402,9 @@ export class DirectoryService {
         kycStatus: true,
         createdAt: true,
         profile: { select: PUBLIC_PROFILE_SELECT },
+        // Crew SIZE is public, crew IDENTITY is not: a buyer needs to know the
+        // company can staff the job, but the roster itself is the company's own
+        // people and never leaves its dashboard.
         _count: {
           select: {
             workers: true,
@@ -351,73 +412,98 @@ export class DirectoryService {
             loaderJobsManaged: { where: { status: 'completed' } },
           },
         },
+        workerOfferings: LABOUR_OFFERING_SELECT,
       },
     });
     await this.localizeProfiles(users.map((u) => u.profile), locale);
-    return users.map((u) => ({ ...u, type: 'loaderco' as const }));
+    return users.map((u) => ({
+      ...u,
+      workerOfferings: u.workerOfferings.map((o) => localizeOffering(o, locale)),
+      type: 'loaderco' as const,
+    }));
   }
 
-  /** The worker browse predicate — shared by the listing read and the facet counts. */
-  private workerWhere(q: DirectoryQuery & { status?: string }): Prisma.WorkerWhereInput {
-    const where: Prisma.WorkerWhereInput = { userId: { not: null } };
-    // "Availability" is a checkbox group: ticking Available and On site means
-    // either, so the statuses OR together.
-    const statuses = csv(q.status).filter((s) => ['available', 'on_site', 'off'].includes(s));
-    if (statuses.length) where.status = eqOrIn(statuses) as never;
-    if (q.search) where.name = { contains: q.search, mode: 'insensitive' };
-    const countries = csv(q.country);
-    if (countries.length === 1) where.user = { country: { contains: countries[0], mode: 'insensitive' } };
-    else if (countries.length > 1) {
-      where.user = { OR: countries.map((c) => ({ country: { contains: c, mode: 'insensitive' as const } })) };
+  /**
+   * Public directory of INDEPENDENT workers.
+   *
+   * This used to list `Worker` crew rows, which published the individual staff
+   * of every loading company — names, ratings and availability of people the
+   * company employs. It now lists worker ACCOUNTS that answer for themselves,
+   * and anyone attached to a loading company is excluded: that company is listed
+   * instead, by the kinds of worker it supplies.
+   */
+  /**
+   * The independent-worker predicate — shared by the listing and its facets, so
+   * the panel can never offer an option the list would not honour.
+   */
+  private independentWorkerWhere(
+    q: DirectoryQuery & { status?: string; workerType?: string; providerKind?: string },
+  ): Prisma.UserWhereInput {
+    // Two kinds of labour supplier share this directory: worker COMPANIES and
+    // individuals selling their own labour. Loading companies are NOT here —
+    // they have their own directory, because they supply only loading crew.
+    const kind = q.providerKind === 'company' || q.providerKind === 'individual' ? q.providerKind : undefined;
+    const where = this.roleWhere(kind === 'company' ? 'workerco' : 'worker', q);
+    if (!kind) {
+      // Unfiltered: both, so the role match has to cover each of them.
+      where.OR = [
+        { role: 'workerco' }, { roles: { has: 'workerco' } },
+        { role: 'worker' }, { roles: { has: 'worker' } },
+      ];
     }
-    // Worker location filters (stored on the Worker row so crew are filterable too).
-    const operatingCities = tagMatch(csv(q.operatingCity));
-    if (operatingCities) where.operatingCities = operatingCities;
-    const operatingCountries = tagMatch(csv(q.operatingCountry));
-    if (operatingCountries) where.operatingCountries = operatingCountries;
-    // Every one of these carries its own OR, so they go under AND — a bare
-    // `where.OR` for one would silently drop the others.
-    const minHrs = num(q.minWorkHours);
-    const workerAnd = [
-      containsAny<Prisma.WorkerWhereInput>('originCity', csv(q.originCity)),
-      containsAny<Prisma.WorkerWhereInput>('originCountry', csv(q.originCountry)),
-      minHrs != null ? { OR: [{ minWorkHours: null }, { minWorkHours: { lte: minHrs } }] } : null,
-      serves(q, { supplying: false }),
-    ].filter(Boolean) as Prisma.WorkerWhereInput[];
-    if (workerAnd.length) where.AND = workerAnd;
+    const and = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
+    // Employed crew are their company's private roster. A worker with no
+    // `Worker` row at all is still independent, so the null case must pass —
+    // and a company has no crew row of its own, so it passes here too.
+    and.push({
+      OR: [{ workerProfile: { is: null } }, { workerProfile: { is: { loadercoId: null } } }],
+    });
+    const statuses = csv(q.status).filter((s) => ['available', 'on_site', 'off'].includes(s));
+    if (statuses.length) and.push({ workerProfile: { is: { status: eqOrIn(statuses) as never } } });
+    const typeSlugs = csv(q.workerType);
+    if (typeSlugs.length) {
+      and.push({ workerOfferings: { some: { isActive: true, workerType: { slug: eqOrIn(typeSlugs) } } } });
+    }
+    where.AND = and;
     return where;
   }
 
-  async workers(q: DirectoryQuery & { status?: string }, locale: Lang = 'en') {
-    const workers = await this.prisma.worker.findMany({
-      where: this.workerWhere(q),
-      orderBy: { rating: 'desc' },
+  async workers(q: DirectoryQuery & { status?: string; workerType?: string; providerKind?: string }, locale: Lang = 'en') {
+    const where = this.independentWorkerWhere(q);
+
+    const users = await this.prisma.user.findMany({
+      where,
+      orderBy: q.sort === 'name' ? { name: 'asc' } : { createdAt: 'desc' },
       ...pageArgs(q),
       select: {
         id: true,
         name: true,
-        rating: true,
-        status: true,
+        role: true,
+        roles: true,
+        country: true,
+        kycStatus: true,
         createdAt: true,
-        originCity: true,
-        originCountry: true,
-        operatingCities: true,
-        operatingCountries: true,
-        minWorkHours: true,
-        loaderco: { select: { id: true, name: true } },
-        user: {
-          select: {
-            id: true,
-            country: true,
-            kycStatus: true,
-            profile: { select: PUBLIC_PROFILE_SELECT },
-          },
+        profile: { select: PUBLIC_PROFILE_SELECT },
+        workerProfile: {
+          select: { id: true, rating: true, status: true, minWorkHours: true },
         },
-        _count: { select: { assignments: { where: { status: 'completed' } } } },
+        workerOfferings: LABOUR_OFFERING_SELECT,
+        _count: { select: { hireRequestsReceived: { where: { status: 'accepted' } } } },
       },
     });
-    await this.localizeProfiles(workers.map((w) => w.user?.profile), locale);
-    return workers.map((w) => ({ ...w, type: 'worker' as const, independent: !w.loaderco }));
+    await this.localizeProfiles(users.map((u) => u.profile), locale);
+    return users.map((u) => {
+      const isCompany = u.role === 'workerco' || (u.roles ?? []).includes('workerco');
+      return {
+        ...u,
+        workerOfferings: u.workerOfferings.map((o) => localizeOffering(o, locale)),
+        type: 'worker' as const,
+        // `independent` means "answers for themselves" — true for a company and
+        // for a solo worker alike, since employed crew never reach this list.
+        independent: true,
+        providerKind: isCompany ? ('company' as const) : ('individual' as const),
+      };
+    });
   }
 
   /**
@@ -487,32 +573,17 @@ export class DirectoryService {
 
   /** The place/tag columns each listed provider carries, under the given filters. */
   private async rowsForFacets(type: DirectoryType, q: DirectoryQuery, locale: Lang): Promise<FacetRow[]> {
-    if (type === 'workers') {
-      const rows = await this.prisma.worker.findMany({
-        where: this.workerWhere(q),
-        select: {
-          status: true,
-          operatingCities: true,
-          operatingCountries: true,
-          user: { select: { country: true, kycStatus: true, profile: { select: { market: { select: { slug: true } } } } } },
-        },
-      });
-      return rows.map((w) => ({
-        country: w.user?.country ?? null,
-        marketSlug: w.user?.profile?.market?.slug ?? null,
-        operatingCities: w.operatingCities,
-        operatingCountries: w.operatingCountries,
-        supplyingCountries: [],
-        status: w.status,
-        verified: w.user?.kycStatus === 'verified',
-      }));
-    }
-    const role = type === 'sellers' ? 'seller' : type === 'transporters' ? 'transporter' : 'loaderco';
+    // Workers used to be counted off `Worker` crew rows here while the listing
+    // returned accounts — the panel offered options the list could not produce.
+    // Both now run the same user query, differing only in the extra predicate.
+    const role =
+      type === 'sellers' ? 'seller' : type === 'transporters' ? 'transporter' : type === 'workers' ? 'worker' : 'loaderco';
     const rows = await this.prisma.user.findMany({
-      where: this.roleWhere(role, q),
+      where: type === 'workers' ? this.independentWorkerWhere(q) : this.roleWhere(role, q),
       select: {
         country: true,
         kycStatus: true,
+        workerProfile: { select: { status: true } },
         profile: {
           select: {
             operatingCities: true,
@@ -530,7 +601,8 @@ export class DirectoryService {
       operatingCities: u.profile?.operatingCities ?? [],
       operatingCountries: u.profile?.operatingCountries ?? [],
       supplyingCountries: u.profile?.supplyingCountries ?? [],
-      status: null,
+      // Availability now comes off the worker's own record; every other type has none.
+      status: u.workerProfile?.status ?? null,
       verified: u.kycStatus === 'verified',
     }));
   }
@@ -636,12 +708,15 @@ export class DirectoryController {
   }
 
   @Get('loaders')
-  loaders(@Query() q: DirectoryQuery, @Locale() locale: Lang) {
+  loaders(@Query() q: DirectoryQuery & { workerType?: string }, @Locale() locale: Lang) {
     return this.directory.loaders(q, locale);
   }
 
   @Get('workers')
-  workers(@Query() q: DirectoryQuery & { status?: string }, @Locale() locale: Lang) {
+  workers(
+    @Query() q: DirectoryQuery & { status?: string; workerType?: string; providerKind?: string },
+    @Locale() locale: Lang,
+  ) {
     return this.directory.workers(q, locale);
   }
 

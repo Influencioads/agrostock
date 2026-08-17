@@ -27,7 +27,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 
 /** Roles a user may request self-service (admin is never requestable). */
-export const REQUESTABLE_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'worker', 'accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner'] as const;
+export const REQUESTABLE_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker', 'accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner'] as const;
 
 export class RoleRequestDto {
   @ApiProperty({ enum: REQUESTABLE_ROLES })

@@ -1,4 +1,5 @@
 import type { Ionicons } from '@expo/vector-icons';
+import { SERVICE_ROLES } from '@agrotraders/types';
 
 export interface MenuItem {
   /** Section registry key, and the key into `nav:section` for the visible label. */
@@ -49,6 +50,8 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
   ],
   loaderco: [
     { id: 'teams', icon: 'grid-outline' },
+    // What buyers actually browse — publishing here is what lists the account.
+    { id: 'labour', icon: 'pricetags-outline' },
     { id: 'availability', icon: 'calendar-outline' },
     { id: 'attendance', icon: 'checkmark-done-outline' },
     { id: 'pricing', icon: 'cash-outline' },
@@ -60,6 +63,7 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
     { id: 'verify', icon: 'shield-checkmark-outline' },
   ],
   worker: [
+    { id: 'labour', icon: 'pricetags-outline' },
     { id: 'wallet', icon: 'card-outline' },
     { id: 'earnings', icon: 'wallet-outline' },
     { id: 'attendance', icon: 'checkmark-done-outline' },
@@ -69,3 +73,21 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
     { id: 'verify', icon: 'shield-checkmark-outline' },
   ],
 };
+
+// A general labour company runs the loading company's console: same jobs, crew,
+// availability and rates. They differ only in which worker types they may
+// publish, which the workforce module enforces server-side.
+ROLE_MENU.workerco = ROLE_MENU.loaderco;
+
+// One menu for all five service roles — they differ only in which categories they
+// may offer, which the service profile form already scopes. Dashboard and
+// enquiries are bottom tabs, so they are deliberately absent here.
+const SERVICE_MENU: MenuItem[] = [
+  { id: 'serviceProfile', icon: 'storefront-outline' },
+  { id: 'invoices', icon: 'receipt-outline' },
+  { id: 'earnings', icon: 'wallet-outline' },
+  { id: 'wallet', icon: 'card-outline' },
+  { id: 'hires', icon: 'people-outline' },
+  { id: 'verify', icon: 'shield-checkmark-outline' },
+];
+for (const role of SERVICE_ROLES) ROLE_MENU[role] = SERVICE_MENU;

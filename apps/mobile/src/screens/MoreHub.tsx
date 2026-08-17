@@ -29,6 +29,7 @@ const MARKETPLACE: {
   { labelKey: 'nav:directory.transporters', icon: 'car-outline', go: (n, title) => n.navigate('Directory', { type: 'transporters', title }) },
   { labelKey: 'nav:directory.loaders', icon: 'people-outline', go: (n, title) => n.navigate('Directory', { type: 'loaders', title }) },
   { labelKey: 'nav:directory.workers', icon: 'person-outline', go: (n, title) => n.navigate('Directory', { type: 'workers', title }) },
+  { labelKey: 'nav:directory.services', icon: 'briefcase-outline', go: (n) => n.navigate('Services') },
   { labelKey: 'nav:stack.AuctionsBoard', icon: 'hammer-outline', go: (n) => n.navigate('AuctionsBoard') },
   { labelKey: 'nav:stack.BuyerBidsBoard', icon: 'pricetags-outline', go: (n) => n.navigate('BuyerBidsBoard') },
   { labelKey: 'nav:stack.Requirements', icon: 'clipboard-outline', go: (n) => n.navigate('Requirements') },

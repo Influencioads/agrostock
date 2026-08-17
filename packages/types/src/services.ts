@@ -87,6 +87,30 @@ export function allowedCategories(role: string, requested: readonly string[]): S
   return SERVICE_CATEGORIES.filter((c) => allowed.has(c) && requested.includes(c));
 }
 
+/** Who a hire request is aimed at — mirrors the API's `HireTargetType` enum. */
+export const HIRE_TARGET_TYPES = ['transporter', 'loaderco', 'workerco', 'worker', 'service_provider'] as const;
+export type HireTarget = (typeof HIRE_TARGET_TYPES)[number];
+
+/**
+ * Which hire flow an account belongs to, from the roles it holds.
+ *
+ * Shared because four surfaces — both directories and both public profiles — each
+ * carried their own copy of this chain, and the copies had already drifted: the
+ * web profile knew about service providers and the mobile one did not, and none
+ * of them knew `workerco`, so a worker company either lost its Hire button or was
+ * booked as an individual (which mints a job with no company attached to it).
+ *
+ * Order is specificity, not preference: `workerco` must be tested before `worker`
+ * because a company holding both reads as a company, and a service role is the
+ * last resort since those five share one flow.
+ */
+export function hireTargetForRoles(roles: readonly (string | null | undefined)[]): HireTarget | null {
+  for (const target of ['transporter', 'loaderco', 'workerco', 'worker'] as const) {
+    if (roles.includes(target)) return target;
+  }
+  return roles.some(isServiceRole) ? 'service_provider' : null;
+}
+
 /**
  * How a provider's price is measured.
  *
@@ -104,6 +128,30 @@ export type ServicePricingBasis = (typeof SERVICE_PRICING_BASES)[number];
 
 /** The one basis that may carry no price at all. */
 export const ON_REQUEST_BASIS = 'on_request';
+
+/**
+ * A priced service reads as a single figure, a range, or "on request".
+ *
+ * Lives here because both public profiles render it and both had their own copy;
+ * `t` and `fmt` are injected for the same reason `unitSuffix` takes `t` — this
+ * package carries no i18n or currency dependency.
+ *
+ * `fmt` converts from the USD-cents baseline, which is the assumption the
+ * directory card already makes about `priceFromCents`. The per-service
+ * `currency` column is not yet honoured on either surface, so both agree.
+ */
+export function servicePriceLabel(
+  s: { pricingBasis: string | null; priceMinCents: number | null; priceMaxCents: number | null },
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  fmt: (cents: number | null | undefined) => string,
+): string {
+  if (s.pricingBasis === ON_REQUEST_BASIS) return t('service.onEnquiry');
+  const { priceMinCents: min, priceMaxCents: max } = s;
+  if (min == null && max == null) return t('service.onEnquiry');
+  const basis = t(`enums:servicePricingBasis.${s.pricingBasis}`, { defaultValue: s.pricingBasis });
+  const amount = min != null && max != null && max !== min ? `${fmt(min)} – ${fmt(max)}` : fmt(min ?? max);
+  return `${amount} ${basis}`;
+}
 
 /**
  * Which taxonomy branches each service role may price, as slug prefixes.

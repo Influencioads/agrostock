@@ -22,6 +22,7 @@
     "taxonomy:sync": "ts-node prisma/taxonomy-sync.ts",
     "seed:attrs": "ts-node prisma/seed-attributes.ts",
     "seed:services": "ts-node prisma/seeds/service-taxonomy.seed.ts",
+    "seed:worker-types": "ts-node prisma/seeds/worker-types.seed.ts",
     "backfill:attrs": "ts-node prisma/backfill-attributes.ts",
     "backfill:translations": "ts-node prisma/backfill-translations.ts",
     "backfill:email-verified": "ts-node prisma/backfill-email-verified.ts",

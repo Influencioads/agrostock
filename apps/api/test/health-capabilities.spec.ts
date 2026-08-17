@@ -9,7 +9,7 @@ describe('HealthController', () => {
       uploads: true,
       directory: true,
       workers: true,
-      roles: ['buyer', 'seller', 'transporter', 'loaderco', 'worker'],
+      roles: ['buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker'],
     });
   });
 });
