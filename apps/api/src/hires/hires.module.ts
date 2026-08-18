@@ -14,9 +14,9 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { HireTargetType } from '@prisma/client';
-import { IsDateString, IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import type { Lang } from '@agrotraders/i18n';
-import { SERVICE_ROLES } from '@agrotraders/types';
+import { SERVICE_ROLES, sanitizeHireDetails } from '@agrotraders/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -63,6 +63,17 @@ export class CreateHireDto {
   @ApiProperty({ required: false }) @IsOptional() @IsDateString() neededDate?: string;
   @ApiProperty({ required: false, description: 'Budget in USD cents' }) @IsOptional() @IsInt() @Min(0) budgetCents?: number;
 
+  @ApiProperty({ required: false, description: 'Leaf service being enquired about (targetType=service_provider)' })
+  @IsOptional() @IsString() serviceNodeId?: string;
+
+  @ApiProperty({
+    required: false,
+    type: 'object',
+    additionalProperties: true,
+    description: 'Answers to the per-service question set. Unknown keys are dropped — see `sanitizeHireDetails`.',
+  })
+  @IsOptional() @IsObject() details?: Record<string, unknown>;
+
   @ApiProperty({ required: false, description: 'Source logistics for one of your orders (seller only)' })
   @IsOptional() @IsString() orderId?: string;
 
@@ -86,6 +97,7 @@ const PARTY_SELECT = {
 } as const;
 
 const HIRE_INCLUDE = {
+  serviceNode: { select: { id: true, slug: true, nameEn: true, translations: { select: { locale: true, name: true } } } },
   requester: { select: PARTY_SELECT },
   targetUser: { select: PARTY_SELECT },
   worker: { select: { id: true, name: true, rating: true, status: true } },
@@ -122,6 +134,13 @@ export class HiresService {
   private async localizeHires<
     T extends Record<string, unknown> & { order?: { product?: { name: string } | null } | null },
   >(rows: T[], locale: Lang): Promise<T[]> {
+    // The service name is a TRANSLATED taxonomy label, not free text — resolve it
+    // from `ServiceNodeTranslation` (as the services module does) rather than
+    // sending an already-translated string through the machine translator.
+    for (const r of rows) {
+      const node = (r as { serviceNode?: { nameEn: string; name?: string; translations?: { locale: string; name: string }[] } | null }).serviceNode;
+      if (node) node.name = node.translations?.find((t) => t.locale === locale)?.name ?? node.nameEn;
+    }
     const out = await this.text.localizeRows(rows, ['cargo', 'message'], locale);
     const names = await this.text.localizeMany(
       out.map((h) => h.order?.product?.name),
@@ -197,6 +216,34 @@ export class HiresService {
       throw new BadRequestException(`This user is not a ${dto.targetType}.`);
     }
 
+    // Which service is being enquired about. Validated against what this provider
+    // actually PRICES, not merely against the taxonomy: a hire naming a leaf the
+    // provider never listed reads on their dashboard as work they offer, and they
+    // would decline every one of them.
+    let serviceNodeId: string | null = null;
+    let serviceSlug: string | null = null;
+    if (dto.serviceNodeId) {
+      if (dto.targetType !== 'service_provider') {
+        throw new BadRequestException('A service can only be named on a service-provider hire.');
+      }
+      const priced = await this.prisma.providerService.findFirst({
+        where: {
+          serviceNodeId: dto.serviceNodeId,
+          isActive: true,
+          provider: { userId: dto.targetUserId },
+          serviceNode: { isActive: true, isLeaf: true },
+        },
+        select: { serviceNodeId: true, serviceNode: { select: { slug: true } } },
+      });
+      if (!priced) throw new BadRequestException('This provider does not offer that service.');
+      serviceNodeId = priced.serviceNodeId;
+      serviceSlug = priced.serviceNode.slug;
+    }
+    // Free-shaped Json on the way to the database: drop unknown keys, hold selects
+    // to their declared options, cap strings. Empty object stores as null so a
+    // question-less hire does not read as "answered nothing".
+    const details = dto.details ? sanitizeHireDetails(dto.details, serviceSlug) : null;
+
     // Order-linked hire: only that order's seller may source logistics for it, and
     // the whole job — route, cargo, work site — is derived from the order so nobody
     // retypes it. The clients prefill the same values into the form (see
@@ -261,6 +308,8 @@ export class HiresService {
             // otherwise — the destination is the buyer's side to staff.
             location: dto.location ?? order?.fromCity ?? null,
             workersNeeded: dto.workersNeeded,
+            serviceNodeId,
+            details: details && Object.keys(details).length ? details : undefined,
             neededDate: dto.neededDate ? new Date(dto.neededDate) : null,
             budgetCents: dto.budgetCents,
             escrowState: budget > 0 ? 'held' : null,

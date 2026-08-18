@@ -1949,5 +1949,285 @@
       "type": "Тип",
       "year": "Год"
     }
+  },
+  "hireQ": {
+    "service": "Нужная услуга",
+    "servicePick": "Выберите услугу…",
+    "noServices": "Исполнитель ещё не указал цены на услуги — опишите задачу ниже.",
+    "estimateNote": "Цены, показанные публично, являются только ориентировочными. При изменении местоположения, объёма или условий обработки исполнитель пересмотрит коммерческое предложение.",
+    "requiredMissing": "Заполните поле: {{label}}",
+    "sectionDetails": "Детали услуги",
+    "cargo": "Товар / продукция",
+    "qty": "Количество",
+    "qtyUnit": "Единица",
+    "frequency": "Периодичность",
+    "neededDate": "Нужно к",
+    "message": "Примечания",
+    "location": "Местоположение",
+    "movement": "Кто перевозит товар?",
+    "condition": "Текущее состояние товара",
+    "outputSpec": "Что вы хотите получить (спецификация)",
+    "returnPackaging": "Упаковка при возврате",
+    "certifications": "Требуемые сертификаты",
+    "sampleFirst": "Пробная партия перед основной?",
+    "storageType": "Тип хранения",
+    "tempC": "Требуемая температура (°C)",
+    "volume": "Объём",
+    "volumeUnit": "Единица объёма",
+    "storageFrom": "Хранение с",
+    "storageTo": "Хранение до",
+    "foodGrade": "Нужен пищевой допуск?",
+    "handling": "Нужна обработка",
+    "fromCity": "Откуда",
+    "toCity": "Куда",
+    "mode": "Вид транспорта",
+    "loadType": "Тип загрузки",
+    "tempControlled": "С температурным режимом?",
+    "deliveryDeadline": "Срок доставки",
+    "incoterm": "Инкотермс",
+    "loadingIncluded": "Погрузка и разгрузка включены?",
+    "direction": "Направление",
+    "portOrBorder": "Порт / ICD / пункт пропуска",
+    "hsCode": "Код ТН ВЭД",
+    "shipmentValue": "Стоимость партии",
+    "shipmentCurrency": "Валюта",
+    "documentsHeld": "Документы, которые у вас есть",
+    "containers": "Контейнеры / отправки",
+    "jurisdiction": "Страна / юрисдикция",
+    "entityType": "Форма организации",
+    "periodFrom": "Период с",
+    "periodTo": "Период по",
+    "engagement": "Формат работы",
+    "turnoverBand": "Годовой оборот",
+    "volumePerMonth": "Счетов / операций в месяц",
+    "booksIn": "Учёт ведётся в",
+    "registrations": "Регистрации (GSTIN / PAN / ИНН)",
+    "coverType": "Вид страхования",
+    "sumInsured": "Страховая сумма",
+    "sumCurrency": "Валюта",
+    "coverScope": "Что нужно застраховать",
+    "routeOrLocation": "Маршрут или место",
+    "coverFrom": "Покрытие с",
+    "coverTo": "Покрытие до",
+    "claimsHistory": "История убытков",
+    "packFormat": "Формат упаковки",
+    "packSize": "Размер упаковки",
+    "unitsPerCase": "Штук в коробе",
+    "materialBy": "Кто предоставляет упаковочный материал?",
+    "labelling": "Маркировка",
+    "shipTo": "Отправить упакованный товар в",
+    "channels": "Каналы продаж",
+    "ordersPerMonth": "Заказов в месяц",
+    "skuCount": "Количество SKU",
+    "storageNeeded": "Нужно хранение?",
+    "storageVolume": "Объём хранения",
+    "returnsHandling": "Нужна обработка возвратов?",
+    "testParams": "Что проверить / испытать",
+    "standard": "Стандарт или спецификация",
+    "lotSize": "Размер партии",
+    "sampleCount": "Количество образцов",
+    "reportType": "Нужный отчёт",
+    "processing": {
+      "location": "Где сейчас находится товар"
+    },
+    "warehousing": {
+      "location": "Город склада"
+    },
+    "packing": {
+      "location": "Где сейчас находится товар"
+    },
+    "fulfilment": {
+      "location": "Откуда поступает товар"
+    },
+    "inspection": {
+      "location": "Место инспекции"
+    },
+    "customs": {
+      "fromCity": "Страна отправления",
+      "toCity": "Страна назначения"
+    },
+    "opt": {
+      "frequency": {
+        "one_off": "Разово",
+        "weekly": "Еженедельно",
+        "monthly": "Ежемесячно",
+        "ongoing": "Постоянный контракт"
+      },
+      "movement": {
+        "i_deliver": "Я привезу вам",
+        "you_collect": "Вы забираете у меня",
+        "you_arrange_both": "Вы организуете в обе стороны"
+      },
+      "returnPackaging": {
+        "bulk": "Навалом, без упаковки",
+        "provider_supplies": "Упаковку предоставляете вы",
+        "i_supply": "Упаковку предоставляю я"
+      },
+      "certifications": {
+        "fssai": "FSSAI",
+        "iso": "ISO",
+        "haccp": "HACCP",
+        "organic": "Органик",
+        "halal": "Халяль",
+        "kosher": "Кошер",
+        "brc": "BRC"
+      },
+      "sampleFirst": {
+        "yes": "Да",
+        "no": "Нет"
+      },
+      "storageType": {
+        "ambient": "Обычное",
+        "chilled": "Охлаждённое",
+        "frozen": "Замороженное",
+        "bonded": "Таможенный склад"
+      },
+      "volumeUnit": {
+        "pallets": "Паллеты",
+        "cbm": "м³",
+        "tons": "Тонны"
+      },
+      "foodGrade": {
+        "yes": "Да",
+        "no": "Нет"
+      },
+      "handling": {
+        "receiving": "Приёмка",
+        "pick_pack": "Комплектация и упаковка",
+        "dispatch": "Отгрузка"
+      },
+      "mode": {
+        "road": "Автомобильный",
+        "rail": "Железнодорожный",
+        "sea": "Морской",
+        "air": "Авиа",
+        "multimodal": "Мультимодальный"
+      },
+      "loadType": {
+        "ftl": "Полная загрузка (FTL)",
+        "ltl": "Сборный груз (LTL)",
+        "part_load": "Догруз",
+        "fcl": "Контейнер FCL",
+        "lcl": "Контейнер LCL",
+        "reefer": "Рефрижератор"
+      },
+      "tempControlled": {
+        "yes": "Да",
+        "no": "Нет"
+      },
+      "incoterm": {
+        "exw": "EXW",
+        "fob": "FOB",
+        "cif": "CIF",
+        "dap": "DAP",
+        "ddp": "DDP"
+      },
+      "loadingIncluded": {
+        "yes": "Да",
+        "no": "Нет"
+      },
+      "direction": {
+        "import": "Импорт",
+        "export": "Экспорт",
+        "transit": "Транзит"
+      },
+      "documentsHeld": {
+        "invoice": "Инвойс",
+        "packing_list": "Упаковочный лист",
+        "coo": "Сертификат происхождения",
+        "phyto": "Фитосанитарный сертификат",
+        "licence": "Лицензия на импорт / экспорт",
+        "bl_awb": "Коносамент или AWB"
+      },
+      "entityType": {
+        "individual": "Физическое лицо",
+        "sole_prop": "ИП",
+        "llp": "LLP",
+        "pvt_ltd": "Частная компания",
+        "ooo": "ООО",
+        "other": "Другое"
+      },
+      "engagement": {
+        "one_off": "Разовая сдача",
+        "monthly_retainer": "Ежемесячное обслуживание",
+        "annual": "Годовое"
+      },
+      "turnoverBand": {
+        "under_100k": "До $100 тыс.",
+        "100k_1m": "$100 тыс. – $1 млн",
+        "1m_10m": "$1 млн – $10 млн",
+        "over_10m": "Более $10 млн"
+      },
+      "booksIn": {
+        "tally": "Tally",
+        "one_c": "1С",
+        "zoho": "Zoho Books",
+        "excel": "Excel",
+        "none": "Пока не ведётся",
+        "other": "Другое"
+      },
+      "coverType": {
+        "cargo": "Груз",
+        "transit": "Перевозка",
+        "warehouse": "Склад / запасы",
+        "liability": "Ответственность",
+        "crop": "Урожай"
+      },
+      "packFormat": {
+        "retail_pouch": "Розничный пакет",
+        "carton": "Короб",
+        "vacuum": "Вакуумная упаковка",
+        "map": "Модифицированная атмосфера (MAP)",
+        "shrink": "Термоусадочная плёнка",
+        "bulk_bag": "Биг-бэг"
+      },
+      "materialBy": {
+        "i_supply": "Предоставляю я",
+        "you_supply": "Предоставляете вы"
+      },
+      "labelling": {
+        "private_label": "Собственная торговая марка",
+        "barcode": "Штрихкод",
+        "export_marks": "Экспортная маркировка"
+      },
+      "channels": {
+        "own_site": "Собственный сайт",
+        "amazon": "Amazon",
+        "flipkart": "Flipkart",
+        "ozon": "Ozon",
+        "wildberries": "Wildberries",
+        "other": "Другое"
+      },
+      "storageNeeded": {
+        "yes": "Да",
+        "no": "Нет"
+      },
+      "returnsHandling": {
+        "yes": "Да",
+        "no": "Нет"
+      },
+      "testParams": {
+        "moisture": "Влажность",
+        "foreign_matter": "Посторонние примеси",
+        "microbio": "Микробиология",
+        "residue": "Остатки пестицидов",
+        "metal_detect": "Металлодетекция",
+        "size": "Размер",
+        "colour": "Цвет"
+      },
+      "reportType": {
+        "lab_report": "Лабораторный отчёт",
+        "certificate": "Сертификат",
+        "psi_certificate": "Сертификат предотгрузочной инспекции"
+      }
+    }
+  },
+  "serviceOffer": {
+    "hireAnswers": "Что вы предлагаете",
+    "pickupOffered": "Забираю товар у заказчика",
+    "deliveryOffered": "Возвращаю товар по адресу заказчика",
+    "packagingSupplied": "Предоставляю упаковочный материал",
+    "sampleAvailable": "Делаю пробную партию",
+    "storageTypes": "Предлагаемые условия хранения"
   }
 }

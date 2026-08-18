@@ -975,6 +975,13 @@ export interface ApiServiceProvider {
   countriesServed: string[];
   productsHandled: string[];
   acceptsInternationalOrders: boolean;
+  /* The provider side of the hire form's questions. */
+  pickupOffered: boolean;
+  deliveryOffered: boolean;
+  packagingSupplied: boolean;
+  sampleAvailable: boolean;
+  /** ambient | chilled | frozen | bonded. */
+  storageTypes: string[];
   capacityPerDay: number | null;
   certifications: string[];
   minOrderQty: number | null;
@@ -1027,6 +1034,11 @@ export interface ApiHireRequest {
   workersNeeded: number | null;
   neededDate: string | null;
   budgetCents: number | null;
+  /** The leaf service enquired about — service-provider hires only. */
+  serviceNodeId: string | null;
+  serviceNode?: { id: string; slug: string; nameEn: string; name?: string } | null;
+  /** Answers to the per-service question set (`hireFieldsForService`). */
+  details?: Record<string, string | number | string[]> | null;
   createdAt: string;
   decidedAt: string | null;
   requester?: ApiHireParty;
@@ -2230,6 +2242,10 @@ export function createApiClient(opts: ApiClientOptions) {
         workersNeeded?: number;
         neededDate?: string;
         budgetCents?: number;
+        /** Leaf service being enquired about (targetType=service_provider). */
+        serviceNodeId?: string;
+        /** Answers to the per-service question set. Unknown keys are dropped server-side. */
+        details?: Record<string, string | number | string[]>;
         /** Source logistics for one of your orders (seller only). */
         orderId?: string;
       }) => post<ApiHireRequest>('/hires', body),

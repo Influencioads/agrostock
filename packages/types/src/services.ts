@@ -87,9 +87,14 @@ export function allowedCategories(role: string, requested: readonly string[]): S
   return SERVICE_CATEGORIES.filter((c) => allowed.has(c) && requested.includes(c));
 }
 
-/** Who a hire request is aimed at — mirrors the API's `HireTargetType` enum. */
+/**
+ * Who a hire request is aimed at — mirrors the API's `HireTargetType` enum.
+ *
+ * Named for the enum, not `HireTarget`: both apps already use that name for the
+ * object their hire modal takes, of which this is one field.
+ */
 export const HIRE_TARGET_TYPES = ['transporter', 'loaderco', 'workerco', 'worker', 'service_provider'] as const;
-export type HireTarget = (typeof HIRE_TARGET_TYPES)[number];
+export type HireTargetType = (typeof HIRE_TARGET_TYPES)[number];
 
 /**
  * Which hire flow an account belongs to, from the roles it holds.
@@ -104,7 +109,7 @@ export type HireTarget = (typeof HIRE_TARGET_TYPES)[number];
  * because a company holding both reads as a company, and a service role is the
  * last resort since those five share one flow.
  */
-export function hireTargetForRoles(roles: readonly (string | null | undefined)[]): HireTarget | null {
+export function hireTargetForRoles(roles: readonly (string | null | undefined)[]): HireTargetType | null {
   for (const target of ['transporter', 'loaderco', 'workerco', 'worker'] as const) {
     if (roles.includes(target)) return target;
   }

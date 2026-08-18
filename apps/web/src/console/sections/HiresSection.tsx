@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import type { ApiHireRequest } from '@agrotraders/api-client';
+import { hireBlockForService, hireFieldByKey } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
@@ -20,6 +21,21 @@ function HireRow({ h, incoming, onAction, onRate }: { h: ApiHireRequest; incomin
   const detail = [h.cargo, h.fromCity && h.toCity ? `${h.fromCity} → ${h.toCity}` : null, h.location, h.workersNeeded ? t('console.hires.workersN', { count: h.workersNeeded }) : null]
     .filter(Boolean)
     .join(' · ');
+  // The per-service answers, rendered back with the same labels the asker saw.
+  // Only select/multiselect values are translated — a free-text answer put
+  // through the option catalog would be a lookup on user input.
+  const block = hireBlockForService(h.serviceNode?.slug);
+  const label = (k: string) => t(`hireQ.${block}.${k}`, { defaultValue: t(`hireQ.${k}`, { defaultValue: k }) });
+  const answer = (k: string, v: string | number | string[]) => {
+    const spec = hireFieldByKey(k);
+    const opt = (o: string) =>
+      k === 'qtyUnit' ? t(`enums:unit.${o}`, { defaultValue: o }) : t(`hireQ.opt.${k}.${o}`, { defaultValue: o });
+    if (Array.isArray(v)) return v.map(opt).join(', ');
+    if (spec?.type === 'select') return opt(String(v));
+    return String(v);
+  };
+  const answers = h.details ? Object.entries(h.details) : [];
+
   // Before accepting, the provider needs to vet and reach the counterparty.
   const contactEmail = other?.email ?? other?.profile?.contactEmail;
   const phone = other?.profile?.phone ?? other?.profile?.whatsapp;
@@ -44,7 +60,20 @@ function HireRow({ h, incoming, onAction, onRate }: { h: ApiHireRequest; incomin
           {incoming ? t('console.hires.fromName', { name: other?.name ?? '—' }) : `${t('console.hires.toName', { name: other?.name ?? '—' })}${h.worker ? ` (${h.worker.name})` : ''}`}
         </div>
         {contact && <div className="text-xs text-ink-soft">{contact}</div>}
+        {h.serviceNode && (
+          <div className="text-sm font-semibold text-brand-dark">{h.serviceNode.name ?? h.serviceNode.nameEn}</div>
+        )}
         {detail && <div className="text-sm text-ink-soft">{detail}</div>}
+        {answers.length > 0 && (
+          <dl className="mt-1 grid gap-x-3 gap-y-0.5 text-xs text-ink-soft sm:grid-cols-2">
+            {answers.map(([k, v]) => (
+              <div key={k} className="flex gap-1">
+                <dt className="shrink-0 font-semibold">{label(k)}:</dt>
+                <dd className="min-w-0 break-words">{answer(k, v)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
         {h.order?.product?.name && (
           <div className="mt-0.5 text-xs text-ink-soft">{t('console.hires.orderGoods', { name: h.order.product.name })}{h.order.amount ? ` · ${h.order.amount}` : ''}</div>
         )}

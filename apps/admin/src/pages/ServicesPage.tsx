@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ApiServiceProvider } from '@agrotraders/api-client';
 import { api } from '../lib/api';
+import { HiresPage } from './HiresPage';
 
 export function ServicesPage() {
   const { data = [] } = useQuery<ApiServiceProvider[]>({
@@ -37,6 +38,17 @@ export function ServicesPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Service enquiries were reachable from no admin page at all: the hire feed
+          is only mounted under /transport and /loaders, both filtered to their own
+          target types. A dispute over a quoted service had nothing to read. */}
+      <div className="mt-8">
+        <h2 className="font-display text-xl font-extrabold">Service enquiries</h2>
+        <p className="mt-1 text-sm text-ink-soft">Hire requests sent to service providers, with the answers the buyer gave.</p>
+        <div className="mt-4">
+          <HiresPage filter={['service_provider']} embedded />
+        </div>
       </div>
     </div>
   );

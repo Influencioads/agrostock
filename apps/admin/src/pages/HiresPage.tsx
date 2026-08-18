@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Card, type BadgeTone } from '@agrotraders/ui';
 import type { ApiHireRequest } from '@agrotraders/api-client';
+import { hireFieldByKey } from '@agrotraders/types';
 import { PageHeader } from '../components/widgets';
 import { api } from '../lib/api';
 import { useI18n } from '../i18n';
@@ -54,7 +55,29 @@ export function HiresPage({
                   <td className="px-5 py-3 text-ink">{h.requester?.name}</td>
                   <td className="px-5 py-3 text-ink">{h.targetUser?.name}{h.worker ? ` (${h.worker.name})` : ''}</td>
                   <td className="px-5 py-3 text-ink-soft">
+                    {h.serviceNode && (
+                      <div className="font-semibold text-brand-dark">{h.serviceNode.name ?? h.serviceNode.nameEn}</div>
+                    )}
                     {[h.cargo, h.fromCity && h.toCity ? `${h.fromCity} → ${h.toCity}` : null, h.location].filter(Boolean).join(' · ') || '—'}
+                    {/* The per-service answers matter in a dispute, so admin sees them too. */}
+                    {h.details && Object.keys(h.details).length > 0 && (
+                      <div className="mt-0.5 text-xs">
+                        {Object.entries(h.details).map(([k, v]) => (
+                          <div key={k}>
+                            <span className="font-semibold">{t(`hireQ.${k}`, { defaultValue: k })}:</span>{' '}
+                            {/* Units reuse the translated unit catalog, as both clients do. */}
+                            {(() => {
+                              const opt = (o: string) =>
+                                k === 'qtyUnit'
+                                  ? t(`enums:unit.${o}`, { defaultValue: o })
+                                  : t(`hireQ.opt.${k}.${o}`, { defaultValue: o });
+                              if (Array.isArray(v)) return v.map(opt).join(', ');
+                              return hireFieldByKey(k)?.type === 'select' ? opt(String(v)) : String(v);
+                            })()}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-5 py-3 font-numeric text-ink-soft">{h.budgetCents != null ? `$${(h.budgetCents / 100).toLocaleString()}` : '—'}</td>
                   <td className="px-5 py-3"><Badge tone={tone[h.status] ?? 'slate'}>{t(`enums:hire_status.${h.status}`)}</Badge></td>

@@ -18,7 +18,7 @@ import {
   ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min,
 } from 'class-validator';
 import {
-  allowedCategories, isServiceRole, SERVICE_CATEGORIES, SERVICE_PRICING_BASES, SERVICE_ROLES,
+  allowedCategories, isServiceRole, SERVICE_CATEGORIES, SERVICE_PRICING_BASES, SERVICE_ROLES, STORAGE_TYPES,
 } from '@agrotraders/types';
 import { MAX_MONEY_CENTS } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
@@ -85,12 +85,24 @@ export class UpdateServiceProfileDto {
 
   @ApiProperty({ required: false })
   @IsOptional() @IsBoolean() acceptsInternationalOrders?: boolean;
+
+  /* The provider side of the hire form's questions — see the schema note. */
+  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() pickupOffered?: boolean;
+  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() deliveryOffered?: boolean;
+  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() packagingSupplied?: boolean;
+  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() sampleAvailable?: boolean;
+
+  @ApiProperty({ required: false, isArray: true, description: 'ambient | chilled | frozen | bonded' })
+  @IsOptional() @IsArray() @ArrayMaxSize(4) @IsIn(STORAGE_TYPES as unknown as string[], { each: true })
+  storageTypes?: string[];
 }
 
 /** Public columns. An allow-list, so a column added later stays private by default. */
 const PUBLIC_SELECT = {
   id: true, companyName: true, categories: true, citiesServed: true, country: true,
   countriesServed: true, productsHandled: true, acceptsInternationalOrders: true,
+  pickupOffered: true, deliveryOffered: true, packagingSupplied: true,
+  sampleAvailable: true, storageTypes: true,
   capacityPerDay: true, certifications: true, minOrderQty: true, turnaroundDays: true,
   pricingBasis: true, priceFromCents: true, priceCurrency: true, photos: true, blurb: true,
   createdAt: true,
@@ -155,6 +167,11 @@ export class ServiceProvidersService {
         countriesServed: dto.countriesServed,
         productsHandled: dto.productsHandled,
         acceptsInternationalOrders: dto.acceptsInternationalOrders,
+        pickupOffered: dto.pickupOffered,
+        deliveryOffered: dto.deliveryOffered,
+        packagingSupplied: dto.packagingSupplied,
+        sampleAvailable: dto.sampleAvailable,
+        storageTypes: dto.storageTypes,
       },
     });
   }

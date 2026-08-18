@@ -3,7 +3,10 @@ import { ScrollView, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiHireRequest, ApiMyServiceProfile } from '@agrotraders/api-client';
-import { categoriesForRole, isServiceRole, SERVICE_PRICING_BASES } from '@agrotraders/types';
+import {
+  categoriesForRole, hireBlockForService, hireFieldByKey, isServiceRole,
+  SERVICE_PRICING_BASES, STORAGE_TYPES,
+} from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -21,6 +24,39 @@ import { PickerField } from '../components/PickerSheet';
  * five places to fix the same bug. `ROLE_ALIAS` in sectionRegistryKeys.ts is what
  * points every service role at these.
  */
+
+/**
+ * The buyer's answers to the question set for the service they asked about.
+ *
+ * This is the provider's real inbox — the quote is written from these, so they
+ * are rendered in full rather than summarised. Labels resolve block-first
+ * (`hireQ.<block>.<key>`), because `location` asks a different question in a
+ * processing enquiry than in a warehousing one. Only select/multiselect values
+ * go through the option catalog; a free-text answer must not be used as a key.
+ */
+function EnquiryAnswers({ hire }: { hire: ApiHireRequest }) {
+  const { t } = useI18n();
+  if (!hire.details || !Object.keys(hire.details).length) return null;
+  const block = hireBlockForService(hire.serviceNode?.slug);
+  return (
+    <View style={{ gap: 2 }}>
+      {Object.entries(hire.details).map(([k, v]) => {
+        const opt = (o: string) =>
+          k === 'qtyUnit' ? t(`enums:unit.${o}`, { defaultValue: o }) : t(`hireQ.opt.${k}.${o}`, { defaultValue: o });
+        const shown = Array.isArray(v)
+          ? v.map(opt).join(', ')
+          : hireFieldByKey(k)?.type === 'select'
+            ? opt(String(v))
+            : String(v);
+        return (
+          <Txt key={k} variant="small" color={C.inkSoft}>
+            {t(`hireQ.${block}.${k}`, { defaultValue: t(`hireQ.${k}`, { defaultValue: k }) })}: {shown}
+          </Txt>
+        );
+      })}
+    </View>
+  );
+}
 
 /** The signed-in user's service role, or null if they hold none. */
 function useServiceRole(): string | null {
@@ -83,6 +119,9 @@ export function ServiceEnquiries() {
               <Txt variant="title" style={{ flex: 1 }}>#{h.reference}</Txt>
               <Badge label={t(`service.${h.status}`, { defaultValue: h.status })} tone={tone(h.status)} />
             </Row>
+            {h.serviceNode ? (
+              <Txt variant="title" color={C.dark}>{h.serviceNode.name ?? h.serviceNode.nameEn}</Txt>
+            ) : null}
             {h.message ? <Txt variant="muted">{h.message}</Txt> : null}
             <Row gap={10} style={{ flexWrap: 'wrap' }}>
               {h.cargo ? <Txt variant="small">{h.cargo}</Txt> : null}
@@ -90,6 +129,7 @@ export function ServiceEnquiries() {
               {h.neededDate ? <Txt variant="small">{new Date(h.neededDate).toLocaleDateString()}</Txt> : null}
               {h.budgetCents != null ? <Txt variant="title">{fmtCents(h.budgetCents)}</Txt> : null}
             </Row>
+            <EnquiryAnswers hire={h} />
             {/* Only a pending enquiry is decidable — the API enforces the same, so
                 a stale screen cannot accept something already cancelled. */}
             {h.status === 'pending' ? (
@@ -124,6 +164,10 @@ export function ServiceEnquiries() {
 
 /* ── listing profile ────────────────────────────────────────────────────── */
 
+/** The booleans the hire form's questions have a provider-side answer for. */
+const OFFER_KEYS = ['pickupOffered', 'deliveryOffered', 'packagingSupplied', 'sampleAvailable'] as const;
+type OfferKey = (typeof OFFER_KEYS)[number];
+
 /** What buyers see. Until `listed` is on, the provider is invisible in the directory. */
 export function ServiceProfile() {
   const { t } = useI18n();
@@ -137,6 +181,11 @@ export function ServiceProfile() {
 
   const [form, setForm] = useState<Record<string, string>>({});
   const [cats, setCats] = useState<string[] | null>(null);
+  /** The provider side of the hire form's questions — null until edited. */
+  const [offers, setOffers] = useState<Partial<Record<OfferKey, boolean>> | null>(null);
+  const [storage, setStorage] = useState<string[] | null>(null);
+  const offer = (k: OfferKey) => offers?.[k] ?? profile?.[k] ?? false;
+  const storageTypes = storage ?? profile?.storageTypes ?? [];
   /** Reads the edited value, falling back to what the server has. Keyed on the
    *  API shape so a typo is a type error, not a silently blank field. */
   const value = (k: keyof ApiMyServiceProfile, fallback = '') =>
@@ -163,6 +212,11 @@ export function ServiceProfile() {
         pricingBasis: value('pricingBasis') || undefined,
         priceFromCents: priceFrom.trim() === '' ? undefined : Math.round(Number(priceFrom) * 100),
         blurb: value('blurb') || undefined,
+        pickupOffered: offer('pickupOffered'),
+        deliveryOffered: offer('deliveryOffered'),
+        packagingSupplied: offer('packagingSupplied'),
+        sampleAvailable: offer('sampleAvailable'),
+        storageTypes,
       });
     },
     onSuccess: invalidate,
@@ -246,6 +300,37 @@ export function ServiceProfile() {
           keyboardType="decimal-pad"
           onChangeText={set('priceFrom')}
         />
+        {/* Answers the hire form asks buyers for, from the provider's side —
+            "you collect" and "I need frozen storage" are unanswerable without them.
+            Chips rather than checkboxes: the mobile kit has no checkbox, and a
+            toggled chip already reads as on/off everywhere else in this app. */}
+        <View style={{ gap: 6 }}>
+          <Txt variant="muted">{t('serviceOffer.hireAnswers')}</Txt>
+          <Row gap={6} style={{ flexWrap: 'wrap' }}>
+            {OFFER_KEYS.map((k) => (
+              <Chip
+                key={k}
+                label={t(`serviceOffer.${k}`)}
+                active={offer(k)}
+                onPress={() => setOffers((p) => ({ ...(p ?? {}), [k]: !offer(k) }))}
+              />
+            ))}
+          </Row>
+        </View>
+        <View style={{ gap: 6 }}>
+          <Txt variant="muted">{t('serviceOffer.storageTypes')}</Txt>
+          <Row gap={6} style={{ flexWrap: 'wrap' }}>
+            {STORAGE_TYPES.map((st) => (
+              <Chip
+                key={st}
+                label={t(`hireQ.opt.storageType.${st}`)}
+                active={storageTypes.includes(st)}
+                onPress={() => setStorage(storageTypes.includes(st) ? storageTypes.filter((x) => x !== st) : [...storageTypes, st])}
+              />
+            ))}
+          </Row>
+        </View>
+
         <Input label={t('service.about')} value={value('blurb')} onChangeText={set('blurb')} multiline />
 
         {save.error ? <Txt style={{ color: C.error }}>{errText(save.error, t('service.saveError'))}</Txt> : null}

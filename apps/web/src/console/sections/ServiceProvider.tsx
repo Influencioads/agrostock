@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
 import type { ApiHireRequest, ApiMyServiceProfile } from '@agrotraders/api-client';
-import { categoriesForRole, isServiceRole, SERVICE_PRICING_BASES } from '@agrotraders/types';
+import {
+  categoriesForRole, hireBlockForService, hireFieldByKey, isServiceRole,
+  SERVICE_PRICING_BASES, STORAGE_TYPES,
+} from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -24,6 +27,42 @@ function useServiceRole(): string | null {
 }
 
 /* ── enquiries ──────────────────────────────────────────────────────────── */
+
+/**
+ * The buyer's answers to the question set for the service they asked about.
+ *
+ * This is the provider's real inbox — the quote is written from these, so they
+ * are rendered in full here rather than summarised. Labels resolve block-first
+ * (`hireQ.<block>.<key>`), because `location` asks a different question in a
+ * processing enquiry than in a warehousing one. Only select/multiselect values
+ * go through the option catalog; a free-text answer must not be used as a key.
+ */
+function EnquiryAnswers({ hire }: { hire: ApiHireRequest }) {
+  const { t } = useI18n();
+  if (!hire.details || !Object.keys(hire.details).length) return null;
+  const block = hireBlockForService(hire.serviceNode?.slug);
+  return (
+    <dl className="mt-2 grid gap-x-4 gap-y-1 text-xs text-ink-soft sm:grid-cols-2">
+      {Object.entries(hire.details).map(([k, v]) => {
+        const opt = (o: string) =>
+          k === 'qtyUnit' ? t(`enums:unit.${o}`, { defaultValue: o }) : t(`hireQ.opt.${k}.${o}`, { defaultValue: o });
+        const shown = Array.isArray(v)
+          ? v.map(opt).join(', ')
+          : hireFieldByKey(k)?.type === 'select'
+            ? opt(String(v))
+            : String(v);
+        return (
+          <div key={k} className="flex gap-1.5">
+            <dt className="shrink-0 font-semibold text-ink">
+              {t(`hireQ.${block}.${k}`, { defaultValue: t(`hireQ.${k}`, { defaultValue: k }) })}:
+            </dt>
+            <dd className="min-w-0 break-words">{shown}</dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
+}
 
 /**
  * Customer enquiries, on the existing hire flow.
@@ -79,6 +118,11 @@ export function ServiceEnquiries() {
                   <span className="font-display font-bold text-ink">#{h.reference}</span>
                   <Badge tone={tone(h.status)}>{t(`service.${h.status}`, { defaultValue: h.status })}</Badge>
                 </div>
+                {h.serviceNode && (
+                  <div className="mt-0.5 text-sm font-semibold text-brand-dark">
+                    {h.serviceNode.name ?? h.serviceNode.nameEn}
+                  </div>
+                )}
                 {h.message && <p className="mt-1 max-w-2xl text-sm text-ink-soft">{h.message}</p>}
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
                   {h.cargo && <span>{h.cargo}</span>}
@@ -86,6 +130,7 @@ export function ServiceEnquiries() {
                   {h.neededDate && <span>{new Date(h.neededDate).toLocaleDateString()}</span>}
                   {h.budgetCents != null && <span className="font-semibold text-ink">{fmtCents(h.budgetCents)}</span>}
                 </div>
+                <EnquiryAnswers hire={h} />
               </div>
               {/* Only a pending enquiry is decidable — the API enforces the same,
                   so a stale tab cannot accept something already cancelled. */}
@@ -109,6 +154,10 @@ export function ServiceEnquiries() {
 
 /* ── listing profile ────────────────────────────────────────────────────── */
 
+/** The five booleans the hire form's questions have a provider-side answer for. */
+const OFFER_KEYS = ['pickupOffered', 'deliveryOffered', 'packagingSupplied', 'sampleAvailable'] as const;
+type OfferKey = (typeof OFFER_KEYS)[number];
+
 /** What buyers see. Until `listed` is on, the provider is invisible in the directory. */
 export function ServiceProfile() {
   const { t } = useI18n();
@@ -124,6 +173,11 @@ export function ServiceProfile() {
 
   const [form, setForm] = useState<Record<string, string>>({});
   const [cats, setCats] = useState<string[] | null>(null);
+  /** The provider side of the hire form's questions — null until edited. */
+  const [offers, setOffers] = useState<Partial<Record<OfferKey, boolean>> | null>(null);
+  const [storage, setStorage] = useState<string[] | null>(null);
+  const offer = (k: OfferKey) => offers?.[k] ?? profile?.[k] ?? false;
+  const storageTypes = storage ?? profile?.storageTypes ?? [];
   /** Reads the edited value, falling back to what the server has. Keyed on the
    *  API shape so a typo is a type error, not a silently blank field. */
   const value = (k: keyof ApiMyServiceProfile, fallback = '') =>
@@ -148,6 +202,11 @@ export function ServiceProfile() {
         pricingBasis: value('pricingBasis') || undefined,
         priceFromCents: priceFrom.trim() === '' ? undefined : Math.round(Number(priceFrom) * 100),
         blurb: value('blurb') || undefined,
+        pickupOffered: offer('pickupOffered'),
+        deliveryOffered: offer('deliveryOffered'),
+        packagingSupplied: offer('packagingSupplied'),
+        sampleAvailable: offer('sampleAvailable'),
+        storageTypes,
       });
     },
     onSuccess: () => { setSaved(true); setError(''); qc.invalidateQueries({ queryKey: ['my-service-profile'] }); },
@@ -245,6 +304,43 @@ export function ServiceProfile() {
             value={priceFrom}
             onChange={set('priceFrom')}
           />
+        </div>
+
+        {/* Answers the hire form asks buyers for, from the provider's side —
+            "you collect" and "I need frozen storage" are unanswerable without them. */}
+        <div>
+          <span className="mb-1.5 block text-sm font-semibold text-ink">{t('serviceOffer.hireAnswers')}</span>
+          <div className="space-y-1.5">
+            {OFFER_KEYS.map((k) => (
+              <label key={k} className="flex items-center gap-2 text-sm text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={offer(k)}
+                  onChange={(e) => setOffers((p) => ({ ...(p ?? {}), [k]: e.target.checked }))}
+                />
+                {t(`serviceOffer.${k}`)}
+              </label>
+            ))}
+          </div>
+          <span className="mb-1.5 mt-3 block text-sm font-semibold text-ink">{t('serviceOffer.storageTypes')}</span>
+          <div className="flex flex-wrap gap-1.5">
+            {STORAGE_TYPES.map((st) => {
+              const on = storageTypes.includes(st);
+              return (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setStorage(on ? storageTypes.filter((x) => x !== st) : [...storageTypes, st])}
+                  className={
+                    'rounded-full border px-3 py-1 text-xs font-semibold transition ' +
+                    (on ? 'border-brand bg-brand-surface text-brand-dark' : 'border-surface-border text-ink-soft hover:border-brand-leaf')
+                  }
+                >
+                  {t(`hireQ.opt.storageType.${st}`)}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <Input label={t('console.productForm.notes')} value={value('blurb')} onChange={set('blurb')} />

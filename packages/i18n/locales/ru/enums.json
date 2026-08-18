@@ -13,7 +13,9 @@
   "hire_target": {
     "loaderco": "Погрузочная компания",
     "transporter": "Перевозчик",
-    "worker": "Рабочий"
+    "worker": "Рабочий",
+    "service_provider": "Поставщик услуг",
+    "workerco": "Компания рабочих"
   },
   "kyc": {
     "pending": "На проверке",

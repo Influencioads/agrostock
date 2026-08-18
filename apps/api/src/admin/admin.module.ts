@@ -563,6 +563,9 @@ export class AdminService {
         requester: { select: { id: true, name: true, role: true } },
         targetUser: { select: { id: true, name: true, role: true } },
         worker: { select: { name: true } },
+        // Without this the per-service answers render under no heading, which in
+        // a dispute is the one thing an admin needs to see first.
+        serviceNode: { select: { id: true, slug: true, nameEn: true } },
       },
     });
   }

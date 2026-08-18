@@ -670,6 +670,20 @@ model ServiceProvider {
   /// would silently exclude a real answer.
   productsHandled            String[] @default([])
   acceptsInternationalOrders Boolean  @default(false)
+  /// The provider side of the questions the hire form now asks. Without these a
+  /// buyer answering "you collect" or "I need frozen storage" is guessing:
+  /// nothing on the profile said whether the provider does either.
+  /// Collects goods from the buyer rather than only accepting delivery.
+  pickupOffered              Boolean  @default(false)
+  /// Returns finished goods to an address the buyer names.
+  deliveryOffered            Boolean  @default(false)
+  /// Supplies the packaging material itself (vs the buyer sending their own).
+  packagingSupplied          Boolean  @default(false)
+  /// Will run a paid or free sample batch before a full order.
+  sampleAvailable            Boolean  @default(false)
+  /// Storage conditions offered, from the hire form's storageType options:
+  /// ambient | chilled | frozen | bonded. Empty for a provider that stores nothing.
+  storageTypes               String[] @default([])
   /// Admin gate on the public listing, mirroring `Profile.listApproved` which
   /// already gates transporters and loader companies. `listed` stays the
   /// provider's own opt-in; both must be true to appear.
@@ -734,6 +748,7 @@ model ServiceNode {
 
   translations     ServiceNodeTranslation[]
   providerServices ProviderService[]
+  hireRequests     HireRequest[]
 
   @@index([parentId])
   @@index([kind])
@@ -798,8 +813,8 @@ model WorkerOffering {
   headcount    Int?
   minHours     Int?
   notes        String?
-  isNegotiable Boolean         @default(false)
-  isActive     Boolean         @default(true)
+  isNegotiable Boolean @default(false)
+  isActive     Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -937,6 +952,17 @@ model HireRequest {
   workersNeeded  Int?
   neededDate     DateTime?
   budgetCents    Int?
+  /// Which leaf service is being enquired about (service-provider hires only).
+  /// A generic "hire this accountant" said nothing about whether the job was a
+  /// GST filing or a statutory audit; the provider prices per leaf, so the
+  /// enquiry names one.
+  serviceNodeId  String?
+  serviceNode    ServiceNode?   @relation(fields: [serviceNodeId], references: [id])
+  /// Answers to the per-service question set (SERVICE_HIRE_BLOCKS in
+  /// @agrotraders/types). Json rather than ~90 columns: the set is per service
+  /// group and grows with the taxonomy, and nothing queries an individual answer.
+  /// Whitelisted and coerced on write by `sanitizeHireDetails`.
+  details        Json?
   /// Escrow lifecycle for the held budget: null (nothing held) | held | released | refunded.
   /// The requester's wallet is debited on send; released to the provider on
   /// completion, or refunded if the hire is declined/cancelled.

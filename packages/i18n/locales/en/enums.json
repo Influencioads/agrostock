@@ -13,7 +13,9 @@
   "hire_target": {
     "loaderco": "Loader Co",
     "transporter": "Transporter",
-    "worker": "Worker"
+    "worker": "Worker",
+    "service_provider": "Service provider",
+    "workerco": "Worker Co"
   },
   "kyc": {
     "pending": "Pending",

@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiHireRequest } from '@agrotraders/api-client';
+import { hireBlockForService, hireFieldByKey } from '@agrotraders/types';
 import { api } from '../lib/api';
 import { useAuth } from '../auth/AuthProvider';
 import { Badge, Button, Card, EmptyState, Row, Segmented, Txt } from '../ui';
@@ -24,6 +25,19 @@ function HireCard({ h, incoming, onAction }: { h: ApiHireRequest; incoming: bool
   const detail = [h.cargo, h.fromCity && h.toCity ? `${h.fromCity} → ${h.toCity}` : null, h.location, h.workersNeeded ? t('compX.hires.workersCount', { count: h.workersNeeded }) : null]
     .filter(Boolean)
     .join(' · ');
+  // The per-service answers, with the labels the asker saw. Only select values
+  // are translated — free text through the option catalog is a lookup on input.
+  const block = hireBlockForService(h.serviceNode?.slug);
+  const label = (k: string) => t(`hireQ.${block}.${k}`, { defaultValue: t(`hireQ.${k}`, { defaultValue: k }) });
+  const answer = (k: string, v: string | number | string[]) => {
+    const opt = (o: string) =>
+      k === 'qtyUnit' ? t(`enums:unit.${o}`, { defaultValue: o }) : t(`hireQ.opt.${k}.${o}`, { defaultValue: o });
+    if (Array.isArray(v)) return v.map(opt).join(', ');
+    if (hireFieldByKey(k)?.type === 'select') return opt(String(v));
+    return String(v);
+  };
+  const answers = h.details ? Object.entries(h.details) : [];
+
   const act = async (fn: () => Promise<unknown>) => {
     await fn();
     onAction();
@@ -44,7 +58,11 @@ function HireCard({ h, incoming, onAction }: { h: ApiHireRequest; incoming: bool
         const contact = [other?.country, email, phone].filter(Boolean).join(' · ');
         return contact ? <Txt variant="muted">{contact}{other?.kycStatus === 'verified' ? ` · ${t('compX.hires.kycVerified')}` : ''}</Txt> : null;
       })()}
+      {h.serviceNode ? <Txt variant="title" color={C.dark}>{h.serviceNode.name ?? h.serviceNode.nameEn}</Txt> : null}
       {detail ? <Txt variant="muted">{detail}</Txt> : null}
+      {answers.map(([k, v]) => (
+        <Txt key={k} variant="small" color={C.inkSoft}>{label(k)}: {answer(k, v)}</Txt>
+      ))}
       {h.order?.product?.name ? <Txt variant="muted">{t('compX.hires.orderGoods', { name: h.order.product.name })}{h.order.amount ? ` · ${h.order.amount}` : ''}</Txt> : null}
       {h.message ? <Txt variant="muted">“{h.message}”</Txt> : null}
       {h.budgetCents != null ? <Txt variant="title" color={C.dark}>{t('compX.hires.budgetLabel')} ${(h.budgetCents / 100).toLocaleString()}</Txt> : null}

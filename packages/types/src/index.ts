@@ -5,6 +5,7 @@ export * from './attributes';
 export * from './listing';
 export * from './units';
 export * from './services';
+export * from './serviceHireFields';
 export * from './vehicles';
 
 /** Platform roles (from the AgroTraders design). */
