@@ -101,23 +101,41 @@ export class TextTranslationService {
     if (locale === FALLBACK_LNG || !this.google.enabled || rows.length === 0) return rows;
 
     // Flatten every field of every row into one array, remembering coordinates.
+    // A `string[]` column (citiesServed, certifications, productsHandled, …) is
+    // just as user-visible as a scalar one, so each element is flattened under the
+    // same field with its index — skipping them left whole columns in English.
     const flat: (string | null | undefined)[] = [];
-    const coords: { row: number; field: keyof T }[] = [];
+    const coords: { row: number; field: keyof T; idx?: number }[] = [];
     rows.forEach((row, ri) => {
       for (const f of fields) {
         const v = row[f];
-        flat.push(typeof v === 'string' ? v : undefined);
-        coords.push({ row: ri, field: f });
+        if (Array.isArray(v)) {
+          v.forEach((el, ei) => {
+            flat.push(typeof el === 'string' ? el : undefined);
+            coords.push({ row: ri, field: f, idx: ei });
+          });
+        } else {
+          flat.push(typeof v === 'string' ? v : undefined);
+          coords.push({ row: ri, field: f });
+        }
       }
     });
 
     const localized = await this.localizeMany(flat, locale);
-    const out = rows.map((r) => ({ ...r }));
-    localized.forEach((val, i) => {
-      if (typeof val === 'string') {
-        const { row, field } = coords[i];
-        out[row][field] = val as T[keyof T];
+    // Array fields are copied too, not just the row: the shallow spread would
+    // otherwise hand back the caller's own array and translate it in place.
+    const out = rows.map((r) => {
+      const copy = { ...r };
+      for (const f of fields) {
+        if (Array.isArray(copy[f])) copy[f] = [...(copy[f] as unknown[])] as T[keyof T];
       }
+      return copy;
+    });
+    localized.forEach((val, i) => {
+      if (typeof val !== 'string') return;
+      const { row, field, idx } = coords[i];
+      if (idx === undefined) out[row][field] = val as T[keyof T];
+      else (out[row][field] as unknown[])[idx] = val;
     });
     return out;
   }

@@ -13,6 +13,7 @@ import {
 } from '@agrotraders/types';
 import { MAX_MONEY_CENTS } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
+import { TextTranslationService } from '../translation/text-translation.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -45,7 +46,10 @@ const SERVICE_SELECT = {
 
 @Injectable()
 export class ProviderServicesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private text: TextTranslationService,
+  ) {}
 
   /** The caller's service role, or a 403 — every write here is provider-only. */
   private roleOf(user: AuthUser): string {
@@ -269,7 +273,11 @@ export class ProviderServicesService {
       orderBy: [{ createdAt: 'asc' }],
       select: SERVICE_SELECT,
     });
-    return rows.map((r) => ({
+    // The node name comes from its own translation table; `notes` is free text
+    // the provider typed, so it goes through the generic cache like every other
+    // free-text column on a public listing.
+    const localized = await this.text.localizeRows(rows, ['notes'], locale);
+    return localized.map((r) => ({
       ...r,
       serviceNode: {
         ...r.serviceNode,

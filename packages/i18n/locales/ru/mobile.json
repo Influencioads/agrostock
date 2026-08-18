@@ -1798,6 +1798,9 @@
     "title": "Услуги",
     "turnaround": "Срок выполнения",
     "turnaroundDays": "{{count}} день",
+    "turnaroundDays_one": "{{count}} день",
+    "turnaroundDays_few": "{{count}} дня",
+    "turnaroundDays_many": "{{count}} дней",
     "turnaroundDays_other": "{{count}} дней",
     "viewProfile": "Профиль"
   },

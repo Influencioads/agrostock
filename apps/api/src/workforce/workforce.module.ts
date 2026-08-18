@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { MAX_MONEY_CENTS } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
+import { TextTranslationService } from '../translation/text-translation.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -87,7 +88,10 @@ const localized = <T extends WithTranslations>(row: T, locale: Lang) => ({
 
 @Injectable()
 export class WorkforceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private text: TextTranslationService,
+  ) {}
 
   /* ── taxonomy ────────────────────────────────────────────────────── */
 
@@ -162,7 +166,10 @@ export class WorkforceService {
       orderBy: [{ createdAt: 'asc' }],
       select: OFFERING_SELECT,
     });
-    return rows.map((r) => ({ ...r, workerType: localized(r.workerType, locale) }));
+    // `notes` is free text the provider typed — the worker type name already
+    // comes from its own translation table.
+    const withNotes = await this.text.localizeRows(rows, ['notes'], locale);
+    return withNotes.map((r) => ({ ...r, workerType: localized(r.workerType, locale) }));
   }
 
   async create(user: AuthUser, dto: UpsertOfferingDto, locale: Lang) {

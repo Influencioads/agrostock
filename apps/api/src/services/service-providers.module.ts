@@ -20,7 +20,10 @@ import {
 import {
   allowedCategories, isServiceRole, SERVICE_CATEGORIES, SERVICE_PRICING_BASES, SERVICE_ROLES, STORAGE_TYPES,
 } from '@agrotraders/types';
+import type { Lang } from '@agrotraders/i18n';
 import { MAX_MONEY_CENTS } from '../common/limits';
+import { Locale } from '../common/locale';
+import { TextTranslationService } from '../translation/text-translation.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -115,9 +118,45 @@ const PUBLIC_SELECT = {
   },
 } as const;
 
+/**
+ * Every free-text column a buyer reads on a listing, including the `string[]`
+ * ones. Categories, roles and pricing bases are enums with their own i18n
+ * catalogs and are deliberately absent — translating them here would produce a
+ * second, worse Russian than the catalog already has.
+ */
+const TEXT_FIELDS = [
+  'companyName', 'blurb', 'country',
+  'citiesServed', 'countriesServed', 'productsHandled', 'certifications',
+] as const;
+
 @Injectable()
 export class ServiceProvidersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private text: TextTranslationService,
+  ) {}
+
+  /**
+   * Translate a page of listings in one batch. This directory was the only one
+   * that never localized — every sibling (transport, loaders, hires) has gone
+   * through {@link TextTranslationService} since the multilingual rollout, so a
+   * Russian visitor read "Northern Cold Pack / Moscow, Saint Petersburg" in
+   * English while every other card on the page was translated.
+   */
+  private async localize<T extends Record<string, unknown>>(rows: T[], locale: Lang): Promise<T[]> {
+    const out = await this.text.localizeRows(rows, TEXT_FIELDS as readonly (keyof T)[], locale);
+    // The card falls back to the account name when a listing has no company
+    // name, so that has to be localized too or the fallback lands back in English.
+    const users = await this.text.localizeRows(
+      out.map((r) => (r.user ?? {}) as Record<string, unknown>),
+      ['name'],
+      locale,
+    );
+    out.forEach((r, i) => {
+      if (r.user) (r as Record<string, unknown>).user = users[i];
+    });
+    return out;
+  }
 
   /** The caller's own profile, created empty on first read so the form has a row. */
   async mine(user: AuthUser) {
@@ -180,7 +219,7 @@ export class ServiceProvidersService {
    * Public directory of listed providers. Same shape of filters the other
    * directories take, so the existing Directory page can render it unchanged.
    */
-  async list(q: { category?: string; city?: string; country?: string; search?: string; role?: string }) {
+  async list(q: { category?: string; city?: string; country?: string; search?: string; role?: string }, locale: Lang = 'en') {
     const where: Prisma.ServiceProviderWhereInput = {
       listed: true,
       // Admin gate, mirroring Profile.listApproved. Defaults true, so this
@@ -199,21 +238,23 @@ export class ServiceProvidersService {
           }
         : {}),
     };
-    return this.prisma.serviceProvider.findMany({
+    const rows = await this.prisma.serviceProvider.findMany({
       where,
       orderBy: [{ createdAt: 'desc' }],
       take: 200,
       select: PUBLIC_SELECT,
     });
+    return this.localize(rows, locale);
   }
 
-  async publicOne(userId: string) {
+  async publicOne(userId: string, locale: Lang = 'en') {
     const row = await this.prisma.serviceProvider.findFirst({
       where: { userId, listed: true, listApproved: true, user: { active: true } },
       select: PUBLIC_SELECT,
     });
     if (!row) throw new NotFoundException('Service provider not found');
-    return row;
+    const [localized] = await this.localize([row], locale);
+    return localized;
   }
 }
 
@@ -224,7 +265,7 @@ export class PublicServiceProvidersController {
   constructor(private svc: ServiceProvidersService) {}
 
   @Get('providers')
-  list(@Query() raw: Record<string, unknown>) {
+  list(@Query() raw: Record<string, unknown>, @Locale() locale: Lang) {
     // Keep this public read compatible with an empty query. The global
     // ValidationPipe rejects an empty all-optional DTO in the production
     // class-validator configuration, so parse this small allow-list explicitly.
@@ -250,12 +291,12 @@ export class PublicServiceProvidersController {
       city: text('city', 120),
       country: text('country', 80),
       search: text('search', 160),
-    });
+    }, locale);
   }
 
   @Get('providers/:userId')
-  one(@Param('userId') userId: string) {
-    return this.svc.publicOne(userId);
+  one(@Param('userId') userId: string, @Locale() locale: Lang) {
+    return this.svc.publicOne(userId, locale);
   }
 }
 

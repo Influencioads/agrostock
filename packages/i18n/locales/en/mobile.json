@@ -1785,6 +1785,7 @@
     "title": "Services",
     "turnaround": "Turnaround",
     "turnaroundDays": "{{count}} day",
+    "turnaroundDays_one": "{{count}} day",
     "turnaroundDays_other": "{{count}} days",
     "viewProfile": "View profile"
   },

@@ -2009,6 +2009,7 @@
     "title": "Services",
     "turnaround": "Turnaround",
     "turnaroundDays": "{{count}} day",
+    "turnaroundDays_one": "{{count}} day",
     "turnaroundDays_other": "{{count}} days",
     "viewProfile": "View profile"
   },
@@ -2148,6 +2149,7 @@
     "count": "Vehicles ({{count}})",
     "drivers": "Drivers",
     "driversValue": "{{count}} driver",
+    "driversValue_one": "{{count}} driver",
     "driversValue_other": "{{count}} drivers",
     "gps": "GPS tracking",
     "gpsAvailable": "Available",
