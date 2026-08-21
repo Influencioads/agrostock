@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuctionsService } from '../src/auctions/auctions.module';
 import { BuyerBidsService } from '../src/buyer-bids/buyer-bids.module';
 import { ProductsService } from '../src/products/products.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 const PAST = new Date(Date.now() - 60_000);
 const FUTURE = new Date(Date.now() + 60_000);
@@ -97,7 +98,7 @@ function buyerBidsFor(buyerBid: Record<string, unknown>, participantIds: string[
       count: vi.fn(async () => 0),
     },
   };
-  return { svc: new BuyerBidsService(prisma as never, {} as never, {} as never), prisma };
+  return { svc: new BuyerBidsService(prisma as never, {} as never, {} as never, {} as never, {} as never, noQuotas()), prisma };
 }
 
 const openReq = {
@@ -164,7 +165,7 @@ describe('ProductsService browse', () => {
     // field map means no attribute specs and no facet definitions, which is
     // exactly the shape a product with no subcategory fields produces.
     fieldMap: async () => new Map(),
-  } as never);
+  } as never, noQuotas());
 
     await svc.findAll({});
 

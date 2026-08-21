@@ -28,6 +28,8 @@ const BuyerBidsPage = lazy(() => import('./pages/BuyerBidsPage').then((m) => ({ 
 const BuyerBidRoomPage = lazy(() => import('./pages/BuyerBidRoomPage').then((m) => ({ default: m.BuyerBidRoomPage })));
 const RequirementsBoardPage = lazy(() => import('./pages/RequirementsBoardPage').then((m) => ({ default: m.RequirementsBoardPage })));
 const SafeDealPage = lazy(() => import('./pages/SafeDealPage').then((m) => ({ default: m.SafeDealPage })));
+const PricingPage = lazy(() => import('./pages/PricingPage').then((m) => ({ default: m.PricingPage })));
+const BillingReturnPage = lazy(() => import('./pages/BillingReturnPage').then((m) => ({ default: m.BillingReturnPage })));
 const ProfileFormPage = lazy(() => import('./pages/ProfileFormPage').then((m) => ({ default: m.ProfileFormPage })));
 const PageView = lazy(() => import('./pages/PageView').then((m) => ({ default: m.PageView })));
 const ConsolePage = lazy(() => import('./console/ConsolePage').then((m) => ({ default: m.ConsolePage })));
@@ -91,6 +93,10 @@ export function App() {
             {/* The older community requirements board, moved off /bids. */}
             <Route path="/requirements" element={<RequirementsBoardPage />} />
             <Route path="/safe-deal" element={<SafeDealPage />} />
+            {/* Public on purpose — a price behind a login does not get sold. */}
+            <Route path="/pricing" element={<PricingPage />} />
+            {/* Where the acquirer returns the browser; it only ever polls. */}
+            <Route path="/billing/return" element={<BillingReturnPage />} />
             <Route path="/p/:slug" element={<PageView />} />
             <Route
               path="/onboarding"

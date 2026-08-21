@@ -18,6 +18,7 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
     { id: 'transport', icon: 'car-outline' },
     { id: 'wallet', icon: 'wallet-outline' },
     { id: 'invoices', icon: 'document-text-outline' },
+    { id: 'billing', icon: 'card-outline' },
     { id: 'verify', icon: 'shield-checkmark-outline' },
     { id: 'messages', icon: 'chatbubbles-outline' },
   ],
@@ -31,6 +32,7 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
     { id: 'payouts', icon: 'wallet-outline' },
     { id: 'wallet', icon: 'card-outline' },
     { id: 'invoices', icon: 'receipt-outline' },
+    { id: 'billing', icon: 'card-outline' },
     { id: 'verify', icon: 'shield-checkmark-outline' },
     { id: 'analytics', icon: 'bar-chart-outline' },
   ],
@@ -46,6 +48,7 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
     { id: 'wallet', icon: 'card-outline' },
     { id: 'ratings', icon: 'star-outline' },
     { id: 'tracking', icon: 'map-outline' },
+    { id: 'billing', icon: 'card-outline' },
     { id: 'verify', icon: 'shield-checkmark-outline' },
   ],
   loaderco: [
@@ -60,6 +63,7 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
     { id: 'reviews', icon: 'star-outline' },
     { id: 'invoices', icon: 'receipt-outline' },
     { id: 'hires', icon: 'people-outline' },
+    { id: 'billing', icon: 'card-outline' },
     { id: 'verify', icon: 'shield-checkmark-outline' },
   ],
   worker: [
@@ -70,6 +74,7 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
     { id: 'reviews', icon: 'star-outline' },
     { id: 'invoices', icon: 'receipt-outline' },
     { id: 'hires', icon: 'people-outline' },
+    { id: 'billing', icon: 'card-outline' },
     { id: 'verify', icon: 'shield-checkmark-outline' },
   ],
 };
@@ -88,6 +93,7 @@ const SERVICE_MENU: MenuItem[] = [
   { id: 'earnings', icon: 'wallet-outline' },
   { id: 'wallet', icon: 'card-outline' },
   { id: 'hires', icon: 'people-outline' },
+  { id: 'billing', icon: 'card-outline' },
   { id: 'verify', icon: 'shield-checkmark-outline' },
 ];
 for (const role of SERVICE_ROLES) ROLE_MENU[role] = SERVICE_MENU;

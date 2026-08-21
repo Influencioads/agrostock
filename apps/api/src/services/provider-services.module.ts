@@ -3,7 +3,7 @@ import {
   NotFoundException, Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Role } from '@prisma/client';
 import {
   ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString,
   Max, MaxLength, Min,
@@ -13,6 +13,7 @@ import {
 } from '@agrotraders/types';
 import { MAX_MONEY_CENTS } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
@@ -49,6 +50,7 @@ export class ProviderServicesService {
   constructor(
     private prisma: PrismaService,
     private text: TextTranslationService,
+    private entitlements: EntitlementsService,
   ) {}
 
   /** The caller's service role, or a 403 — every write here is provider-only. */
@@ -118,6 +120,7 @@ export class ProviderServicesService {
 
   async create(user: AuthUser, dto: UpsertProviderServiceDto) {
     const role = this.roleOf(user);
+    await this.entitlements.assertWithin(user.id, role as Role, 'pricedServices');
     const provider = await this.providerOf(user);
     await this.assertPricableLeaf(role, dto.serviceNodeId);
     this.assertPriceCoherent(dto);
@@ -239,6 +242,10 @@ export class ProviderServicesService {
     });
     const already = new Set(existing.map((e) => e.serviceNodeId));
     const toCreate = accepted.filter((id) => !already.has(id));
+
+    // A bulk add creates N rows in one request: the quota MUST be checked against
+    // the real count, or one call trivially bypasses the plan limit.
+    if (toCreate.length) await this.entitlements.assertWithin(user.id, role as Role, 'pricedServices', toCreate.length);
 
     if (toCreate.length) {
       await this.prisma.providerService.createMany({

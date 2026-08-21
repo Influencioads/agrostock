@@ -4,6 +4,7 @@ import { AdminService } from '../src/admin/admin.module';
 import { InvoicesService } from '../src/invoices/invoices.module';
 import { MeService } from '../src/me/me.module';
 import { OrdersService } from '../src/orders/orders.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 const financialWriteDisabled = (error: unknown) =>
   error instanceof ServiceUnavailableException &&
@@ -27,7 +28,7 @@ describe('legacy financial write containment', () => {
 
   it('blocks mock wallet top-up before crediting a wallet', async () => {
     const wallets = { credit: vi.fn() };
-    const service = new MeService({} as never, {} as never, wallets as never, {} as never);
+    const service = new MeService({} as never, {} as never, wallets as never, {} as never, noQuotas());
 
     await expect(service.topup('buyer-1', 500)).rejects.toSatisfy(financialWriteDisabled);
     expect(wallets.credit).not.toHaveBeenCalled();

@@ -17,6 +17,11 @@ interface CurrencyContextValue {
   fmtCompactCents: (usdCents: number | null | undefined) => string;
   /** Product-ish price: converts when a cents baseline exists, else raw string. */
   fmtPrice: (p: { price: string; priceCents?: number | null }) => string;
+  /**
+   * Format an amount held in the MINOR units of some other currency — plan
+   * prices are kopecks, not the USD cents everything else uses.
+   */
+  fmtMinor: (amountMinor: number | null | undefined, sourceCurrency?: string) => string;
 }
 
 const Ctx = createContext<CurrencyContextValue | null>(null);
@@ -95,7 +100,29 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     [currency, fx, lang],
   );
 
-  const value = useMemo(() => ({ currency, setCurrency, rate, fmtCents, fmtCompactCents, fmtPrice }), [currency, setCurrency, rate, fmtCents, fmtCompactCents, fmtPrice]);
+  /**
+   * Subscription prices are published and charged in rubles, so they are stored
+   * in kopecks rather than in the USD-cents baseline. The FX table is USD-based,
+   * so RUB -> target goes through USD. A missing source rate falls back to the
+   * original currency rather than mislabelling the number.
+   */
+  const fmtMinor = useCallback(
+    (amountMinor: number | null | undefined, sourceCurrency = 'RUB') => {
+      if (amountMinor == null) return '—';
+      const src = sourceCurrency.toUpperCase();
+      if (src === currency) return formatMoney(amountMinor, src, 1, lang);
+      const srcRate = src === 'USD' ? 1 : fx?.rates?.[src];
+      const dstRate = currency === 'USD' ? 1 : fx?.rates?.[currency];
+      if (!srcRate || srcRate <= 0 || !dstRate || dstRate <= 0) return formatMoney(amountMinor, src, 1, lang);
+      return formatMoney(amountMinor, currency, dstRate / srcRate, lang);
+    },
+    [currency, fx, lang],
+  );
+
+  const value = useMemo(
+    () => ({ currency, setCurrency, rate, fmtCents, fmtCompactCents, fmtPrice, fmtMinor }),
+    [currency, setCurrency, rate, fmtCents, fmtCompactCents, fmtPrice, fmtMinor],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

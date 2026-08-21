@@ -46,6 +46,7 @@ import { ServiceTaxonomyModule } from './services/service-taxonomy.module';
 import { ProviderServicesModule } from './services/provider-services.module';
 import { WorkforceModule } from './workforce/workforce.module';
 import { TranslationModule } from './translation/translation.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { TranslationModule } from './translation/translation.module';
     ProviderServicesModule,
 
     WorkforceModule,
+    BillingModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

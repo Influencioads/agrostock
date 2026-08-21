@@ -5,6 +5,7 @@ import type { ApiProduct } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
 import { useI18n } from '../../i18n';
 import { errMessage } from './order-parts';
+import { QuotaNotice } from '../../components/site/QuotaNotice';
 import { ProductForm, blankProduct, formToPayload, productToForm, productFormReady, type ProductFormValues } from './ProductForm';
 import { stockDisplay, unitSuffix } from '@agrotraders/types';
 
@@ -28,6 +29,9 @@ function ProductModal({ editing, onClose }: { editing: SellerProduct | null; onC
   const qc = useQueryClient();
   const [form, setForm] = useState<ProductFormValues>(editing ? productToForm(editing) : blankProduct);
   const [err, setErr] = useState('');
+  // The raw rejection too: a quota block carries numbers the plain message
+  // cannot, and QuotaNotice turns those into an upgrade prompt.
+  const [rawErr, setRawErr] = useState<unknown>(null);
   // Save stays clickable: pressing it on an incomplete form paints the missing
   // fields red, which a disabled button never explained.
   const [tried, setTried] = useState(false);
@@ -42,7 +46,10 @@ function ProductModal({ editing, onClose }: { editing: SellerProduct | null; onC
       qc.invalidateQueries({ queryKey: ['products'] });
       onClose();
     },
-    onError: (e) => setErr(errMessage(e, editing ? t('console.productForm.saveProductError') : t('console.seller.createProductError'))),
+    onError: (e) => {
+      setRawErr(e);
+      setErr(errMessage(e, editing ? t('console.productForm.saveProductError') : t('console.seller.createProductError')));
+    },
   });
 
   return (
@@ -60,6 +67,7 @@ function ProductModal({ editing, onClose }: { editing: SellerProduct | null; onC
         </>
       }
     >
+      <QuotaNotice error={rawErr} />
       <ProductForm value={form} onChange={setForm} error={err} onError={setErr} showErrors={tried} />
     </Modal>
   );

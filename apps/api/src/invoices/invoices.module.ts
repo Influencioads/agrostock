@@ -57,10 +57,18 @@ export class InvoiceLineDto {
   @ApiProperty() @IsInt() @Min(0) @Max(MAX_MONEY_CENTS) unitPriceCents!: number;
 }
 
+/**
+ * The kinds a USER may issue. `subscription` is deliberately absent: those are
+ * platform→customer documents minted by the billing module, and letting a peer
+ * issue one would let anybody invoice in AgroTraders' name.
+ */
+export const PEER_INVOICE_KINDS = ['order', 'trip', 'loaderjob', 'assignment'] as const;
+export type PeerInvoiceKind = (typeof PEER_INVOICE_KINDS)[number];
+
 export class CreateInvoiceDto {
-  @ApiProperty({ enum: ['order', 'trip', 'loaderjob', 'assignment'] })
-  @IsIn(['order', 'trip', 'loaderjob', 'assignment'])
-  kind!: InvoiceKind;
+  @ApiProperty({ enum: PEER_INVOICE_KINDS })
+  @IsIn(PEER_INVOICE_KINDS as unknown as string[])
+  kind!: PeerInvoiceKind;
 
   @ApiProperty({ description: 'Id of the Order / Trip / LoaderJob / JobAssignment being billed' })
   @IsString() subjectId!: string;
@@ -169,7 +177,7 @@ export class InvoicesService {
    * if the issuer didn't supply one. Also enforces that the caller is the party
    * entitled to bill this subject.
    */
-  private async resolveSubject(kind: InvoiceKind, subjectId: string, issuer: AuthUser) {
+  private async resolveSubject(kind: PeerInvoiceKind, subjectId: string, issuer: AuthUser) {
     switch (kind) {
       case 'order': {
         const order = await this.prisma.order.findUnique({ where: { id: subjectId }, include: { product: { select: { name: true } } } });

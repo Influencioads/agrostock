@@ -12,6 +12,7 @@ export type NotificationCategory =
   | 'bids'
   | 'auctions'
   | 'wallet'
+  | 'billing'
   | 'account'
   | 'reviews'
   | 'hire'
@@ -41,6 +42,9 @@ export interface CategoryConfig {
 export const NOTIFICATION_CATEGORIES: Record<NotificationCategory, CategoryConfig> = {
   orders: { label: 'Orders', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
   wallet: { label: 'Wallet & payments', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
+  // Renewals, failed charges and dunning. Transactional by definition: a customer
+  // who does not see "your card was declined" loses their plan without knowing why.
+  billing: { label: 'Subscription & billing', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
   account: { label: 'Account & verification', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
   auctions: { label: 'Auctions', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
   hire: { label: 'Hiring', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },

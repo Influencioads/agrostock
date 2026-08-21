@@ -31,6 +31,7 @@ import { ProfileForm } from '../pages/ProfileFormPage';
 import { isServiceRole, SERVICE_ROLES } from '@agrotraders/types';
 import { ServiceEnquiries, ServiceProfile, ServiceProviderDashboard } from './sections/ServiceProvider';
 import { LabourOfferings } from './sections/LabourOfferings';
+import { BillingSection } from './sections/BillingSection';
 
 // Nav items carry only `id` + `icon`; labels are translated at render from
 // `web:console.nav.<id>` in ConsoleLayout (never store the English label here).
@@ -40,6 +41,8 @@ const accessNav: ConsoleNavItem = { id: 'access', icon: 'user' };
 const hiresNav: ConsoleNavItem = { id: 'hires', icon: 'worker' };
 const verifyNav: ConsoleNavItem = { id: 'verify', icon: 'shield' };
 const profileNav: ConsoleNavItem = { id: 'profile', icon: 'user' };
+// Plan, quota meters and checkout — every role has one, including free accounts.
+const billingNav: ConsoleNavItem = { id: 'billing', icon: 'wallet' };
 
 const NAV: Record<string, ConsoleNavItem[]> = {
   buyer: [
@@ -166,7 +169,7 @@ export function ConsolePage() {
   const greetName = user?.name ?? t('console.nameFallback');
   // Admins have no public console (they use admin.agrotraders.org); every other
   // role gets Hires (direct hiring) + the extended Profile.
-  const extras = [hiresNav, verifyNav, profileNav, accessNav];
+  const extras = [billingNav, hiresNav, verifyNav, profileNav, accessNav];
   const nav = [...(NAV[role] ?? NAV.buyer), ...extras];
 
   // F05: resolve the deep-linked section (/console/:section) to a real nav id
@@ -188,6 +191,7 @@ export function ConsolePage() {
   }, [section, role]);
 
   const render = () => {
+    if (active === 'billing') return <BillingSection />;
     if (active === 'access') return <RolesAccessSection />;
     if (active === 'hires') return <HiresSection />;
     if (active === 'verify') return <KycSection />;

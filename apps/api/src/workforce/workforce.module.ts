@@ -3,13 +3,14 @@ import {
   NotFoundException, Param, Patch, Post, Query, UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { LabourRateBasis, Prisma, WorkerTypeGroup } from '@prisma/client';
+import { LabourRateBasis, Prisma, WorkerTypeGroup, type Role } from '@prisma/client';
 import {
   ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString,
   Max, MaxLength, Min,
 } from 'class-validator';
 import { MAX_MONEY_CENTS } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
@@ -91,6 +92,7 @@ export class WorkforceService {
   constructor(
     private prisma: PrismaService,
     private text: TextTranslationService,
+    private entitlements: EntitlementsService,
   ) {}
 
   /* ── taxonomy ────────────────────────────────────────────────────── */
@@ -174,6 +176,8 @@ export class WorkforceService {
 
   async create(user: AuthUser, dto: UpsertOfferingDto, locale: Lang) {
     const role = this.roleOf(user);
+    // A published labour rate is a priced service on the same plan quota.
+    await this.entitlements.assertWithin(user.id, role as Role, 'pricedServices');
     await this.assertSuppliable(role, dto.workerTypeId);
     this.assertRateCoherent(dto);
 
@@ -277,6 +281,9 @@ export class WorkforceService {
     });
     const already = new Set(existing.map((e) => e.workerTypeId));
     const toCreate = [...valid].filter((id) => !already.has(id));
+
+    // Bulk creates N rows in one request — count them, or the quota is a no-op here.
+    if (toCreate.length) await this.entitlements.assertWithin(user.id, role as Role, 'pricedServices', toCreate.length);
 
     if (toCreate.length) {
       await this.prisma.workerOffering.createMany({

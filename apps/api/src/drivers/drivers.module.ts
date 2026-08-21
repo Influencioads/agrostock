@@ -20,6 +20,7 @@ import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { DriverStatus } from '@prisma/client';
 import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
@@ -51,12 +52,17 @@ export class UpdateDriverDto {
 
 @Injectable()
 export class DriversService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private entitlements: EntitlementsService,
+  ) {}
 
   mine(ownerId: string) {
     return this.prisma.driver.findMany({ where: { ownerId }, orderBy: { createdAt: 'desc' } });
   }
-  create(ownerId: string, dto: CreateDriverDto) {
+  async create(ownerId: string, dto: CreateDriverDto) {
+    // Driver sub-accounts are a Standard/Fleet perk — Basic gets none.
+    await this.entitlements.assertWithin(ownerId, 'transporter', 'driverAccounts');
     return this.prisma.driver.create({
       data: {
         ownerId,

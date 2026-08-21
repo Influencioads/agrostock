@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { CategoriesService, MAX_TAXONOMY_DEPTH } from '../src/catalog/catalog.module';
 import { ProductsService } from '../src/products/products.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 type Node = { id: string; name: string; parentId: string | null; categoryId: string };
 
@@ -136,7 +137,7 @@ function serviceForProducts() {
     // field map means no attribute specs and no facet definitions, which is
     // exactly the shape a product with no subcategory fields produces.
     fieldMap: async () => new Map(),
-  } as never), prisma };
+  } as never, noQuotas()), prisma };
 }
 
 describe('ProductsService deep taxonomy filters', () => {

@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { HireTargetType } from '@prisma/client';
+import { HireTargetType, type Role } from '@prisma/client';
 import { IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import type { Lang } from '@agrotraders/i18n';
 import { SERVICE_ROLES, sanitizeHireDetails } from '@agrotraders/types';
@@ -24,6 +24,8 @@ import { Locale } from '../common/locale';
 import { NotificationsService, type NotificationParams } from '../notifications/notifications.service';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { WalletService } from '../wallet/wallet.service';
+import { CommissionService } from '../wallet/commission.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { secureOtp, secureReference } from '../common/secure-random';
 
 /**
@@ -122,6 +124,8 @@ export class HiresService {
     private notifications: NotificationsService,
     private wallets: WalletService,
     private text: TextTranslationService,
+    private commission: CommissionService,
+    private entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -376,6 +380,10 @@ export class HiresService {
 
   async accept(user: AuthUser, id: string) {
     const hire = await this.pendingOwned(id, user.id);
+    // Responding to an enquiry is the quota transporters, loading companies and
+    // service providers actually buy more of. Checked against the role that
+    // received the hire, so a multi-role account is measured on the right plan.
+    await this.entitlements.assertWithin(user.id, user.role as Role, 'hireResponsesPerMonth');
     const updated = await this.prisma.$transaction(async (tx) => {
       if (hire.targetType === 'transporter') {
         const request = await tx.transportRequest.create({
@@ -530,17 +538,27 @@ export class HiresService {
     if (hire.escrowState !== 'held' || !hire.budgetCents) {
       throw new BadRequestException('This hire has no held budget to release.');
     }
+    let payoutCents = hire.budgetCents;
     await this.prisma.$transaction(async (tx) => {
       const claimed = await tx.hireRequest.updateMany({ where: { id, escrowState: 'held' }, data: { escrowState: 'released' } });
       if (claimed.count === 0) throw new BadRequestException('This hire budget was already settled.');
-      await this.wallets.credit(hire.targetUserId, hire.budgetCents!, 'escrow_release', 'Hire completed — payout', tx, `escrow:release:hire:${id}`);
+      // Platform take rate on a completed hire/service job. Both credits run in
+      // this transaction; 0% and disabled until an admin turns it on.
+      const cut = await this.commission.split({ kind: 'escrow', recipientId: hire.targetUserId, grossCents: hire.budgetCents!, ref: `hire:${id}` });
+      payoutCents = cut.net;
+      if (cut.net > 0) {
+        await this.wallets.credit(hire.targetUserId, cut.net, 'escrow_release', 'Hire completed — payout', tx, `escrow:release:hire:${id}`);
+      }
+      if (cut.fee > 0 && cut.platformUserId) {
+        await this.wallets.credit(cut.platformUserId, cut.fee, 'payout', cut.note, tx, cut.idempotencyKey);
+      }
     });
     // The credit ran inside the tx (silent) — notify the provider of the payout now.
     await this.notifications.create({
       userId: hire.targetUserId,
       system: 'wallet',
       type: 'wallet.escrow_release',
-      params: { amount: `$${(hire.budgetCents / 100).toFixed(2)}` },
+      params: { amount: `$${(payoutCents / 100).toFixed(2)}` },
       data: { hireId: id },
       linkUrl: '/console/wallet',
     });

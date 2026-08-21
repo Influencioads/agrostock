@@ -42,6 +42,7 @@ const SAFE_IMAGE_REF = /^(?:https?:\/\/|\/)[^\s]*$/i;
 import { assertSafeDealSettlement, requireSafeDeal } from '../products/safe-deal';
 import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { flagFor, maskName } from '../common/masking';
 import { JwtAuthGuard, OptionalJwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
@@ -198,6 +199,7 @@ export class BuyerBidsService {
     private events: EventEmitter2,
     private fx: FxService,
     private categories: CategoriesService,
+    private entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -250,6 +252,8 @@ export class BuyerBidsService {
   // ── buyer ──────────────────────────────────────────────────────
 
   async create(buyer: AuthUser, dto: CreateBuyerBidDto) {
+    // Buy requests are the buyer plan's headline quota, counted per billing period.
+    await this.entitlements.assertWithin(buyer.id, 'buyer', 'rfqsPerMonth');
     // A buyer posts ONE thing — what they need — and sellers underbid each other
     // for it. `dto.mode` is ignored: sealed quote mode is legacy, kept only so
     // the requirements posted under it keep rendering. The deadline is the

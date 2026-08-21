@@ -2,6 +2,7 @@ import { BadRequestException, Global, Injectable, Module } from '@nestjs/common'
 import { Prisma, TxType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CommissionService } from './commission.service';
 
 /** Either the root client or a `$transaction` client — so callers can compose. */
 type Db = PrismaService | Prisma.TransactionClient;
@@ -175,6 +176,7 @@ export class EscrowService {
   constructor(
     private prisma: PrismaService,
     private wallet: WalletService,
+    private commission: CommissionService,
   ) {}
 
   /** Debit the buyer and open a hold for the order. Idempotent on orderId. */
@@ -219,12 +221,24 @@ export class EscrowService {
         await this.wallet.credit(hold.buyerId, refund, 'refund', params.note ?? `Escrow refund for order ${orderId}`, tx, `escrow:refund:${orderId}`);
       }
       if (release > 0 && hold.sellerId) {
-        await this.wallet.credit(hold.sellerId, release, 'escrow_release', params.note ?? `Escrow release for order ${orderId}`, tx, `escrow:release:${orderId}`);
+        // Platform take rate. Both credits run inside this transaction, so the
+        // fee and the payout commit or roll back together and the hold is never
+        // partly distributed. Ships at 0% / disabled — see CommissionService.
+        const cut = await this.commission.split({ kind: 'order', recipientId: hold.sellerId, grossCents: release, ref: `order:${orderId}` });
+        if (cut.net > 0) {
+          await this.wallet.credit(hold.sellerId, cut.net, 'escrow_release', params.note ?? `Escrow release for order ${orderId}`, tx, `escrow:release:${orderId}`);
+        }
+        if (cut.fee > 0 && cut.platformUserId) {
+          await this.wallet.credit(cut.platformUserId, cut.fee, 'payout', cut.note, tx, cut.idempotencyKey);
+        }
       }
     });
   }
 }
 
 @Global()
-@Module({ providers: [WalletService, EscrowService], exports: [WalletService, EscrowService] })
+@Module({
+  providers: [WalletService, EscrowService, CommissionService],
+  exports: [WalletService, EscrowService, CommissionService],
+})
 export class WalletModule {}

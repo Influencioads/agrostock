@@ -26,6 +26,7 @@ import { PUBLIC_VEHICLE_SELECT, toPublicVehicle } from './vehicle-public';
 import { MAX_MONEY_CENTS } from '../common/limits';
 import { Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { secureOtp, secureReference } from '../common/secure-random';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
@@ -186,6 +187,7 @@ export class TransportService {
     private prisma: PrismaService,
     private text: TextTranslationService,
     private notifications: NotificationsService,
+    private entitlements: EntitlementsService,
   ) {}
 
   // requests
@@ -213,6 +215,8 @@ export class TransportService {
 
   // quotes
   async quote(requestId: string, transporterId: string, priceCents: number, etaDays?: number) {
+    // Quoting a freight request is a "response to a hire request" for quota purposes.
+    await this.entitlements.assertWithin(transporterId, 'transporter', 'hireResponsesPerMonth');
     const req = await this.prisma.transportRequest.findUnique({ where: { id: requestId } });
     if (!req) throw new NotFoundException('Request not found');
     const q = await this.prisma.transportQuote.create({ data: { requestId, transporterId, priceCents, etaDays } });
@@ -397,7 +401,9 @@ export class TransportService {
     };
   }
 
-  addVehicle(ownerId: string, dto: CreateVehicleDto) {
+  async addVehicle(ownerId: string, dto: CreateVehicleDto) {
+    // Fleet size is what the transporter ladder actually sells.
+    await this.entitlements.assertWithin(ownerId, 'transporter', 'vehicles');
     return this.prisma.vehicle.create({
       data: {
         ownerId,

@@ -19,6 +19,7 @@ import { Role } from '@prisma/client';
 import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { LOCALES } from '@agrotraders/i18n';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
@@ -156,6 +157,7 @@ export class MeService {
     private uploads: UploadsService,
     private wallets: WalletService,
     private notifications: NotificationsService,
+    private entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -324,7 +326,13 @@ export class MeService {
     });
   }
 
-  async updateProfile(userId: string, dto: UpdateProfileDto) {
+  async updateProfile(userId: string, dto: UpdateProfileDto, role?: string) {
+    // Operating regions (transporters) and service areas (labour companies) are
+    // plan quotas held as scalar arrays, so the cap is on the resulting length.
+    if (dto.operatingCities && role) {
+      const key = role === 'transporter' ? 'operatingRegions' : 'serviceAreas';
+      await this.entitlements.assertArrayWithin(userId, role as Role, key, dto.operatingCities.length);
+    }
     if (dto.marketId) {
       const market = await this.prisma.market.findUnique({ where: { id: dto.marketId } });
       if (!market) throw new BadRequestException('Unknown market');
@@ -496,7 +504,9 @@ export class MeController {
 
   @Put('profile')
   updateProfile(@CurrentUser() u: AuthUser, @Body() dto: UpdateProfileDto) {
-    return this.svc.updateProfile(u.id, dto);
+    // `u.role` is the ACTIVE role (x-agro-active-role), which is the plan the
+    // quota should be measured against for a multi-role account.
+    return this.svc.updateProfile(u.id, dto, u.role);
   }
 
   @ApiConsumes('multipart/form-data')

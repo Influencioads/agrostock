@@ -12,6 +12,7 @@ const validConfig = {
   S3_SECRET_KEY: 'production-object-secret-that-is-long',
   S3_BUCKET: 'agrostock-production',
   CORS_ORIGINS: 'https://app.agrotraders.example,https://admin.agrotraders.example',
+  PAYMENTS_SECRET_KEY: 'payments-credential-key-that-is-long-and-unique-987',
 } as const;
 
 describe('production configuration', () => {
@@ -19,7 +20,16 @@ describe('production configuration', () => {
     expect(() => assertProductionConfig(validConfig)).not.toThrow();
   });
 
-  it.each(['DATABASE_URL', 'REDIS_URL', 'S3_ENDPOINT', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET', 'CORS_ORIGINS'])(
+  it.each([
+    'DATABASE_URL',
+    'REDIS_URL',
+    'S3_ENDPOINT',
+    'S3_ACCESS_KEY',
+    'S3_SECRET_KEY',
+    'S3_BUCKET',
+    'CORS_ORIGINS',
+    'PAYMENTS_SECRET_KEY',
+  ])(
     'rejects missing %s',
     (key) => {
       expect(() => assertProductionConfig({ ...validConfig, [key]: '' })).toThrow(key);
@@ -30,6 +40,10 @@ describe('production configuration', () => {
     expect(() => assertProductionConfig({ ...validConfig, JWT_SECRET: 'change-me-access-secret' })).toThrow('JWT_SECRET');
     expect(() => assertProductionConfig({ ...validConfig, JWT_REFRESH_SECRET: validConfig.JWT_SECRET })).toThrow('must differ');
     expect(() => assertProductionConfig({ ...validConfig, JWT_SECRET: 'short' })).toThrow('JWT_SECRET');
+  });
+
+  it('rejects a short payments credential key', () => {
+    expect(() => assertProductionConfig({ ...validConfig, PAYMENTS_SECRET_KEY: 'short' })).toThrow('PAYMENTS_SECRET_KEY');
   });
 
   it('rejects localhost and wildcard production CORS origins', () => {

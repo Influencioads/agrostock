@@ -30,6 +30,23 @@ export function errMessage(e: unknown, fallback: string): string {
   return Array.isArray(msg) ? msg.join(', ') : msg || fallback;
 }
 
+/** The structured payload a `QUOTA_EXCEEDED` rejection carries. */
+export interface QuotaError {
+  key: string;
+  limit: number;
+  used: number;
+}
+
+/**
+ * Pull the quota numbers out of a 403 so a blocked write can show
+ * "5 of 5 listings used — upgrade" instead of a bare error. Returns null for
+ * every other failure, which is what keeps callers from guessing.
+ */
+export function quotaError(e: unknown): QuotaError | null {
+  const data = (e as { response?: { data?: { code?: string; quota?: QuotaError } } })?.response?.data;
+  return data?.code === 'QUOTA_EXCEEDED' && data.quota ? data.quota : null;
+}
+
 /** Horizontal stepper over the happy path, filled up to the order's position. */
 export function OrderStepper({ status }: { status: ApiOrderStatus }) {
   const { t } = useI18n();

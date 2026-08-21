@@ -116,7 +116,7 @@ function hiresService(order: Record<string, unknown> | null = ORDER) {
     $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn({ hireRequest: { create } })),
   };
   const noop = { notify: vi.fn(), create: vi.fn(), debit: vi.fn(), localizeRows: vi.fn(async (r: unknown) => r) };
-  return { svc: new HiresService(prisma as never, noop as never, noop as never, noop as never), create };
+  return { svc: new HiresService(prisma as never, noop as never, noop as never, noop as never, noop as never), create };
 }
 
 describe('order-linked hire', () => {

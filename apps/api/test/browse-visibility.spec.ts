@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ProductsService } from '../src/products/products.module';
 import { assertProductSellable, browsableWhere, sellableWhere } from '../src/products/sellable';
+import { noQuotas } from './helpers/entitlements-stub';
 
 /**
  * Browse must show EVERY live listing in a category, auctions included. A
@@ -17,7 +18,7 @@ function serviceForProducts() {
     $transaction: vi.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
   };
   return {
-    svc: new ProductsService(prisma as never, {} as never, {} as never, { fieldMap: async () => new Map() } as never),
+    svc: new ProductsService(prisma as never, {} as never, {} as never, { fieldMap: async () => new Map() } as never, noQuotas()),
     prisma,
   };
 }

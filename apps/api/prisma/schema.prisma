@@ -155,6 +155,8 @@ enum AdminPermission {
   reports_view
   staff_manage
   reviews_moderate
+  /// Plan catalogue, subscriptions, payment gateways, commission + dunning settings.
+  billing_manage
 }
 
 /// Which completed subject a review is anchored to. Polymorphic — exactly one of
@@ -293,6 +295,10 @@ enum InvoiceKind {
   trip
   loaderjob
   assignment
+  /// Closing document for a subscription period. Issued BY the platform account
+  /// (`BillingSettings.platformUserId`) rather than by a peer, which is the one
+  /// way this kind differs from the four above.
+  subscription
 }
 
 enum InvoiceStatus {
@@ -401,6 +407,9 @@ model User {
   /// Preferred UI locale (BCP-47, e.g. "ru"). Null = detect from Accept-Language.
   locale            String?
   kycStatus         KycStatus         @default(pending)
+  /// Exempt from platform commission. Set for annual subscribers grandfathered
+  /// at 0% when the take rate is switched on (see BillingSettings).
+  commissionExempt  Boolean           @default(false)
   /// Per-user notification channel preferences. Shape:
   /// { categories: Record<category, { email, push, inApp }>, emailUnsubscribedAll }.
   /// Null = all-on defaults (see notification-categories.ts).
@@ -503,6 +512,11 @@ model User {
 
   // ── F02: real per-user wishlist (saved products) ──
   wishlist WishlistItem[]
+
+  // ── Billing (subscriptions, one-off add-ons, gateway payments) ──
+  subscriptions  Subscription[]
+  addonPurchases AddonPurchase[]
+  payments       Payment[]
 }
 
 // ── Markets & profiles ──────────────────────────────────────────
@@ -1011,16 +1025,17 @@ model RoleRequest {
 }
 
 model Category {
-  id            String                @id @default(cuid())
-  name          String                @unique
-  slug          String                @unique
-  emoji         String?
-  tint          String?
-  sort          Int                   @default(0)
-  subcategories Subcategory[]
-  products      Product[]
-  buyerBids     BuyerBid[]
-  translations  CategoryTranslation[]
+  id             String                @id @default(cuid())
+  name           String                @unique
+  slug           String                @unique
+  emoji          String?
+  tint           String?
+  sort           Int                   @default(0)
+  subcategories  Subcategory[]
+  products       Product[]
+  buyerBids      BuyerBid[]
+  addonPurchases AddonPurchase[]
+  translations   CategoryTranslation[]
 }
 
 model Subcategory {
@@ -1050,15 +1065,15 @@ model Subcategory {
 }
 
 model Product {
-  id                String        @id @default(cuid())
-  slug              String        @unique
+  id                String         @id @default(cuid())
+  slug              String         @unique
   name              String
   emoji             String?
   /// Cover image. Always mirrors `images[0]` when the gallery is non-empty, so
   /// every existing single-image render keeps working untouched.
   imageUrl          String?
   /// Gallery, max 6, ordered — the first entry is the cover.
-  images            String[]      @default([])
+  images            String[]       @default([])
   grade             String?
   flag              String?
   origin            String?
@@ -1070,7 +1085,7 @@ model Product {
   country           String?
   /// Countries the seller can supply/ship this product to. Multi-select — a
   /// seller ships to many destinations from one origin.
-  supplyCountries   String[]      @default([])
+  supplyCountries   String[]       @default([])
   price             String
   // Numeric baseline (USD cents) for currency conversion; backfilled from
   // `price` where parseable. `price` stays the display fallback.
@@ -1078,25 +1093,25 @@ model Product {
   /// The currency the SELLER quoted in. `priceCents` is always the USD baseline
   /// (converted at listing time) so buyer-side conversion and price sorting stay
   /// comparable across listings; this is what we echo back into the edit form.
-  priceCurrency     String        @default("USD")
-  unit              String        @default("/MT")
+  priceCurrency     String         @default("USD")
+  unit              String         @default("/MT")
   /// The quoted price excludes VAT — the buyer sees "VAT extra" under it.
-  vatExtra          Boolean       @default(false)
+  vatExtra          Boolean        @default(false)
   /// Free-text seller notes on the listing (packing, loading terms, remarks).
   /// Not translated: it is unconstrained prose the seller may want verbatim.
   notes             String?
   // Legacy display rating (string). Kept in sync with `ratingAvg` when the
   // product has real reviews, otherwise retains its cosmetic default.
-  rating            String        @default("4.8")
+  rating            String         @default("4.8")
   ratingAvg         Float?
-  ratingCount       Int           @default(0)
-  verified          Boolean       @default(false)
-  safeDeal          Boolean       @default(true)
+  ratingCount       Int            @default(0)
+  verified          Boolean        @default(false)
+  safeDeal          Boolean        @default(true)
   /// Seller accepts price negotiation. Buyers filter on it; the card/detail
   /// pages label both states so "firm price" is as visible as "negotiable".
-  negotiable        Boolean       @default(false)
-  isOffer           Boolean       @default(false)
-  isAuction         Boolean       @default(false)
+  negotiable        Boolean        @default(false)
+  isOffer           Boolean        @default(false)
+  isAuction         Boolean        @default(false)
   startBidCents     Int?
   // The seller's typed starting bid, in cents of THEIR priceCurrency — kept so
   // the edit form round-trips the exact number; `startBidCents` is the USD
@@ -1113,9 +1128,9 @@ model Product {
   /// The cron only processes lapsed auctions where this is still null, so a lot is
   /// settled exactly once no matter which path fires.
   auctionSettledAt  DateTime?
-  approved          Boolean       @default(true)
+  approved          Boolean        @default(true)
   // Moderation lifecycle (source of truth). Kept in sync with `approved`.
-  status            ProductStatus @default(live)
+  status            ProductStatus  @default(live)
   rejectionReason   String?
   delivery          String?
   /// F10: optional inventory. `stockQty` null = unmanaged (unlimited, legacy
@@ -1123,12 +1138,17 @@ model Product {
   /// how much is held by open orders. Available = stockQty - reservedQty, and
   /// reservation decrements atomically to prevent oversell.
   stockQty          Int?
-  reservedQty       Int           @default(0)
+  reservedQty       Int            @default(0)
   /// Category/subcategory-specific attributes captured at listing time, keyed by
   /// the field `key` from the shared attribute schema (@agrotraders/types). Scalar
   /// fields store a value; multiselect fields store an array. Buyers filter on it.
   attributes        Json?
-  createdAt         DateTime      @default(now())
+  /// Paid promotion (AddonKind.promote_category / promote_home). `promotedUntil`
+  /// is when the slot lapses; `promotedSlot` is which surface it was bought for.
+  /// Both null = not promoted. Sorting reads these, so a lapsed slot needs no job.
+  promotedUntil     DateTime?
+  promotedSlot      PromotionSlot?
+  createdAt         DateTime       @default(now())
 
   categoryId      String
   category        Category             @relation(fields: [categoryId], references: [id])
@@ -1145,6 +1165,7 @@ model Product {
   buyerBids       BuyerBid[]
   reviews         Review[]             @relation("ProductReviews")
   wishlistedBy    WishlistItem[]
+  addonPurchases  AddonPurchase[]
   translations    ProductTranslation[]
   /// Per-field SHA-1 of the source (English) text at last translation, so the
   /// translation worker skips fields whose source is unchanged. Keyed by field name.
@@ -1420,6 +1441,8 @@ model Invoice {
   loaderJob       LoaderJob?     @relation(fields: [loaderJobId], references: [id])
   jobAssignmentId String?
   jobAssignment   JobAssignment? @relation(fields: [jobAssignmentId], references: [id])
+  subscriptionId  String?
+  subscription    Subscription?  @relation(fields: [subscriptionId], references: [id])
 
   lines InvoiceLine[]
 
@@ -2797,4 +2820,302 @@ model TextTranslation {
 
   @@unique([sourceHash, locale])
   @@index([locale])
+}
+
+// ── Billing: plans, subscriptions, add-ons, gateway payments ─────
+//
+// Money here is deliberately SEPARATE from the Wallet/Escrow ledger. That ledger
+// is an internal USD-cents book for marketplace settlement; subscription pricing
+// is a published ruble price list that must not drift with an FX rate between
+// renewals. So plan money is stored in RUB minor units (kopecks) with an explicit
+// currency, charged in RUB by the Russian acquirers, and only ever *displayed* in
+// another currency via the existing FX snapshot.
+
+/// How often a subscription renews. The discount ladder (~10% quarterly, ~30%
+/// yearly) is expressed in the PlanPrice rows, not computed — an admin must be
+/// able to price a cycle freely without a code change.
+enum BillingCycle {
+  monthly
+  quarterly
+  yearly
+}
+
+enum SubscriptionStatus {
+  /// Paid and inside its period.
+  active
+  /// A renewal charge failed; dunning is retrying. Entitlements still apply
+  /// until the retries are exhausted — a suspended account stops producing the
+  /// listings that make the marketplace worth joining.
+  past_due
+  /// User asked to cancel; runs to the end of the paid period.
+  canceled
+  /// Period elapsed with no successful payment. Entitlements fall back to free.
+  expired
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  canceled
+  failed
+}
+
+/// What a payment buys. One payment layer serves all three so there is a single
+/// webhook path and a single reconciliation story.
+enum PaymentPurpose {
+  subscription
+  addon
+  wallet_topup
+}
+
+enum PaymentProviderKey {
+  robokassa
+  yookassa
+  tbank
+}
+
+/// Pay-as-you-go items, available to any account including free tier. This is
+/// the long-tail line and the natural upsell path into a plan.
+enum AddonKind {
+  /// +1 active listing slot beyond the plan quota, per month.
+  extra_listing
+  /// Top of its category for 7 days.
+  promote_category
+  /// Homepage placement for 7 days.
+  promote_home
+  /// One auction lot beyond the monthly quota.
+  auction_lot
+  /// Category banner, per month.
+  category_banner
+  /// One-off KYC verification + verified badge.
+  kyc_badge
+}
+
+/// Which surface a paid promotion occupies. Mirrors the two promotion add-ons.
+enum PromotionSlot {
+  category
+  home
+}
+
+/// One rung of one role's price ladder. Admin-editable so a price or quota change
+/// is a form submit, not a deployment — that is the whole point of this table
+/// existing instead of a constant in code.
+model Plan {
+  id   String @id @default(cuid())
+  /// Stable machine key, e.g. `seller_standard`. Seeds and defaults upsert on it,
+  /// so renaming the display `name` never orphans a subscription.
+  code String @unique
+  /// Which constituency this ladder serves. The five service-provider roles share
+  /// ONE ladder (commercial plan 3.7) — they get one Plan row each with identical
+  /// limits, so an admin can still diverge them later without a migration.
+  role Role
+  /// 0 = free, 1 = standard/anchor, 2 = pro. Orders the ladder and decides whether
+  /// a plan change is an upgrade or a downgrade.
+  tier Int
+
+  /// Display name (English source; localized on read via TextTranslationService).
+  name        String
+  description String?
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  /// Numeric quotas keyed by PLAN_LIMIT_KEYS (@agrotraders/types). A key that is
+  /// absent or null means UNLIMITED — not zero. Json rather than columns because
+  /// the keys are heterogeneous per role (activeListings vs vehicles vs
+  /// managedWorkers) and must stay admin-editable; the keys are validated against
+  /// the shared const list on write, so it is typed, not a free-form blob.
+  limits   Json @default("{}")
+  /// Boolean/enum feature flags keyed by PLAN_FEATURE_KEYS — verifiedBadge,
+  /// searchPriority, analytics, apiAccess, dispatchBoard, directoryPlacement...
+  features Json @default("{}")
+
+  prices        PlanPrice[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role, active])
+}
+
+/// The price of one plan on one cycle. A free tier simply has no rows (or rows
+/// at 0) — nothing else in the system special-cases it.
+model PlanPrice {
+  id          String       @id @default(cuid())
+  planId      String
+  plan        Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  cycle       BillingCycle
+  /// Minor units of `currency` (kopecks for RUB). VAT-inclusive, per the plan.
+  amountMinor Int
+  currency    String       @default("RUB")
+  active      Boolean      @default(true)
+
+  @@unique([planId, cycle])
+}
+
+/// A user's standing entitlement for ONE role. A multi-role account (seller +
+/// transporter) holds one row per role, which is why `role` is denormalized here
+/// rather than read off the plan: the unique key has to be (user, role).
+model Subscription {
+  id     String       @id @default(cuid())
+  userId String
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role
+  planId String
+  plan   Plan         @relation(fields: [planId], references: [id])
+  cycle  BillingCycle
+
+  status             SubscriptionStatus @default(active)
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  /// Self-serve cancellation: runs to the end of the paid period, then expires.
+  cancelAtPeriodEnd  Boolean            @default(false)
+  canceledAt         DateTime?
+
+  /// Grandfathering — the 50% early-adopter offer runs itself off these two
+  /// fields, and any admin-granted discount uses the same mechanism.
+  discountPercent Int       @default(0)
+  discountUntil   DateTime?
+
+  /// Card binding for unattended renewal. `providerToken` is ENCRYPTED at rest
+  /// (see common/crypto.ts): YooKassa payment_method_id, T-Bank RebillId, or the
+  /// Robokassa PreviousInvoiceID.
+  provider      PaymentProviderKey?
+  providerToken String?
+
+  /// Failed-renewal counter. Reset on every success; at BillingSettings.dunningRetries
+  /// the subscription expires down to free rather than suspending the account.
+  dunningAttempts Int       @default(0)
+  lastPaymentAt   DateTime?
+
+  payments Payment[]
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One subscription row per (user, role) — a cancel/expire flips `status` and
+  /// a re-subscribe reuses the row, so history stays on Payment, not on duplicates.
+  @@unique([userId, role])
+  @@index([status, currentPeriodEnd])
+}
+
+/// A paid gateway intent. Rows are created `pending` before the user is sent to
+/// the provider and only move to `succeeded` from a VERIFIED callback — never
+/// from the browser returning to the success URL.
+model Payment {
+  id       String             @id @default(cuid())
+  userId   String
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider PaymentProviderKey
+  purpose  PaymentPurpose
+  status   PaymentStatus      @default(pending)
+
+  amountMinor Int
+  currency    String @default("RUB")
+
+  /// The provider's own id: YooKassa payment id, T-Bank PaymentId, Robokassa InvId.
+  providerRef     String?
+  /// Robokassa's protocol requires a NUMERIC invoice id it can sign, so every
+  /// payment gets one whether or not Robokassa is the provider. Autoincrement
+  /// keeps it monotonic and collision-free across providers.
+  invId           Int     @unique @default(autoincrement())
+  /// Where to send the user to pay. Null for unattended renewal charges.
+  confirmationUrl String?
+
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  planId         String?
+  cycle          BillingCycle?
+  addonKind      AddonKind?
+  /// Product id for a promotion or extra listing, category id for a banner.
+  addonTargetId  String?
+
+  /// Client-supplied or server-minted; unique so a double-tapped checkout reuses
+  /// the same intent instead of opening a second charge.
+  idempotencyKey String  @unique
+  /// Last provider payload, verbatim — the only thing that makes a disputed
+  /// charge reconcilable months later.
+  raw            Json?
+  failureReason  String?
+
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  addonPurchase AddonPurchase?
+
+  @@index([userId, status])
+  @@index([provider, providerRef])
+  @@index([status, createdAt])
+}
+
+/// A one-off or time-boxed purchase. `expiresAt` null = permanent (kyc_badge).
+/// Quota maths folds active `extra_listing` rows on top of the plan's limit.
+model AddonPurchase {
+  id     String    @id @default(cuid())
+  userId String
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind   AddonKind
+
+  /// Target of the add-on, when it has one.
+  productId  String?
+  product    Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  amountMinor Int
+  currency    String @default("RUB")
+
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  startsAt  DateTime  @default(now())
+  expiresAt DateTime?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, kind, expiresAt])
+  @@index([productId, kind, expiresAt])
+}
+
+/// Per-provider acquiring configuration. One row per provider, keyed by the enum
+/// so it can never hold two rows for the same gateway.
+model PaymentGatewayConfig {
+  provider    PaymentProviderKey @id
+  enabled     Boolean            @default(false)
+  /// Test/sandbox credentials and endpoints. Ships true so an accidentally
+  /// enabled gateway cannot take a real payment.
+  testMode    Boolean            @default(true)
+  /// AES-256-GCM ciphertext of the credential map (see common/crypto.ts). Never
+  /// leaves the server: the admin API returns masked values and accepts writes only.
+  credentials String?
+  sortOrder   Int                @default(0)
+  updatedAt   DateTime           @updatedAt
+}
+
+/// Singleton platform billing configuration — the Branding model's pattern.
+model BillingSettings {
+  id Int @id @default(1)
+
+  /// Take rate in basis points (200 = 2%). Both ship at 0 and disabled: the
+  /// commercial plan switches commission on at month 12, once escrow settlement
+  /// is habitual, and charging it early suppresses the volume it taxes.
+  orderCommissionBps  Int     @default(0)
+  escrowCommissionBps Int     @default(0)
+  commissionEnabled   Boolean @default(false)
+
+  /// Master switch for quota enforcement. The plan's Phase 0 keeps everything
+  /// free while supply is landed, so quotas can be built now and armed later.
+  quotasEnforced Boolean @default(true)
+
+  /// Dunning: retry a failed card N times over ~7 days, then downgrade to free.
+  dunningRetries       Int @default(3)
+  dunningIntervalHours Int @default(56)
+
+  /// The account subscription invoices are issued FROM. The existing Invoice model
+  /// is peer-to-peer, so the platform needs a User row to sit on the issuer side.
+  platformUserId String?
+
+  updatedAt DateTime @updatedAt
 }

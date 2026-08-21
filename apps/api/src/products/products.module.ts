@@ -27,6 +27,7 @@ import { CURRENCIES, CURRENCY_SYMBOLS, PRODUCT_UNITS, filterFields, parseQtyIn, 
 import { requireSafeDeal, resolveListingSafeDeal } from './safe-deal';
 import { commonWord } from '@agrotraders/i18n/notifications';
 import { FxModule, FxService } from '../fx/fx.module';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { CatalogModule, CategoriesService, MAX_TAXONOMY_DEPTH } from '../catalog/catalog.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
@@ -411,6 +412,7 @@ export class ProductsService {
     private events: EventEmitter2,
     private fx: FxService,
     private categories: CategoriesService,
+    private entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -1076,10 +1078,19 @@ export class ProductsService {
   }
 
   async create(sellerId: string, dto: CreateProductDto) {
+    // Plan quotas are enforced at WRITE time. Checking on read instead would let
+    // a downgraded seller keep publishing and quietly teach everyone that the
+    // plan is optional. An auction lot IS a Product, so both quotas apply here.
+    await this.entitlements.assertWithin(sellerId, 'seller', 'activeListings');
+    if (dto.isAuction) await this.entitlements.assertWithin(sellerId, 'seller', 'auctionLotsPerMonth');
+
     const subcategoryId = await this.validSubcategory(dto.categoryId, dto.subcategoryId);
     const marketId = await this.validMarket(sellerId, dto.marketId);
     const price = await this.pricePatch(dto.price, dto.priceCurrency);
-    const images = dto.images ?? [];
+    const photoLimit = await this.entitlements.photoLimit(sellerId, 'seller');
+    // A per-listing cap, so trim to the allowance instead of rejecting the whole
+    // listing — the seller gets their listing, just not the extra photos.
+    const images = photoLimit === null ? (dto.images ?? []) : (dto.images ?? []).slice(0, photoLimit);
     const attributes = dto.attributes ? await this.cleanAttributes(subcategoryId, dto.attributes) : null;
     const product = await this.prisma.product.create({
       data: {

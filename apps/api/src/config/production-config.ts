@@ -10,6 +10,10 @@ const REQUIRED = [
   'S3_SECRET_KEY',
   'S3_BUCKET',
   'CORS_ORIGINS',
+  // Encrypts payment-gateway credentials at rest (common/crypto.ts). Without it
+  // the code falls back to a key that is published in this repository, so a
+  // database dump would hand over live acquiring credentials.
+  'PAYMENTS_SECRET_KEY',
 ] as const;
 
 const PLACEHOLDERS = new Set([
@@ -46,6 +50,11 @@ export function assertProductionConfig(env: Environment = process.env): void {
   for (const name of ['S3_ACCESS_KEY', 'S3_SECRET_KEY'] as const) {
     const value = env[name]?.trim();
     if (value && PLACEHOLDERS.has(value)) problems.push(`${name} is a placeholder`);
+  }
+
+  const payments = env.PAYMENTS_SECRET_KEY?.trim();
+  if (payments && (payments.length < 32 || PLACEHOLDERS.has(payments))) {
+    problems.push('PAYMENTS_SECRET_KEY is insecure');
   }
 
   const origins = env.CORS_ORIGINS?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? [];

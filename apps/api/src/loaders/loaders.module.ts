@@ -31,6 +31,7 @@ import {
   Min,
 } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
@@ -157,6 +158,7 @@ export class LoadersService {
     private reviewsSvc: ReviewsService,
     private text: TextTranslationService,
     private notifications: NotificationsService,
+    private entitlements: EntitlementsService,
   ) {}
 
   // ── teams & workers (loaderco) ──
@@ -204,6 +206,8 @@ export class LoadersService {
   }
 
   async addWorker(loadercoId: string, b: CreateWorkerDto) {
+    // Managed crew headcount is the loading-company ladder's headline quota.
+    await this.entitlements.assertWithin(loadercoId, 'loaderco', 'managedWorkers');
     await this.assertTeamOwned(b.teamId, loadercoId);
     const wantsLogin = !!(b.loginHandle && b.loginPassword);
     return this.prisma.$transaction(async (tx) => {

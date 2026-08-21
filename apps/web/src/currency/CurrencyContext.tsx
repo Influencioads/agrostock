@@ -13,6 +13,12 @@ interface CurrencyContextValue {
   fmtCents: (usdCents: number | null | undefined) => string;
   /** Format a product-ish price: converts when a cents baseline exists, else shows the raw string. */
   fmtPrice: (p: { price: string; priceCents?: number | null }) => string;
+  /**
+   * Format an amount held in the MINOR units of some other currency — plan
+   * prices are kopecks, not the USD cents everything else uses. Converts into
+   * the selected display currency through the same FX snapshot.
+   */
+  fmtMinor: (amountMinor: number | null | undefined, sourceCurrency?: string) => string;
   stale: boolean;
 }
 
@@ -70,11 +76,32 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     [displayCurrency, rate, lang],
   );
 
+  /**
+   * Subscription prices are published in rubles and charged in rubles, so they
+   * are stored in kopecks rather than in the USD-cents baseline. The FX table is
+   * USD-based, so converting RUB -> target goes through USD: divide out the
+   * source rate, multiply by the target's. When the source rate is missing we
+   * show the original currency rather than mislabelling the number.
+   */
+  const fmtMinor = useCallback(
+    (amountMinor: number | null | undefined, sourceCurrency = 'RUB') => {
+      if (amountMinor == null) return '—';
+      const src = sourceCurrency.toUpperCase();
+      if (src === displayCurrency) return formatMoney(amountMinor, src, 1, lang);
+      const srcRate = src === 'USD' ? 1 : fx?.rates?.[src];
+      if (!srcRate || srcRate <= 0) return formatMoney(amountMinor, src, 1, lang);
+      // amountMinor is in the source currency's minor units; rate converts the
+      // whole amount at once, so the minor-unit scale carries through unchanged.
+      return formatMoney(amountMinor, displayCurrency, rate / srcRate, lang);
+    },
+    [displayCurrency, rate, lang, fx?.rates],
+  );
+
   const value = useMemo<CurrencyContextValue>(
     // `stale` is true when rates are unavailable/outdated — including the
     // no-rate fallback above, so consumers can surface it.
-    () => ({ currency: displayCurrency, setCurrency, rate, fmtCents, fmtPrice, stale: !hasRate || (fx?.stale ?? true) }),
-    [displayCurrency, setCurrency, rate, fmtCents, fmtPrice, hasRate, fx?.stale],
+    () => ({ currency: displayCurrency, setCurrency, rate, fmtCents, fmtPrice, fmtMinor, stale: !hasRate || (fx?.stale ?? true) }),
+    [displayCurrency, setCurrency, rate, fmtCents, fmtPrice, fmtMinor, hasRate, fx?.stale],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

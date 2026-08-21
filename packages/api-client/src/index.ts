@@ -1112,7 +1112,201 @@ export type AdminPermission =
   | 'audit_view'
   | 'reports_view'
   | 'staff_manage'
-  | 'reviews_moderate';
+  | 'reviews_moderate'
+  | 'billing_manage';
+
+/* ── billing ────────────────────────────────────────────────────── */
+
+export type ApiBillingCycle = 'monthly' | 'quarterly' | 'yearly';
+export type ApiPaymentProvider = 'robokassa' | 'yookassa' | 'tbank';
+export type ApiPaymentStatus = 'pending' | 'succeeded' | 'canceled' | 'failed';
+export type ApiSubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'expired' | 'free';
+export type ApiAddonKind =
+  | 'extra_listing'
+  | 'promote_category'
+  | 'promote_home'
+  | 'auction_lot'
+  | 'category_banner'
+  | 'kyc_badge';
+
+export interface ApiPlanPrice {
+  cycle: ApiBillingCycle;
+  /** Minor units of `currency` — kopecks for RUB. */
+  amountMinor: number;
+  /** The per-month equivalent, so the annual price can show one alongside it. */
+  perMonthMinor: number;
+  currency: string;
+}
+
+export interface ApiPlan {
+  id: string;
+  code: string;
+  role: string;
+  /** 0 free · 1 standard · 2 pro. */
+  tier: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  /** Quota key → number, or null for unlimited. An absent key is unlimited too. */
+  limits: Record<string, number | null>;
+  /** Feature key → boolean, or a graded string ('standard' | 'top' | …). */
+  features: Record<string, boolean | string>;
+  prices: ApiPlanPrice[];
+}
+
+export interface ApiAddonSpec {
+  kind: ApiAddonKind;
+  amountMinor: number;
+  /** Null = permanent. */
+  durationDays: number | null;
+  target: 'product' | 'category' | 'none';
+}
+
+export interface ApiGateway {
+  provider: ApiPaymentProvider;
+  label: string;
+  enabled: boolean;
+  testMode: boolean;
+  supportsRecurring: boolean;
+  configured: boolean;
+}
+
+export interface ApiGatewayField {
+  key: string;
+  /** i18n key suffix under `gateways.field.*`. */
+  label: string;
+  secret: boolean;
+  example?: string;
+}
+
+export interface ApiAdminGateway extends ApiGateway {
+  docsUrl: string;
+  dashboardUrl: string;
+  credentialFields: ApiGatewayField[];
+  /** Masked values only — the real secrets never leave the server. */
+  credentials: Record<string, string | null>;
+  callbackUrls: { kind: string; url: string }[];
+  updatedAt: string | null;
+}
+
+export interface ApiQuotaRow {
+  key: string;
+  used: number;
+  /** Null = unlimited. */
+  limit: number | null;
+  /** Extra slots bought as add-ons on top of the plan. */
+  addon: number;
+  /** False when the platform has no counter for this key yet. */
+  enforced: boolean;
+}
+
+export interface ApiEntitlement {
+  role: string;
+  planId: string | null;
+  planCode: string;
+  planName: string;
+  tier: number;
+  limits: Record<string, number | null>;
+  features: Record<string, boolean | string>;
+  subscriptionId: string | null;
+  status: ApiSubscriptionStatus;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+}
+
+export interface ApiSubscription {
+  id: string;
+  role: string;
+  planId: string;
+  planCode: string;
+  planName: string;
+  cycle: ApiBillingCycle;
+  status: ApiSubscriptionStatus;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  discountPercent: number;
+  discountUntil: string | null;
+  provider: ApiPaymentProvider | null;
+  hasSavedCard: boolean;
+}
+
+export interface ApiAddonPurchase {
+  id: string;
+  kind: ApiAddonKind;
+  productId: string | null;
+  categoryId: string | null;
+  amountMinor: number;
+  currency: string;
+  startsAt: string;
+  expiresAt: string | null;
+  active: boolean;
+}
+
+export interface ApiPaymentRow {
+  id: string;
+  provider: ApiPaymentProvider;
+  purpose: 'subscription' | 'addon' | 'wallet_topup';
+  status: ApiPaymentStatus;
+  amountMinor: number;
+  currency: string;
+  createdAt: string;
+  paidAt: string | null;
+  /** Present only while pending — resume an abandoned checkout. */
+  confirmationUrl: string | null;
+}
+
+export interface ApiBillingOverview {
+  entitlements: Record<string, ApiEntitlement>;
+  usage: Record<string, ApiQuotaRow[]>;
+  subscriptions: ApiSubscription[];
+  addons: ApiAddonPurchase[];
+  payments: ApiPaymentRow[];
+}
+
+export interface ApiPaymentIntent {
+  paymentId: string;
+  /** Where to send the browser. Null when the provider settles inline. */
+  confirmationUrl: string | null;
+  amountMinor: number;
+  currency: string;
+  provider: ApiPaymentProvider;
+}
+
+export interface ApiBillingSettings {
+  id: number;
+  /** Basis points; 200 = 2%. */
+  orderCommissionBps: number;
+  escrowCommissionBps: number;
+  commissionEnabled: boolean;
+  quotasEnforced: boolean;
+  dunningRetries: number;
+  dunningIntervalHours: number;
+  platformUserId: string | null;
+}
+
+export interface ApiRevenueSummary {
+  mrrMinor: number;
+  arrMinor: number;
+  currency: string;
+  paidAccounts: number;
+  freeAccounts: number;
+  pastDue: number;
+  addonMinor30d: number;
+  collectedMinor30d: number;
+  churnPercent30d: number;
+  byRole: { role: string; paid: number; mrrMinor: number }[];
+  byPlan: { planCode: string; planName: string; paid: number; mrrMinor: number }[];
+}
+
+export interface ApiAdminSubscription extends ApiSubscription {
+  user: { id: string; name: string; email: string };
+  tier: number;
+  dunningAttempts: number;
+  amountMinor: number;
+  currency: string;
+}
 
 export interface ApiUser {
   id: string;
@@ -2861,6 +3055,41 @@ export function createApiClient(opts: ApiClientOptions) {
        */
       setServiceNodeActive: (id: string, isActive: boolean) =>
         patch<{ ok: boolean; affected: number }>(`/admin/service-taxonomy/${id}/active`, { isActive }),
+
+      /* ── billing: plan catalogue, gateways, subscriptions ──────── */
+      billingPlans: () => get<ApiPlan[]>('/admin/billing/plans'),
+      createPlan: (body: Record<string, unknown>) => post<ApiPlan>('/admin/billing/plans', body),
+      updatePlan: (id: string, body: Record<string, unknown>) => patch<ApiPlan>(`/admin/billing/plans/${id}`, body),
+      setPlanPrice: (id: string, body: { cycle: ApiBillingCycle; amountMinor: number | null; currency?: string }) =>
+        post<ApiPlan>(`/admin/billing/plans/${id}/price`, body),
+      deactivatePlan: (id: string) => post<ApiPlan>(`/admin/billing/plans/${id}/deactivate`),
+      /** Resets prices and quotas to the published commercial plan. Audited. */
+      restorePlanDefaults: () =>
+        post<{ plansCreated: number; plansUpdated: number; pricesWritten: number; gatewaysCreated: number }>('/admin/billing/plans/restore-defaults'),
+
+      billingGateways: () => get<ApiAdminGateway[]>('/admin/billing/gateways'),
+      /** Credentials are write-only; a value left masked means "unchanged". */
+      updateGateway: (provider: ApiPaymentProvider, body: { enabled?: boolean; testMode?: boolean; credentials?: Record<string, string> }) =>
+        patch<ApiAdminGateway[]>(`/admin/billing/gateways/${provider}`, body),
+      testGateway: (provider: ApiPaymentProvider) =>
+        post<{ ok: boolean; message: string }>(`/admin/billing/gateways/${provider}/test`),
+
+      billingSettings: () => get<ApiBillingSettings>('/admin/billing/settings'),
+      updateBillingSettings: (body: Partial<ApiBillingSettings>) => patch<ApiBillingSettings>('/admin/billing/settings', body),
+
+      subscriptions: (params: { status?: string; role?: string; q?: string } = {}) =>
+        get<ApiAdminSubscription[]>('/admin/billing/subscriptions', params),
+      grantSubscription: (body: { userId: string; planId: string; cycle: ApiBillingCycle; months?: number }) =>
+        post<ApiSubscription>('/admin/billing/subscriptions/grant', body),
+      setSubscriptionDiscount: (id: string, body: { discountPercent: number; discountUntil?: string | null }) =>
+        post<ApiSubscription>(`/admin/billing/subscriptions/${id}/discount`, body),
+      cancelSubscription: (id: string) => post<ApiSubscription>(`/admin/billing/subscriptions/${id}/cancel`),
+      /** Run one renewal now instead of waiting for the hourly cron. */
+      renewSubscription: (id: string) => post<{ outcome: 'renewed' | 'dunned' | 'expired' }>(`/admin/billing/subscriptions/${id}/renew`),
+
+      revenue: () => get<ApiRevenueSummary>('/admin/billing/revenue'),
+      billingPayments: (params: { status?: string; provider?: string } = {}) =>
+        get<Record<string, unknown>[]>('/admin/billing/payments', params),
     },
 
     /* ── CHAT SYSTEM 1 — Community (separate from Support) ─────────── */
@@ -2955,6 +3184,36 @@ export function createApiClient(opts: ApiClientOptions) {
       updatePreferences: (body: NotificationPrefsPatch) =>
         put<NotificationPreferences>('/notifications/preferences', body),
     },
+
+    /* ── billing: plans, subscriptions, add-ons, gateways ──────────── */
+    billing: {
+      /** Public catalogue — the pricing page. No auth. */
+      plans: (params: { role?: string; locale?: string } = {}) => get<ApiPlan[]>('/billing/plans', params),
+      /** Pay-as-you-go price list, available to free accounts too. */
+      addons: () => get<ApiAddonSpec[]>('/billing/addons'),
+      /** Acquirers the checkout may offer. Never carries credentials. */
+      gateways: () => get<ApiGateway[]>('/billing/gateways'),
+
+      /** Current plan, quota meters, add-ons and payment history. */
+      overview: (locale?: string) => get<ApiBillingOverview>('/me/billing', { locale }),
+      /** Open a subscription checkout; send the browser to `confirmationUrl`. */
+      subscribe: (body: { planId: string; cycle: ApiBillingCycle; provider: ApiPaymentProvider; idempotencyKey?: string }) =>
+        post<ApiPaymentIntent>('/me/billing/subscribe', body),
+      /** Runs to the end of the paid period unless `immediately`. */
+      cancel: (body: { role: string; immediately?: boolean }) => post<ApiSubscription>('/me/billing/cancel', body),
+      resume: (body: { role: string }) => post<ApiSubscription>('/me/billing/resume', body),
+      buyAddon: (body: { kind: ApiAddonKind; targetId?: string; provider: ApiPaymentProvider; idempotencyKey?: string }) =>
+        post<ApiPaymentIntent>('/me/billing/addons', body),
+      /** Poll target for the return page — the webhook is the source of truth. */
+      payment: (id: string) =>
+        get<{ id: string; status: ApiPaymentStatus; purpose: string; amountMinor: number; currency: string; paidAt: string | null; failureReason: string | null }>(
+          `/me/billing/payments/${id}`,
+        ),
+      /** Real, gateway-backed wallet top-up (the legacy one is a blocked mock). */
+      topupIntent: (body: { amountMinor: number; currency?: string; provider: ApiPaymentProvider; idempotencyKey?: string }) =>
+        post<ApiPaymentIntent>('/me/wallet/topup-intent', body),
+    },
+
     attachments: {
       presign: (body: { system: 'community' | 'support'; mime: string; sizeBytes: number; originalName?: string }) =>
         post<{ attachmentId: string; uploadUrl: string; s3Key: string; kind: string }>('/attachments/presign', body),

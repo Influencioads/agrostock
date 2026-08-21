@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TextTranslationService } from '../src/translation/text-translation.service';
 import { ServiceProvidersService } from '../src/services/service-providers.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 /**
  * The services directory was the one public listing that never went through the
@@ -104,7 +105,7 @@ describe('ServiceProvidersService — the directory actually localizes', () => {
         findFirst: vi.fn(async () => ({ ...row })),
       },
     };
-    return new ServiceProvidersService(prisma as never, text);
+    return new ServiceProvidersService(prisma as never, text, noQuotas());
   }
 
   it('translates names, blurbs and every array column on the public list', async () => {

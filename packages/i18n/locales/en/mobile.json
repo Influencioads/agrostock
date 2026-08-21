@@ -92,6 +92,103 @@
       "title": "Create your account"
     }
   },
+  "billing": {
+    "addon": {
+      "auction_lot": "Extra auction lot",
+      "category_banner": "Category banner",
+      "extra_listing": "Extra listing slot",
+      "kyc_badge": "KYC verification + verified badge",
+      "promote_category": "Promote to top of category",
+      "promote_home": "Promote to homepage"
+    },
+    "addonsTitle": "Your add-ons",
+    "autoRenews": "Renews automatically",
+    "cancelAnytime": "Cancel any time — your plan runs to the end of the period you paid for.",
+    "cancelPlan": "Cancel plan",
+    "chargedInRubles": "Charged in Russian rubles, VAT included.",
+    "checkoutFailed": "We could not start the payment. Please try again.",
+    "choose": "Choose this plan",
+    "comparePlans": "Compare plans",
+    "confirmTitle": "{{plan}}, billed {{cycle}}",
+    "currentPlan": "Your plan",
+    "cycle": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "cycleUnavailable": "Not offered on this billing cycle.",
+    "endsOn": "Ends {{date}}",
+    "finishPayment": "Finish payment",
+    "free": "Free",
+    "historyTitle": "Payment history",
+    "limit": {
+      "activeListings": "active listings",
+      "auctionLotsPerMonth": "auction lots per month",
+      "driverAccounts": "driver sub-accounts",
+      "enquiriesPerMonth": "enquiries received per month",
+      "hireResponsesPerMonth": "responses to hire requests per month",
+      "managedWorkers": "managed workers",
+      "operatingRegions": "operating regions",
+      "photosPerListing": "photos per listing",
+      "pricedServices": "priced services",
+      "rfqsPerMonth": "buy requests per month",
+      "savedSearches": "saved searches with alerts",
+      "serviceAreas": "service areas",
+      "teamMembers": "team members",
+      "vehicles": "vehicles in your profile"
+    },
+    "loading": "Loading your plan…",
+    "noGatewaysBody": "Online payments are not switched on for this platform yet. Please contact support to arrange payment.",
+    "noGatewaysTitle": "No payment method available yet",
+    "noRedirect": "The payment provider did not return a payment page. Please try another provider.",
+    "overLimit": "Over your plan limit — existing items are untouched, but you cannot add more until you upgrade.",
+    "pastDueBody": "We will retry over the next few days. Your plan stays active in the meantime — update your payment method to keep it.",
+    "pastDueTitle": "We could not charge your card",
+    "payNow": "Continue to payment",
+    "payment": {
+      "canceled": "Cancelled",
+      "failed": "Failed",
+      "pending": "Pending",
+      "succeeded": "Paid"
+    },
+    "perMonth": "per month",
+    "perMonthEquivalent": "{{amount}} / month",
+    "permanent": "Permanent",
+    "purpose": {
+      "addon": "Add-on",
+      "subscription": "Subscription",
+      "wallet_topup": "Wallet top-up"
+    },
+    "quotaExceeded": "You have reached your plan limit ({{used}} of {{limit}}). Upgrade for more.",
+    "redirecting": "Redirecting…",
+    "renewsOn": "Renews {{date}}",
+    "resume": "Keep my plan",
+    "returnFailed": "Payment not completed",
+    "returnFailedBody": "Nothing was charged. You can try again or choose a different payment method.",
+    "returnPaid": "Payment received",
+    "returnPaidBody": "Your plan is active. Everything it unlocks is available right away.",
+    "returnPending": "Confirming your payment",
+    "returnPendingBody": "We are waiting for your bank to confirm. This usually takes a few seconds — you can leave this page open.",
+    "returnSlowBody": "This is taking longer than usual. Your payment may still go through; check your billing page in a few minutes before trying again.",
+    "returnTitle": "Payment",
+    "returnToBilling": "Go to billing",
+    "returnToPricing": "Back to plans",
+    "returnUnknown": "We could not find that payment.",
+    "status": {
+      "active": "Active",
+      "canceled": "Cancelling",
+      "expired": "Ended",
+      "free": "Free plan",
+      "past_due": "Payment failed"
+    },
+    "testMode": "Test mode",
+    "unlimited": "Unlimited",
+    "until": "until {{date}}",
+    "upgradeCta": "See plans",
+    "upgradeTitle": "Upgrade",
+    "usageTitle": "Your usage",
+    "usedOf": "{{used}} of {{limit}} used"
+  },
   "buyerX": {
     "auctions": {
       "bidCount_few": "{{count}} bids",
@@ -720,6 +817,278 @@
     "createAccount": "Create account",
     "heading": "You're browsing as a guest",
     "name": "Guest"
+  },
+  "hireQ": {
+    "booksIn": "Books kept in",
+    "cargo": "Product / commodity",
+    "certifications": "Certifications required",
+    "channels": "Sales channels",
+    "claimsHistory": "Claims history",
+    "condition": "Current condition of goods",
+    "containers": "Containers / shipments",
+    "coverFrom": "Cover from",
+    "coverScope": "What needs covering",
+    "coverTo": "Cover to",
+    "coverType": "Cover type",
+    "customs": {
+      "fromCity": "Origin country",
+      "toCity": "Destination country"
+    },
+    "deliveryDeadline": "Delivery deadline",
+    "direction": "Direction",
+    "documentsHeld": "Documents you already hold",
+    "engagement": "Engagement",
+    "entityType": "Entity type",
+    "estimateNote": "Prices shown publicly are estimated prices only. If the location, quantity or handling requirements change, the quotation will be revised by the service provider.",
+    "foodGrade": "Food-grade required?",
+    "frequency": "How often",
+    "fromCity": "From",
+    "fulfilment": {
+      "location": "Inbound stock arriving from"
+    },
+    "handling": "Handling needed",
+    "hsCode": "HS code",
+    "incoterm": "Incoterm",
+    "inspection": {
+      "location": "Inspection site"
+    },
+    "jurisdiction": "Country / jurisdiction",
+    "labelling": "Labelling",
+    "loadType": "Load type",
+    "loadingIncluded": "Loading & unloading included?",
+    "location": "Location",
+    "lotSize": "Lot size",
+    "materialBy": "Who supplies packaging material?",
+    "message": "Notes",
+    "mode": "Mode",
+    "movement": "Who moves the goods?",
+    "neededDate": "Needed by",
+    "noServices": "This provider hasn't listed priced services yet — describe what you need below.",
+    "opt": {
+      "booksIn": {
+        "excel": "Excel",
+        "none": "Not kept yet",
+        "one_c": "1C",
+        "other": "Other",
+        "tally": "Tally",
+        "zoho": "Zoho Books"
+      },
+      "certifications": {
+        "brc": "BRC",
+        "fssai": "FSSAI",
+        "haccp": "HACCP",
+        "halal": "Halal",
+        "iso": "ISO",
+        "kosher": "Kosher",
+        "organic": "Organic"
+      },
+      "channels": {
+        "amazon": "Amazon",
+        "flipkart": "Flipkart",
+        "other": "Other",
+        "own_site": "Own website",
+        "ozon": "Ozon",
+        "wildberries": "Wildberries"
+      },
+      "coverType": {
+        "cargo": "Cargo",
+        "crop": "Crop",
+        "liability": "Liability",
+        "transit": "Transit",
+        "warehouse": "Warehouse / stock"
+      },
+      "direction": {
+        "export": "Export",
+        "import": "Import",
+        "transit": "Transit"
+      },
+      "documentsHeld": {
+        "bl_awb": "B/L or AWB",
+        "coo": "Certificate of origin",
+        "invoice": "Commercial invoice",
+        "licence": "Import / export licence",
+        "packing_list": "Packing list",
+        "phyto": "Phytosanitary certificate"
+      },
+      "engagement": {
+        "annual": "Annual",
+        "monthly_retainer": "Monthly retainer",
+        "one_off": "One-off filing"
+      },
+      "entityType": {
+        "individual": "Individual",
+        "llp": "LLP",
+        "ooo": "OOO / LLC",
+        "other": "Other",
+        "pvt_ltd": "Private limited",
+        "sole_prop": "Sole proprietorship"
+      },
+      "foodGrade": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "frequency": {
+        "monthly": "Monthly",
+        "one_off": "One-off",
+        "ongoing": "Ongoing contract",
+        "weekly": "Weekly"
+      },
+      "handling": {
+        "dispatch": "Dispatch / outbound",
+        "pick_pack": "Pick & pack",
+        "receiving": "Receiving / inbound"
+      },
+      "incoterm": {
+        "cif": "CIF",
+        "dap": "DAP",
+        "ddp": "DDP",
+        "exw": "EXW",
+        "fob": "FOB"
+      },
+      "labelling": {
+        "barcode": "Barcode",
+        "export_marks": "Export markings",
+        "private_label": "Private label"
+      },
+      "loadType": {
+        "fcl": "Container FCL",
+        "ftl": "Full truck load (FTL)",
+        "lcl": "Container LCL",
+        "ltl": "Less than truck load (LTL)",
+        "part_load": "Part load",
+        "reefer": "Refrigerated"
+      },
+      "loadingIncluded": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "materialBy": {
+        "i_supply": "I supply it",
+        "you_supply": "You supply it"
+      },
+      "mode": {
+        "air": "Air",
+        "multimodal": "Multimodal",
+        "rail": "Rail",
+        "road": "Road",
+        "sea": "Sea"
+      },
+      "movement": {
+        "i_deliver": "I deliver to you",
+        "you_arrange_both": "You arrange both ways",
+        "you_collect": "You collect from me"
+      },
+      "packFormat": {
+        "bulk_bag": "Bulk bag",
+        "carton": "Carton / box",
+        "map": "Modified atmosphere (MAP)",
+        "retail_pouch": "Retail pouch",
+        "shrink": "Shrink wrap",
+        "vacuum": "Vacuum pack"
+      },
+      "reportType": {
+        "certificate": "Certificate",
+        "lab_report": "Lab report",
+        "psi_certificate": "Pre-shipment inspection certificate"
+      },
+      "returnPackaging": {
+        "bulk": "Bulk, no packing",
+        "i_supply": "I supply the packaging",
+        "provider_supplies": "You supply the packaging"
+      },
+      "returnsHandling": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "sampleFirst": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "storageNeeded": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "storageType": {
+        "ambient": "Ambient",
+        "bonded": "Bonded / customs",
+        "chilled": "Chilled",
+        "frozen": "Frozen"
+      },
+      "tempControlled": {
+        "no": "No",
+        "yes": "Yes"
+      },
+      "testParams": {
+        "colour": "Colour",
+        "foreign_matter": "Foreign matter",
+        "metal_detect": "Metal detection",
+        "microbio": "Microbiological",
+        "moisture": "Moisture",
+        "residue": "Pesticide residue",
+        "size": "Size"
+      },
+      "turnoverBand": {
+        "100k_1m": "$100k – $1M",
+        "1m_10m": "$1M – $10M",
+        "over_10m": "Over $10M",
+        "under_100k": "Under $100k"
+      },
+      "volumeUnit": {
+        "cbm": "m³",
+        "pallets": "Pallets",
+        "tons": "Tons"
+      }
+    },
+    "ordersPerMonth": "Orders per month",
+    "outputSpec": "What you want back (output spec)",
+    "packFormat": "Pack format",
+    "packSize": "Pack size",
+    "packing": {
+      "location": "Where the goods are now"
+    },
+    "periodFrom": "Period from",
+    "periodTo": "Period to",
+    "portOrBorder": "Port / ICD / border post",
+    "processing": {
+      "location": "Where the goods are now"
+    },
+    "qty": "Quantity",
+    "qtyUnit": "Unit",
+    "registrations": "Registrations held (GSTIN / PAN / INN)",
+    "reportType": "Report needed",
+    "requiredMissing": "Please answer: {{label}}",
+    "returnPackaging": "Packaging on return",
+    "returnsHandling": "Returns handling needed?",
+    "routeOrLocation": "Route or location covered",
+    "sampleCount": "Number of samples",
+    "sampleFirst": "Sample batch before the full run?",
+    "sectionDetails": "Service details",
+    "service": "Service needed",
+    "servicePick": "Choose a service…",
+    "shipTo": "Ship packed goods to",
+    "shipmentCurrency": "Currency",
+    "shipmentValue": "Shipment value",
+    "skuCount": "SKUs held",
+    "standard": "Standard or spec to test against",
+    "storageFrom": "Store from",
+    "storageNeeded": "Storage needed?",
+    "storageTo": "Store until",
+    "storageType": "Storage type",
+    "storageVolume": "Storage volume",
+    "sumCurrency": "Currency",
+    "sumInsured": "Sum insured",
+    "tempC": "Temperature required (°C)",
+    "tempControlled": "Temperature-controlled?",
+    "testParams": "What to test / inspect",
+    "toCity": "To",
+    "turnoverBand": "Annual turnover",
+    "unitsPerCase": "Units per case",
+    "volume": "Volume",
+    "volumePerMonth": "Invoices / transactions per month",
+    "volumeUnit": "Volume unit",
+    "warehousing": {
+      "location": "Warehouse city"
+    }
   },
   "hub": {
     "account": "Account",
@@ -1789,6 +2158,14 @@
     "turnaroundDays_other": "{{count}} days",
     "viewProfile": "View profile"
   },
+  "serviceOffer": {
+    "deliveryOffered": "I return goods to an address the customer names",
+    "hireAnswers": "What you offer",
+    "packagingSupplied": "I supply the packaging material",
+    "pickupOffered": "I collect goods from the customer",
+    "sampleAvailable": "I will run a sample batch first",
+    "storageTypes": "Storage conditions offered"
+  },
   "transX": {
     "actions": {
       "add": "Add",
@@ -1937,285 +2314,5 @@
       "type": "Type",
       "year": "Year"
     }
-  },
-  "hireQ": {
-    "service": "Service needed",
-    "servicePick": "Choose a service…",
-    "noServices": "This provider hasn't listed priced services yet — describe what you need below.",
-    "estimateNote": "Prices shown publicly are estimated prices only. If the location, quantity or handling requirements change, the quotation will be revised by the service provider.",
-    "requiredMissing": "Please answer: {{label}}",
-    "sectionDetails": "Service details",
-    "cargo": "Product / commodity",
-    "qty": "Quantity",
-    "qtyUnit": "Unit",
-    "frequency": "How often",
-    "neededDate": "Needed by",
-    "message": "Notes",
-    "location": "Location",
-    "movement": "Who moves the goods?",
-    "condition": "Current condition of goods",
-    "outputSpec": "What you want back (output spec)",
-    "returnPackaging": "Packaging on return",
-    "certifications": "Certifications required",
-    "sampleFirst": "Sample batch before the full run?",
-    "storageType": "Storage type",
-    "tempC": "Temperature required (°C)",
-    "volume": "Volume",
-    "volumeUnit": "Volume unit",
-    "storageFrom": "Store from",
-    "storageTo": "Store until",
-    "foodGrade": "Food-grade required?",
-    "handling": "Handling needed",
-    "fromCity": "From",
-    "toCity": "To",
-    "mode": "Mode",
-    "loadType": "Load type",
-    "tempControlled": "Temperature-controlled?",
-    "deliveryDeadline": "Delivery deadline",
-    "incoterm": "Incoterm",
-    "loadingIncluded": "Loading & unloading included?",
-    "direction": "Direction",
-    "portOrBorder": "Port / ICD / border post",
-    "hsCode": "HS code",
-    "shipmentValue": "Shipment value",
-    "shipmentCurrency": "Currency",
-    "documentsHeld": "Documents you already hold",
-    "containers": "Containers / shipments",
-    "jurisdiction": "Country / jurisdiction",
-    "entityType": "Entity type",
-    "periodFrom": "Period from",
-    "periodTo": "Period to",
-    "engagement": "Engagement",
-    "turnoverBand": "Annual turnover",
-    "volumePerMonth": "Invoices / transactions per month",
-    "booksIn": "Books kept in",
-    "registrations": "Registrations held (GSTIN / PAN / INN)",
-    "coverType": "Cover type",
-    "sumInsured": "Sum insured",
-    "sumCurrency": "Currency",
-    "coverScope": "What needs covering",
-    "routeOrLocation": "Route or location covered",
-    "coverFrom": "Cover from",
-    "coverTo": "Cover to",
-    "claimsHistory": "Claims history",
-    "packFormat": "Pack format",
-    "packSize": "Pack size",
-    "unitsPerCase": "Units per case",
-    "materialBy": "Who supplies packaging material?",
-    "labelling": "Labelling",
-    "shipTo": "Ship packed goods to",
-    "channels": "Sales channels",
-    "ordersPerMonth": "Orders per month",
-    "skuCount": "SKUs held",
-    "storageNeeded": "Storage needed?",
-    "storageVolume": "Storage volume",
-    "returnsHandling": "Returns handling needed?",
-    "testParams": "What to test / inspect",
-    "standard": "Standard or spec to test against",
-    "lotSize": "Lot size",
-    "sampleCount": "Number of samples",
-    "reportType": "Report needed",
-    "processing": {
-      "location": "Where the goods are now"
-    },
-    "warehousing": {
-      "location": "Warehouse city"
-    },
-    "packing": {
-      "location": "Where the goods are now"
-    },
-    "fulfilment": {
-      "location": "Inbound stock arriving from"
-    },
-    "inspection": {
-      "location": "Inspection site"
-    },
-    "customs": {
-      "fromCity": "Origin country",
-      "toCity": "Destination country"
-    },
-    "opt": {
-      "frequency": {
-        "one_off": "One-off",
-        "weekly": "Weekly",
-        "monthly": "Monthly",
-        "ongoing": "Ongoing contract"
-      },
-      "movement": {
-        "i_deliver": "I deliver to you",
-        "you_collect": "You collect from me",
-        "you_arrange_both": "You arrange both ways"
-      },
-      "returnPackaging": {
-        "bulk": "Bulk, no packing",
-        "provider_supplies": "You supply the packaging",
-        "i_supply": "I supply the packaging"
-      },
-      "certifications": {
-        "fssai": "FSSAI",
-        "iso": "ISO",
-        "haccp": "HACCP",
-        "organic": "Organic",
-        "halal": "Halal",
-        "kosher": "Kosher",
-        "brc": "BRC"
-      },
-      "sampleFirst": {
-        "yes": "Yes",
-        "no": "No"
-      },
-      "storageType": {
-        "ambient": "Ambient",
-        "chilled": "Chilled",
-        "frozen": "Frozen",
-        "bonded": "Bonded / customs"
-      },
-      "volumeUnit": {
-        "pallets": "Pallets",
-        "cbm": "m³",
-        "tons": "Tons"
-      },
-      "foodGrade": {
-        "yes": "Yes",
-        "no": "No"
-      },
-      "handling": {
-        "receiving": "Receiving / inbound",
-        "pick_pack": "Pick & pack",
-        "dispatch": "Dispatch / outbound"
-      },
-      "mode": {
-        "road": "Road",
-        "rail": "Rail",
-        "sea": "Sea",
-        "air": "Air",
-        "multimodal": "Multimodal"
-      },
-      "loadType": {
-        "ftl": "Full truck load (FTL)",
-        "ltl": "Less than truck load (LTL)",
-        "part_load": "Part load",
-        "fcl": "Container FCL",
-        "lcl": "Container LCL",
-        "reefer": "Refrigerated"
-      },
-      "tempControlled": {
-        "yes": "Yes",
-        "no": "No"
-      },
-      "incoterm": {
-        "exw": "EXW",
-        "fob": "FOB",
-        "cif": "CIF",
-        "dap": "DAP",
-        "ddp": "DDP"
-      },
-      "loadingIncluded": {
-        "yes": "Yes",
-        "no": "No"
-      },
-      "direction": {
-        "import": "Import",
-        "export": "Export",
-        "transit": "Transit"
-      },
-      "documentsHeld": {
-        "invoice": "Commercial invoice",
-        "packing_list": "Packing list",
-        "coo": "Certificate of origin",
-        "phyto": "Phytosanitary certificate",
-        "licence": "Import / export licence",
-        "bl_awb": "B/L or AWB"
-      },
-      "entityType": {
-        "individual": "Individual",
-        "sole_prop": "Sole proprietorship",
-        "llp": "LLP",
-        "pvt_ltd": "Private limited",
-        "ooo": "OOO / LLC",
-        "other": "Other"
-      },
-      "engagement": {
-        "one_off": "One-off filing",
-        "monthly_retainer": "Monthly retainer",
-        "annual": "Annual"
-      },
-      "turnoverBand": {
-        "under_100k": "Under $100k",
-        "100k_1m": "$100k – $1M",
-        "1m_10m": "$1M – $10M",
-        "over_10m": "Over $10M"
-      },
-      "booksIn": {
-        "tally": "Tally",
-        "one_c": "1C",
-        "zoho": "Zoho Books",
-        "excel": "Excel",
-        "none": "Not kept yet",
-        "other": "Other"
-      },
-      "coverType": {
-        "cargo": "Cargo",
-        "transit": "Transit",
-        "warehouse": "Warehouse / stock",
-        "liability": "Liability",
-        "crop": "Crop"
-      },
-      "packFormat": {
-        "retail_pouch": "Retail pouch",
-        "carton": "Carton / box",
-        "vacuum": "Vacuum pack",
-        "map": "Modified atmosphere (MAP)",
-        "shrink": "Shrink wrap",
-        "bulk_bag": "Bulk bag"
-      },
-      "materialBy": {
-        "i_supply": "I supply it",
-        "you_supply": "You supply it"
-      },
-      "labelling": {
-        "private_label": "Private label",
-        "barcode": "Barcode",
-        "export_marks": "Export markings"
-      },
-      "channels": {
-        "own_site": "Own website",
-        "amazon": "Amazon",
-        "flipkart": "Flipkart",
-        "ozon": "Ozon",
-        "wildberries": "Wildberries",
-        "other": "Other"
-      },
-      "storageNeeded": {
-        "yes": "Yes",
-        "no": "No"
-      },
-      "returnsHandling": {
-        "yes": "Yes",
-        "no": "No"
-      },
-      "testParams": {
-        "moisture": "Moisture",
-        "foreign_matter": "Foreign matter",
-        "microbio": "Microbiological",
-        "residue": "Pesticide residue",
-        "metal_detect": "Metal detection",
-        "size": "Size",
-        "colour": "Colour"
-      },
-      "reportType": {
-        "lab_report": "Lab report",
-        "certificate": "Certificate",
-        "psi_certificate": "Pre-shipment inspection certificate"
-      }
-    }
-  },
-  "serviceOffer": {
-    "hireAnswers": "What you offer",
-    "pickupOffered": "I collect goods from the customer",
-    "deliveryOffered": "I return goods to an address the customer names",
-    "packagingSupplied": "I supply the packaging material",
-    "sampleAvailable": "I will run a sample batch first",
-    "storageTypes": "Storage conditions offered"
   }
 }

@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Role } from '@prisma/client';
 import {
   ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min,
 } from 'class-validator';
@@ -25,6 +25,7 @@ import { MAX_MONEY_CENTS } from '../common/limits';
 import { Locale } from '../common/locale';
 import { TextTranslationService } from '../translation/text-translation.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 
@@ -134,6 +135,7 @@ export class ServiceProvidersService {
   constructor(
     private prisma: PrismaService,
     private text: TextTranslationService,
+    private entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -176,6 +178,12 @@ export class ServiceProvidersService {
     // the client sends what the picker showed, and the picker is already scoped —
     // anything extra is a stale client, not a user error worth a 400.
     const categories = dto.categories ? allowedCategories(role, dto.categories) : undefined;
+
+    // Service areas are a plan quota, but they arrive as a scalar array on a
+    // PATCH rather than as rows, so the cap is on the resulting LENGTH.
+    if (dto.citiesServed) {
+      await this.entitlements.assertArrayWithin(user.id, role as Role, 'serviceAreas', dto.citiesServed.length);
+    }
 
     // Listing requires something to list. A blank card in the directory wastes a
     // buyer's click and reflects badly on the provider.

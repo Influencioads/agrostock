@@ -27,8 +27,13 @@ function build(hold: Record<string, unknown> | null) {
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
   };
   const wallet = { debit: vi.fn(async () => {}), credit: vi.fn(async () => {}) };
-  const svc = new EscrowService(prisma as never, wallet as never);
-  return { svc, prisma, wallet, get: () => current };
+  // Commission ships disabled, so the default stub is a pass-through: the seller
+  // is credited the full release and these invariants are unchanged by it.
+  const commission = {
+    split: vi.fn(async ({ grossCents }: { grossCents: number }) => ({ net: grossCents, fee: 0, platformUserId: null, note: '', idempotencyKey: 'c' })),
+  };
+  const svc = new EscrowService(prisma as never, wallet as never, commission as never);
+  return { svc, prisma, wallet, commission, get: () => current };
 }
 
 describe('EscrowService (F06)', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AttrField } from '@agrotraders/types';
 import { BuyerBidsService } from '../src/buyer-bids/buyer-bids.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 /**
  * A requirement carries the same spec sheet a listing does, so a seller reads
@@ -28,6 +29,7 @@ function service() {
     { emit: vi.fn() } as never,
     fx as never,
     categories as never,
+    noQuotas(),
   );
 }
 

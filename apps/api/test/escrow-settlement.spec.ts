@@ -76,8 +76,11 @@ function hiresHarness(hire: Record<string, unknown> | null, claimWins = true) {
     },
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
   };
-  const svc = new HiresService(prisma as never, notifications as never, wallets as never, text as never);
-  return { svc, prisma, wallets };
+  const commission = {
+    split: vi.fn(async ({ grossCents }: { grossCents: number }) => ({ net: grossCents, fee: 0, platformUserId: null, note: '', idempotencyKey: 'c' })),
+  };
+  const svc = new HiresService(prisma as never, notifications as never, wallets as never, text as never, commission as never);
+  return { svc, prisma, wallets, commission };
 }
 
 describe('HiresService completion authority', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AuctionsService } from '../src/auctions/auctions.module';
 import { BuyerBidsService } from '../src/buyer-bids/buyer-bids.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 /**
  * Bidders name their own price. Neither side enforces a floor any more:
@@ -140,7 +141,7 @@ describe('reverse (buyer) auction accepts any quote', () => {
         }),
       },
     };
-    const svc = new BuyerBidsService(prisma as never, { create: notify } as never, {} as never, {} as never);
+    const svc = new BuyerBidsService(prisma as never, { create: notify } as never, {} as never, {} as never, {} as never, noQuotas());
     vi.spyOn(svc, 'detail').mockResolvedValue({} as never);
     return { svc, prisma, notify, written };
   }

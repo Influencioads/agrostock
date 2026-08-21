@@ -18,6 +18,14 @@ export function useFormat() {
       number: (v: number | null | undefined, o?: Intl.NumberFormatOptions) => formatNumber(v, lang, o),
       compact: (v: number | null | undefined) => formatCompact(v, lang),
       money: (usdCents: number | null | undefined) => (usdCents == null ? '—' : formatMoney(usdCents, 'USD', 1, lang)),
+      /**
+       * Plan and payment amounts, which are stored in the minor units of their
+       * OWN currency (kopecks for RUB) rather than in the USD platform baseline.
+       * Passing rate 1 formats the amount as-is, which is what a sticker price
+       * needs — it must not drift with an FX rate.
+       */
+      minor: (amountMinor: number | null | undefined, currency = 'RUB') =>
+        amountMinor == null ? '—' : formatMoney(amountMinor, currency, 1, lang),
     }),
     [lang],
   );

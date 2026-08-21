@@ -109,6 +109,40 @@
       "body": "Your payout request was declined."
     }
   },
+  "billing": {
+    "activated": {
+      "title": "Subscription active",
+      "body": "Your {{plan}} plan is active until {{until}}."
+    },
+    "renewed": {
+      "title": "Subscription renewed",
+      "body": "{{plan}} renewed for {{amount}}. Next renewal {{until}}."
+    },
+    "payment_failed": {
+      "title": "Payment failed",
+      "body": "We could not charge your card for {{plan}}. We will retry — update your payment method to avoid losing your plan."
+    },
+    "past_due": {
+      "title": "Subscription past due",
+      "body": "{{plan}} could not be renewed. Attempt {{attempt}} of {{max}}."
+    },
+    "downgraded": {
+      "title": "Moved to the free plan",
+      "body": "{{plan}} was not renewed, so your account is now on the free plan. Your data is untouched."
+    },
+    "canceled": {
+      "title": "Subscription cancelled",
+      "body": "{{plan}} will stay active until {{until}}, then move to the free plan."
+    },
+    "addon_active": {
+      "title": "Add-on active",
+      "body": "Your {{addon}} purchase is active{{detail}}."
+    },
+    "quota_warning": {
+      "title": "Approaching your plan limit",
+      "body": "You have used {{used}} of {{limit}} {{quota}}. Upgrade for more."
+    }
+  },
   "auction": {
     "outbid": {
       "title": "You've been outbid",

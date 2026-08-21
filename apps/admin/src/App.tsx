@@ -39,6 +39,9 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage').then((m) => ({ defa
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const ServicesPage = lazy(() => import('./pages/ServicesPage').then((m) => ({ default: m.ServicesPage })));
 const ServiceTaxonomyPage = lazy(() => import('./pages/ServiceTaxonomyPage').then((m) => ({ default: m.ServiceTaxonomyPage })));
+const PlansPage = lazy(() => import('./pages/PlansPage').then((m) => ({ default: m.PlansPage })));
+const SubscriptionsPage = lazy(() => import('./pages/SubscriptionsPage').then((m) => ({ default: m.SubscriptionsPage })));
+const PaymentGatewaysPage = lazy(() => import('./pages/PaymentGatewaysPage').then((m) => ({ default: m.PaymentGatewaysPage })));
 
 // ADM-01: the permission that guards each route's sidebar link, keyed by path,
 // so routes and nav stay in lockstep from the single MODULES source of truth.
@@ -85,6 +88,9 @@ export function App() {
         <Route path="/offices" element={guard('/offices', <OfficesPage />)} />
         <Route path="/branding" element={guard('/branding', <BrandingPage />)} />
         <Route path="/payments" element={guard('/payments', <PaymentsPage />)} />
+        <Route path="/plans" element={guard('/plans', <PlansPage />)} />
+        <Route path="/subscriptions" element={guard('/subscriptions', <SubscriptionsPage />)} />
+        <Route path="/gateways" element={guard('/gateways', <PaymentGatewaysPage />)} />
         <Route path="/reports" element={guard('/reports', <ReportsPage />)} />
         <Route path="/audit" element={guard('/audit', <AuditPage />)} />
         <Route path="/profile" element={<ProfilePage />} />

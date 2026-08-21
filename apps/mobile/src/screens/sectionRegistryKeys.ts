@@ -19,6 +19,13 @@ export const ROLE_ALIAS: Record<string, string> = {
 
 /** Keys the registry declares directly, mirroring `sectionRegistry` in registry.tsx. */
 const OWN_KEYS = [
+  // Plan & billing — shared across every role.
+  'buyer:billing',
+  'seller:billing',
+  'transporter:billing',
+  'loaderco:billing',
+  'worker:billing',
+  'service:billing',
   // Verification (KYC) — shared across every role.
   'buyer:verify',
   'seller:verify',

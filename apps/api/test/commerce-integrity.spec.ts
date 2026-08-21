@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { BadRequestException } from '@nestjs/common';
 import { OrdersService } from '../src/orders/orders.module';
 import { TransportService } from '../src/transport/transport.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 /**
  * F11 (order idempotency) and F15 (single conditional winner on quote/RFQ
@@ -92,7 +93,7 @@ describe('transport quote acceptance is a single winner (F15)', () => {
       $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma)),
     };
     const notifications = { create: vi.fn(async () => {}) };
-    const svc = new TransportService(prisma as never, {} as never, notifications as never);
+    const svc = new TransportService(prisma as never, {} as never, notifications as never, noQuotas());
     return { svc, prisma };
   }
 

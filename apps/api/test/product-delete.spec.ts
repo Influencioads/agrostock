@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import { ProductsService } from '../src/products/products.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 const fkViolation = () =>
   new Prisma.PrismaClientKnownRequestError('Foreign key constraint failed', {
@@ -28,7 +29,7 @@ function serviceFor(opts: {
       update: vi.fn(async () => product),
     },
   };
-  return { svc: new ProductsService(prisma as never, {} as never, {} as never, {} as never), prisma };
+  return { svc: new ProductsService(prisma as never, {} as never, {} as never, {} as never, noQuotas()), prisma };
 }
 
 describe('ProductsService.remove', () => {

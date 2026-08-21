@@ -7,14 +7,27 @@ export * from './units';
 export * from './services';
 export * from './serviceHireFields';
 export * from './vehicles';
+export * from './billing';
 
-/** Platform roles (from the AgroTraders design). */
+/**
+ * Platform roles. Must mirror the `Role` enum in the API's Prisma schema — it is
+ * the key subscription plans, quotas and dashboards are all resolved by, so a
+ * role missing here silently gets no plan at all.
+ */
 export const Role = {
   Buyer: 'buyer',
   Seller: 'seller',
   Transporter: 'transporter',
   LoaderCo: 'loaderco',
+  /** General labour company (packers, sorters, line, harvest gangs, loaders). */
+  WorkerCo: 'workerco',
   Worker: 'worker',
+  // Service providers — one shared price ladder, five distinct dashboards.
+  Accountant: 'accountant',
+  Packer: 'packer',
+  Processor: 'processor',
+  FulfillmentPartner: 'fulfillment_partner',
+  FinancePartner: 'finance_partner',
   Admin: 'admin',
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];

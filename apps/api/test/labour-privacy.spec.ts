@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Prisma, WorkerTypeGroup } from '@prisma/client';
 import { DirectoryService } from '../src/directory/directory.module';
 import { canRoleSupplyGroup, WorkforceService } from '../src/workforce/workforce.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 function directory() {
   const prisma = { user: { findMany: vi.fn(async () => []) } };
@@ -68,7 +69,7 @@ describe('public worker directory excludes employed crew', () => {
  * needs both values at once.
  */
 describe('WorkerOffering rate rules', () => {
-  const svc = new WorkforceService({} as never);
+  const svc = new WorkforceService({} as never, {} as never, noQuotas());
   // The guard is deliberately private — it is an invariant of this service, not
   // an API. Reaching in beats making it public purely to be testable.
   const check = (dto: Record<string, unknown>) =>

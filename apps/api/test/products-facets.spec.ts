@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ProductsService } from '../src/products/products.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 /**
  * The facet endpoint exists so the browse panel stops inventing its own options.
@@ -55,7 +56,7 @@ function serviceForFacets({ groupBy = {}, scan = [] }: FacetCase = {}) {
     },
   };
   const categories = { fieldMap: async () => new Map([['sub1', ATTR_FIELDS]]) };
-  return { svc: new ProductsService(prisma as never, {} as never, {} as never, categories as never), prisma, groupByCalls };
+  return { svc: new ProductsService(prisma as never, {} as never, {} as never, categories as never, noQuotas()), prisma, groupByCalls };
 }
 
 describe('ProductsService facets', () => {

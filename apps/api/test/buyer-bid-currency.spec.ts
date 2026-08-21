@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BuyerBidsService } from '../src/buyer-bids/buyer-bids.module';
+import { noQuotas } from './helpers/entitlements-stub';
 
 // RUB→USD at the fallback rate the FxService ships with.
 const fx = {
@@ -10,7 +11,7 @@ const fx = {
 
 function service() {
   const prisma = { buyerBid: { create: vi.fn(async ({ data }: { data: unknown }) => data) } };
-  return new BuyerBidsService(prisma as never, { create: vi.fn() } as never, { emit: vi.fn() } as never, fx as never);
+  return new BuyerBidsService(prisma as never, { create: vi.fn() } as never, { emit: vi.fn() } as never, fx as never, {} as never, noQuotas());
 }
 
 const base = { title: 'Wheat for Jebel Ali', productName: 'Wheat', qtyValue: 100 };

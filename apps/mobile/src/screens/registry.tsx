@@ -28,6 +28,7 @@ import { LoaderTeams, LoaderAvailability, LoaderAttendance, LoaderPricing, Loade
 import { WorkerAttendance } from './worker/Attendance';
 import { WorkerReviews } from './worker/Reviews';
 import { WalletScreen, EarningsScreen } from './components/MoneyScreens';
+import { BillingScreen } from './components/BillingScreen';
 import { InvoiceCenter } from './components/InvoiceCenter';
 import { HiresScreen } from './HiresScreen';
 import { LabourOfferings } from './components/LabourOfferings';
@@ -45,6 +46,13 @@ const SectionEarnings = () => <EarningsScreen showTitle={false} />;
 export type SectionComponent = ComponentType<Record<string, never>>;
 
 export const sectionRegistry: Record<string, SectionComponent> = {
+  // Plan, quota meters and checkout — one screen behind every role.
+  'buyer:billing': BillingScreen,
+  'seller:billing': BillingScreen,
+  'transporter:billing': BillingScreen,
+  'loaderco:billing': BillingScreen,
+  'worker:billing': BillingScreen,
+  'service:billing': BillingScreen,
   // Verification (KYC) — shared across every role.
   'buyer:verify': Kyc,
   'seller:verify': Kyc,
