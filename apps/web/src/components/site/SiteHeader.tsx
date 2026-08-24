@@ -41,16 +41,18 @@ export function SiteHeader() {
             what got crushed when translated labels grew (170px of mark squeezed
             into 130px). */}
         <Link to="/" className="min-w-0 shrink-0">
-          {/* Never clip the wordmark. A `max-w` + `overflow-hidden` clamp here
-              cut it to "AgroTrad" mid-letter. The full name is 170px at
-              `text-xl`, but only ~145px is free once the hamburger and the auth
-              buttons take their share of a 360px row — so the type scales down
-              instead of the name being truncated. */}
+          {/* Glyph only below `sm` — the same rule the rest of this bar follows:
+              icons on the row, words in the drawer. Scaling the type down was
+              tried and does not work: on a 375px row the hamburger, the cart and
+              the auth buttons leave ~40px for the name, and "Регистрация"
+              alone is 108px, so the whole row needed 425px and `overflow-x: clip`
+              was cutting the sign-up button off instead of showing a small
+              wordmark. The glyph's `alt` still announces the product name. */}
           <BrandMark
             logoSrc={logoSrc}
             size="md"
             glyphClassName="shadow-cta"
-            wordmarkClassName="text-[15px] min-[400px]:text-lg sm:text-xl"
+            wordmarkClassName="hidden sm:inline text-xl"
           />
         </Link>
 
@@ -63,10 +65,12 @@ export function SiteHeader() {
             missing. Only the secondary controls (currency, language, Dashboard)
             still fold into the drawer; the primary action never does. */}
         <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2 xl:ms-0">
-          {/* display currency */}
-          <CurrencySelect className="hidden sm:block" />
-          {/* language */}
-          <LanguageSelect className="hidden sm:block" />
+          {/* Currency and language appear on the bar only where the drawer stops
+              carrying them: MobileNav renders both, and its hamburger is
+              `lg:hidden`, so `sm:block` here duplicated them across 640-1023px
+              and pushed the sign-up button off a 640px row in Russian. */}
+          <CurrencySelect className="hidden lg:block" />
+          <LanguageSelect className="hidden lg:block" />
 
           {/* Cart. Icon-only at every width — the row already has to fit the
               logo, the hamburger and the auth actions on a 360px phone. */}

@@ -59,7 +59,9 @@ function csvCell(v: string | number): string {
   // (counterparty names, transaction notes), so a value starting with =, +, -, @
   // or a control prefix would execute as a formula when the export is opened in
   // Excel/Sheets. Prefix with a single quote so it is read as literal text.
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  // A plain number is exempt: "-42.00" is a debit, not a payload, and quoting it
+  // makes it text a spreadsheet cannot sum — a statement that cannot be totalled.
+  if (/^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

@@ -200,9 +200,3 @@ export const safeSteps = [
   { n: '4', title: 'Payment released', desc: 'Funds released to seller. Dispute window protected.', icon: 'gauge' as const },
 ];
 
-export const footerCols = [
-  { h: 'Marketplace', links: ['Buy Products', 'Sell Products', 'Live Auctions', 'Offers', 'International Trade'] },
-  { h: 'Services', links: ['Book Transport', 'Hire Loaders', 'Safe Deal', 'Wallet', 'Logistics'] },
-  { h: 'Company', links: ['Global Offices', 'Community', 'About', 'Careers', 'Press'] },
-  { h: 'Support', links: ['Help Centre', 'Contact', 'KYC & Verification', 'Disputes', 'EN / RU Support'] },
-];

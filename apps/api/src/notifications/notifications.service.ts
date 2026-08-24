@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Notification, Prisma } from '@prisma/client';
-import { FALLBACK_LNG, isLang, type Lang } from '@agrotraders/i18n';
+import { FALLBACK_LNG, isLang } from '@agrotraders/i18n';
 import { renderNotification, type NotificationParams } from '@agrotraders/i18n/notifications';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  channelEnabled,
   ChatSystem,
   NotificationCategory,
   NotificationPrefs,
@@ -42,6 +43,13 @@ export interface CreateNotification {
 export interface NotificationCreatedEvent {
   notification: Notification;
   overrides: { email?: boolean; push?: boolean };
+  /**
+   * False when the recipient muted this category in-app: nothing was persisted
+   * and `notification` is an unsaved stand-in carrying the rendered text for the
+   * email/push listeners, which own their own toggles. Relays to a live client
+   * (the bell) must skip it — there is no row for the user to open or read.
+   */
+  inApp: boolean;
 }
 
 /**
@@ -58,38 +66,53 @@ export class NotificationsService {
     private events: EventEmitter2,
   ) {}
 
-  /** The locale to render this recipient's notification in: their saved preference, else English. */
-  private async recipientLocale(userId: string): Promise<Lang> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { locale: true } });
-    return user?.locale && isLang(user.locale) ? user.locale : FALLBACK_LNG;
-  }
-
   async create(n: CreateNotification) {
     // Render title/body from the i18n catalog in the recipient's locale so every
     // channel (in-app, toast, push, email) is localized. Explicit title/body
     // overrides win (passthrough user content); the raw type is the last resort.
-    const locale = await this.recipientLocale(n.userId);
-    const rendered = renderNotification(locale, n.type, n.params ?? {});
-    const title = n.title ?? rendered?.title ?? n.type;
-    const body = n.body ?? rendered?.body;
-
-    const notification = await this.prisma.notification.create({
-      data: {
-        userId: n.userId,
-        system: n.system,
-        type: n.type,
-        title,
-        body,
-        params: (n.params ?? undefined) as Prisma.InputJsonValue | undefined,
-        linkUrl: n.linkUrl,
-        data: (n.data ?? undefined) as Prisma.InputJsonValue | undefined,
-      },
+    const recipient = await this.prisma.user.findUnique({
+      where: { id: n.userId },
+      select: { locale: true, notificationPrefs: true },
     });
+    const locale = recipient?.locale && isLang(recipient.locale) ? recipient.locale : FALLBACK_LNG;
+    const rendered = renderNotification(locale, n.type, n.params ?? {});
+
+    const row = {
+      userId: n.userId,
+      system: n.system,
+      type: n.type,
+      title: n.title ?? rendered?.title ?? n.type,
+      body: n.body ?? rendered?.body ?? null,
+      linkUrl: n.linkUrl ?? null,
+    };
+
+    // The persisted row IS the in-app channel — the bell reads nothing else — so
+    // a category the user muted in-app is never written. Email and push resolve
+    // their own toggles in their listeners, so the fan-out still runs, off an
+    // unsaved stand-in row.
+    const inApp = channelEnabled(recipient?.notificationPrefs ?? null, n.system, 'inApp');
+    const notification: Notification = inApp
+      ? await this.prisma.notification.create({
+          data: {
+            ...row,
+            params: (n.params ?? undefined) as Prisma.InputJsonValue | undefined,
+            data: (n.data ?? undefined) as Prisma.InputJsonValue | undefined,
+          },
+        })
+      : {
+          ...row,
+          id: '',
+          readAt: null,
+          createdAt: new Date(),
+          params: (n.params ?? null) as Prisma.JsonValue,
+          data: (n.data ?? null) as Prisma.JsonValue,
+        };
     // Fire-and-forget fan-out; listeners own their own error handling so a
     // failing transport never breaks the request that created the notification.
     this.events.emit(NOTIFICATION_CREATED, {
       notification,
       overrides: { email: n.email, push: n.push },
+      inApp,
     } satisfies NotificationCreatedEvent);
     return notification;
   }

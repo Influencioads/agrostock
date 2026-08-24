@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Icon } from '@agrotraders/ui';
+import { convertCents, toUsdAmount } from '@agrotraders/api-client';
 import type { ApiAuctionBidRow, ApiAuctionDetail } from '@agrotraders/api-client';
 import { toUnit, unitSuffix } from '@agrotraders/types';
 import { api } from '../../lib/api';
@@ -37,8 +38,8 @@ export function BidPanel({ slug }: { slug: string }) {
   const { user, roles } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { fmtCents } = useCurrency();
-  const [amount, setAmount] = useState<string | null>(null); // major units; null = track the current price
+  const { currency, rate, fmtCents } = useCurrency();
+  const [amount, setAmount] = useState<string | null>(null); // DISPLAY-currency major units; null = track the current price
   const [autoOpen, setAutoOpen] = useState(false);
   const [autoMax, setAutoMax] = useState('');
   const [error, setError] = useState('');
@@ -59,10 +60,19 @@ export function BidPanel({ slug }: { slug: string }) {
   const isOwner = auction?.isOwner ?? false;
   // The field opens at whatever the lot stands at; the bidder edits it freely.
   const currentCents = auction?.highestCents ?? auction?.startBidCents ?? 0;
+  /**
+   * Every price on this panel is printed in the viewer's DISPLAY currency, so
+   * the offer field has to be quoted there too. It used to hold USD dollars
+   * under a converted headline with no marker on it: a bidder reading "₽83,467"
+   * and typing it placed an $83,467 bid — ~84x their intent, with no floor and
+   * no confirmation to catch it. Converted in, converted back out on submit.
+   */
+  const inDisplay = (usdCents: number) => String(Math.round(convertCents(usdCents, rate) * 100) / 100);
   // One account, one offer: once you have bid the field opens at YOUR standing
   // offer, because placing again revises it rather than adding a second row.
-  const amountText = amount ?? String((auction?.standing?.yourMaxCents ?? currentCents) / 100);
+  const amountText = amount ?? inDisplay(auction?.standing?.yourMaxCents ?? currentCents);
   const value = Number(amountText);
+  const usdAmount = toUsdAmount(value, rate); // what the API is given: USD dollars
   // The metric the lot is priced in, so "$8.20" always reads "$8.20/KG".
   const unit = unitSuffix(auction?.unit, t);
   const standing = auction?.standing;
@@ -70,7 +80,7 @@ export function BidPanel({ slug }: { slug: string }) {
 
   // Keep the auto-bid toggle in sync with the server's view of my ceiling.
   useEffect(() => {
-    if (autoMaxCents != null) { setAutoOpen(true); if (!autoMax) setAutoMax(String(autoMaxCents / 100)); }
+    if (autoMaxCents != null) { setAutoOpen(true); if (!autoMax) setAutoMax(inDisplay(autoMaxCents)); }
   }, [autoMaxCents]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const lastRaise = bids.length >= 2 ? bids[0].amountCents - bids[1].amountCents : null;
@@ -84,7 +94,7 @@ export function BidPanel({ slug }: { slug: string }) {
   };
 
   const place = useMutation({
-    mutationFn: () => api.auctions.placeBid(slug, value),
+    mutationFn: () => api.auctions.placeBid(slug, usdAmount),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['auction', slug] });
       qc.invalidateQueries({ queryKey: ['auction-bids', slug] });
@@ -95,7 +105,8 @@ export function BidPanel({ slug }: { slug: string }) {
   });
 
   const saveAuto = useMutation({
-    mutationFn: (clear: boolean) => (clear ? api.auctions.clearAutoBid(slug) : api.auctions.setAutoBid(slug, Number(autoMax))),
+    mutationFn: (clear: boolean) =>
+      clear ? api.auctions.clearAutoBid(slug) : api.auctions.setAutoBid(slug, toUsdAmount(Number(autoMax), rate)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['auction', slug] });
       qc.invalidateQueries({ queryKey: ['auction-bids', slug] });
@@ -110,10 +121,6 @@ export function BidPanel({ slug }: { slug: string }) {
     else setAutoOpen((o) => !o);
   };
   const onSaveAuto = () => { if (requireBuyer() && Number(autoMax) > 0) saveAuto.mutate(false); };
-
-  // Cents matter now that a lot can be priced per KG — rounding to whole dollars
-  // rendered an $8.20 bid as "$8".
-  const fmtUsd = (n: number) => '$' + n.toLocaleString('en-US', { maximumFractionDigits: 2 });
 
   return (
     <Card padded={false} className="overflow-hidden">
@@ -185,6 +192,8 @@ export function BidPanel({ slug }: { slug: string }) {
                 aria-label={t('auction.yourOfferLabel')}
                 className="h-[52px] w-full flex-1 border-0 text-center font-numeric text-2xl font-bold text-ink outline-none"
               />
+              {/* The field is quoted in the display currency — say which one. */}
+              <span className="ps-2 font-numeric text-sm font-bold text-ink-soft">{currency}</span>
             </div>
 
             <Button
@@ -194,7 +203,7 @@ export function BidPanel({ slug }: { slug: string }) {
               onClick={onBid}
               leftIcon={<Icon name="gavel" size={18} />}
             >
-              {ended ? t('site.ended') : t('auction.placeBidAmount', { amount: `${fmtUsd(value)}${unit}` })}
+              {ended ? t('site.ended') : t('auction.placeBidAmount', { amount: `${fmtCents(Math.round(usdAmount * 100))}${unit}` })}
             </Button>
             {error && <p className="mt-2 text-xs text-status-error">{error}</p>}
 
@@ -220,7 +229,7 @@ export function BidPanel({ slug }: { slug: string }) {
                   <input
                     type="text"
                     inputMode="decimal"
-                    placeholder={t('auction.maxPlaceholder')}
+                    placeholder={t('auction.maxPlaceholder', { currency })}
                     value={autoMax}
                     onChange={(e) => setAutoMax(e.target.value)}
                     disabled={ended}

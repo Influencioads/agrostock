@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark, Button, Card, Icon, Input } from '@agrotraders/ui';
 import { api } from '../lib/api';
+import { authErrorText } from '../lib/authError';
 import { useBranding } from '../branding/BrandingProvider';
 import { useI18n } from '../i18n';
 
@@ -12,12 +13,19 @@ export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
   const submit = async () => {
+    setError('');
     setBusy(true);
     try {
       await api.auth.forgotPassword(email);
       setSent(true);
+    } catch (e) {
+      // /auth/forgot-password is throttled at 3/min because it sends mail. Without
+      // this the 429 rejected into nothing and the page reported neither success
+      // nor failure — the visitor could not tell their request had been dropped.
+      setError(authErrorText(e, t));
     } finally {
       setBusy(false);
     }
@@ -50,6 +58,7 @@ export function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 leftIcon={<Icon name="user" size={16} />}
+                error={error || undefined}
                 required
               />
               <Button type="submit" fullWidth disabled={busy || !email}>

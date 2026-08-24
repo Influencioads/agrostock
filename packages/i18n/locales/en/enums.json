@@ -30,8 +30,11 @@
   "order_status": {
     "cancelled": "Cancelled",
     "delivered": "Delivered",
+    "dispatched": "Dispatched",
     "dispute": "Dispute",
+    "enquiry": "Enquiry sent",
     "in_transit": "In transit",
+    "packed": "Packed & ready",
     "paid": "Escrow held",
     "processing": "Processing",
     "quote": "Quote sent",

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Input, Modal } from '@agrotraders/ui';
 import { canCancel, nextStatusFor, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
@@ -102,7 +103,11 @@ export function SellerOrders() {
   const [respondTo, setRespondTo] = useState<ApiOrder | null>(null);
   const [dispatchOrder, setDispatchOrder] = useState<ApiOrderDetail | null>(null);
   const [invoiceFor, setInvoiceFor] = useState<ApiOrder | null>(null);
-  const [detailId, setDetailId] = useState<string | null>(null);
+  // FLOW-01: an order notification deep link (/orders/:id) forwards the id as
+  // ?open=. BuyerOrders honoured it and this list did not, so a seller tapping
+  // their own order alert landed on an unexpanded list.
+  const [searchParams] = useSearchParams();
+  const [detailId, setDetailId] = useState<string | null>(() => searchParams.get('open'));
   const [logisticsFor, setLogisticsFor] = useState<ApiOrder | null>(null);
   const [error, setError] = useState('');
   const invalidate = useOrderInvalidation();

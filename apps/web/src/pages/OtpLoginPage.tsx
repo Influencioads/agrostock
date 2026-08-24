@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BrandMark, Button, Card, Icon, Input } from '@agrotraders/ui';
-import { resolveApiError } from '@agrotraders/api-client';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../lib/api';
+import { authErrorText } from '../lib/authError';
 import { useBranding } from '../branding/BrandingProvider';
 import { useI18n } from '../i18n';
 
@@ -28,6 +28,10 @@ export function OtpLoginPage() {
     try {
       await api.auth.requestOtp(email);
       setStep('code');
+    } catch (e) {
+      // /auth/request-otp is throttled at 3/min because it sends mail. Without
+      // this the rejection was unhandled and the form simply never advanced.
+      setError(authErrorText(e, t));
     } finally {
       setBusy(false);
     }
@@ -40,11 +44,7 @@ export function OtpLoginPage() {
       await verifyOtp(email, code.trim());
       navigate(from, { replace: true });
     } catch (e) {
-      if (e instanceof Error && e.message.includes('admin.agrotraders.org')) {
-        setError(e.message);
-        return;
-      }
-      setError(resolveApiError(e, (c) => t(`errors:${c}`, { defaultValue: '' }) || undefined, t('errors:unknown')));
+      setError(authErrorText(e, t));
     } finally {
       setBusy(false);
     }
@@ -77,6 +77,7 @@ export function OtpLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 leftIcon={<Icon name="user" size={16} />}
+                error={error || undefined}
                 required
               />
               <Button type="submit" fullWidth disabled={busy || !email}>

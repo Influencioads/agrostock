@@ -2224,12 +2224,20 @@ export function createApiClient(opts: ApiClientOptions) {
       const original = error.config as (typeof error.config & { _retried?: boolean }) | undefined;
       const status = error.response?.status;
       const refreshTok = opts.getRefreshToken?.();
-      const isRefreshCall = original?.url?.includes('/auth/refresh');
+      // A 401 from a route that is *presenting* credentials means the credentials
+      // were refused — not that the access token expired. Refreshing there burns a
+      // round-trip and, worse, replaces "Invalid email or password" with the refresh
+      // call's own "your session has expired" (and force-logs-out a visitor who was
+      // only mistyping their password). Only the guarded /auth routes (me, sessions,
+      // logout-all) may recover a 401 by refreshing.
+      const isCredentialCall = /\/auth\/(login|register|refresh|request-otp|verify-otp|verify-email|resend-verification|forgot-password|reset-password)/.test(
+        original?.url ?? '',
+      );
       // In cookie mode the refresh token lives in the HttpOnly cookie, so we can
       // always attempt a refresh; in body mode we need a stored token to send.
       const canRefresh = cookieMode || !!refreshTok;
-      if (status !== 401 || !original || original._retried || !canRefresh || isRefreshCall) {
-        if (status === 401 && !canRefresh) opts.onAuthError?.();
+      if (status !== 401 || !original || original._retried || !canRefresh || isCredentialCall) {
+        if (status === 401 && !canRefresh && !isCredentialCall) opts.onAuthError?.();
         return Promise.reject(error);
       }
       original._retried = true;

@@ -362,3 +362,8 @@ export function WorkerInvoices() {
   const { t } = useI18n();
   return <InvoiceCenter title={t('console.nav.invoices')} sub={t('console.invoice.workerSub')} />;
 }
+
+/** Service providers get the same read-only centre: they raise an invoice from
+ *  an accepted enquiry, not from this screen. */
+export const ServiceInvoices = WorkerInvoices;
+

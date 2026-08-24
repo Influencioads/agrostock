@@ -17,7 +17,7 @@ interface LiveAuction {
   flag: string | null;
   seller?: { name: string } | null;
   sellerId?: string | null;
-  /** Only present for the auction owner — bids are private. */
+  /** Public: the API publishes every offer price; only identities are masked. */
   highestCents: number | null;
   startBidCents: number | null;
   bidCount: number;
@@ -35,8 +35,11 @@ function endsIn(end: string | null) {
 }
 
 /**
- * Live auction board. Bids are PRIVATE: the public sees the starting bid and
- * bid count; the highest bid is only shown to the auction's owner.
+ * Live auction board. Open ascending: the current highest bid and the bid count
+ * are public — only the bidders' identities are masked (AuctionsService.withPublic).
+ * "Owner view" is therefore a question of who owns the lot, NOT of whether the
+ * payload carries a highest bid: keying it off `highestCents != null` showed
+ * every stranger the owner's label and swapped away their only way in.
  */
 export function AuctionsPage() {
   const { t } = useI18n();
@@ -84,12 +87,13 @@ export function AuctionsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((a) => {
-            const mine = a.highestCents != null; // owner view: API only sends it to the owner
+            const mine = !!user && a.sellerId === user.id; // owner view = this seller's own lot
+            const bid = a.highestCents != null;
             return (
               <Card key={a.id} interactive className="flex h-full flex-col">
                 <div className="flex items-center justify-between">
                   <Badge tone="error" icon={<span className="h-1.5 w-1.5 rounded-full bg-status-error" />}>{t('page.auctions.live')}</Badge>
-                  <span className="text-xs text-ink-soft">{t('site.sealedBids', { count: a.bidCount })}</span>
+                  <span className="text-xs text-ink-soft">{t('auction.bidsN', { count: a.bidCount })}</span>
                 </div>
                 <div className="mt-3 flex items-center gap-3">
                   <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg bg-brand-surface text-3xl">
@@ -114,9 +118,11 @@ export function AuctionsPage() {
                 </div>
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <div className="text-xs text-ink-soft">{mine ? t('page.auctions.highestOwner') : t('page.auctions.startingBid')}</div>
+                    <div className="text-xs text-ink-soft">
+                      {mine ? t('page.auctions.highestOwner') : bid ? t('auction.currentBid') : t('page.auctions.startingBid')}
+                    </div>
                     <span className="font-display text-xl font-extrabold text-ink">
-                      {fmtCents(mine ? a.highestCents : a.startBidCents)}
+                      {fmtCents(bid ? a.highestCents : a.startBidCents)}
                     </span>
                   </div>
                   <div className="text-end">

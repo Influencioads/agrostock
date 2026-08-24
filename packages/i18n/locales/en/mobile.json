@@ -479,7 +479,7 @@
       "highestOwner": "Highest (only you see this)",
       "leading": "You're leading this lot.",
       "live": "LIVE AUCTION",
-      "maxPlaceholder": "Your max (USD)",
+      "maxPlaceholder": "Your max ({{currency}})",
       "noBidsOwner": "No bids yet.",
       "noBidsYou": "You haven't bid yet — be the first.",
       "onlyBuyers": "Only buyer accounts can bid.",

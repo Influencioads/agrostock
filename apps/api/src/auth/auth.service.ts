@@ -76,11 +76,22 @@ export class AuthService {
   /**
    * Open a new revocable session family (F39) and mint its first token pair.
    * The token's random `jti` is stored only as a hash; every refresh rotates it.
+   *
+   * A deactivated account gets no session, and the check lives HERE rather than
+   * in `login` because five paths mint sessions — login, email verification,
+   * password reset, email OTP and role switching. `refresh` refused a suspended
+   * account and `login` did not, so an admin suspension only stopped the user
+   * once their current token expired: they could sign in again and get a brand
+   * new 15-minute token whenever they liked, indefinitely. Guarding the one
+   * function they all funnel through is what makes suspension actually suspend.
    */
   private async issueSession(
-    user: { id: string; email: string; role: string },
+    user: { id: string; email: string; role: string; active?: boolean },
     meta?: SessionMeta,
   ) {
+    if (user.active === false) {
+      throw AppException.unauthorized('auth.account_disabled', 'Account is deactivated');
+    }
     const jti = randomUUID();
     const session = await this.prisma.refreshSession.create({
       data: {

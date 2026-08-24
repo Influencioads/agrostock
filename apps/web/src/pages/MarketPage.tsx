@@ -386,7 +386,8 @@ export function MarketPage() {
     if (minPrice || maxPrice) {
       out.push({
         key: 'price',
-        label: `$${minPrice || '0'}–${maxPrice || '∞'}`,
+        // Both bounds carry the symbol; "$268–2140" reads like a bare number.
+        label: `$${minPrice || '0'}–${maxPrice ? '$' + maxPrice : '∞'}`,
         tone: 'slate',
         onRemove: () => patch((next) => { next.delete('minPrice'); next.delete('maxPrice'); next.delete('page'); }),
       });

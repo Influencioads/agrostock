@@ -8,7 +8,13 @@ import { ORDER_LABELS, nextStatusFor, type ApiOrderStatus } from '@agrotraders/a
 export const usd = (cents: number | null | undefined) =>
   cents == null
     ? '—'
-    : '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    : // Intl, not '$' + number: a hand-concatenated sign renders debits as "$-50".
+      (cents / 100).toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
 
 /** Parse an API amount/price string like "$48,200" into a plain number. */
 export const parseAmount = (a: string | null | undefined): number => {

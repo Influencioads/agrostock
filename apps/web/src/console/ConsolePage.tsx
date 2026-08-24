@@ -19,7 +19,7 @@ import { EarningsSection } from './sections/EarningsSection';
 import { TransporterRequests, TransporterTrips, TransporterVehicles, TransporterRoutes } from './sections/transporter';
 import { TransporterDashboard } from './sections/TransporterDashboard';
 import { TransporterQuotes, TransporterDrivers, TransporterInvoices, TransporterOrders, TransporterRatings, TransporterMyRequests } from './sections/TransporterExtras';
-import { SellerInvoices, LoadercoInvoices, WorkerInvoices } from './sections/InvoiceCenter';
+import { SellerInvoices, LoadercoInvoices, ServiceInvoices, WorkerInvoices } from './sections/InvoiceCenter';
 import { LoaderWorkers, LoaderTeams } from './sections/loaderco';
 import { LoaderDashboard } from './sections/LoaderDashboard';
 import { LoaderJobRequests, LoaderActiveJobs, LoaderAvailability, LoaderPricing, LoaderAttendance, LoaderReviews } from './sections/LoaderExtras';
@@ -29,7 +29,7 @@ import { HiresSection } from './sections/HiresSection';
 import { KycSection } from './sections/KycSection';
 import { ProfileForm } from '../pages/ProfileFormPage';
 import { isServiceRole, SERVICE_ROLES } from '@agrotraders/types';
-import { ServiceEnquiries, ServiceProfile, ServiceProviderDashboard } from './sections/ServiceProvider';
+import { ServiceEnquiries, ServiceProfile, ServiceProviderDashboard, ServiceReviews } from './sections/ServiceProvider';
 import { LabourOfferings } from './sections/LabourOfferings';
 import { BillingSection } from './sections/BillingSection';
 
@@ -133,9 +133,6 @@ for (const role of SERVICE_ROLES) NAV[role] = SERVICE_NAV;
 NAV.workerco = NAV.loaderco;
 
 
-/** Roles with a dedicated dashboard title; others fall back to `console.title.fallback`. */
-const TITLE_ROLES = new Set(['buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker']);
-
 /**
  * F05: map the section slug in a notification deep link (/console/<slug>) to the
  * internal section id when they differ. Unmapped slugs that don't match a nav id
@@ -145,6 +142,19 @@ const SECTION_ALIAS: Record<string, string> = {
   products: 'inventory', // seller listings notification
   settings: 'verify', // /console/settings/verification
   loaders: 'transport', // buyer loader/transport bookings
+};
+
+/**
+ * The same mapping where it depends on WHO is looking.
+ *
+ * An order deep link always says `orders`, but a transporter has no `orders`
+ * section — their order queue is `loads` — so the link degraded to the dashboard
+ * for them while working for the buyer and the seller. Only consulted when the
+ * slug does not already name a section this role has, so it can never shadow a
+ * real one.
+ */
+const ROLE_SECTION_ALIAS: Record<string, Record<string, string>> = {
+  transporter: { orders: 'loads' },
 };
 
 function ComingSoon({ labelKey }: { labelKey: string }) {
@@ -179,7 +189,10 @@ export function ConsolePage() {
   const resolveSection = (slug: string | undefined): string => {
     if (!slug) return 'dashboard';
     const target = SECTION_ALIAS[slug] ?? slug;
-    return nav.some((n) => n.id === target) ? target : 'dashboard';
+    if (nav.some((n) => n.id === target)) return target;
+    const perRole = ROLE_SECTION_ALIAS[role]?.[slug];
+    if (perRole && nav.some((n) => n.id === perRole)) return perRole;
+    return 'dashboard';
   };
   const [active, setActive] = useState(() => resolveSection(section));
 
@@ -259,6 +272,8 @@ export function ConsolePage() {
     if (isServiceRole(role)) {
       if (active === 'enquiries') return <ServiceEnquiries />;
       if (active === 'serviceProfile') return <ServiceProfile />;
+      if (active === 'invoices') return <ServiceInvoices />;
+      if (active === 'reviews') return <ServiceReviews />;
     }
     // One screen for both: a loading company and an independent worker publish
     // the same thing, differing only in headcount.
@@ -272,7 +287,10 @@ export function ConsolePage() {
 
   return (
     <ConsoleLayout
-      title={TITLE_ROLES.has(role) ? t(`console.title.${role}`) : t('console.title.fallback')}
+      // A hand-kept list of "roles that have a title" drifted from the locale
+      // files and painted `console.title.workerco` in the header; ask i18n and
+      // let any role without its own title fall back.
+      title={t(`console.title.${role}`, { defaultValue: t('console.title.fallback') })}
       sub={user?.name ?? ''}
       nav={nav}
       active={active}

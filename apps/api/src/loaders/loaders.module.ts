@@ -16,7 +16,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { JobStatus } from '@prisma/client';
+import { JobStatus, type Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import {
   IsArray,
@@ -205,9 +205,9 @@ export class LoadersService {
     if (!t || t.loadercoId !== loadercoId) throw new ForbiddenException('Not your team');
   }
 
-  async addWorker(loadercoId: string, b: CreateWorkerDto) {
+  async addWorker(loadercoId: string, b: CreateWorkerDto, role: Role = 'loaderco') {
     // Managed crew headcount is the loading-company ladder's headline quota.
-    await this.entitlements.assertWithin(loadercoId, 'loaderco', 'managedWorkers');
+    await this.entitlements.assertWithin(loadercoId, role, 'managedWorkers');
     await this.assertTeamOwned(b.teamId, loadercoId);
     const wantsLogin = !!(b.loginHandle && b.loginPassword);
     return this.prisma.$transaction(async (tx) => {
@@ -663,34 +663,42 @@ export class LoadersService {
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('loaders')
+/**
+ * A general labour company (`workerco`) runs the same crew console as a loading
+ * company — same jobs, workers, teams, availability, rates and attendance, all
+ * scoped by the caller's own id. They differ only in which worker types they may
+ * publish, which the workforce module enforces. Locking these routes to
+ * `loaderco` alone 403'd eight of the thirteen sections the web console gives a
+ * workerco.
+ */
 export class LoadersController {
   constructor(private svc: LoadersService) {}
 
   // teams
-  @Roles('loaderco') @Get('teams') teams(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
+  @Roles('loaderco', 'workerco') @Get('teams') teams(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
     return this.svc.teams(u.id, locale);
   }
-  @Roles('loaderco') @Post('teams') addTeam(@CurrentUser() u: AuthUser, @Body() b: CreateTeamDto) {
+  @Roles('loaderco', 'workerco') @Post('teams') addTeam(@CurrentUser() u: AuthUser, @Body() b: CreateTeamDto) {
     return this.svc.addTeam(u.id, b.name);
   }
-  @Roles('loaderco') @Patch('teams/:id') updateTeam(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UpdateTeamDto) {
+  @Roles('loaderco', 'workerco') @Patch('teams/:id') updateTeam(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UpdateTeamDto) {
     return this.svc.updateTeam(id, u.id, b.name);
   }
-  @Roles('loaderco') @Post('teams/:id/delete') delTeam(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  @Roles('loaderco', 'workerco') @Post('teams/:id/delete') delTeam(@CurrentUser() u: AuthUser, @Param('id') id: string) {
     return this.svc.delTeam(id, u.id);
   }
 
   // workers
-  @Roles('loaderco') @Get('workers') workers(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
+  @Roles('loaderco', 'workerco') @Get('workers') workers(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
     return this.svc.workers(u.id, locale);
   }
-  @Roles('loaderco') @Post('workers') addWorker(@CurrentUser() u: AuthUser, @Body() b: CreateWorkerDto) {
-    return this.svc.addWorker(u.id, b);
+  @Roles('loaderco', 'workerco') @Post('workers') addWorker(@CurrentUser() u: AuthUser, @Body() b: CreateWorkerDto) {
+    return this.svc.addWorker(u.id, b, u.role as Role);
   }
-  @Roles('loaderco') @Patch('workers/:id') updateWorker(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UpdateWorkerDto) {
+  @Roles('loaderco', 'workerco') @Patch('workers/:id') updateWorker(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UpdateWorkerDto) {
     return this.svc.updateWorker(id, u.id, b);
   }
-  @Roles('loaderco') @Post('workers/:id/delete') delWorker(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  @Roles('loaderco', 'workerco') @Post('workers/:id/delete') delWorker(@CurrentUser() u: AuthUser, @Param('id') id: string) {
     return this.svc.delWorker(id, u.id);
   }
 
@@ -698,25 +706,25 @@ export class LoadersController {
   @Post('jobs') createJob(@CurrentUser() u: AuthUser, @Body() b: CreateJobDto) {
     return this.svc.createJob(u.id, b);
   }
-  @Roles('loaderco') @Get('jobs/open') openJobs(@Locale() locale: Lang) {
+  @Roles('loaderco', 'workerco') @Get('jobs/open') openJobs(@Locale() locale: Lang) {
     return this.svc.openJobs(locale);
   }
-  @Roles('loaderco') @Get('jobs/mine') myJobs(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
+  @Roles('loaderco', 'workerco') @Get('jobs/mine') myJobs(@CurrentUser() u: AuthUser, @Locale() locale: Lang) {
     return this.svc.myJobs(u.id, locale);
   }
-  @Roles('loaderco') @Get('jobs/:id') jobDetail(@CurrentUser() u: AuthUser, @Param('id') id: string, @Locale() locale: Lang) {
+  @Roles('loaderco', 'workerco') @Get('jobs/:id') jobDetail(@CurrentUser() u: AuthUser, @Param('id') id: string, @Locale() locale: Lang) {
     return this.svc.jobDetail(id, u.id, locale);
   }
-  @Roles('loaderco') @Post('jobs/:id/claim') claim(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  @Roles('loaderco', 'workerco') @Post('jobs/:id/claim') claim(@CurrentUser() u: AuthUser, @Param('id') id: string) {
     return this.svc.claim(id, u.id);
   }
-  @Roles('loaderco') @Post('jobs/:id/assign') assign(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: AssignDto) {
+  @Roles('loaderco', 'workerco') @Post('jobs/:id/assign') assign(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: AssignDto) {
     return this.svc.assign(id, u.id, b);
   }
-  @Roles('loaderco') @Post('jobs/:id/unassign') unassign(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UnassignDto) {
+  @Roles('loaderco', 'workerco') @Post('jobs/:id/unassign') unassign(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UnassignDto) {
     return this.svc.unassign(id, u.id, b.workerId);
   }
-  @Roles('loaderco') @Post('jobs/:id/status') setJobStatus(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: JobStatusDto) {
+  @Roles('loaderco', 'workerco') @Post('jobs/:id/status') setJobStatus(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: JobStatusDto) {
     return this.svc.setJobStatus(id, u.id, b.status);
   }
   @Post('jobs/:id/review') reviewJob(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: ReviewDto) {
@@ -724,40 +732,40 @@ export class LoadersController {
   }
 
   // availability
-  @Roles('loaderco') @Get('availability') availability(@CurrentUser() u: AuthUser) {
+  @Roles('loaderco', 'workerco') @Get('availability') availability(@CurrentUser() u: AuthUser) {
     return this.svc.availability(u.id);
   }
-  @Roles('loaderco') @Put('availability') setAvailability(@CurrentUser() u: AuthUser, @Body() b: AvailabilityDto) {
+  @Roles('loaderco', 'workerco') @Put('availability') setAvailability(@CurrentUser() u: AuthUser, @Body() b: AvailabilityDto) {
     return this.svc.setAvailability(u.id, b.cells ?? []);
   }
 
   // attendance
-  @Roles('loaderco') @Get('attendance') attendance(@CurrentUser() u: AuthUser, @Query('date') date?: string) {
+  @Roles('loaderco', 'workerco') @Get('attendance') attendance(@CurrentUser() u: AuthUser, @Query('date') date?: string) {
     return this.svc.attendanceList(u.id, date);
   }
-  @Roles('loaderco') @Post('attendance/checkin') attendanceCheckin(@CurrentUser() u: AuthUser, @Body() b: AttendanceCheckinDto) {
+  @Roles('loaderco', 'workerco') @Post('attendance/checkin') attendanceCheckin(@CurrentUser() u: AuthUser, @Body() b: AttendanceCheckinDto) {
     return this.svc.attendanceCheckin(u.id, b.workerId, b.jobId);
   }
-  @Roles('loaderco') @Post('attendance/checkout') attendanceCheckout(@CurrentUser() u: AuthUser, @Body() b: AttendanceCheckoutDto) {
+  @Roles('loaderco', 'workerco') @Post('attendance/checkout') attendanceCheckout(@CurrentUser() u: AuthUser, @Body() b: AttendanceCheckoutDto) {
     return this.svc.attendanceCheckout(u.id, b.id);
   }
 
   // rates
-  @Roles('loaderco') @Get('rates') rates(@CurrentUser() u: AuthUser) {
+  @Roles('loaderco', 'workerco') @Get('rates') rates(@CurrentUser() u: AuthUser) {
     return this.svc.rates(u.id);
   }
-  @Roles('loaderco') @Post('rates') addRate(@CurrentUser() u: AuthUser, @Body() b: RateDto) {
+  @Roles('loaderco', 'workerco') @Post('rates') addRate(@CurrentUser() u: AuthUser, @Body() b: RateDto) {
     return this.svc.addRate(u.id, b);
   }
-  @Roles('loaderco') @Patch('rates/:id') updateRate(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UpdateRateDto) {
+  @Roles('loaderco', 'workerco') @Patch('rates/:id') updateRate(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: UpdateRateDto) {
     return this.svc.updateRate(id, u.id, b);
   }
-  @Roles('loaderco') @Post('rates/:id/delete') delRate(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  @Roles('loaderco', 'workerco') @Post('rates/:id/delete') delRate(@CurrentUser() u: AuthUser, @Param('id') id: string) {
     return this.svc.delRate(id, u.id);
   }
 
   // reviews
-  @Roles('loaderco') @Get('reviews') reviews(@CurrentUser() u: AuthUser) {
+  @Roles('loaderco', 'workerco') @Get('reviews') reviews(@CurrentUser() u: AuthUser) {
     return this.svc.reviews(u.id);
   }
 

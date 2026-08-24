@@ -79,8 +79,9 @@ export class SupportGateway implements OnGatewayConnection {
    * everything else is relayed by CommunityGateway.
    */
   @OnEvent(NOTIFICATION_CREATED)
-  onNotificationCreated({ notification }: NotificationCreatedEvent) {
-    if (notification.system === 'support') {
+  onNotificationCreated({ notification, inApp }: NotificationCreatedEvent) {
+    // Muted in-app → nothing was persisted; see CommunityGateway's relay.
+    if (inApp && notification.system === 'support') {
       this.server?.to(userRoom(notification.userId)).emit('notify:new', notification);
     }
   }

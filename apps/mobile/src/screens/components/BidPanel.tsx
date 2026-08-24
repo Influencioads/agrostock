@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { convertCents, toUsdAmount } from '@agrotraders/api-client';
 import type { ApiAuctionDetail } from '@agrotraders/api-client';
 import { toUnit, unitSuffix } from '@agrotraders/types';
 import { api } from '../../lib/api';
@@ -26,12 +27,12 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
  */
 export function BidPanel({ slug }: { slug: string }) {
   const { t } = useI18n();
-  const { fmtCents } = useCurrency();
+  const { currency, rate, fmtCents } = useCurrency();
   const apiError = useApiError();
   const { user, roles } = useAuth();
   const nav = useNavigation<Nav>();
   const qc = useQueryClient();
-  const [amount, setAmount] = useState<number | null>(null); // dollars; null = track min
+  const [amount, setAmount] = useState<number | null>(null); // DISPLAY-currency major units; null = track the lot
   const [autoOpen, setAutoOpen] = useState(false);
   const [autoMax, setAutoMax] = useState('');
   const [error, setError] = useState('');
@@ -45,15 +46,23 @@ export function BidPanel({ slug }: { slug: string }) {
   // — or at YOUR standing offer once you have one, since one account holds a
   // single revisable offer — and the ± buttons nudge by 1% of the lot price.
   const currentCents = auction?.highestCents ?? auction?.startBidCents ?? 0;
-  const value = amount ?? (auction?.standing?.yourMaxCents ?? currentCents) / 100;
-  const nudge = Math.max(0.01, Math.round(currentCents * 0.01) / 100);
+  /**
+   * Every price on this card is printed in the viewer's DISPLAY currency, so the
+   * offer is quoted there too. It used to step a USD figure under a converted
+   * headline: a bidder shown "₽83,467" was offering $83,467, ~84x their intent.
+   * Converted in here, converted back to USD dollars on submit.
+   */
+  const inDisplay = (usdCents: number) => Math.round(convertCents(usdCents, rate) * 100) / 100;
+  const value = amount ?? inDisplay(auction?.standing?.yourMaxCents ?? currentCents);
+  const usdAmount = toUsdAmount(value, rate); // what the API is given: USD dollars
+  const nudge = Math.max(0.01, Math.round(inDisplay(currentCents)) / 100);
   const unit = unitSuffix(auction?.unit, t);
   const isOwner = auction?.isOwner ?? false;
   const standing = auction?.standing;
   const autoMaxCents = standing?.autoMaxCents ?? null;
 
   useEffect(() => {
-    if (autoMaxCents != null) { setAutoOpen(true); if (!autoMax) setAutoMax(String(Math.round(autoMaxCents / 100))); }
+    if (autoMaxCents != null) { setAutoOpen(true); if (!autoMax) setAutoMax(String(Math.round(inDisplay(autoMaxCents)))); }
   }, [autoMaxCents]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const requireBuyer = () => {
@@ -69,12 +78,13 @@ export function BidPanel({ slug }: { slug: string }) {
     qc.invalidateQueries({ queryKey: ['auction-bids', slug] });
   };
   const place = useMutation({
-    mutationFn: () => api.auctions.placeBid(slug, value),
+    mutationFn: () => api.auctions.placeBid(slug, usdAmount),
     onSuccess: () => { invalidate(); setAmount(null); setError(''); },
     onError: (e) => setError(apiError(e, t('compX.bid.placeError'))),
   });
   const saveAuto = useMutation({
-    mutationFn: (clear: boolean) => (clear ? api.auctions.clearAutoBid(slug) : api.auctions.setAutoBid(slug, Number(autoMax))),
+    mutationFn: (clear: boolean) =>
+      clear ? api.auctions.clearAutoBid(slug) : api.auctions.setAutoBid(slug, toUsdAmount(Number(autoMax), rate)),
     onSuccess: () => { invalidate(); setError(''); },
     onError: (e) => setError(apiError(e, t('compX.bid.placeError'))),
   });
@@ -126,7 +136,7 @@ export function BidPanel({ slug }: { slug: string }) {
               </Pressable>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 {/* Cents matter now that a lot can be priced per KG. */}
-                <Txt style={{ fontSize: 22, fontWeight: '800' }}>${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}</Txt>
+                <Txt style={{ fontSize: 22, fontWeight: '800' }}>{fmtCents(Math.round(usdAmount * 100))}</Txt>
               </View>
               <Pressable onPress={() => step(1)} style={{ width: 46, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
                 <Txt style={{ fontSize: 22, color: C.dark }}>+</Txt>
@@ -135,7 +145,7 @@ export function BidPanel({ slug }: { slug: string }) {
           </View>
 
           <Button
-            title={t('compX.bid.placeAmount', { amount: `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}${unit}` })}
+            title={t('compX.bid.placeAmount', { amount: `${fmtCents(Math.round(usdAmount * 100))}${unit}` })}
             variant="primary"
             icon="hammer"
             full
@@ -157,7 +167,7 @@ export function BidPanel({ slug }: { slug: string }) {
           {autoOpen ? (
             <Row style={{ gap: 8, alignItems: 'flex-end' }}>
               <View style={{ flex: 1 }}>
-                <Input placeholder={t('compX.bid.maxPlaceholder')} keyboardType="numeric" value={autoMax} onChangeText={setAutoMax} />
+                <Input placeholder={t('compX.bid.maxPlaceholder', { currency })} keyboardType="numeric" value={autoMax} onChangeText={setAutoMax} />
               </View>
               <Button title={autoMaxCents != null ? t('mobile2.form.save') : t('compX.bid.setMax')} variant="outline" size="sm" disabled={saveAuto.isPending || !Number(autoMax)} onPress={onSaveAuto} />
             </Row>

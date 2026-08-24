@@ -2,26 +2,55 @@ import { Link } from 'react-router-dom';
 import { BrandMark } from '@agrotraders/ui';
 import { useBranding } from '../../branding/BrandingProvider';
 import { useI18n } from '../../i18n';
-import { footerCols } from '../../mock/data';
 
-const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-/** Map a footer label to a real destination; unknown labels fall to a CMS page. */
-const LINK_MAP: Record<string, string> = {
-  'Buy Products': '/market',
-  'Sell Products': '/register',
-  'Live Auctions': '/auctions',
-  'Offers': '/market',
-  'International Trade': '/market',
-  'Book Transport': '/transporters',
-  'Hire Loaders': '/loaders',
-  'Safe Deal': '/safe-deal',
-  'Wallet': '/console',
-  'Logistics': '/transporters',
-  'Global Offices': '/offices',
-  'Community': '/',
-};
-const hrefFor = (label: string) => LINK_MAP[label] ?? `/p/${slugify(label)}`;
+/**
+ * Column headings and link labels are catalog keys (`site.footer.*`), not
+ * English strings: the label is what the user reads, the `to` is what the
+ * router needs, and keeping them apart is what lets the footer translate.
+ * The `/p/...` targets are CMS slugs — do not re-derive them from the label.
+ */
+const COLS: { h: string; links: [key: string, to: string][] }[] = [
+  {
+    h: 'marketplace',
+    links: [
+      ['buyProducts', '/market'],
+      ['sellProducts', '/register'],
+      ['liveAuctions', '/auctions'],
+      ['offers', '/market'],
+      ['intlTrade', '/market'],
+    ],
+  },
+  {
+    h: 'services',
+    links: [
+      ['bookTransport', '/transporters'],
+      ['hireLoaders', '/loaders'],
+      ['safeDeal', '/safe-deal'],
+      ['wallet', '/console'],
+      ['logistics', '/transporters'],
+    ],
+  },
+  {
+    h: 'company',
+    links: [
+      ['offices', '/offices'],
+      ['community', '/'],
+      ['about', '/p/about'],
+      ['careers', '/p/careers'],
+      ['press', '/p/press'],
+    ],
+  },
+  {
+    h: 'support',
+    links: [
+      ['help', '/p/help-centre'],
+      ['contact', '/p/contact'],
+      ['kyc', '/p/kyc-verification'],
+      ['disputes', '/p/disputes'],
+      ['languages', '/p/en-ru-support'],
+    ],
+  },
+];
 
 export function SiteFooter() {
   const { t } = useI18n();
@@ -38,14 +67,14 @@ export function SiteFooter() {
           />
           <p className="mt-4 max-w-xs text-sm text-mint/70">{t('site.footerTagline')}</p>
         </div>
-        {footerCols.map((col) => (
+        {COLS.map((col) => (
           <div key={col.h}>
-            <h4 className="font-display text-sm font-bold text-white">{col.h}</h4>
+            <h4 className="font-display text-sm font-bold text-white">{t(`site.footer.col.${col.h}`)}</h4>
             <ul className="mt-3 space-y-2 text-sm">
-              {col.links.map((l) => (
-                <li key={l}>
-                  <Link to={hrefFor(l)} className="text-mint/70 transition hover:text-mango">
-                    {l}
+              {col.links.map(([key, to]) => (
+                <li key={key}>
+                  <Link to={to} className="text-mint/70 transition hover:text-mango">
+                    {t(`site.footer.link.${key}`)}
                   </Link>
                 </li>
               ))}

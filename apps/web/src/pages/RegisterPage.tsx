@@ -134,6 +134,13 @@ export function RegisterPage() {
     }
   };
 
+  // `console.role.buyer_seller` exists in no catalog — the trading account is
+  // two roles. Both the card and the submit button go through this, so neither
+  // can render the raw key.
+  // Shown inline under Confirm password, so the form-level banner skips it.
+  const isMismatch = error === t('page.resetPassword.mismatch');
+  const roleLabel = (id: string) =>
+    id === 'buyer_seller' ? `${t('console.role.buyer')} / ${t('console.role.seller')}` : t(`console.role.${id}`);
   const activeRole = roles.find((r) => r.id === form.role);
   const effectiveRole = form.role === 'service_provider' ? serviceRole : form.role;
 
@@ -217,14 +224,10 @@ export function RegisterPage() {
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-ink">
-                        {r.id === 'buyer_seller'
-                          ? `${t('console.role.buyer')} / ${t('console.role.seller')}`
-                          : t(`console.role.${r.id}`)}
+                        {roleLabel(r.id)}
                       </span>
                       <span className="block text-xs text-ink-soft">
-                        {r.id === 'buyer_seller'
-                          ? `${t('page.register.roleDesc.buyer')} · ${t('page.register.roleDesc.seller')}`
-                          : t(`page.register.roleDesc.${r.id}`)}
+                        {t(`page.register.roleDesc.${r.id}`)}
                       </span>
                     </span>
                   </button>
@@ -267,7 +270,7 @@ export function RegisterPage() {
               placeholder={t('page.register.passwordHint')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              error={error === t('page.resetPassword.mismatch') ? error : undefined}
+              error={isMismatch ? error : undefined}
               required
             />
             {/* Two inputs side by side leave ~155px each on a phone, which
@@ -411,9 +414,9 @@ export function RegisterPage() {
               </div>
             )}
 
-            {error && <p className="text-sm font-semibold text-status-error">{error}</p>}
+            {error && !isMismatch && <p className="text-sm font-semibold text-status-error">{error}</p>}
             <Button type="submit" fullWidth disabled={busy} leftIcon={<Icon name="check" size={16} />}>
-              {busy ? t('page.register.creating') : t('page.register.createAccount', { role: t(`console.role.${effectiveRole}`) })}
+              {busy ? t('page.register.creating') : t('page.register.createAccount', { role: roleLabel(effectiveRole) })}
             </Button>
           </form>
 

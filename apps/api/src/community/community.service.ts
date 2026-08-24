@@ -13,6 +13,7 @@ import { AuditService } from '../common/audit.service';
 import { maskContacts, sanitizeMessage } from '../common/sanitize';
 import { localize } from '../common/locale';
 import { TranslationService } from '../translation/translation.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   COMMUNITY_GROUP_UPSERTED,
   COMMUNITY_POST_UPSERTED,
@@ -88,6 +89,7 @@ export class CommunityService {
     private audit: AuditService,
     private events: EventEmitter2,
     private translation: TranslationService,
+    private notifications: NotificationsService,
   ) {}
 
   private baseLang(tag?: string | null): string {
@@ -707,7 +709,29 @@ export class CommunityService {
       await this.linkAttachments(user.id, message.id, opts.attachmentIds);
     }
     this.detectMessageLang(message.id, message.body);
-    return this.hydrateMessage(message.id);
+    const hydrated = await this.hydrateMessage(message.id);
+    await this.notifyMembers(groupId, user.id, hydrated?.body);
+    return hydrated;
+  }
+
+  /**
+   * Notify everyone in a conversation about a new message. Lives here, not in
+   * the gateway: `POST /community/messages` is the REST fallback the clients use
+   * whenever the chat socket is down — precisely when the recipient will get no
+   * `message:new` frame either — so hanging the notification off the gateway
+   * silently dropped it on the path that needed it most. create() emits
+   * NOTIFICATION_CREATED, which is what relays the live badge and push/email.
+   */
+  private async notifyMembers(groupId: string, senderId: string, preview?: string | null) {
+    for (const userId of await this.groupMemberIds(groupId, senderId)) {
+      await this.notifications.create({
+        userId,
+        system: 'community',
+        type: 'community.message',
+        body: preview?.slice(0, 120),
+        data: { groupId },
+      });
+    }
   }
 
   private async linkAttachments(uploaderId: string, messageId: string, attachmentIds: string[]) {
@@ -837,6 +861,14 @@ export class CommunityService {
     await this.prisma.communityDirectThread.update({ where: { id: thread.id }, data: { lastMessageAt: new Date() } });
     this.detectMessageLang(message.id, message.body);
     const hydrated = await this.hydrateMessage(message.id);
+    // Same reason as notifyMembers(): the REST fallback must notify too.
+    await this.notifications.create({
+      userId: otherUserId,
+      system: 'community',
+      type: 'community.dm',
+      body: hydrated?.body?.slice(0, 120),
+      data: { threadId: thread.id },
+    });
     return { threadId: thread.id, message: hydrated, recipientId: otherUserId };
   }
 

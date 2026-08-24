@@ -541,6 +541,15 @@ export class AdminService {
         this.prisma.deviceToken.deleteMany({ where: { userId: id } }),
         this.prisma.refreshSession.deleteMany({ where: { userId: id } }),
         this.prisma.wallet.deleteMany({ where: { userId: id } }),
+        // KYC is personal data, not a trade record, so the footprint check above
+        // deliberately does NOT count it as a reason to keep the account. It was
+        // missing here though, and `KycRecord.user` restricts, so the delete hit
+        // P2003 and came back as "records that prevent deletion" — meaning the
+        // one account you most want to be able to erase, the one that only ever
+        // uploaded ID documents, was the one that could not be.
+        // ponytail: the rows go, the files behind `KycDocument.storageKey` do
+        // not — a private-store sweep belongs with a real erasure job.
+        this.prisma.kycRecord.deleteMany({ where: { userId: id } }),
         this.prisma.profile.deleteMany({ where: { userId: id } }),
         this.prisma.user.delete({ where: { id } }),
       ]);

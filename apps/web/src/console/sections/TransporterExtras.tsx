@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal, type BadgeTone, type IconName } from '@agrotraders/ui';
 import type { ApiDriver, ApiOrder } from '@agrotraders/api-client';
@@ -392,7 +393,10 @@ export function TransporterInvoices() {
 export function TransporterOrders() {
   const { t } = useI18n();
   const orderText = (s: ApiOrder['status']) => t(`enums:order_status.${s}`, { defaultValue: orderLabel[s] ?? s });
-  const [detailId, setDetailId] = useState<string | null>(null);
+  // FLOW-01: honour the ?open= id an order deep link forwards, as the buyer and
+  // seller order lists do.
+  const [searchParams] = useSearchParams();
+  const [detailId, setDetailId] = useState<string | null>(() => searchParams.get('open'));
   const { data: orders = [], isLoading } = useQuery<ApiOrder[]>({
     queryKey: ['transporting-orders'],
     queryFn: () => api.orders.transporting(),

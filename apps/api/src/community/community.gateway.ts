@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import { WsAuthService } from '../realtime/ws-auth.service';
-import { NotificationsService, type NotificationCreatedEvent } from '../notifications/notifications.service';
+import type { NotificationCreatedEvent } from '../notifications/notifications.service';
 import { NOTIFICATION_CREATED } from '../notifications/notification-categories';
 import type { AuthUser } from '../auth/current-user.decorator';
 import { CommunityService } from './community.service';
@@ -34,7 +34,6 @@ export class CommunityGateway implements OnGatewayConnection {
 
   constructor(
     private community: CommunityService,
-    private notifications: NotificationsService,
     private wsAuth: WsAuthService,
   ) {}
 
@@ -73,8 +72,10 @@ export class CommunityGateway implements OnGatewayConnection {
    * namespace instead (keeps the two drawers' unread counts partitioned).
    */
   @OnEvent(NOTIFICATION_CREATED)
-  onNotificationCreated({ notification }: NotificationCreatedEvent) {
-    if (notification.system !== 'support') this.notifyUser(notification.userId, notification);
+  onNotificationCreated({ notification, inApp }: NotificationCreatedEvent) {
+    // `inApp: false` means the recipient muted this category in the bell — no row
+    // was persisted, so relaying it would badge something they cannot open.
+    if (inApp && notification.system !== 'support') this.notifyUser(notification.userId, notification);
   }
 
   @SubscribeMessage('group:join')
@@ -114,20 +115,9 @@ export class CommunityGateway implements OnGatewayConnection {
         attachmentIds: body.attachmentIds,
       });
       // Echo tempId so the sender can reconcile its optimistic message (dedupe).
+      // The notification fan-out (badge + push/email) is done by the service, so
+      // the REST fallback gets it too.
       this.server.to(groupRoom(body.groupId)).emit('message:new', { ...message, tempId: body.tempId });
-      // Fan-out notifications + unread badges to members not in the room.
-      const memberIds = await this.community.groupMemberIds(body.groupId, user.id);
-      for (const uid of memberIds) {
-        // create() emits NOTIFICATION_CREATED → onNotificationCreated relays the
-        // live `notify:new` badge (and fans out to push/email transports).
-        await this.notifications.create({
-          userId: uid,
-          system: 'community',
-          type: 'community.message',
-          body: message?.body?.slice(0, 120),
-          data: { groupId: body.groupId },
-        });
-      }
       return { ok: true, id: message?.id, tempId: body.tempId };
     }
 
@@ -136,14 +126,6 @@ export class CommunityGateway implements OnGatewayConnection {
         attachmentIds: body.attachmentIds,
       });
       this.server.to(threadRoom(threadId)).emit('message:new', { ...message, tempId: body.tempId });
-      // create() → onNotificationCreated relays the `notify:new` badge + push/email.
-      await this.notifications.create({
-        userId: recipientId,
-        system: 'community',
-        type: 'community.dm',
-        body: message?.body?.slice(0, 120),
-        data: { threadId },
-      });
       this.server.to(userRoom(recipientId)).emit('message:new', { ...message, tempId: body.tempId });
       return { ok: true, id: message?.id, threadId, tempId: body.tempId };
     }

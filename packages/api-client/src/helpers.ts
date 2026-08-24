@@ -53,6 +53,16 @@ export function convertCents(usdCents: number, rate: number): number {
 }
 
 /**
+ * The inverse: an amount a user typed in the DISPLAY currency → USD dollars,
+ * the unit every money endpoint takes. Anything that prices through
+ * `formatMoney`/`convertCents` and then reads a number back out of an input
+ * has to come through here, or it submits a converted figure as if it were USD.
+ */
+export function toUsdAmount(displayAmount: number, rate: number): number {
+  return rate > 0 ? displayAmount / rate : displayAmount;
+}
+
+/**
  * Format USD cents in the given currency. Uses Intl when available (Hermes on
  * Expo SDK 54 ships Intl) and falls back to a symbol map otherwise.
  */

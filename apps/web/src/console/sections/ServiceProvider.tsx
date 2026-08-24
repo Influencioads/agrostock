@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input } from '@agrotraders/ui';
-import type { ApiHireRequest, ApiMyServiceProfile } from '@agrotraders/api-client';
+import type { ApiHireRequest, ApiMyServiceProfile, ApiReviewSummary } from '@agrotraders/api-client';
 import {
   categoriesForRole, hireBlockForService, hireFieldByKey, isServiceRole,
   SERVICE_PRICING_BASES, STORAGE_TYPES,
@@ -10,6 +10,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
+import { ReviewList } from '../components/ReviewList';
 import { errMessage } from './order-parts';
 
 /**
@@ -351,6 +352,30 @@ export function ServiceProfile() {
           {save.isPending ? t('console.transporter.saving') : t('service.save')}
         </Button>
       </Card>
+    </div>
+  );
+}
+
+/* ── reviews ────────────────────────────────────────────────────────────── */
+
+/** What clients said after a completed service — the same unified reviews the
+ *  provider's public profile shows, read-only here. */
+export function ServiceReviews() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const { data } = useQuery<ApiReviewSummary>({
+    queryKey: ['reviews', 'received', user?.id],
+    queryFn: () => api.reviews.forUser(user!.id),
+    enabled: !!user?.id,
+  });
+
+  return (
+    <div>
+      <div className="mb-5">
+        <h2 className="font-display text-xl font-extrabold text-ink sm:text-2xl">{t('console.nav.reviews')}</h2>
+        <p className="mt-1 text-sm text-ink-soft">{t('service.reviewsSub')}</p>
+      </div>
+      <Card>{data ? <ReviewList summary={data} /> : <p className="text-sm text-ink-soft">{t('common:loading')}</p>}</Card>
     </div>
   );
 }

@@ -29,7 +29,7 @@
     "liveLot": "LIVE · {{qty}} lot",
     "lotDetails": "Lot Details",
     "maskedNote": "Everyone sees each offer price. To keep the auction fair, bidder identities are masked — full names are revealed only to the seller and the winning buyer.",
-    "maxPlaceholder": "Your max (USD)",
+    "maxPlaceholder": "Your max ({{currency}})",
     "minutes": "MINUTES",
     "noBidsYet": "No bids yet — be the first to open the lot.",
     "noLive": "No live auctions right now.",
@@ -1060,6 +1060,7 @@
       "accountant": "Accountant",
       "admin": "Admin",
       "buyer": "Buyer",
+      "buyer_seller": "Buyer / Seller",
       "finance_partner": "Financial services",
       "fulfillment_partner": "Fulfilment partner",
       "loaderco": "Loading Company",
@@ -1189,7 +1190,8 @@
       "loaderco": "Loader Company",
       "seller": "Seller Dashboard",
       "transporter": "Transporter Dashboard",
-      "worker": "Worker Console"
+      "worker": "Worker Console",
+      "workerco": "Worker Company"
     },
     "transporter": {
       "activate": "Activate",
@@ -2466,6 +2468,7 @@
     "profileSub": "What buyers see when they find you.",
     "profileTitle": "Service profile",
     "providers": "Service providers",
+    "reviewsSub": "How clients rate you after a completed service.",
     "save": "Save profile",
     "saveError": "Could not save your profile.",
     "saved": "Profile saved",
@@ -2528,6 +2531,36 @@
     "done": "Done",
     "ended": "Ended",
     "fixedPrice": "Fixed price",
+    "footer": {
+      "col": {
+        "company": "Company",
+        "marketplace": "Marketplace",
+        "services": "Services",
+        "support": "Support"
+      },
+      "link": {
+        "about": "About",
+        "bookTransport": "Book Transport",
+        "buyProducts": "Buy Products",
+        "careers": "Careers",
+        "community": "Community",
+        "contact": "Contact",
+        "disputes": "Disputes",
+        "help": "Help Centre",
+        "hireLoaders": "Hire Loaders",
+        "intlTrade": "International Trade",
+        "kyc": "KYC & Verification",
+        "languages": "EN / RU Support",
+        "liveAuctions": "Live Auctions",
+        "logistics": "Logistics",
+        "offers": "Offers",
+        "offices": "Global Offices",
+        "press": "Press",
+        "safeDeal": "Safe Deal",
+        "sellProducts": "Sell Products",
+        "wallet": "Wallet"
+      }
+    },
     "footerTagline": "The international agriculture trading & logistics platform. Safe deals, verified sellers, worldwide delivery.",
     "from": "From",
     "globe": {

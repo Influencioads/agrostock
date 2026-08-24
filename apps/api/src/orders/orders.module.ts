@@ -542,44 +542,54 @@ export class OrdersService {
    * trip. Product names are English in the DB with no per-type translation table,
    * so they ride the generic translate-on-read cache. Mutates the joined product
    * objects in place (the same references returned to the client). No-op for en.
+   *
+   * Also masks the dispatch OTPs, because every order LIST goes through here.
+   * `one()` masked and the lists did not, which handed each party the other
+   * side's secret — and handed the transporter BOTH, letting them confirm
+   * pickup and delivery without either counterparty. Masking at the shared
+   * funnel rather than in each list method is what stops the next list endpoint
+   * from reintroducing it.
    */
-  private async localizeOrders<T extends { product?: { name?: string | null } | null }>(
-    rows: T[],
-    locale: Lang,
-  ): Promise<T[]> {
+  private async localizeOrders<
+    T extends OrderWithParties & {
+      pickupOtp: string | null;
+      deliveryOtp: string | null;
+      product?: { name?: string | null } | null;
+    },
+  >(rows: T[], locale: Lang, user: AuthUser): Promise<T[]> {
     const names = await this.text.localizeMany(rows.map((r) => r.product?.name), locale);
     rows.forEach((r, i) => {
       if (typeof names[i] === 'string' && r.product) r.product.name = names[i] as string;
     });
-    return rows;
+    return rows.map((r) => this.maskOtps(r, this.partiesOf(r, user), user));
   }
 
-  async mine(buyerId: string, locale: Lang = 'en') {
+  async mine(user: AuthUser, locale: Lang = 'en') {
     const rows = await this.prisma.order.findMany({
-      where: { buyerId },
+      where: { buyerId: user.id },
       orderBy: { createdAt: 'desc' },
       include: ORDER_INCLUDE,
     });
-    return this.localizeOrders(rows, locale);
+    return this.localizeOrders(rows, locale, user);
   }
 
-  async incoming(sellerId: string, locale: Lang = 'en') {
+  async incoming(user: AuthUser, locale: Lang = 'en') {
     const rows = await this.prisma.order.findMany({
-      where: { sellerId },
+      where: { sellerId: user.id },
       orderBy: { createdAt: 'desc' },
       include: ORDER_INCLUDE,
     });
-    return this.localizeOrders(rows, locale);
+    return this.localizeOrders(rows, locale, user);
   }
 
   /** A transporter's work queue: orders riding on one of their trips. */
-  async transporting(transporterId: string, locale: Lang = 'en') {
+  async transporting(user: AuthUser, locale: Lang = 'en') {
     const rows = await this.prisma.order.findMany({
-      where: { trip: { transporterId } },
+      where: { trip: { transporterId: user.id } },
       orderBy: { createdAt: 'desc' },
       include: { ...ORDER_INCLUDE, trip: { include: { vehicle: true, route: true } } },
     });
-    return this.localizeOrders(rows, locale);
+    return this.localizeOrders(rows, locale, user);
   }
 
   async one(id: string, user: AuthUser, locale: Lang = 'en') {
@@ -952,19 +962,19 @@ export class OrdersController {
   @Roles('buyer')
   @Get('mine')
   mine(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
-    return this.orders.mine(user.id, locale);
+    return this.orders.mine(user, locale);
   }
 
   @Roles('seller')
   @Get('incoming')
   incoming(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
-    return this.orders.incoming(user.id, locale);
+    return this.orders.incoming(user, locale);
   }
 
   @Roles('transporter')
   @Get('transporting')
   transporting(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
-    return this.orders.transporting(user.id, locale);
+    return this.orders.transporting(user, locale);
   }
 
   @Roles('seller')
