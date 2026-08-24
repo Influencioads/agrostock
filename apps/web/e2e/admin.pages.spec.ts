@@ -101,8 +101,12 @@ for (const path of ADMIN_PAGES) {
       /something went wrong|unexpected error/i,
     );
     // A raw i18n key on screen is a missing translation, which reads as a broken
-    // page to anyone who is not the developer.
-    expect(text, `${path} leaked a raw i18n key`).not.toMatch(/\b[a-z]+\.[a-zA-Z]+\.[a-zA-Z]{3,}\b/);
+    // page to anyone who is not the developer. Anchored to the real namespaces
+    // (see apps/admin/src/i18n) — a bare `foo.bar.baz` pattern matches the email
+    // domains in the user table and reports a bug that isn't one.
+    expect(text, `${path} leaked a raw i18n key`).not.toMatch(
+      /\b(admin|common|nav|enums|errors)\.[a-zA-Z]+(\.[a-zA-Z]+)*\b/,
+    );
     expect(serverErrors, `${path} got failing API responses`).toEqual([]);
     expect(consoleErrors, `${path} logged console errors`).toEqual([]);
   });

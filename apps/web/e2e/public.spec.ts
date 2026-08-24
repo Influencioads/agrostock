@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { API, failOnConsoleErrors } from './helpers';
+import { API, failOnConsoleErrors, visit } from './helpers';
 
 /**
  * Tier 1 — every public page a signed-out visitor can reach.
@@ -53,7 +53,7 @@ for (const { path, name, chrome } of PUBLIC_PAGES) {
     });
     page.on('pageerror', (e) => errors.push(`UNCAUGHT: ${e.message}`));
 
-    await page.goto(path, { waitUntil: 'networkidle' });
+    await visit(page, path);
 
     if (chrome) {
       // The shell must be present — a crashed render leaves an empty body.
@@ -70,7 +70,7 @@ for (const { path, name, chrome } of PUBLIC_PAGES) {
 }
 
 test('marketplace lists products and its facet counts match the results', async ({ page }) => {
-  await page.goto('/market', { waitUntil: 'networkidle' });
+  await visit(page, '/market');
 
   const body = await page.locator('body').innerText();
   const listed = Number(body.match(/(\d+)\s+verified products/)?.[1] ?? 0);
@@ -85,13 +85,13 @@ test('worker types filter narrows the labour directory', async ({ page, request 
   const withProviders = types.find((t: { providerCount: number }) => t.providerCount > 0);
   expect(withProviders, 'no worker type has a provider — seed data missing').toBeTruthy();
 
-  await page.goto(`/workers?workerType=${withProviders.slug}`, { waitUntil: 'networkidle' });
+  await visit(page, `/workers?workerType=${withProviders.slug}`);
   const body = await page.locator('body').innerText();
   expect(body).toContain(withProviders.name);
 });
 
 test('a 404 route shows the not-found page, not a blank screen', async ({ page }) => {
-  await page.goto('/this-route-does-not-exist', { waitUntil: 'networkidle' });
+  await visit(page, '/this-route-does-not-exist');
   const body = await page.locator('body').innerText();
   // The 404 page is mounted outside SiteLayout, so it carries no chrome — what
   // matters is that it says something rather than painting a blank screen.

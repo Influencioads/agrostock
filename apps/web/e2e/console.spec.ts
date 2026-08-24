@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { DEMO, signIn } from './helpers';
+import { DEMO, signIn, visit } from './helpers';
 
 /**
  * Sweep every console section of every role.
@@ -23,6 +23,12 @@ for (const [email, sections] of Object.entries(SECTIONS)) {
   const role = email.split('@')[0];
 
   test(`console sections render for ${role}`, async ({ page, request }) => {
+    // Up to 14 full navigations in one test. Every section renders in well under
+    // a second once its modules are cached, but the FIRST /console/* hit of a
+    // fresh context makes the dev server hand over the whole console module
+    // graph, which on a loaded machine costs more than the default 45s budget on
+    // its own — a bundler cost, not an app one.
+    test.slow();
     await signIn(page, request, email);
 
     const broken: string[] = [];
@@ -41,7 +47,7 @@ for (const [email, sections] of Object.entries(SECTIONS)) {
     page.on('pageerror', (e) => noisy.push(`UNCAUGHT: ${e.message.slice(0, 180)}`));
 
     for (const section of sections) {
-      await page.goto(`/console/${section}`, { waitUntil: 'networkidle' });
+      await visit(page, `/console/${section}`);
       const main = page.locator('main').first();
       const text = (await main.count()) ? await main.innerText() : await page.locator('body').innerText();
 
@@ -58,7 +64,7 @@ for (const [email, sections] of Object.entries(SECTIONS)) {
 }
 
 test('switching to Russian translates the shell and keeps the page working', async ({ page }) => {
-  await page.goto('/workers', { waitUntil: 'networkidle' });
+  await visit(page, '/workers');
 
   const select = page.locator('select').filter({ has: page.locator('option[value="ru"]') }).first();
   await select.selectOption('ru');

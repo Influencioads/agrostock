@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { API, DEMO, signIn, token } from './helpers';
+import { API, DEMO, signIn, token, visit } from './helpers';
 
 /**
  * The labour rules, end to end through the real HTTP surface.
@@ -74,7 +74,7 @@ test('rate validation refuses an incoherent price', async ({ request }) => {
 
 test('the labour dashboard lists rates and offers only permitted types', async ({ page, request }) => {
   await signIn(page, request, DEMO.loaderco);
-  await page.goto('/console/labour', { waitUntil: 'networkidle' });
+  await visit(page, '/console/labour');
 
   await expect(page.getByText(/Published rates/i).first()).toBeVisible();
 
@@ -90,7 +90,7 @@ test('a provider profile shows rates but never names individual crew', async ({ 
   const loaders = await (await request.get(`${API}/directory/loaders`)).json();
   const company = (loaders.items ?? loaders)[0];
 
-  await page.goto(`/u/${company.id}`, { waitUntil: 'networkidle' });
+  await visit(page, `/u/${company.id}`);
   const body = await page.locator('body').innerText();
 
   expect(body).toContain(company.name);
