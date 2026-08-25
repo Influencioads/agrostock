@@ -60,6 +60,7 @@ function assertProvider(value: string): PaymentProviderKey {
 @Controller('billing')
 export class BillingPublicController {
   constructor(
+    private prisma: PrismaService,
     private plans: PlansService,
     private gateways: GatewaysService,
     private payments: PaymentsService,
@@ -110,9 +111,19 @@ export class BillingPublicController {
    * user landing on a URL they could have typed themselves.
    */
   @Get('return')
-  back(@Query('payment') payment: string | undefined, @Res() res: Response) {
-    const target = `${webBaseUrl()}/billing/return${payment ? `?payment=${encodeURIComponent(payment)}` : ''}`;
+  async back(@Query() query: Record<string, string>, @Res() res: Response) {
+    // Robokassa reads Success/Fail URLs from its own dashboard, so it cannot
+    // carry our payment id — it echoes only the numeric InvId. Resolve it here
+    // or the return page has nothing to poll and spins forever.
+    const id = query.payment || (await this.paymentIdFromInvId(query.InvId ?? query.inv_id));
+    const target = `${webBaseUrl()}/billing/return${id ? `?payment=${encodeURIComponent(id)}` : ''}`;
     res.redirect(302, target);
+  }
+
+  private async paymentIdFromInvId(invId: string | undefined): Promise<string | undefined> {
+    if (!invId || !/^\d+$/.test(invId)) return undefined;
+    const row = await this.prisma.payment.findUnique({ where: { invId: Number(invId) }, select: { id: true } });
+    return row?.id;
   }
 }
 

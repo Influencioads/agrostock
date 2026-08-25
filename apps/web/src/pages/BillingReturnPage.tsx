@@ -46,7 +46,8 @@ export function BillingReturnPage() {
 
   const settled = data && data.status !== 'pending';
   const succeeded = data?.status === 'succeeded';
-  const timedOut = !settled && polls >= MAX_POLLS;
+  // No payment id means we cannot confirm anything — say so instead of spinning.
+  const timedOut = !settled && (polls >= MAX_POLLS || !paymentId);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
