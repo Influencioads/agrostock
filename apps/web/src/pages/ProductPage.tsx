@@ -77,7 +77,7 @@ export function ProductPage() {
     const s = stockDisplay(product?.stockQty, product?.unit);
     if (s.kind === 'untracked') return t('site.inStock');
     if (s.kind === 'out') return t('site.outOfStock');
-    return t('site.stockCount', { count: s.count, unit: s.unit });
+    return t('site.stockCount', { count: s.count, unit: t(`enums:unitShort.${s.unit}`) });
   })();
 
   // Category-specific attributes captured on this listing, rendered by the API:

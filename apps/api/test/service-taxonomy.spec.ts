@@ -154,13 +154,17 @@ describe('russian translations', () => {
     expect(missing).toEqual([]);
   });
 
-  it('leaves the uncertain leaves untranslated rather than inventing Russian', () => {
-    // Deliberate: the seed reports these in missing-ru-translations.txt for a
-    // native speaker. This asserts the gap is real and known, not an oversight.
+  it('covers every leaf too — no service name falls back to English', () => {
+    // This assertion used to be the INVERSE: the map was deliberately partial
+    // and the gap was asserted as real-and-known. That policy was overridden on
+    // 2026-08-25 — 434 of 699 names were reaching Russian users in English, so
+    // the remainder was machine-translated and hand-corrected where Google had
+    // mapped India-corridor terms onto Russian ones. Full coverage is now the
+    // invariant: a new node without a Russian label fails here rather than
+    // silently shipping English.
     const leaves = byKind('SERVICE').map((e) => e.node.slug);
-    const translated = leaves.filter((s) => SERVICE_TAXONOMY_RU[s]).length;
-    expect(translated).toBeGreaterThan(0);
-    expect(translated).toBeLessThan(leaves.length);
+    const missing = leaves.filter((s) => !SERVICE_TAXONOMY_RU[s]);
+    expect(missing).toEqual([]);
   });
 });
 

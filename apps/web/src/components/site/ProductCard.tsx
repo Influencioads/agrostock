@@ -64,7 +64,7 @@ export function ProductCard({ p }: { p: Product }) {
     if (s.kind === 'untracked') return t('site.inStock');
     if (s.kind === 'out') return t('site.outOfStock');
     // Canonical unit, or a legacy row would read "12 /MT in stock".
-    return t('site.stockCount', { count: s.count, unit: s.unit });
+    return t('site.stockCount', { count: s.count, unit: t(`enums:unitShort.${s.unit}`) });
   })();
 
   // "Product details": the first few category-specific specs the seller filled

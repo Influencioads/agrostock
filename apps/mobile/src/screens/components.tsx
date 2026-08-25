@@ -182,7 +182,7 @@ export function stockLabel(product: ApiProduct, t: (k: string, o?: Record<string
   const s = stockDisplay(product.stockQty, product.unit);
   if (s.kind === 'untracked') return t('compX.product.inStock');
   if (s.kind === 'out') return t('compX.product.outOfStock');
-  return t('compX.product.stockCount', { count: s.count, unit: s.unit });
+  return t('compX.product.stockCount', { count: s.count, unit: t(`enums:unitShort.${s.unit}`) });
 }
 
 /**

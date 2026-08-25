@@ -79,7 +79,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: CardProd
   const stock = stockDisplay(product.stockQty, product.unit);
   const stockText =
     stock.kind === 'count'
-      ? t('site.stockCount', { count: stock.count, unit: stock.unit })
+      ? t('site.stockCount', { count: stock.count, unit: t(`enums:unitShort.${stock.unit}`) })
       : stock.kind === 'out'
         ? t('site.outOfStock')
         : t('site.inStock');
