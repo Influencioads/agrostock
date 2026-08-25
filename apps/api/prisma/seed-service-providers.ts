@@ -26,6 +26,8 @@ const businesses: Array<{
   categories: ServiceCategory[];
   cities: string[];
   capacity: number;
+  /** What `capacity` counts, from CAPACITY_UNITS — kg for a line, cases for a firm. */
+  capacityUnit: string;
   certifications: string[];
   minOrderQty: number;
   turnaroundDays: number;
@@ -38,7 +40,7 @@ const businesses: Array<{
     slug: 'meridian-trade-accounting', loginEmail: 'accountant@agrostock.live', name: 'Meridian Trade Accounting', role: Role.accountant,
     country: 'India',
     countriesServed: ['India', 'United Arab Emirates', 'Singapore'], productsHandled: ['Rice', 'Spices', 'Pulses'], acceptsInternationalOrders: true, categories: [ServiceCategory.accounting, ServiceCategory.customs_clearance],
-    cities: ['Mumbai', 'Delhi'], capacity: 40, certifications: ['ICAI'], minOrderQty: 1,
+    cities: ['Mumbai', 'Delhi'], capacity: 40, capacityUnit: 'filing', certifications: ['ICAI'], minOrderQty: 1,
     turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_month, priceFromCents: 45000, currency: 'USD',
     blurb: 'Export-import accounting, GST support and customs documentation for agricultural traders.',
   },
@@ -46,7 +48,7 @@ const businesses: Array<{
     slug: 'harbour-pack-solutions', loginEmail: 'packer@agrostock.live', name: 'Harbour Pack Solutions', role: Role.packer,
     country: 'India',
     countriesServed: ['India', 'Sri Lanka', 'United Arab Emirates'], productsHandled: ['Cashew', 'Peanut', 'Turmeric', 'Rice'], acceptsInternationalOrders: true, categories: [ServiceCategory.packing, ServiceCategory.fulfillment],
-    cities: ['Chennai', 'Bengaluru'], capacity: 25000, certifications: ['FSSAI', 'ISO 22000'], minOrderQty: 500,
+    cities: ['Chennai', 'Bengaluru'], capacity: 25000, capacityUnit: 'kg', certifications: ['FSSAI', 'ISO 22000'], minOrderQty: 500,
     turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 1200, currency: 'USD',
     blurb: 'Vacuum, jute and retail packing for nuts, pulses, grains and spices.',
   },
@@ -54,7 +56,7 @@ const businesses: Array<{
     slug: 'anatolia-processing-works', loginEmail: 'processor@agrostock.live', name: 'Anatolia Processing Works', role: Role.processor,
     country: 'Turkey',
     countriesServed: ['Turkey', 'Germany', 'Russia'], productsHandled: ['Hazelnut', 'Pistachio', 'Almond', 'Sunflower seed'], acceptsInternationalOrders: true, categories: [ServiceCategory.roasting, ServiceCategory.roasting_salting, ServiceCategory.sorting_grading],
-    cities: ['Mersin', 'Istanbul'], capacity: 18000, certifications: ['HACCP', 'BRCGS'], minOrderQty: 1000,
+    cities: ['Mersin', 'Istanbul'], capacity: 18000, capacityUnit: 'kg', certifications: ['HACCP', 'BRCGS'], minOrderQty: 1000,
     turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 9500, currency: 'USD',
     blurb: 'Roasting, salting, sorting and grading for tree nuts and seeds.',
   },
@@ -62,7 +64,7 @@ const businesses: Array<{
     slug: 'gulf-fulfilment-hub', loginEmail: 'fulfillment@agrostock.live', name: 'Gulf Fulfilment Hub', role: Role.fulfillment_partner,
     country: 'United Arab Emirates',
     countriesServed: ['United Arab Emirates', 'Saudi Arabia', 'Oman'], productsHandled: ['Dates', 'Rice', 'Packaged foods'], acceptsInternationalOrders: true, categories: [ServiceCategory.fulfillment],
-    cities: ['Dubai', 'Jebel Ali'], capacity: 900, certifications: ['ISO 9001'], minOrderQty: 1,
+    cities: ['Dubai', 'Jebel Ali'], capacity: 900, capacityUnit: 'order', certifications: ['ISO 9001'], minOrderQty: 1,
     turnaroundDays: 1, pricingBasis: ServicePricingBasis.per_lot, priceFromCents: 18000, currency: 'USD',
     blurb: 'Bonded warehousing, order dispatch, inventory handling and delivery proof.',
   },
@@ -70,7 +72,7 @@ const businesses: Array<{
     slug: 'steppe-trade-finance', loginEmail: 'finance@agrostock.live', name: 'Steppe Trade Finance', role: Role.finance_partner,
     country: 'Kazakhstan',
     countriesServed: ['Kazakhstan', 'Russia', 'Uzbekistan'], productsHandled: ['Wheat', 'Barley', 'Sunflower oil'], acceptsInternationalOrders: false, categories: [ServiceCategory.financial_services],
-    cities: ['Almaty', 'Astana'], capacity: 20, certifications: [], minOrderQty: 1,
+    cities: ['Almaty', 'Astana'], capacity: 20, capacityUnit: 'client', certifications: [], minOrderQty: 1,
     turnaroundDays: 7, pricingBasis: ServicePricingBasis.per_lot, priceFromCents: null, currency: 'USD',
     blurb: 'Working capital, trade finance and invoice discounting for commodity businesses.',
   },
@@ -78,7 +80,7 @@ const businesses: Array<{
     slug: 'deccan-food-processors', name: 'Deccan Food Processors', role: Role.processor,
     country: 'India',
     countriesServed: ['India'], productsHandled: ['Mango', 'Tomato', 'Onion', 'Groundnut'], acceptsInternationalOrders: false, categories: [ServiceCategory.chopping, ServiceCategory.blanching, ServiceCategory.pitting],
-    cities: ['Hyderabad', 'Pune'], capacity: 12000, certifications: ['FSSAI', 'HACCP'], minOrderQty: 750,
+    cities: ['Hyderabad', 'Pune'], capacity: 12000, capacityUnit: 'kg', certifications: ['FSSAI', 'HACCP'], minOrderQty: 750,
     turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_kg, priceFromCents: 18, currency: 'USD',
     blurb: 'Contract chopping, blanching and pitting with export-grade food safety controls.',
   },
@@ -86,7 +88,7 @@ const businesses: Array<{
     slug: 'gateway-customs-advisors', name: 'Gateway Customs Advisors', role: Role.accountant,
     country: 'United Arab Emirates',
     countriesServed: ['United Arab Emirates', 'Qatar', 'Kuwait'], productsHandled: ['Grains', 'Edible oils', 'Frozen foods'], acceptsInternationalOrders: true, categories: [ServiceCategory.customs_clearance, ServiceCategory.accounting],
-    cities: ['Dubai', 'Sharjah'], capacity: 30, certifications: ['FTA Registered'], minOrderQty: 1,
+    cities: ['Dubai', 'Sharjah'], capacity: 30, capacityUnit: 'shipment', certifications: ['FTA Registered'], minOrderQty: 1,
     turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_lot, priceFromCents: 12500, currency: 'USD',
     blurb: 'Customs clearance, VAT accounting and cross-border documentation for food imports.',
   },
@@ -94,9 +96,25 @@ const businesses: Array<{
     slug: 'northern-cold-pack', name: 'Northern Cold Pack', role: Role.packer,
     country: 'Russia',
     countriesServed: ['Russia', 'Belarus', 'Kazakhstan'], productsHandled: ['Berries', 'Potato', 'Carrot', 'Frozen vegetables'], acceptsInternationalOrders: true, categories: [ServiceCategory.packing, ServiceCategory.sorting_grading],
-    cities: ['Moscow', 'Saint Petersburg'], capacity: 20000, certifications: ['ISO 22000'], minOrderQty: 1000,
+    cities: ['Moscow', 'Saint Petersburg'], capacity: 20000, capacityUnit: 'kg', certifications: ['ISO 22000'], minOrderQty: 1000,
     turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 7200, currency: 'USD',
     blurb: 'Temperature-controlled sorting and packing for fresh and frozen agricultural goods.',
+  },
+  {
+    slug: 'ravel-and-co-trade-law', loginEmail: 'legal@agrostock.live', name: 'Ravel & Co Trade Law', role: Role.legal_advisor,
+    country: 'India',
+    countriesServed: ['India', 'United Arab Emirates', 'Other International'], productsHandled: ['Rice', 'Spices', 'Cashew'], acceptsInternationalOrders: true, categories: [ServiceCategory.legal_services],
+    cities: ['Mumbai', 'Kochi'], capacity: 6, capacityUnit: 'case', certifications: ['Bar Council of India'], minOrderQty: 1,
+    turnaroundDays: 5, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 6000, currency: 'USD',
+    blurb: 'Trade contracts, customs disputes and GAFTA arbitration for agricultural exporters.',
+  },
+  {
+    slug: 'nevsky-legal-partners', name: 'Nevsky Legal Partners', role: Role.legal_advisor,
+    country: 'Russia',
+    countriesServed: ['Russia', 'Kazakhstan', 'China'], productsHandled: ['Grains', 'Edible oils', 'Sunflower seed'], acceptsInternationalOrders: true, categories: [ServiceCategory.legal_services],
+    cities: ['Moscow', 'Saint Petersburg'], capacity: 8, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 4500, currency: 'USD',
+    blurb: 'Supply contracts, EAEU compliance and arbitrazh representation for grain traders.',
   },
 ];
 
@@ -157,6 +175,7 @@ async function main() {
         productsHandled: business.productsHandled,
         acceptsInternationalOrders: business.acceptsInternationalOrders,
         capacityPerDay: business.capacity,
+        capacityUnit: business.capacityUnit,
         certifications: business.certifications,
         minOrderQty: business.minOrderQty,
         turnaroundDays: business.turnaroundDays,
@@ -175,6 +194,7 @@ async function main() {
         productsHandled: business.productsHandled,
         acceptsInternationalOrders: business.acceptsInternationalOrders,
         capacityPerDay: business.capacity,
+        capacityUnit: business.capacityUnit,
         certifications: business.certifications,
         minOrderQty: business.minOrderQty,
         turnaroundDays: business.turnaroundDays,

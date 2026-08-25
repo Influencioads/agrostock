@@ -983,6 +983,8 @@ export interface ApiServiceProvider {
   /** ambient | chilled | frozen | bonded. */
   storageTypes: string[];
   capacityPerDay: number | null;
+  /** What `capacityPerDay` counts (CAPACITY_UNITS); null on rows written before it existed. */
+  capacityUnit: string | null;
   certifications: string[];
   minOrderQty: number | null;
   turnaroundDays: number | null;

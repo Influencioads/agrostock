@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiHireRequest, ApiMyServiceProfile } from '@agrotraders/api-client';
+import type {
+  ApiHireRequest, ApiMyServiceProfile, ApiProviderService, ApiServiceNode,
+} from '@agrotraders/api-client';
 import {
-  categoriesForRole, hireBlockForService, hireFieldByKey, isServiceRole,
-  SERVICE_PRICING_BASES, STORAGE_TYPES,
+  canRolePriceService, CAPACITY_UNITS, categoriesForRole, hireBlockForService, hireFieldByKey,
+  isServiceRole, ON_REQUEST_BASIS, SERVICE_PRICING_BASES, servicePriceLabel, STORAGE_TYPES,
 } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
@@ -14,10 +16,11 @@ import { useI18n } from '../../i18n';
 import { Badge, Button, Card, Chip, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { PickerField } from '../components/PickerSheet';
+import { errMessage } from '../../lib/format';
 
 /**
- * The service provider console — one set of screens for all five roles, matching
- * the web console section for section.
+ * The service provider console — one set of screens for every service role,
+ * matching the web console section for section.
  *
  * The roles differ only in which categories they may offer, which
  * `categoriesForRole` already encodes, so five near-identical screens would be
@@ -206,6 +209,7 @@ export function ServiceProfile() {
         citiesServed: csv(value('citiesServed')),
         country: value('country') || undefined,
         capacityPerDay: num(value('capacityPerDay')),
+        capacityUnit: value('capacityUnit') || undefined,
         certifications: csv(value('certifications')),
         minOrderQty: num(value('minOrderQty')),
         turnaroundDays: num(value('turnaroundDays')),
@@ -278,6 +282,16 @@ export function ServiceProfile() {
         {field(t('service.cities'), 'citiesServed')}
         {field(t('service.basedIn'), 'country')}
         {field(t('service.capacity'), 'capacityPerDay', true)}
+        {/* Without this the directory card read "Capacity per day: 30" and a
+            buyer could not tell 30 tons from 30 filings. */}
+        <PickerField
+          label={t('service.capacityUnit')}
+          placeholder={t('service.capacityUnitHint')}
+          value={value('capacityUnit')}
+          displayValue={value('capacityUnit') ? t(`enums:capacityUnit.${value('capacityUnit')}`, { count: 2 }) : ''}
+          options={CAPACITY_UNITS.map((u) => ({ value: u, label: t(`enums:capacityUnit.${u}`, { count: 2 }) }))}
+          onChange={set('capacityUnit')}
+        />
         {field(t('service.certifications'), 'certifications')}
         {field(t('service.minOrder'), 'minOrderQty', true)}
         {field(t('service.turnaround'), 'turnaroundDays', true)}
@@ -388,6 +402,200 @@ export function ServiceDashboard() {
           <Txt variant="muted">{t('service.categories')}</Txt>
         </Card>
       </Row>
+    </ScrollView>
+  );
+}
+
+/* ── per-service price list ─────────────────────────────────────────────── */
+
+/** Every pricable leaf in the tree, flattened, with the path that names it. */
+function leavesOf(nodes: ApiServiceNode[], trail: string[] = []): { id: string; slug: string; path: string }[] {
+  return nodes.flatMap((n) => {
+    const here = [...trail, n.name || n.nameEn];
+    return n.isLeaf && n.kind === 'SERVICE'
+      ? [{ id: n.id, slug: n.slug, path: here.join(' / ') }]
+      : leavesOf(n.children ?? [], here);
+  });
+}
+
+/**
+ * What the provider charges per service — the same screen the web console has,
+ * against the same endpoints, so a provider who priced their services on a
+ * phone sees the identical list on the desktop console.
+ *
+ * Until this existed no client called these endpoints at all: every public
+ * price list was empty, and the hire form had no service for a buyer to pick,
+ * so every enquiry fell back to the blockless question set.
+ */
+export function ServicePrices() {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const role = useServiceRole();
+  const { fmtCents } = useCurrency();
+  const [error, setError] = useState('');
+  const [draft, setDraft] = useState({ serviceNodeId: '', pricingBasis: '', min: '', max: '', notes: '' });
+
+  const { data: rows = [], isLoading } = useQuery<ApiProviderService[]>({
+    queryKey: ['my-provider-services'],
+    queryFn: () => api.services.myServices(),
+  });
+  const { data: tree = [] } = useQuery<ApiServiceNode[]>({
+    queryKey: ['service-taxonomy'],
+    queryFn: () => api.services.taxonomy(),
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const priced = new Set(rows.map((r) => r.serviceNodeId));
+  const leaves = leavesOf(tree).filter((l) => !priced.has(l.id) && canRolePriceService(role ?? '', l.slug));
+  const picked = leaves.find((l) => l.id === draft.serviceNodeId);
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ['my-provider-services'] });
+    qc.invalidateQueries({ queryKey: ['provider-services'] });
+  };
+  const fail = (e: unknown) => setError(errMessage(e, t('service.saveError')));
+
+  const add = useMutation({
+    mutationFn: () => {
+      const cents = (v: string) => (v.trim() === '' ? undefined : Math.round(Number(v) * 100));
+      return api.services.addMyService({
+        serviceNodeId: draft.serviceNodeId,
+        pricingBasis: draft.pricingBasis,
+        priceMinCents: cents(draft.min),
+        priceMaxCents: cents(draft.max),
+        notes: draft.notes || undefined,
+      });
+    },
+    onSuccess: () => {
+      setDraft({ serviceNodeId: '', pricingBasis: '', min: '', max: '', notes: '' });
+      setError('');
+      refresh();
+    },
+    onError: fail,
+  });
+  const toggle = useMutation({
+    mutationFn: (r: ApiProviderService) => api.services.updateMyService(r.id, { isActive: !r.isActive }),
+    onSuccess: refresh,
+    onError: fail,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => api.services.removeMyService(id),
+    onSuccess: refresh,
+    onError: fail,
+  });
+
+  // `on_request` is the one basis that may carry no figure, so the price inputs
+  // are hidden for it rather than offered and then silently ignored.
+  const onRequest = draft.pricingBasis === ON_REQUEST_BASIS;
+  const canAdd = !!draft.serviceNodeId && !!draft.pricingBasis && (onRequest || draft.min.trim() !== '');
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: space.lg, gap: 14 }}>
+      <View>
+        <Txt variant="title">{t('service.pricesTitle')}</Txt>
+        <Txt variant="muted">{t('service.pricesSub')}</Txt>
+      </View>
+
+      {error ? <Txt variant="small" color={C.error}>{error}</Txt> : null}
+
+      <Card style={{ gap: 10 }}>
+        <PickerField
+          label={t('service.serviceCol')}
+          placeholder={t('hireQ.servicePick')}
+          value={draft.serviceNodeId}
+          displayValue={picked?.path ?? ''}
+          options={leaves.map((l) => ({ value: l.id, label: l.path }))}
+          onChange={(v) => setDraft((d) => ({ ...d, serviceNodeId: v }))}
+        />
+        <PickerField
+          label={t('service.pricing')}
+          placeholder={t('service.onEnquiry')}
+          value={draft.pricingBasis}
+          displayValue={
+            draft.pricingBasis
+              ? t(`enums:servicePricingBasis.${draft.pricingBasis}`, { defaultValue: draft.pricingBasis })
+              : ''
+          }
+          options={SERVICE_PRICING_BASES.map((b) => ({
+            value: b,
+            label: t(`enums:servicePricingBasis.${b}`, { defaultValue: b }),
+          }))}
+          onChange={(v) => setDraft((d) => ({ ...d, pricingBasis: v }))}
+        />
+        {!onRequest ? (
+          <Row gap={10}>
+            <View style={{ flex: 1 }}>
+              <Input
+                label={t('service.priceMin')}
+                value={draft.min}
+                keyboardType="decimal-pad"
+                onChangeText={(v) => setDraft((d) => ({ ...d, min: v }))}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Input
+                label={t('service.priceMax')}
+                value={draft.max}
+                keyboardType="decimal-pad"
+                onChangeText={(v) => setDraft((d) => ({ ...d, max: v }))}
+              />
+            </View>
+          </Row>
+        ) : null}
+        <Input
+          label={t('service.priceNotes')}
+          value={draft.notes}
+          onChangeText={(v) => setDraft((d) => ({ ...d, notes: v }))}
+        />
+        <Button
+          title={t('service.addPrice')}
+          icon="checkmark"
+          disabled={!canAdd || add.isPending}
+          onPress={() => add.mutate()}
+        />
+      </Card>
+
+      {isLoading ? (
+        <SkeletonRows count={3} />
+      ) : rows.length === 0 ? (
+        <EmptyState icon="pricetags-outline" title={t('service.noPrices')} />
+      ) : (
+        rows.map((r) => (
+          <Card key={r.id} style={{ gap: 8 }}>
+            <Txt variant="title">{r.serviceNode.name ?? r.serviceNode.nameEn}</Txt>
+            <Txt variant="muted">{servicePriceLabel(r, t, fmtCents)}</Txt>
+            {r.notes ? <Txt variant="small">{r.notes}</Txt> : null}
+            <Row gap={8} style={{ flexWrap: 'wrap' }}>
+              {/* Hidden, not deleted: a service paused for the season comes back
+                  without the price being retyped. */}
+              <Badge
+                label={t(r.isActive ? 'service.priceLive' : 'service.priceHidden')}
+                tone={r.isActive ? 'green' : 'slate'}
+              />
+              <View style={{ flex: 1 }}>
+                <Button
+                  title={t(r.isActive ? 'service.hidePrice' : 'service.showPrice')}
+                  size="sm"
+                  variant="outline"
+                  full
+                  disabled={toggle.isPending}
+                  onPress={() => toggle.mutate(r)}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title={t('service.removePrice')}
+                  size="sm"
+                  variant="outline"
+                  full
+                  disabled={remove.isPending}
+                  onPress={() => remove.mutate(r.id)}
+                />
+              </View>
+            </Row>
+          </Card>
+        ))
+      )}
     </ScrollView>
   );
 }

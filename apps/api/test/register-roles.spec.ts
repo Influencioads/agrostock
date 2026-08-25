@@ -22,6 +22,7 @@ describe('public self-registration roles', () => {
       'buyer',
       'finance_partner',
       'fulfillment_partner',
+      'legal_advisor',
       'loaderco',
       'packer',
       'processor',

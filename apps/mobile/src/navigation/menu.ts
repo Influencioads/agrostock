@@ -84,11 +84,12 @@ export const ROLE_MENU: Record<string, MenuItem[]> = {
 // publish, which the workforce module enforces server-side.
 ROLE_MENU.workerco = ROLE_MENU.loaderco;
 
-// One menu for all five service roles — they differ only in which categories they
+// One menu for every service role — they differ only in which categories they
 // may offer, which the service profile form already scopes. Dashboard and
 // enquiries are bottom tabs, so they are deliberately absent here.
 const SERVICE_MENU: MenuItem[] = [
   { id: 'serviceProfile', icon: 'storefront-outline' },
+  { id: 'servicePrices', icon: 'pricetags-outline' },
   { id: 'invoices', icon: 'receipt-outline' },
   { id: 'earnings', icon: 'wallet-outline' },
   { id: 'wallet', icon: 'card-outline' },

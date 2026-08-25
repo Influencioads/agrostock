@@ -18,7 +18,8 @@ import {
   ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min,
 } from 'class-validator';
 import {
-  allowedCategories, isServiceRole, SERVICE_CATEGORIES, SERVICE_PRICING_BASES, SERVICE_ROLES, STORAGE_TYPES,
+  allowedCategories, CAPACITY_UNITS, isServiceRole, SERVICE_CATEGORIES, SERVICE_PRICING_BASES,
+  SERVICE_ROLES, STORAGE_TYPES,
 } from '@agrotraders/types';
 import type { Lang } from '@agrotraders/i18n';
 import { MAX_MONEY_CENTS } from '../common/limits';
@@ -54,6 +55,10 @@ export class UpdateServiceProfileDto {
 
   @ApiProperty({ required: false }) @IsOptional() @IsString() @MaxLength(80) country?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsInt() @Min(0) @Max(10_000_000) capacityPerDay?: number;
+
+  /** What `capacityPerDay` counts — tons, filings, orders. See CAPACITY_UNITS. */
+  @ApiProperty({ required: false, enum: CAPACITY_UNITS })
+  @IsOptional() @IsIn(CAPACITY_UNITS as unknown as string[]) capacityUnit?: string;
 
   @ApiProperty({ required: false, isArray: true, description: 'FSSAI / ISO / HACCP …' })
   @IsOptional() @IsArray() @ArrayMaxSize(20) @IsString({ each: true }) @MaxLength(80, { each: true })
@@ -107,7 +112,7 @@ const PUBLIC_SELECT = {
   countriesServed: true, productsHandled: true, acceptsInternationalOrders: true,
   pickupOffered: true, deliveryOffered: true, packagingSupplied: true,
   sampleAvailable: true, storageTypes: true,
-  capacityPerDay: true, certifications: true, minOrderQty: true, turnaroundDays: true,
+  capacityPerDay: true, capacityUnit: true, certifications: true, minOrderQty: true, turnaroundDays: true,
   pricingBasis: true, priceFromCents: true, priceCurrency: true, photos: true, blurb: true,
   createdAt: true,
   user: {
@@ -202,6 +207,7 @@ export class ServiceProvidersService {
         citiesServed: dto.citiesServed,
         country: dto.country,
         capacityPerDay: dto.capacityPerDay,
+        capacityUnit: dto.capacityUnit,
         certifications: dto.certifications,
         minOrderQty: dto.minOrderQty,
         turnaroundDays: dto.turnaroundDays,

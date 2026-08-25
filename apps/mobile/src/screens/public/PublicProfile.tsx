@@ -14,7 +14,7 @@ import { HireModal, type HireTarget } from '../components/HireModal';
 import { rateLabel } from '../components/LabourOfferings';
 import type { RootStackParamList } from '../../navigation/types';
 import { forwardChevron } from '../../lib/rtl';
-import { hireTargetForRoles, isServiceRole, servicePriceLabel, unitSuffix } from '@agrotraders/types';
+import { capacityLabel, hireTargetForRoles, isServiceRole, servicePriceLabel, unitSuffix } from '@agrotraders/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, 'PublicProfile'>;
@@ -176,7 +176,7 @@ export function PublicProfile() {
               <Field label={t('service.cities')} value={provider.citiesServed.join(', ')} />
               <Field label={t('service.countriesServed')} value={provider.countriesServed.join(', ')} />
               <Field label={t('service.productsHandled')} value={provider.productsHandled.join(', ')} />
-              <Field label={t('service.capacity')} value={provider.capacityPerDay} />
+              <Field label={t('service.capacity')} value={capacityLabel(provider.capacityPerDay, provider.capacityUnit, t)} />
               <Field
                 label={t('service.turnaround')}
                 value={provider.turnaroundDays != null ? t('service.turnaroundDays', { count: provider.turnaroundDays }) : null}

@@ -35,12 +35,15 @@ const ALL = walk(DOC.sections);
 const byKind = (kind: Node['kind']) => ALL.filter((e) => e.node.kind === kind);
 
 describe('service taxonomy file', () => {
-  it('carries the whole PDF: 3 sections, 36 groups, 20 middle nodes, 544 leaves', () => {
+  it('carries the whole PDF plus Legal: 3 sections, 37 groups, 23 middle nodes, 636 leaves', () => {
+    // The PDF's own shape was 36 groups / 544 leaves. Legal is the one branch
+    // added after it — 3 jurisdictions, 92 leaves — and these counts move only
+    // when a branch is deliberately added, never as a side effect of an edit.
     expect(byKind('SECTION')).toHaveLength(3);
-    expect(byKind('GROUP')).toHaveLength(36);
-    expect(byKind('COUNTRY').length + byKind('SUBGROUP').length).toBe(20);
-    expect(byKind('SERVICE')).toHaveLength(544);
-    expect(ALL).toHaveLength(603);
+    expect(byKind('GROUP')).toHaveLength(37);
+    expect(byKind('COUNTRY').length + byKind('SUBGROUP').length).toBe(23);
+    expect(byKind('SERVICE')).toHaveLength(636);
+    expect(ALL).toHaveLength(699);
   });
 
   it('has globally unique slugs — the seed upserts on them', () => {
@@ -131,6 +134,8 @@ describe('service taxonomy file', () => {
     // Two different concepts, kept apart by decision: the tree forks on three
     // jurisdictions, providers declare eight.
     expect(new Set(byKind('COUNTRY').map((e) => e.node.name))).toEqual(new Set(['India', 'Russia', 'International']));
+    // Legal forks on the same three, not a fourth set of its own.
+    expect(byKind('COUNTRY').filter((e) => e.node.slug.startsWith('financial-and-compliance/legal/'))).toHaveLength(3);
     expect(DOC.countriesServed).toHaveLength(8);
     expect(DOC.countriesServed).toContain('Kazakhstan');
   });

@@ -27,6 +27,7 @@ export const BILLABLE_ROLES = [
   'processor',
   'fulfillment_partner',
   'finance_partner',
+  'legal_advisor',
 ] as const;
 
 export class SubscribeDto {

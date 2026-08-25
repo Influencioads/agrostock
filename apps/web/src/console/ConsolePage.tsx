@@ -29,7 +29,7 @@ import { HiresSection } from './sections/HiresSection';
 import { KycSection } from './sections/KycSection';
 import { ProfileForm } from '../pages/ProfileFormPage';
 import { isServiceRole, SERVICE_ROLES } from '@agrotraders/types';
-import { ServiceEnquiries, ServiceProfile, ServiceProviderDashboard, ServiceReviews } from './sections/ServiceProvider';
+import { ServiceEnquiries, ServicePrices, ServiceProfile, ServiceProviderDashboard, ServiceReviews } from './sections/ServiceProvider';
 import { LabourOfferings } from './sections/LabourOfferings';
 import { BillingSection } from './sections/BillingSection';
 
@@ -114,13 +114,14 @@ const NAV: Record<string, ConsoleNavItem[]> = {
   ],
 };
 
-// All five service roles share one console: they differ only in which service
-// categories they may offer, which the profile form already scopes. Five copies
-// of this list would be five places to fix the same bug.
+// Every service role shares one console: they differ only in which service
+// categories they may offer, which the profile form already scopes. A copy of
+// this list per role would be a place per role to fix the same bug.
 const SERVICE_NAV: ConsoleNavItem[] = [
   dash,
   { id: 'enquiries', icon: 'message' },
   { id: 'serviceProfile', icon: 'store' },
+  { id: 'servicePrices', icon: 'wallet' },
   { id: 'invoices', icon: 'file' },
   { id: 'wallet', icon: 'wallet' },
   { id: 'reviews', icon: 'star' },
@@ -272,6 +273,7 @@ export function ConsolePage() {
     if (isServiceRole(role)) {
       if (active === 'enquiries') return <ServiceEnquiries />;
       if (active === 'serviceProfile') return <ServiceProfile />;
+      if (active === 'servicePrices') return <ServicePrices />;
       if (active === 'invoices') return <ServiceInvoices />;
       if (active === 'reviews') return <ServiceReviews />;
     }

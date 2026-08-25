@@ -34,6 +34,7 @@ const ROLE_TABS = [
   'processor',
   'fulfillment_partner',
   'finance_partner',
+  'legal_advisor',
 ] as const;
 
 /** Kopecks → the ruble string shown in the input (blank when unpriced). */

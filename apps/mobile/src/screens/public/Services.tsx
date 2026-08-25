@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiServiceProvider } from '@agrotraders/api-client';
-import { SERVICE_GROUPS } from '@agrotraders/types';
+import { capacityLabel, SERVICE_GROUPS } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -105,7 +105,7 @@ export function Services() {
                   <Txt variant="small">{t('service.turnaroundDays', { count: p.turnaroundDays })}</Txt>
                 ) : null}
                 {p.capacityPerDay != null ? (
-                  <Txt variant="small">{t('service.capacity')}: {p.capacityPerDay}</Txt>
+                  <Txt variant="small">{t('service.capacity')}: {capacityLabel(p.capacityPerDay, p.capacityUnit, t)}</Txt>
                 ) : null}
               </Row>
 

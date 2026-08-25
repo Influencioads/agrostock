@@ -139,6 +139,7 @@ const SERVICE = (name: string): Sec[] => [
   // standalone section and not the dashboard with the same block scrolled in.
   { id: 'enquiries', heading: 'Customer enquiries', text: 'Requests buyers have sent you.', absent: 'Services offered' },
   { id: 'serviceProfile', heading: 'Service profile', text: 'What buyers see when they find you.' },
+  { id: 'servicePrices', heading: 'Services & pricing', text: 'What you charge per service.' },
   { id: 'wallet', heading: 'Wallet', text: WALLET_SUB },
 ];
 

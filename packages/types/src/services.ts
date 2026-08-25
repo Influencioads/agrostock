@@ -14,6 +14,7 @@ export const SERVICE_ROLES = [
   'processor',
   'fulfillment_partner',
   'finance_partner',
+  'legal_advisor',
 ] as const;
 export type ServiceRole = (typeof SERVICE_ROLES)[number];
 
@@ -26,6 +27,7 @@ export const SERVICE_CATEGORIES = [
   'accounting',
   'customs_clearance',
   'financial_services',
+  'legal_services',
   'fulfillment',
   'packing',
   'roasting',
@@ -47,7 +49,7 @@ export function isServiceCategory(value: unknown): value is ServiceCategory {
  * it only decides which heading a category sits under in a picker or filter.
  */
 export const SERVICE_GROUPS = {
-  financial: ['accounting', 'customs_clearance', 'financial_services'],
+  financial: ['accounting', 'customs_clearance', 'financial_services', 'legal_services'],
   logistics: ['fulfillment', 'packing'],
   processing: ['roasting', 'roasting_salting', 'chopping', 'blanching', 'pitting', 'sorting_grading'],
 } as const satisfies Record<string, readonly ServiceCategory[]>;
@@ -67,6 +69,7 @@ export type ServiceGroup = keyof typeof SERVICE_GROUPS;
 export const ROLE_CATEGORIES = {
   accountant: ['accounting', 'customs_clearance'],
   finance_partner: ['financial_services'],
+  legal_advisor: ['legal_services'],
   fulfillment_partner: ['fulfillment'],
   packer: ['packing', 'fulfillment'],
   processor: [...SERVICE_GROUPS.processing],
@@ -159,6 +162,58 @@ export function servicePriceLabel(
 }
 
 /**
+ * What a provider's daily throughput is counted in.
+ *
+ * `ServiceProvider.capacityPerDay` shipped as a bare integer whose unit was
+ * "implied by pricingBasis" — which meant a directory card read "Capacity per
+ * day: 30" and the buyer could not tell 30 tons from 30 filings. The basis was
+ * never a safe stand-in either: a law firm bills per hour and processes filings,
+ * a warehouse bills per pallet and receives trucks.
+ *
+ * Deliberately mixed mass/count/work units, because that is what the roles
+ * actually measure. Nullable on the column, so every row written before this
+ * existed keeps rendering as the plain number it always did.
+ *
+ * Labels are `enums:capacityUnit.<ID>` and are PLURALISED — pass `count`.
+ */
+export const CAPACITY_UNITS = [
+  'kg', 'ton', 'quintal', 'bag', 'piece', 'pallet', 'container', 'truck',
+  'order', 'shipment', 'filing', 'case', 'document', 'client', 'hour',
+] as const;
+export type CapacityUnit = (typeof CAPACITY_UNITS)[number];
+
+export function isCapacityUnit(value: unknown): value is CapacityUnit {
+  return typeof value === 'string' && (CAPACITY_UNITS as readonly string[]).includes(value);
+}
+
+/**
+ * "30 tons", "30 filings" — the one place capacity is turned into words.
+ *
+ * Four surfaces render this field (both directories, both public profiles) and
+ * every one of them printed the bare number. `t` is injected for the same reason
+ * {@link servicePriceLabel} takes it: this package carries no i18n dependency.
+ *
+ * Deliberately does NOT say "per day" — every call site already labels the field
+ * `service.capacity` ("Capacity per day"), and adding it here would read
+ * "Capacity per day: 30 tons per day".
+ *
+ * The catalog holds the unit NAME only ("ton"/"tons"), not "{{count}} tons", so
+ * that a unit picker can render the same key as a plain label. `count` is still
+ * passed because it is what selects the plural form.
+ *
+ * Returns `null` when there is no capacity to show, so a caller can drop the row
+ * entirely rather than printing an empty label.
+ */
+export function capacityLabel(
+  qty: number | null | undefined,
+  unit: string | null | undefined,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): string | null {
+  if (qty == null) return null;
+  return isCapacityUnit(unit) ? `${qty} ${t(`enums:capacityUnit.${unit}`, { count: qty })}` : String(qty);
+}
+
+/**
  * Which taxonomy branches each service role may price, as slug prefixes.
  *
  * This is the taxonomy-era twin of `ROLE_CATEGORIES`, derived from it rather
@@ -199,6 +254,11 @@ export const ROLE_SERVICE_BRANCHES = {
     'logistics-and-handling/fulfilment',
     'processing/packaging',
   ],
+  // A legal practice reaches only the Legal branch. Contract drafting and an
+  // arbitration filing are the same profession; a tax return is not, so
+  // `financial-and-compliance/taxation` stays with the accountant who already
+  // holds it rather than being granted twice.
+  legal_advisor: ['financial-and-compliance/legal'],
   // `processor` covers every processing trade for the same reason it covers all
   // six legacy processing categories: one business, different equipment.
   processor: ['processing'],

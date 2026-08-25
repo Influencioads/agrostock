@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon } from '@agrotraders/ui';
 import type { ApiServiceProvider } from '@agrotraders/api-client';
-import { SERVICE_GROUPS } from '@agrotraders/types';
+import { capacityLabel, SERVICE_GROUPS } from '@agrotraders/types';
 import { useNavigate } from 'react-router-dom';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
 import { api } from '../lib/api';
@@ -121,7 +121,9 @@ export function ServicesPage() {
                   </div>
                 )}
                 {p.capacityPerDay != null && (
-                  <div>{t('service.capacity')}: <b className="text-ink">{p.capacityPerDay}</b></div>
+                  <div>
+                    {t('service.capacity')}: <b className="text-ink">{capacityLabel(p.capacityPerDay, p.capacityUnit, t)}</b>
+                  </div>
                 )}
                 {p.turnaroundDays != null && (
                   <div>{t('service.turnaround')}: <b className="text-ink">{t('service.turnaroundDays', { count: p.turnaroundDays })}</b></div>

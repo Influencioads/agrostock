@@ -27,6 +27,7 @@ const ROLES: { id: string; icon: IconName }[] = [
   { id: 'processor', icon: 'gauge' },
   { id: 'fulfillment_partner', icon: 'truck' },
   { id: 'finance_partner', icon: 'wallet' },
+  { id: 'legal_advisor', icon: 'file' },
   { id: 'admin', icon: 'shield' },
 ];
 

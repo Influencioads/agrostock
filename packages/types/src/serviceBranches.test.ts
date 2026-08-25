@@ -51,6 +51,14 @@ describe('role → taxonomy branches', () => {
     expect(canRolePriceService('accountant', 'logistics-and-handling/customs-and-border-logistics/india/indian-customs')).toBe(false);
   });
 
+  it('keeps legal work with the law firm and tax work with the accountant', () => {
+    expect(canRolePriceService('legal_advisor', 'financial-and-compliance/legal/india/commercial-arbitration')).toBe(true);
+    // The two neighbours on the same section must not bleed into each other.
+    expect(canRolePriceService('legal_advisor', 'financial-and-compliance/accounting/india/bookkeeping')).toBe(false);
+    expect(canRolePriceService('legal_advisor', 'financial-and-compliance/taxation')).toBe(false);
+    expect(canRolePriceService('accountant', 'financial-and-compliance/legal/india/commercial-arbitration')).toBe(false);
+  });
+
   it('keeps the packer/fulfilment overlap the legacy mapping already had', () => {
     // ROLE_CATEGORIES gives `packer` both `packing` and `fulfillment`; the
     // branch mapping has to preserve that, not tidy it away.

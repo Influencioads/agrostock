@@ -81,9 +81,10 @@ const OWN_KEYS = [
   'worker:reviews',
   'worker:invoices',
   'worker:hires',
-  // Service providers — one set behind the five roles that alias onto it.
+  // Service providers — one set behind every service role that aliases onto it.
   'service:enquiries',
   'service:serviceProfile',
+  'service:servicePrices',
   'service:invoices',
   'service:earnings',
   'service:wallet',

@@ -11,7 +11,7 @@ import { chatBus } from '../chat/chatBus';
 import { HireModal, type HireTarget } from '../components/site/HireModal';
 import { ReviewList } from '../console/components/ReviewList';
 import { rateLabel } from '../console/sections/LabourOfferings';
-import { hireTargetForRoles, isServiceRole, servicePriceLabel, unitSuffix } from '@agrotraders/types';
+import { capacityLabel, hireTargetForRoles, isServiceRole, servicePriceLabel, unitSuffix } from '@agrotraders/types';
 
 function locationLabel(city: string | null | undefined, country: string | null | undefined): string {
   const place = city?.trim();
@@ -262,7 +262,7 @@ export function PublicProfilePage() {
               <Field label={t('service.cities')} value={provider.citiesServed.join(', ')} />
               <Field label={t('service.countriesServed')} value={provider.countriesServed.join(', ')} />
               <Field label={t('service.productsHandled')} value={provider.productsHandled.join(', ')} />
-              <Field label={t('service.capacity')} value={provider.capacityPerDay} />
+              <Field label={t('service.capacity')} value={capacityLabel(provider.capacityPerDay, provider.capacityUnit, t)} />
               <Field
                 label={t('service.turnaround')}
                 value={provider.turnaroundDays != null ? t('service.turnaroundDays', { count: provider.turnaroundDays }) : null}

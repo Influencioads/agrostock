@@ -14,6 +14,9 @@ function serviceForUsers() {
     notification: deleteMany(),
     deviceToken: deleteMany(),
     refreshSession: { deleteMany: vi.fn(async () => ({ count: 0 })), updateMany: vi.fn(async () => ({ count: 0 })) },
+    // deleteUser clears KycRecord too — KycRecord.user RESTRICTs, so without
+    // this the account that only ever uploaded ID documents cannot be erased.
+    kycRecord: deleteMany(),
     profile: deleteMany(),
     wallet: deleteMany(),
     user: {

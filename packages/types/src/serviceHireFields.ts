@@ -118,6 +118,30 @@ export const SERVICE_HIRE_BLOCKS: Record<string, readonly ServiceHireField[]> = 
     { key: 'booksIn', type: 'select', options: ['tally', 'one_c', 'zoho', 'excel', 'none', 'other'] },
     { key: 'registrations', type: 'text' },
   ],
+  /**
+   * Legal work is scoped by jurisdiction and matter, never by tonnage — a firm
+   * cannot quote without knowing which law applies, what stage the matter is at
+   * and whether anything is already on a clock. `deadline` is the field that
+   * most often decides whether a firm can take the instruction at all.
+   */
+  legal: [
+    { key: 'jurisdiction', type: 'text', required: true },
+    { key: 'matterType', type: 'select', required: true, options: [
+      'contract_drafting', 'contract_review', 'company_setup', 'licensing',
+      'customs_dispute', 'arbitration', 'litigation', 'debt_recovery',
+      'ip_trademark', 'property_lease', 'employment', 'compliance_advisory', 'notarial',
+    ] },
+    { key: 'entityType', type: 'select', options: ['individual', 'sole_prop', 'llp', 'pvt_ltd', 'ooo', 'other'] },
+    { key: 'counterpartyCountry', type: 'text' },
+    { key: 'matterStage', type: 'select', options: ['advice_only', 'drafting', 'negotiation', 'notice_served', 'filed', 'hearing'] },
+    { key: 'disputeValue', type: 'number' },
+    { key: 'disputeCurrency', type: 'text' },
+    { key: 'documentsHeld', type: 'multiselect', options: ['invoice', 'packing_list', 'coo', 'phyto', 'licence', 'bl_awb'] },
+    { key: 'deadline', type: 'date' },
+    { key: 'confidential', type: 'select', options: ['yes', 'no'] },
+    { key: 'engagement', type: 'select', options: ['one_off', 'monthly_retainer', 'annual'] },
+    { key: 'matterSummary', type: 'textarea', required: true },
+  ],
   insurance: [
     { key: 'coverType', type: 'select', options: ['cargo', 'transit', 'warehouse', 'liability', 'crop'], required: true },
     { key: 'sumInsured', type: 'number' },
@@ -181,6 +205,7 @@ const BLOCK_BY_PREFIX: readonly (readonly [string, string])[] = [
 
   ['financial-and-compliance/customs-clearance', 'customs'],
   ['financial-and-compliance/insurance', 'insurance'],
+  ['financial-and-compliance/legal', 'legal'],
   ['financial-and-compliance', 'accounting'],
 ];
 

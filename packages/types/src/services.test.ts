@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  allowedCategories, categoriesForRole, hireTargetForRoles, isServiceRole,
+  allowedCategories, capacityLabel, categoriesForRole, hireTargetForRoles, isServiceRole,
   ROLE_CATEGORIES, SERVICE_CATEGORIES, SERVICE_GROUPS, SERVICE_ROLES,
 } from './services';
 
 describe('service roles and categories', () => {
-  it('recognises exactly the five service roles', () => {
-    expect(SERVICE_ROLES).toHaveLength(5);
+  it('recognises exactly the service roles', () => {
+    expect([...SERVICE_ROLES].sort()).toEqual([
+      'accountant', 'finance_partner', 'fulfillment_partner', 'legal_advisor', 'packer', 'processor',
+    ]);
     expect(isServiceRole('packer')).toBe(true);
+    expect(isServiceRole('legal_advisor')).toBe(true);
     // Existing roles must NOT be treated as service providers.
     expect(isServiceRole('transporter')).toBe(false);
     expect(isServiceRole('admin')).toBe(false);
@@ -51,6 +54,32 @@ describe('allowedCategories', () => {
   it('allows a packer to also offer fulfilment', () => {
     expect(allowedCategories('packer', ['packing', 'fulfillment'])).toEqual(['fulfillment', 'packing']);
   });
+
+  it('keeps a law firm out of the accounting categories', () => {
+    expect(allowedCategories('legal_advisor', ['legal_services', 'accounting'])).toEqual(['legal_services']);
+  });
+});
+
+describe('capacityLabel', () => {
+  // `t` here is the i18next contract the apps pass in: the catalog holds the
+  // unit NAME and `count` picks its plural form.
+  const t = (key: string, o?: Record<string, unknown>) =>
+    `${key.split('.').pop()}${(o!.count as number) === 1 ? '' : 's'}`;
+
+  it('names the unit instead of printing a bare number', () => {
+    expect(capacityLabel(30, 'ton', t)).toBe('30 tons');
+    expect(capacityLabel(30, 'filing', t)).toBe('30 filings');
+  });
+
+  it('still renders rows written before the unit column existed', () => {
+    expect(capacityLabel(30, null, t)).toBe('30');
+    // A stale client sending something outside the list must not become a key.
+    expect(capacityLabel(30, 'lightyears', t)).toBe('30');
+  });
+
+  it('has nothing to say when no capacity is set', () => {
+    expect(capacityLabel(null, 'ton', t)).toBeNull();
+  });
 });
 
 describe('hireTargetForRoles', () => {
@@ -61,7 +90,7 @@ describe('hireTargetForRoles', () => {
     expect(hireTargetForRoles(['worker'])).toBe('worker');
   });
 
-  it('folds all five service roles into one flow', () => {
+  it('folds every service role into one flow', () => {
     for (const role of SERVICE_ROLES) expect(hireTargetForRoles([role])).toBe('service_provider');
   });
 

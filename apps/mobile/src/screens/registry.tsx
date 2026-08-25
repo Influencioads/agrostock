@@ -32,7 +32,7 @@ import { BillingScreen } from './components/BillingScreen';
 import { InvoiceCenter } from './components/InvoiceCenter';
 import { HiresScreen } from './HiresScreen';
 import { LabourOfferings } from './components/LabourOfferings';
-import { ServiceEnquiries, ServiceProfile } from './service/ServiceProvider';
+import { ServiceEnquiries, ServicePrices, ServiceProfile } from './service/ServiceProvider';
 import { ROLE_ALIAS } from './sectionRegistryKeys';
 import { Kyc } from './auth/Kyc';
 
@@ -116,9 +116,10 @@ export const sectionRegistry: Record<string, SectionComponent> = {
   'worker:reviews': WorkerReviews,
   'worker:invoices': InvoiceCenter,
   'worker:hires': HiresScreen,
-  // Service providers — one set for all five roles, which ROLE_ALIAS points here.
+  // Service providers — one set behind every service role, which ROLE_ALIAS points here.
   'service:enquiries': ServiceEnquiries,
   'service:serviceProfile': ServiceProfile,
+  'service:servicePrices': ServicePrices,
   'service:invoices': InvoiceCenter,
   'service:earnings': SectionEarnings,
   'service:wallet': WalletScreen,
