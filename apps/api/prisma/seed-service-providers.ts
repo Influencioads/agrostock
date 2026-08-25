@@ -11,6 +11,19 @@ import { canRolePriceService } from '@agrotraders/types';
 
 const prisma = new PrismaClient();
 
+/**
+ * DELETING the demo fill-out.
+ *
+ * Every entry added on 2026-08-25 carries a `demo-` slug, which becomes the
+ * email local-part, so the whole block is removable in one statement:
+ *
+ *   DELETE FROM "User" WHERE email LIKE 'demo-%@directory.agrotraders.org';
+ *
+ * ServiceProvider and its priced services cascade from User. The ten ORIGINAL
+ * providers do NOT carry the prefix, so that pattern cannot reach them — which
+ * is the whole reason for the prefix.
+ */
+
 /** How many leaf services each demo business publishes a price for. */
 const PRICED_SERVICES_PER_BUSINESS = 6;
 
@@ -115,6 +128,191 @@ const businesses: Array<{
     cities: ['Moscow', 'Saint Petersburg'], capacity: 8, capacityUnit: 'case', certifications: [], minOrderQty: 1,
     turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 4500, currency: 'USD',
     blurb: 'Supply contracts, EAEU compliance and arbitrazh representation for grain traders.',
+  },
+
+  /* Demo fill-out, 2026-08-25. Every slug here is `demo-` prefixed so the
+   * whole block is removable in one predictable query - see DELETING in
+   * the file header. Nothing outside this block carries that prefix.
+   */
+  {
+    slug: 'demo-kama-agro-law', name: 'Kama Agro Law', role: Role.legal_advisor,
+    country: 'Russia', countriesServed: ['Russia', 'Kazakhstan'],
+    productsHandled: ['Grain', 'Pulses'], acceptsInternationalOrders: false,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Kazan', 'Ufa'], capacity: 7, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 4200, currency: 'USD',
+    blurb: 'Grain supply contracts and EAEU customs disputes.',
+  },
+  {
+    slug: 'demo-volga-contract-chambers', name: 'Volga Contract Chambers', role: Role.legal_advisor,
+    country: 'Russia', countriesServed: ['Russia'],
+    productsHandled: ['Grain', 'Oilseeds'], acceptsInternationalOrders: false,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Samara', 'Saratov'], capacity: 5, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 5, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 3800, currency: 'USD',
+    blurb: 'Contract drafting and arbitrazh representation for elevators.',
+  },
+  {
+    slug: 'demo-baltic-trade-counsel', name: 'Baltic Trade Counsel', role: Role.legal_advisor,
+    country: 'Russia', countriesServed: ['Russia', 'EU'],
+    productsHandled: ['Grain', 'Nuts'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Kaliningrad', 'Saint Petersburg'], capacity: 9, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 5200, currency: 'USD',
+    blurb: 'Cross-border sale of goods, sanctions screening and export licensing.',
+  },
+  {
+    slug: 'demo-steppe-legal-bureau', name: 'Steppe Legal Bureau', role: Role.legal_advisor,
+    country: 'Kazakhstan', countriesServed: ['Kazakhstan', 'Russia', 'China'],
+    productsHandled: ['Grain', 'Pulses'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Almaty', 'Shymkent'], capacity: 6, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 6, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 3600, currency: 'USD',
+    blurb: 'Kazakh export licensing, phytosanitary appeals and transit disputes.',
+  },
+  {
+    slug: 'demo-bosphorus-trade-law', name: 'Bosphorus Trade Law', role: Role.legal_advisor,
+    country: 'Turkey', countriesServed: ['Turkey', 'EU', 'UAE'],
+    productsHandled: ['Nuts', 'Dried fruit'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Istanbul', 'Izmir'], capacity: 8, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 6100, currency: 'USD',
+    blurb: 'Charterparty, bill of lading and demurrage claims for dry cargo.',
+  },
+  {
+    slug: 'demo-gulf-commercial-advocates', name: 'Gulf Commercial Advocates', role: Role.legal_advisor,
+    country: 'UAE', countriesServed: ['UAE', 'India', 'Turkey'],
+    productsHandled: ['Nuts', 'Spices'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Dubai', 'Abu Dhabi'], capacity: 10, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 7400, currency: 'USD',
+    blurb: 'DIFC contracts, free-zone structuring and letter-of-credit disputes.',
+  },
+  {
+    slug: 'demo-silk-road-arbitration', name: 'Silk Road Arbitration', role: Role.legal_advisor,
+    country: 'Kazakhstan', countriesServed: ['Kazakhstan', 'China', 'Russia'],
+    productsHandled: ['Grain'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Astana', 'Karaganda'], capacity: 4, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 10, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 5800, currency: 'USD',
+    blurb: 'Arbitration and award enforcement across the China-EAEU corridor.',
+  },
+  {
+    slug: 'demo-siberian-agri-counsel', name: 'Siberian Agri Counsel', role: Role.legal_advisor,
+    country: 'Russia', countriesServed: ['Russia', 'China'],
+    productsHandled: ['Grain', 'Oilseeds'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Novosibirsk', 'Omsk'], capacity: 6, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 5, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 3400, currency: 'USD',
+    blurb: 'Land lease, subsidy compliance and grain elevator disputes.',
+  },
+  {
+    slug: 'demo-anatolia-notary-partners', name: 'Anatolia Notary Partners', role: Role.legal_advisor,
+    country: 'Turkey', countriesServed: ['Turkey', 'EU'],
+    productsHandled: ['Dried fruit', 'Nuts'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Mersin', 'Ankara'], capacity: 12, capacityUnit: 'document', certifications: [], minOrderQty: 1,
+    turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_document, priceFromCents: 900, currency: 'USD',
+    blurb: 'Apostille, notarisation and document legalisation for exporters.',
+  },
+  {
+    slug: 'demo-caspian-customs-law', name: 'Caspian Customs Law', role: Role.legal_advisor,
+    country: 'Russia', countriesServed: ['Russia', 'Kazakhstan', 'UAE'],
+    productsHandled: ['Grain', 'Pulses', 'Spices'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.legal_services],
+    cities: ['Astrakhan', 'Makhachkala'], capacity: 7, capacityUnit: 'case', certifications: [], minOrderQty: 1,
+    turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_hour, priceFromCents: 3900, currency: 'USD',
+    blurb: 'Customs valuation challenges and detained-cargo release.',
+  },
+  {
+    slug: 'demo-ural-grain-audit', name: 'Ural Grain Audit', role: Role.accountant,
+    country: 'Russia', countriesServed: ['Russia'],
+    productsHandled: ['Grain'], acceptsInternationalOrders: false,
+    categories: [ServiceCategory.accounting],
+    cities: ['Yekaterinburg', 'Perm'], capacity: 35, capacityUnit: 'filing', certifications: ['IPBR'], minOrderQty: 1,
+    turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_month, priceFromCents: 42000, currency: 'USD',
+    blurb: 'Statutory accounting and profit-tax support for trading houses.',
+  },
+  {
+    slug: 'demo-don-books-and-tax', name: 'Don Books and Tax', role: Role.accountant,
+    country: 'Russia', countriesServed: ['Russia'],
+    productsHandled: ['Grain', 'Oilseeds'], acceptsInternationalOrders: false,
+    categories: [ServiceCategory.accounting, ServiceCategory.customs_clearance],
+    cities: ['Rostov-on-Don', 'Krasnodar'], capacity: 40, capacityUnit: 'filing', certifications: ['IPBR'], minOrderQty: 1,
+    turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_month, priceFromCents: 38000, currency: 'USD',
+    blurb: 'Bookkeeping, VAT returns and export-refund filings.',
+  },
+  {
+    slug: 'demo-emirates-trade-books', name: 'Emirates Trade Books', role: Role.accountant,
+    country: 'UAE', countriesServed: ['UAE', 'India'],
+    productsHandled: ['Nuts', 'Spices'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.accounting],
+    cities: ['Dubai', 'Sharjah'], capacity: 28, capacityUnit: 'filing', certifications: ['FTA Registered'], minOrderQty: 1,
+    turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_month, priceFromCents: 52000, currency: 'USD',
+    blurb: 'Corporate tax registration and free-zone bookkeeping.',
+  },
+  {
+    slug: 'demo-neva-pack-works', name: 'Neva Pack Works', role: Role.packer,
+    country: 'Russia', countriesServed: ['Russia'],
+    productsHandled: ['Grain', 'Pulses'], acceptsInternationalOrders: false,
+    categories: [ServiceCategory.packing],
+    cities: ['Saint Petersburg', 'Veliky Novgorod'], capacity: 22000, capacityUnit: 'kg', certifications: ['ISO 22000'], minOrderQty: 500,
+    turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 6800, currency: 'USD',
+    blurb: 'Retail and bulk repacking on vacuum and food-grade lines.',
+  },
+  {
+    slug: 'demo-kuban-bagging-lines', name: 'Kuban Bagging Lines', role: Role.packer,
+    country: 'Russia', countriesServed: ['Russia', 'Kazakhstan'],
+    productsHandled: ['Grain', 'Oilseeds'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.packing, ServiceCategory.sorting_grading],
+    cities: ['Krasnodar', 'Sochi'], capacity: 30000, capacityUnit: 'kg', certifications: ['ISO 22000', 'HACCP'], minOrderQty: 1000,
+    turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 5900, currency: 'USD',
+    blurb: 'Big-bag and 25kg bagging with in-line metal detection.',
+  },
+  {
+    slug: 'demo-marmara-packing-co', name: 'Marmara Packing Co', role: Role.packer,
+    country: 'Turkey', countriesServed: ['Turkey', 'EU'],
+    productsHandled: ['Dried fruit', 'Nuts'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.packing],
+    cities: ['Bursa', 'Istanbul'], capacity: 26000, capacityUnit: 'kg', certifications: ['BRCGS'], minOrderQty: 750,
+    turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 7100, currency: 'USD',
+    blurb: 'Modified-atmosphere and tamper-evident retail packing.',
+  },
+  {
+    slug: 'demo-altai-roasting-house', name: 'Altai Roasting House', role: Role.processor,
+    country: 'Russia', countriesServed: ['Russia', 'Kazakhstan'],
+    productsHandled: ['Nuts', 'Seeds'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.roasting, ServiceCategory.roasting_salting],
+    cities: ['Barnaul', 'Novosibirsk'], capacity: 14000, capacityUnit: 'kg', certifications: ['HACCP'], minOrderQty: 800,
+    turnaroundDays: 4, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 9200, currency: 'USD',
+    blurb: 'Drum roasting, salting and flavour application lines.',
+  },
+  {
+    slug: 'demo-aegean-sorting-plant', name: 'Aegean Sorting Plant', role: Role.processor,
+    country: 'Turkey', countriesServed: ['Turkey', 'EU', 'UAE'],
+    productsHandled: ['Dried fruit', 'Pulses'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.sorting_grading, ServiceCategory.pitting],
+    cities: ['Izmir', 'Manisa'], capacity: 21000, capacityUnit: 'kg', certifications: ['BRCGS', 'HACCP'], minOrderQty: 1000,
+    turnaroundDays: 3, pricingBasis: ServicePricingBasis.per_ton, priceFromCents: 8400, currency: 'USD',
+    blurb: 'Optical sorting, calibration and pitting for dried fruit.',
+  },
+  {
+    slug: 'demo-caspian-cold-fulfilment', name: 'Caspian Cold Fulfilment', role: Role.fulfillment_partner,
+    country: 'Kazakhstan', countriesServed: ['Kazakhstan', 'Russia', 'China'],
+    productsHandled: ['Grain', 'Nuts'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.fulfillment],
+    cities: ['Aktau', 'Almaty'], capacity: 1200, capacityUnit: 'order', certifications: ['ISO 9001'], minOrderQty: 1,
+    turnaroundDays: 1, pricingBasis: ServicePricingBasis.per_order, priceFromCents: 15000, currency: 'USD',
+    blurb: 'Marketplace pick-pack, cold storage and last-mile handover.',
+  },
+  {
+    slug: 'demo-anatolia-trade-finance', name: 'Anatolia Trade Finance', role: Role.finance_partner,
+    country: 'Turkey', countriesServed: ['Turkey', 'UAE', 'EU'],
+    productsHandled: ['Nuts', 'Dried fruit'], acceptsInternationalOrders: true,
+    categories: [ServiceCategory.financial_services],
+    cities: ['Istanbul', 'Mersin'], capacity: 25, capacityUnit: 'client', certifications: [], minOrderQty: 1,
+    turnaroundDays: 6, pricingBasis: ServicePricingBasis.per_lot, priceFromCents: null, currency: 'USD',
+    blurb: 'Letters of credit, invoice discounting and FX hedging.',
   },
 ];
 
