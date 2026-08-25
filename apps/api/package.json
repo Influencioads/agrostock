@@ -18,7 +18,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "seed": "ts-node prisma/seed.ts",
-    "__x": "ts-node prisma/seed-service-providers.ts",
+    "seed:service-providers": "ts-node prisma/seed-service-providers.ts",
     "taxonomy:sync": "ts-node prisma/taxonomy-sync.ts",
     "seed:attrs": "ts-node prisma/seed-attributes.ts",
     "seed:services": "ts-node prisma/seeds/service-taxonomy.seed.ts",
