@@ -212,7 +212,7 @@ const businesses: Array<{
     productsHandled: ['Dried fruit', 'Nuts'], acceptsInternationalOrders: true,
     categories: [ServiceCategory.legal_services],
     cities: ['Mersin', 'Ankara'], capacity: 12, capacityUnit: 'document', certifications: [], minOrderQty: 1,
-    turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_document, priceFromCents: 900, currency: 'USD',
+    turnaroundDays: 2, pricingBasis: ServicePricingBasis.per_piece, priceFromCents: 900, currency: 'USD',
     blurb: 'Apostille, notarisation and document legalisation for exporters.',
   },
   {
