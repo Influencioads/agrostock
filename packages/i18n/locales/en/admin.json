@@ -46,8 +46,8 @@
     "bidBook": "Bid book ({{count}})",
     "bidderFallback": "Bidder",
     "bidsCount": "{{count}} bids",
-    "closeNow": "Close now",
     "closed": "Closed",
+    "closeNow": "Close now",
     "drawerTitle": "Auction",
     "ends": "Ends {{date}}",
     "high": "High {{amount}}",
@@ -88,8 +88,8 @@
     "colSellerBids": "Seller bids",
     "colStatus": "Status",
     "drawerTitle": "Buyer bid",
-    "noSellerBids": "No seller bids yet.",
     "none": "No buyer bids match.",
+    "noSellerBids": "No seller bids yet.",
     "reqFallback": "Requirement",
     "sellerBidsCount": "Seller bids ({{count}})",
     "sellerFallback": "Seller",
@@ -161,6 +161,10 @@
     "fieldOptions": "Options",
     "fieldOptionsHint": "One per line. Keep these in English — they are what gets stored and filtered on; translations are filled in automatically.",
     "fieldRequired": "Required",
+    "fields": "Fields",
+    "fieldsCount": "Fields ({{count}})",
+    "fieldsIntro": "These are the details a seller fills in for this subcategory, and the filters buyers get. Order here is the order they appear in.",
+    "fieldsTitle": "Product fields — {{name}}",
     "fieldType": "Type",
     "fieldTypes": {
       "boolean": "Yes / no",
@@ -172,10 +176,6 @@
     },
     "fieldUnit": "Unit (optional)",
     "fieldUnitHint": "Shown after the number, e.g. %, mm, kg.",
-    "fields": "Fields",
-    "fieldsCount": "Fields ({{count}})",
-    "fieldsIntro": "These are the details a seller fills in for this subcategory, and the filters buyers get. Order here is the order they appear in.",
-    "fieldsTitle": "Product fields — {{name}}",
     "inheritNote": "No fields of its own — it currently inherits: {{list}}. Adding one here replaces the inherited set for this node and everything under it.",
     "modalAddCategory": "Add category",
     "modalAddChild": "Add child under {{name}}",
@@ -185,9 +185,9 @@
     "moveHint": "Moves this node and everything under it.",
     "moveLabel": "Move under",
     "moveTopLevel": "Top level of",
+    "nodeStats": "{{products}} products · {{children}} child levels",
     "noMatch": "Nothing matches.",
     "noSubs": "No subcategories yet.",
-    "nodeStats": "{{products}} products · {{children}} child levels",
     "phCat": "e.g. Fruits",
     "phSub": "e.g. Basmati Rice",
     "productsCount": "{{count}} products",
@@ -220,8 +220,8 @@
     "fEmoji": "Emoji",
     "fName": "Name",
     "glance": "Community at a glance",
-    "groupStats": "{{members}} members · {{posts}} posts · {{messages}} messages",
     "groupsCount": "Groups ({{count}})",
+    "groupStats": "{{members}} members · {{posts}} posts · {{messages}} messages",
     "inGroup": "in {{name}}",
     "metric": {
       "groups": "Groups",
@@ -313,8 +313,8 @@
     "save": "Save changes",
     "saved": "Template saved",
     "saving": "Saving…",
-    "sendTest": "Send test to me",
     "sending": "Sending…",
+    "sendTest": "Send test to me",
     "smtpOff": "SMTP is not configured — templates are editable but emails won't be delivered until SMTP is set.",
     "sub": "Edit the copy of every automated email. Changes apply immediately.",
     "subject": "Subject",
@@ -381,8 +381,8 @@
     },
     "test": "Test mode",
     "testConnection": "Test connection",
-    "testMode": "Test mode",
-    "testing": "Testing…"
+    "testing": "Testing…",
+    "testMode": "Test mode"
   },
   "genericError": "Something went wrong. Please try again.",
   "header": {
@@ -426,8 +426,8 @@
     },
     "jurisdiction": "Country / jurisdiction",
     "labelling": "Labelling",
-    "loadType": "Load type",
     "loadingIncluded": "Loading & unloading included?",
+    "loadType": "Load type",
     "location": "Location",
     "lotSize": "Lot size",
     "materialBy": "Who supplies packaging material?",
@@ -522,6 +522,10 @@
         "export_marks": "Export markings",
         "private_label": "Private label"
       },
+      "loadingIncluded": {
+        "no": "No",
+        "yes": "Yes"
+      },
       "loadType": {
         "fcl": "Container FCL",
         "ftl": "Full truck load (FTL)",
@@ -529,10 +533,6 @@
         "ltl": "Less than truck load (LTL)",
         "part_load": "Part load",
         "reefer": "Refrigerated"
-      },
-      "loadingIncluded": {
-        "no": "No",
-        "yes": "Yes"
       },
       "materialBy": {
         "i_supply": "I supply it",
@@ -614,10 +614,10 @@
     "ordersPerMonth": "Orders per month",
     "outputSpec": "What you want back (output spec)",
     "packFormat": "Pack format",
-    "packSize": "Pack size",
     "packing": {
       "location": "Where the goods are now"
     },
+    "packSize": "Pack size",
     "periodFrom": "Period from",
     "periodTo": "Period to",
     "portOrBorder": "Port / ICD / border post",
@@ -637,9 +637,9 @@
     "sectionDetails": "Service details",
     "service": "Service needed",
     "servicePick": "Choose a service…",
-    "shipTo": "Ship packed goods to",
     "shipmentCurrency": "Currency",
     "shipmentValue": "Shipment value",
+    "shipTo": "Ship packed goods to",
     "skuCount": "SKUs held",
     "standard": "Standard or spec to test against",
     "storageFrom": "Store from",
@@ -774,8 +774,8 @@
     "reviews": "Reviews",
     "roleRequests": "Role Requests",
     "safedeal": "Safe Deal",
-    "serviceTaxonomy": "Service taxonomy",
     "services": "Service providers",
+    "serviceTaxonomy": "Service taxonomy",
     "subscriptions": "Subscriptions",
     "support": "Support Inbox",
     "team": "Team",
@@ -941,8 +941,8 @@
     "debitPayout": "Debit (payout)",
     "debitWithdraw": "Debit (withdraw)",
     "exportCsv": "Export CSV",
-    "exportPdf": "Export PDF",
     "exporting": "Exporting…",
+    "exportPdf": "Export PDF",
     "noMatches": "No matches.",
     "noPending": "No pending payout requests.",
     "noTxns": "No transactions in this range.",
@@ -1057,12 +1057,12 @@
     "quotasTitle": "Quotas",
     "rename": "Rename",
     "restoreConfirm": "This resets every price, quota and feature to the published commercial plan. Any changes you made here will be lost. Continue?",
-    "restoreDefaults": "Restore published prices",
     "restored": "{{count}} plans restored to the published price card",
+    "restoreDefaults": "Restore published prices",
     "restoring": "Restoring…",
+    "saved": "Plan updated",
     "savePrice": "Save price",
     "saveQuotas": "Save quotas & features",
-    "saved": "Plan updated",
     "saving": "Saving…",
     "tier": {
       "0": "Free",
@@ -1170,8 +1170,8 @@
     "months12": "12 months",
     "noSettled": "No settled orders.",
     "noSignups": "No sign-ups in range.",
-    "orderVolume": "Order volume",
     "ordersByStatus": "Orders by status",
+    "orderVolume": "Order volume",
     "perMonthSettled": "$ per month · settled orders",
     "preset": {
       "month": "Last month",
@@ -1207,8 +1207,8 @@
       "trip": "trip"
     },
     "modalTitle": "Edit review",
-    "noText": "No written review.",
     "notePh": "Internal note about this moderation…",
+    "noText": "No written review.",
     "rating": "Rating",
     "remove": "Remove",
     "reviewText": "Review text",
@@ -1259,6 +1259,7 @@
     "sellerBalances": "Seller balances",
     "sub": "Company-wide financial oversight — escrow, wallets and balances.",
     "totalOnPlatform": "Total on platform",
+    "txnsCount": "Transactions ({{count}})",
     "txType": {
       "escrow_hold": "escrow hold",
       "escrow_release": "escrow release",
@@ -1266,7 +1267,6 @@
       "refund": "refund",
       "topup": "top-up"
     },
-    "txnsCount": "Transactions ({{count}})",
     "wallets": "Wallets"
   },
   "serviceOffer": {
@@ -1325,8 +1325,8 @@
     "statusCol": "Status"
   },
   "support": {
-    "noTickets": "No tickets",
     "notePlaceholder": "Add note…",
+    "noTickets": "No tickets",
     "replyPlaceholder": "Reply to customer…",
     "searchPlaceholder": "Ref, order, user…",
     "subtitle": "{{count}} tickets",
@@ -1351,6 +1351,18 @@
     "selectTicket": "Select a ticket",
     "waitingUser": "Waiting user"
   },
+  "svcAdmin": {
+    "cities": "Cities",
+    "company": "Company",
+    "enquiries": "Enquiries",
+    "hiresSub": "Hire requests sent to service providers, with the answers the buyer gave.",
+    "hiresTitle": "Service enquiries",
+    "listed": "Listed",
+    "services": "Services",
+    "status": "Status",
+    "sub": "Review listings, categories, coverage and publication status.",
+    "title": "Service providers"
+  },
   "svcTax": {
     "add": "Add",
     "addChild": "Add child",
@@ -1374,9 +1386,9 @@
   "team": {
     "accessGranted": "Access ({{count}} granted)",
     "active": "active",
+    "adding": "Adding…",
     "addStaff": "Add a staff member",
     "addStaffBtn": "Add staff member",
-    "adding": "Adding…",
     "clear": "Clear",
     "close": "Close",
     "createError": "Could not create staff member.",
@@ -1403,13 +1415,13 @@
     "actBuyOrders": "Orders (buy)",
     "actHiresReceived": "Hires received",
     "actHiresSent": "Hires sent",
+    "active": "active",
+    "activity": "Activity",
     "actProducts": "Products",
     "actSellOrders": "Orders (sell)",
     "actTrips": "Trips",
     "actVehicles": "Vehicles",
     "actWorkers": "Workers",
-    "active": "active",
-    "activity": "Activity",
     "addRole": "Add a role…",
     "adminOnly": "admin-only",
     "confirmDeactivate": "Deactivate this account? The user will be signed out and unable to log in.",

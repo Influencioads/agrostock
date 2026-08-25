@@ -23,7 +23,7 @@
       "title": "Вы выиграли тендер покупателя."
     },
     "new_seller_bid": {
-      "body": "A seller bid {{amount}} per {{unit}} on {{reference}}.",
+      "body": "Продавец предложил {{amount}} за {{unit}} по {{reference}}.",
       "title": "Новое предложение продавца"
     },
     "outbid": {

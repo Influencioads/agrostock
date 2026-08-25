@@ -31,7 +31,11 @@ export class MarketsService {
       orderBy: [{ sort: 'asc' }, { name: 'asc' }],
       include: { ...MARKET_COUNT, translations: { where: { locale } } },
     });
-    return byLocalizedName(rows.map((m) => localize(m, ['name'])), locale);
+    // `city` and `region` too, not just `name`: MarketTranslation carries all
+    // three and every row has them, but folding only the name rendered the
+    // pickers as "Рынок Азадпур · Delhi" — half translated, which reads worse
+    // than either language on its own.
+    return byLocalizedName(rows.map((m) => localize(m, ['name', 'city', 'region'])), locale);
   }
 }
 

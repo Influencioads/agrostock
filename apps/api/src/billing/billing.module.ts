@@ -23,6 +23,8 @@ import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { AuditService } from '../common/audit.service';
+import { Locale } from '../common/locale';
+import type { Lang } from '@agrotraders/i18n';
 import { seedBilling } from './plan-defaults';
 import { GatewaysService } from './gateways.service';
 import { PlansService } from './plans.service';
@@ -66,7 +68,7 @@ export class BillingPublicController {
   /** The pricing page. Public and unauthenticated by design — a price behind a login does not get sold. */
   @Get('plans')
   @ApiOperation({ summary: 'Published plan catalogue with prices, quotas and features' })
-  plansList(@Query('role') role?: string, @Query('locale') locale?: string) {
+  plansList(@Locale() locale: Lang, @Query('role') role?: string) {
     return this.plans.list({ role: role as Role | undefined, locale });
   }
 
@@ -131,7 +133,7 @@ export class MeBillingController {
 
   /** Everything the console's Billing section renders: plan, meters, history. */
   @Get()
-  async overview(@CurrentUser() user: AuthUser, @Query('locale') locale?: string) {
+  async overview(@CurrentUser() user: AuthUser, @Locale() locale: Lang) {
     const ent = await this.entitlements.resolve(user.id);
     const roles = Object.keys(ent.roles) as Role[];
 
@@ -150,7 +152,17 @@ export class MeBillingController {
     const catalogue = await this.plans.list({ locale });
 
     return {
-      entitlements: ent.roles,
+      // `entitlements.resolve` is a locale-agnostic hot path behind a per-user
+      // cache that quota checks share, so it cannot localize its own plan names
+      // without the first caller's language poisoning the cache for everyone.
+      // Fold the localized catalogue in here instead, where the locale is known
+      // — the console's "current plan" heading reads this, not `subscriptions`.
+      entitlements: Object.fromEntries(
+        Object.entries(ent.roles).map(([role, e]) => [
+          role,
+          { ...e, planName: catalogue.find((p) => p.id === e.planId)?.name ?? e.planName },
+        ]),
+      ),
       usage: Object.fromEntries(usage.map((u) => [u.role, u.rows])),
       subscriptions: subs.map((s) => ({
         id: s.id,

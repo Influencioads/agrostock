@@ -248,7 +248,11 @@ export function RegisterPage() {
           <form className="mt-5 space-y-4" onSubmit={submit}>
             <Input
               label={t('page.register.fullName')}
-              placeholder={activeRole?.id === 'buyer_seller' ? 'Karim Trading' : 'Punjab Agro Exports'}
+              placeholder={t(
+                activeRole?.id === 'buyer_seller'
+                  ? 'page.register.phNameTrader'
+                  : 'page.register.phNameExporter',
+              )}
               value={form.name}
               onChange={set('name')}
               required
