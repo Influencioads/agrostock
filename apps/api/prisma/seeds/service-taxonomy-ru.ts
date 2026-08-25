@@ -576,7 +576,6 @@ export const SERVICE_TAXONOMY_RU: Record<string, string> = {
   'logistics-and-handling/freight-forwarding/freight-documentation': 'Документация на грузоперевозки',
   'logistics-and-handling/freight-forwarding/shipment-tracking': 'Отслеживание отправлений',
   'logistics-and-handling/freight-forwarding/freight-insurance-assistance': 'Помощь в оформлении страхования грузоперевозок',
-  'processing': 'Обработка',
   'processing/sorting-and-grading/sorting/shape-sorting': 'Сортировка по форме',
   'processing/sorting-and-grading/sorting/defect-sorting': 'Сортировка дефектов',
   'processing/sorting-and-grading/sorting/foreign-material-removal': 'Удаление посторонних предметов',
