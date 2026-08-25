@@ -32,6 +32,11 @@ enum Role {
   processor
   fulfillment_partner
   finance_partner
+  /// A law firm or independent advocate. Contract drafting, licensing,
+  /// arbitration and notarial work for traders — quoted per matter, not per
+  /// tonne, which is why it carries its own capacity unit rather than the
+  /// mass units the processing roles assume.
+  legal_advisor
   admin
 }
 
@@ -42,6 +47,7 @@ enum ServiceCategory {
   accounting
   customs_clearance
   financial_services
+  legal_services
   fulfillment
   packing
   roasting
@@ -653,8 +659,17 @@ model ServiceProvider {
   citiesServed String[]          @default([])
   country      String?
 
-  /// Throughput in the unit implied by `pricingBasis` (kg/day, ton/day, lots/day).
+  /// Throughput per day, counted in `capacityUnit`.
   capacityPerDay Int?
+  /// What `capacityPerDay` counts, from `CAPACITY_UNITS` in @agrotraders/types.
+  ///
+  /// Nullable, and it stays that way: this column landed long after
+  /// `capacityPerDay`, whose unit used to be "implied by pricingBasis" — which
+  /// in practice meant a directory card read "Capacity per day: 30" and the
+  /// buyer could not tell 30 tons from 30 filings. Rows written before this
+  /// existed keep rendering as the bare number they always did rather than
+  /// being back-filled with a guess.
+  capacityUnit   String?
   /// FSSAI / ISO / HACCP and similar. Free text: certification names vary by
   /// country and a fixed enum would silently exclude valid ones.
   certifications String[] @default([])

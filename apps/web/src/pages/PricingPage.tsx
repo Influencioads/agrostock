@@ -31,9 +31,9 @@ const ROLE_TABS: { key: string; roles: string[] }[] = [
   { key: 'transporter', roles: ['transporter'] },
   { key: 'loaderco', roles: ['loaderco', 'workerco'] },
   { key: 'worker', roles: ['worker'] },
-  // The five service roles share one ladder; `processor` carries an uplifted
+  // The service roles share one ladder; `processor` carries an uplifted
   // Standard tier, so it gets its own tab rather than being averaged away.
-  { key: 'services', roles: ['accountant', 'packer', 'fulfillment_partner', 'finance_partner'] },
+  { key: 'services', roles: ['accountant', 'packer', 'fulfillment_partner', 'finance_partner', 'legal_advisor'] },
   { key: 'processor', roles: ['processor'] },
 ];
 

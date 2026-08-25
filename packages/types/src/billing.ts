@@ -137,10 +137,10 @@ export interface PlanSeed {
 const rub = (n: number) => n * 100;
 
 /**
- * The five service-provider roles share ONE ladder: they differ in what they
- * list, not in how much platform they consume. Five tables would be five things
- * to keep in sync for no extra revenue — so the quotas are defined once here and
- * stamped onto one Plan row per role.
+ * The service-provider roles share ONE ladder: they differ in what they list,
+ * not in how much platform they consume. A table per role would be a table per
+ * role to keep in sync for no extra revenue — so the quotas are defined once
+ * here and stamped onto one Plan row per role.
  */
 const SERVICE_LIMITS = {
   start: { pricedServices: 3, enquiriesPerMonth: 5, serviceAreas: 1, teamMembers: 1 },
@@ -160,6 +160,7 @@ const SERVICE_ROLE_PRICING: { role: string; standard: Partial<Record<BillingCycl
   { role: 'packer', standard: { monthly: rub(4900), quarterly: rub(13200), yearly: rub(40900) } },
   { role: 'fulfillment_partner', standard: { monthly: rub(4900), quarterly: rub(13200), yearly: rub(40900) } },
   { role: 'finance_partner', standard: { monthly: rub(4900), quarterly: rub(13200), yearly: rub(40900) } },
+  { role: 'legal_advisor', standard: { monthly: rub(4900), quarterly: rub(13200), yearly: rub(40900) } },
   // Processor exception: roasting, sorting/grading, blanching and pitting lines
   // are capital-equipment businesses quoting per tonne, not per filing, so they
   // carry materially higher job values and take an uplifted Standard tier.
