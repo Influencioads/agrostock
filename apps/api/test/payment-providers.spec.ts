@@ -5,7 +5,7 @@ import { TBankProvider, tbankToken } from '../src/billing/providers/tbank';
 import { YooKassaProvider } from '../src/billing/providers/yookassa';
 import type { CreatePaymentInput } from '../src/billing/providers/provider';
 
-const md5 = (s: string) => createHash('md5').update(s, 'utf8').digest('hex');
+const rk = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 
 const baseInput: CreatePaymentInput = {
   paymentId: 'pay_1',
@@ -33,7 +33,7 @@ describe('Robokassa', () => {
     expect(url.origin + url.pathname).toBe('https://auth.robokassa.ru/Merchant/Index.aspx');
     expect(url.searchParams.get('OutSum')).toBe('2900.00');
     expect(url.searchParams.get('InvId')).toBe('4242');
-    expect(url.searchParams.get('SignatureValue')).toBe(md5('agrotraders:2900.00:4242:pass-one'));
+    expect(url.searchParams.get('SignatureValue')).toBe(rk('agrotraders:2900.00:4242:pass-one'));
     expect(url.searchParams.get('Recurring')).toBe('true');
     expect(url.searchParams.get('IsTest')).toBe('1');
   });
@@ -46,18 +46,18 @@ describe('Robokassa', () => {
   });
 
   it('accepts a callback signed with Password2 and reports the amount in kopecks', async () => {
-    const body = { OutSum: '2900.00', InvId: '4242', SignatureValue: md5('2900.00:4242:pass-two').toUpperCase() };
+    const body = { OutSum: '2900.00', InvId: '4242', SignatureValue: rk('2900.00:4242:pass-two').toUpperCase() };
     const event = await p.verify(body, creds);
     expect(event).toMatchObject({ invId: 4242, status: 'succeeded', amountMinor: 290_000, bindingToken: '4242' });
     expect(p.ack(event!)).toBe('OK4242');
   });
 
   it('rejects a tampered amount, a wrong password, and a missing signature', async () => {
-    const good = md5('2900.00:4242:pass-two');
+    const good = rk('2900.00:4242:pass-two');
     // Amount raised, signature left alone — the classic forgery attempt.
     expect(await p.verify({ OutSum: '29000.00', InvId: '4242', SignatureValue: good }, creds)).toBeNull();
     // Signed with Password1, which only ever signs OUTgoing checkout URLs.
-    expect(await p.verify({ OutSum: '2900.00', InvId: '4242', SignatureValue: md5('2900.00:4242:pass-one') }, creds)).toBeNull();
+    expect(await p.verify({ OutSum: '2900.00', InvId: '4242', SignatureValue: rk('2900.00:4242:pass-one') }, creds)).toBeNull();
     expect(await p.verify({ OutSum: '2900.00', InvId: '4242' }, creds)).toBeNull();
     expect(await p.verify({ OutSum: '2900.00', InvId: '4242', SignatureValue: good }, { MerchantLogin: 'x', Password1: 'a' })).toBeNull();
   });

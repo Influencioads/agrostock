@@ -18,11 +18,11 @@ import {
  * Robokassa — https://docs.robokassa.ru/
  *
  * The odd one out: starting a payment needs no server call at all. You build a
- * signed query string and redirect the browser to it. Everything is MD5 over
- * colon-joined values, which is dated but is what the protocol specifies.
+ * signed query string and redirect the browser to it. Everything is a hash over
+ * colon-joined values.
  *
- *   payment signature : md5(MerchantLogin:OutSum:InvId:Password1)
- *   result signature  : md5(OutSum:InvId:Password2)
+ *   payment signature : sha256(MerchantLogin:OutSum:InvId:Password1)
+ *   result signature  : sha256(OutSum:InvId:Password2)
  *
  * Two different passwords on purpose: Password1 signs what we send the user,
  * Password2 signs what Robokassa sends back, so a leaked checkout URL cannot be
@@ -32,7 +32,15 @@ import {
 const PAY_URL = 'https://auth.robokassa.ru/Merchant/Index.aspx';
 const RECURRING_URL = 'https://auth.robokassa.ru/Merchant/Recurring';
 
-const md5 = (s: string) => createHash('md5').update(s, 'utf8').digest('hex');
+/**
+ * Must match "Hash calculation algorithm" in the Robokassa merchant profile —
+ * BOTH dropdowns, the live one and the one under "Parameters of the test fees".
+ * A mismatch is silent: checkout URLs are rejected and callbacks fail to verify.
+ *
+ * ponytail: hardcoded, because one shop cannot have two live algorithms. Make it
+ * a credential field if live and test ever need to differ.
+ */
+const sign = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 
 export class RobokassaProvider implements PaymentProvider {
   readonly key: PaymentProviderKey = 'robokassa';
@@ -65,7 +73,7 @@ export class RobokassaProvider implements PaymentProvider {
       OutSum: outSum,
       InvId: String(input.invId),
       Description: input.description.slice(0, 100),
-      SignatureValue: md5(`${login}:${outSum}:${input.invId}:${p1}`),
+      SignatureValue: sign(`${login}:${outSum}:${input.invId}:${p1}`),
       Culture: 'ru',
       Encoding: 'utf-8',
     });
@@ -90,7 +98,7 @@ export class RobokassaProvider implements PaymentProvider {
       InvoiceID: String(input.invId),
       PreviousInvoiceID: input.bindingToken,
       Description: input.description.slice(0, 100),
-      SignatureValue: md5(`${login}:${outSum}:${input.invId}:${p1}`),
+      SignatureValue: sign(`${login}:${outSum}:${input.invId}:${p1}`),
       OutSum: outSum,
     });
 
@@ -122,7 +130,7 @@ export class RobokassaProvider implements PaymentProvider {
     const signature = str(body, 'SignatureValue') ?? str(body, 'crc');
     if (!outSum || !invIdRaw || !signature) return Promise.resolve(null);
 
-    if (!safeEqual(md5(`${outSum}:${invIdRaw}:${p2}`), signature)) return Promise.resolve(null);
+    if (!safeEqual(sign(`${outSum}:${invIdRaw}:${p2}`), signature)) return Promise.resolve(null);
 
     const invId = Number(invIdRaw);
     if (!Number.isInteger(invId)) return Promise.resolve(null);
@@ -150,7 +158,7 @@ export class RobokassaProvider implements PaymentProvider {
    */
   test(creds: Creds): Promise<string> {
     const { login, p1 } = this.assert(creds);
-    md5(`${login}:1.00:1:${p1}`);
+    sign(`${login}:1.00:1:${p1}`);
     return Promise.resolve(`Credentials present for merchant "${login}". Robokassa has no verification endpoint, so this checks completeness only.`);
   }
 }
