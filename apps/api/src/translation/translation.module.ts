@@ -4,6 +4,8 @@ import { TranslationService } from './translation.service';
 import { TextTranslationService } from './text-translation.service';
 import { ContentTranslationWorker } from './content-translation.worker';
 import { TranslationSweepService } from './translation-sweep.service';
+import { TranslationAdminService } from './translation-admin.service';
+import { TranslationAdminController } from './translation-admin.controller';
 import { CatalogModule } from '../catalog/catalog.module';
 
 /**
@@ -18,7 +20,8 @@ import { CatalogModule } from '../catalog/catalog.module';
   // For CategoriesService.fieldMap(): the worker and the sweep both need the
   // attribute definitions, which now live in the DB behind the catalog cache.
   imports: [CatalogModule],
-  providers: [GoogleTranslateClient, TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService],
-  exports: [TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService],
+  controllers: [TranslationAdminController],
+  providers: [GoogleTranslateClient, TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService, TranslationAdminService],
+  exports: [TranslationService, TextTranslationService, ContentTranslationWorker, TranslationSweepService, TranslationAdminService],
 })
 export class TranslationModule {}

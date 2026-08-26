@@ -780,7 +780,8 @@
     "support": "Support Inbox",
     "team": "Team",
     "transport": "Transport",
-    "users": "Users"
+    "users": "Users",
+    "translation": "Translation"
   },
   "navGroup": {
     "Company": "Company",
@@ -989,7 +990,8 @@
     "staff_manage": "Staff & permissions (super-admin)",
     "support_agent": "Support",
     "transport_manage": "Transport",
-    "users_manage": "Users"
+    "users_manage": "Users",
+    "translation_manage": "Translation"
   },
   "placeholder": {
     "body": "This module shares the same layout, tables and components. Wiring to live data continues as the backend phases land.",
@@ -1470,5 +1472,37 @@
     "subtitle": "{{shown}} of {{total}} accounts",
     "title": "Users",
     "view": "View"
+  },
+  "translation": {
+    "title": "Translation",
+    "subtitle": "Automatic translation coverage across the catalogue.",
+    "autoTitle": "Automatic translation",
+    "autoHelp": "Fills missing translations every hour. Turning it off freezes coverage — text already translated keeps showing, only new content stops being translated.",
+    "auto": "Auto-translate",
+    "noProvider": "No translation provider is configured on the server, so nothing can be translated.",
+    "runNow": "Translate everything now",
+    "running": "Translating…",
+    "lastRun": "Last run {{when}} — {{count}} filled",
+    "neverRun": "Never run from here",
+    "ranOk": "Translated {{count}} items",
+    "turnedOn": "Automatic translation is on",
+    "turnedOff": "Automatic translation is off",
+    "complete": "100% translated",
+    "missingN": "{{count}} missing",
+    "coverage": "Coverage by source",
+    "coverageHelp": "Counted from the database. Every name a visitor reads comes from one of these, so a count here is exact.",
+    "source": "Source",
+    "rows": "Rows",
+    "missingCol": "Missing",
+    "percent": "Translated",
+    "src": {
+      "products": "Product listings",
+      "categories": "Categories",
+      "subcategories": "Subcategories",
+      "markets": "Markets",
+      "serviceNodes": "Service catalogue",
+      "workerTypes": "Worker types",
+      "cmsPages": "CMS pages"
+    }
   }
 }

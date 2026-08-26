@@ -163,6 +163,9 @@ enum AdminPermission {
   reviews_moderate
   /// Plan catalogue, subscriptions, payment gateways, commission + dunning settings.
   billing_manage
+  /// Automatic translation: the master switch, the coverage report, and the
+  /// on-demand full sweep.
+  translation_manage
 }
 
 /// Which completed subject a review is anchored to. Polymorphic — exactly one of
@@ -3110,6 +3113,24 @@ model PaymentGatewayConfig {
 }
 
 /// Singleton platform billing configuration — the Branding model's pattern.
+/// Master controls for machine translation. Singleton, like BillingSettings.
+model TranslationSettings {
+  id Int @id @default(1)
+
+  /// Master switch for the hourly sweep. The sweep is the backstop that fills
+  /// reference data and anything translate-on-write missed, so turning it off
+  /// freezes coverage rather than breaking reads — existing translations keep
+  /// serving, only new ones stop being produced.
+  autoTranslateEnabled Boolean @default(true)
+
+  /// Stamped by the admin "translate everything" run, so the page can say when
+  /// coverage was last moved rather than leaving an admin guessing.
+  lastRunAt     DateTime?
+  lastRunFilled Int?
+
+  updatedAt DateTime @updatedAt
+}
+
 model BillingSettings {
   id Int @id @default(1)
 

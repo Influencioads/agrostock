@@ -49,6 +49,7 @@ export const MODULES: Mod[] = [
   { to: '/email-templates', key: 'emailTemplates', icon: 'message', group: 'Company', perm: 'email_templates' },
   { to: '/offices', key: 'offices', icon: 'globe', group: 'Company', perm: 'offices_manage' },
   { to: '/branding', key: 'branding', icon: 'leaf', group: 'Company', perm: 'branding_manage' },
+  { to: '/translation', key: 'translation', icon: 'globe', group: 'Company', perm: 'translation_manage' },
   { to: '/payments', key: 'payments', icon: 'wallet', group: 'Company', perm: 'finance_manage' },
   { to: '/plans', key: 'plans', icon: 'chart', group: 'Company', perm: 'billing_manage' },
   { to: '/subscriptions', key: 'subscriptions', icon: 'wallet', group: 'Company', perm: 'billing_manage' },

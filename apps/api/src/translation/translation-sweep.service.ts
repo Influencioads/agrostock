@@ -81,6 +81,10 @@ export class TranslationSweepService {
   @Cron(CronExpression.EVERY_HOUR, { name: 'translation-sweep' })
   async hourly() {
     if (!this.translation.enabled) return;
+    // Master switch (Admin -> Translation). Off freezes coverage rather than
+    // breaking reads: stored translations keep serving, only new ones stop.
+    const settings = await this.prisma.translationSettings.findUnique({ where: { id: 1 } });
+    if (settings && !settings.autoTranslateEnabled) return;
     // Overlap guard: a big backlog can take longer than the interval, and two
     // sweeps translating the same rows would double the bill for nothing.
     if (this.running) {

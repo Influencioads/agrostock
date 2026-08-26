@@ -1115,7 +1115,29 @@ export type AdminPermission =
   | 'reports_view'
   | 'staff_manage'
   | 'reviews_moderate'
-  | 'billing_manage';
+  | 'billing_manage'
+  | 'translation_manage';
+
+/* ── translation ────────────────────────────────────────────────── */
+
+export interface ApiTranslationCoverageRow {
+  key: string;
+  total: number;
+  translated: number;
+  missing: number;
+  percent: number;
+}
+
+export interface ApiTranslationOverview {
+  autoTranslateEnabled: boolean;
+  /** False when the server has no translation API key — the run button cannot work. */
+  providerConfigured: boolean;
+  locales: string[];
+  lastRunAt: string | null;
+  lastRunFilled: number | null;
+  coverage: ApiTranslationCoverageRow[];
+  totalMissing: number;
+}
 
 /* ── billing ────────────────────────────────────────────────────── */
 
@@ -3065,6 +3087,12 @@ export function createApiClient(opts: ApiClientOptions) {
        */
       setServiceNodeActive: (id: string, isActive: boolean) =>
         patch<{ ok: boolean; affected: number }>(`/admin/service-taxonomy/${id}/active`, { isActive }),
+
+      /* ── translation: master switch, coverage, manual full run ──── */
+      translation: () => get<ApiTranslationOverview>('/admin/translation'),
+      setTranslationEnabled: (enabled: boolean) =>
+        patch<ApiTranslationOverview>('/admin/translation', { enabled }),
+      runTranslation: () => post<ApiTranslationOverview>('/admin/translation/run'),
 
       /* ── billing: plan catalogue, gateways, subscriptions ──────── */
       billingPlans: () => get<ApiPlan[]>('/admin/billing/plans'),
