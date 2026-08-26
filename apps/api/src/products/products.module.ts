@@ -92,6 +92,7 @@ export function localizeProduct<
     translations?: ProductTranslationRow[];
     category?: TaxonRel;
     subcategory?: TaxonRel;
+    market?: { name: string; city?: string | null; translations?: { name?: string; city?: string | null }[] } | null;
   },
 >(row: T): T {
   const tr = row.translations?.[0];
@@ -104,6 +105,14 @@ export function localizeProduct<
   }
   if (localized.category) localized.category = localizeTaxon(localized.category);
   if (localized.subcategory) localized.subcategory = localizeTaxon(localized.subcategory);
+  // The market carries its own translation row and /api/markets already folds
+  // it; every product endpoint selected the market WITHOUT one, so a Russian
+  // card read "Ваши APMC" in the picker and "Vashi APMC" on the listing.
+  // `city` travels with `name` for the reason the markets module gives: half a
+  // translated place name reads worse than either language alone.
+  if (localized.market) {
+    localized.market = localize(localized.market, ['name', 'city']) as typeof localized.market;
+  }
   return localized;
 }
 
@@ -668,7 +677,12 @@ export class ProductsService {
         include: {
           ...productTaxonInclude(locale),
           seller: { select: { id: true, name: true } },
-          market: { select: { id: true, slug: true, name: true, city: true, country: true, flag: true } },
+          market: {
+            select: {
+              id: true, slug: true, name: true, city: true, country: true, flag: true,
+              translations: { where: { locale }, select: { name: true, city: true } },
+            },
+          },
           translations: { where: { locale } },
         },
       }),
@@ -980,7 +994,12 @@ export class ProductsService {
         include: {
           ...productTaxonInclude(locale),
           seller: { select: { id: true, name: true } },
-          market: { select: { id: true, slug: true, name: true, city: true, country: true, flag: true } },
+          market: {
+            select: {
+              id: true, slug: true, name: true, city: true, country: true, flag: true,
+              translations: { where: { locale }, select: { name: true, city: true } },
+            },
+          },
           translations: { where: { locale } },
         },
       });
@@ -1003,7 +1022,12 @@ export class ProductsService {
       include: {
         ...productTaxonInclude(locale),
         seller: { select: { id: true, name: true, country: true, kycStatus: true } },
-        market: { select: { id: true, slug: true, name: true, city: true, country: true, flag: true } },
+        market: {
+            select: {
+              id: true, slug: true, name: true, city: true, country: true, flag: true,
+              translations: { where: { locale }, select: { name: true, city: true } },
+            },
+          },
         translations: { where: { locale } },
       },
     });

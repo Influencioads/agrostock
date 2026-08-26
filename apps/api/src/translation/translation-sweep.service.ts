@@ -30,6 +30,35 @@ interface AttrDict {
   option?: Record<string, string>;
 }
 
+/**
+ * A trade code, not prose — `SWP`, `LWP`, `W180`, `IQF`, `20/22`, `US No.1`.
+ *
+ * Google transliterates these into the target script: `SWP` came back as `СВП`
+ * and `BB` as `ББ`, which is not a translation but a corruption — a buyer
+ * filtering on the grade `SWP` no longer matches the row, and the code is
+ * meaningless in Cyrillic. Anything with no lowercase letter is a code, so it
+ * is stored as itself and never sent. Also saves the API call.
+ */
+function isTradeCode(text: string): boolean {
+  return /[A-Za-z]/.test(text) && !/[a-z]/.test(text);
+}
+
+/**
+ * Put back any bracketed code the translator rewrote: `Butts (B)` came back as
+ * `Баттс (Б)`, changing the very letter the code is. The prose around it is a
+ * real translation and is kept.
+ */
+function restoreBracketedCodes(source: string, translated: string): string {
+  const codes = source.match(/\(([^)]*)\)/g)?.filter((c) => isTradeCode(c.slice(1, -1))) ?? [];
+  if (!codes.length) return translated;
+  let out = translated;
+  const found = out.match(/\(([^)]*)\)/g) ?? [];
+  codes.forEach((code, i) => {
+    if (found[i] && found[i] !== code) out = out.replace(found[i], code);
+  });
+  return out;
+}
+
 @Injectable()
 export class TranslationSweepService {
   private readonly logger = new Logger('TranslationSweep');
@@ -199,17 +228,36 @@ export class TranslationSweepService {
         const dict = (tr.attrFields as AttrDict | null) ?? {};
         const missing: string[] = [];
         const kinds: ('label' | 'option')[] = [];
+        // Codes are stored as themselves without ever reaching the translator.
+        const selfStored: { key: string; kind: 'label' | 'option' }[] = [];
         for (const f of (row.attrFields as unknown as AttrField[]) ?? []) {
           if (!dict.label?.[f.label] && !missing.includes(f.label)) {
-            missing.push(f.label);
-            kinds.push('label');
+            if (isTradeCode(f.label)) selfStored.push({ key: f.label, kind: 'label' });
+            else {
+              missing.push(f.label);
+              kinds.push('label');
+            }
           }
           for (const o of f.options ?? []) {
             if (!dict.option?.[o] && !missing.includes(o)) {
-              missing.push(o);
-              kinds.push('option');
+              if (isTradeCode(o)) selfStored.push({ key: o, kind: 'option' });
+              else {
+                missing.push(o);
+                kinds.push('option');
+              }
             }
           }
+        }
+        for (const { key, kind } of selfStored) {
+          const bucket = kind === 'label' ? (dict.label ??= {}) : (dict.option ??= {});
+          bucket[key] = key;
+        }
+        if (selfStored.length && !missing.length) {
+          await this.prisma.subcategoryTranslation.update({
+            where: { id: tr.id },
+            data: { attrFields: { label: dict.label ?? {}, option: dict.option ?? {} } as Prisma.InputJsonValue },
+          });
+          filled += selfStored.length;
         }
         if (missing.length) jobs.push({ id: tr.id, dict, missing, kinds });
         if (limit && jobs.length >= limit) break;
@@ -226,7 +274,7 @@ export class TranslationSweepService {
           // Store the identity mapping when Google returns nothing or the same
           // text — an unstored string reads as "missing" again next hour and
           // would be re-sent to Google forever ("20/22", "IQF", …).
-          const text = out[i] || src;
+          const text = restoreBracketedCodes(src, out[i] || src);
           if (job.kinds[i] === 'label') label[src] = text;
           else option[src] = text;
         });
