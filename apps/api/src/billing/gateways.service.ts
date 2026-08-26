@@ -75,7 +75,7 @@ export class GatewaysService {
   }
 
   private isConfigured(adapter: PaymentProvider, creds: Creds): boolean {
-    return adapter.credentialFields.every((f) => Boolean(creds[f.key]?.trim()));
+    return adapter.credentialFields.every((f) => f.optional || Boolean(creds[f.key]?.trim()));
   }
 
   /**
@@ -193,7 +193,7 @@ export class GatewaysService {
     // the first customer to pick it gets an error at checkout.
     const effective = patch.credentials ? decryptJson(credentials) : current;
     if (patch.enabled && !this.isConfigured(adapter, effective)) {
-      const missing = adapter.credentialFields.filter((f) => !effective[f.key]?.trim()).map((f) => f.key);
+      const missing = adapter.credentialFields.filter((f) => !f.optional && !effective[f.key]?.trim()).map((f) => f.key);
       throw new BadRequestException(`Cannot enable ${LABELS[provider]}: missing ${missing.join(', ')}.`);
     }
 
@@ -213,7 +213,7 @@ export class GatewaysService {
     const adapter = this.adapter(provider);
     const creds = decryptJson(row.credentials);
     if (!this.isConfigured(adapter, creds)) {
-      const missing = adapter.credentialFields.filter((f) => !creds[f.key]?.trim()).map((f) => f.key);
+      const missing = adapter.credentialFields.filter((f) => !f.optional && !creds[f.key]?.trim()).map((f) => f.key);
       return { ok: false, message: `Missing credentials: ${missing.join(', ')}.` };
     }
     try {

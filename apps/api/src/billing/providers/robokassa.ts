@@ -55,7 +55,19 @@ export class RobokassaProvider implements PaymentProvider {
     { key: 'MerchantLogin', label: 'merchantLogin', secret: false, example: 'agrotraders' },
     { key: 'Password1', label: 'password1', secret: true },
     { key: 'Password2', label: 'password2', secret: true },
+    /**
+     * Recurring is a SEPARATE service Robokassa grants per shop, not something a
+     * merchant can switch on themselves. Sending `Recurring=true` without it
+     * fails the whole payment with error 34, so this stays off until support
+     * confirms — otherwise every subscription checkout dies at the acquirer.
+     */
+    { key: 'RecurringEnabled', label: 'recurringEnabled', secret: false, optional: true, example: 'true — only after Robokassa grants рекуррентные платежи' },
   ] as const;
+
+  /** Whether this merchant may send `Recurring=true`. Opt-in, never assumed. */
+  private recurringAllowed(creds: Creds): boolean {
+    return creds.RecurringEnabled?.trim().toLowerCase() === 'true';
+  }
 
   private assert(creds: Creds): { login: string; p1: string; p2: string } {
     const login = creds.MerchantLogin?.trim();
@@ -79,7 +91,11 @@ export class RobokassaProvider implements PaymentProvider {
     });
     // Marks the payment as the first of a recurring series; the InvId of this
     // payment becomes the PreviousInvoiceID every renewal charges against.
-    if (input.bindCard) params.set('Recurring', 'true');
+    // Gated: a shop without the recurring service rejects the ENTIRE payment
+    // with error 34, so an ungranted merchant silently takes a one-off payment
+    // instead of failing checkout. The subscription still starts; only the
+    // unattended renewal is unavailable, and `charge()` says so plainly.
+    if (input.bindCard && this.recurringAllowed(creds)) params.set('Recurring', 'true');
     if (input.testMode) params.set('IsTest', '1');
 
     return Promise.resolve({ providerRef: String(input.invId), confirmationUrl: `${PAY_URL}?${params.toString()}` });
@@ -92,6 +108,13 @@ export class RobokassaProvider implements PaymentProvider {
    */
   async charge(input: ChargeInput, creds: Creds): Promise<ChargeResult> {
     const { login, p1 } = this.assert(creds);
+    if (!this.recurringAllowed(creds)) {
+      return {
+        providerRef: String(input.invId),
+        status: 'failed',
+        failureReason: 'Robokassa recurring payments are not enabled for this merchant (error 34). Request the service from Robokassa, then set RecurringEnabled.',
+      };
+    }
     const outSum = minorToDecimal(input.amountMinor);
     const body = new URLSearchParams({
       MerchantLogin: login,

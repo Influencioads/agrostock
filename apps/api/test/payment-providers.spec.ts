@@ -28,7 +28,7 @@ describe('Robokassa', () => {
   const creds = { MerchantLogin: 'agrotraders', Password1: 'pass-one', Password2: 'pass-two' };
 
   it('signs the checkout URL with Password1 over MerchantLogin:OutSum:InvId', async () => {
-    const { confirmationUrl } = await p.create({ ...baseInput, bindCard: true }, creds);
+    const { confirmationUrl } = await p.create({ ...baseInput, bindCard: true }, { ...creds, RecurringEnabled: 'true' });
     const url = new URL(confirmationUrl!);
     expect(url.origin + url.pathname).toBe('https://auth.robokassa.ru/Merchant/Index.aspx');
     expect(url.searchParams.get('OutSum')).toBe('2900.00');
@@ -36,6 +36,25 @@ describe('Robokassa', () => {
     expect(url.searchParams.get('SignatureValue')).toBe(rk('agrotraders:2900.00:4242:pass-one'));
     expect(url.searchParams.get('Recurring')).toBe('true');
     expect(url.searchParams.get('IsTest')).toBe('1');
+  });
+
+  it('does NOT send Recurring unless the merchant was granted the service', async () => {
+    // Robokassa rejects the ENTIRE payment with error 34 ("услуга рекуррентных
+    // платежей не разрешена магазину") when a shop without the service sends
+    // Recurring=true. Live checkout died on exactly this, so the flag is opt-in.
+    const withoutGrant = await p.create({ ...baseInput, bindCard: true }, creds);
+    expect(new URL(withoutGrant.confirmationUrl!).searchParams.get('Recurring')).toBeNull();
+    // The rest of the payment is unaffected — it still goes through as a one-off.
+    expect(new URL(withoutGrant.confirmationUrl!).searchParams.get('OutSum')).toBe('2900.00');
+
+    const granted = await p.create({ ...baseInput, bindCard: true }, { ...creds, RecurringEnabled: 'true' });
+    expect(new URL(granted.confirmationUrl!).searchParams.get('Recurring')).toBe('true');
+  });
+
+  it('refuses an unattended renewal rather than charging without the grant', async () => {
+    const res = await p.charge({ ...baseInput, bindingToken: '4242' }, creds);
+    expect(res.status).toBe('failed');
+    expect(res.failureReason).toMatch(/recurring/i);
   });
 
   it('omits the recurring flag and test flag when not asked for', async () => {

@@ -90,6 +90,12 @@ export interface CredentialField {
   secret: boolean;
   /** Shown under the input as a hint; already-translated copy is not expected here. */
   example?: string;
+  /**
+   * Not required for the gateway to take a payment. `isConfigured` skips these,
+   * so adding one never turns a working gateway "incomplete" — which would stop
+   * checkout dead the moment the field shipped.
+   */
+  optional?: boolean;
 }
 
 export interface PaymentProvider {

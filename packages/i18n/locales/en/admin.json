@@ -342,7 +342,8 @@
       "secretKey": "Secret key",
       "shopId": "Shop ID",
       "terminalKey": "Terminal key",
-      "terminalPassword": "Terminal password"
+      "terminalPassword": "Terminal password",
+      "recurringEnabled": "Recurring allowed (type \"true\" only after Robokassa grants the service)"
     },
     "hideSetup": "Hide guide",
     "incomplete": "Credentials missing",

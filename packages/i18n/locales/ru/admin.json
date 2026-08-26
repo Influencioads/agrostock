@@ -344,7 +344,8 @@
       "secretKey": "Секретный ключ",
       "shopId": "ID магазина",
       "terminalKey": "Ключ терминала",
-      "terminalPassword": "Пароль терминала"
+      "terminalPassword": "Пароль терминала",
+      "recurringEnabled": "Рекуррентные платежи разрешены (введите «true» только после подключения услуги в Robokassa)"
     },
     "hideSetup": "Скрыть инструкцию",
     "incomplete": "Нет доступов",
