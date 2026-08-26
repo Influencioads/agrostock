@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CategoriesService, MAX_TAXONOMY_DEPTH } from '../src/catalog/catalog.module';
 import { ProductsService } from '../src/products/products.module';
 import { noQuotas } from './helpers/entitlements-stub';
+import { noTranslate } from './helpers/text-translation-stub';
 
 type Node = { id: string; name: string; parentId: string | null; categoryId: string };
 
@@ -137,7 +138,7 @@ function serviceForProducts() {
     // field map means no attribute specs and no facet definitions, which is
     // exactly the shape a product with no subcategory fields produces.
     fieldMap: async () => new Map(),
-  } as never, noQuotas()), prisma };
+  } as never, noQuotas(), noTranslate()), prisma };
 }
 
 describe('ProductsService deep taxonomy filters', () => {

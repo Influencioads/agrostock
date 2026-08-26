@@ -35,6 +35,7 @@ import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
 import { PRODUCT_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
 import { Locale, localize } from '../common/locale';
+import { TextTranslationService } from '../translation/text-translation.service';
 import { browsableWhere } from './sellable';
 import { MAX_QTY } from '../common/limits';
 import type { Lang } from '@agrotraders/i18n';
@@ -422,7 +423,20 @@ export class ProductsService {
     private fx: FxService,
     private categories: CategoriesService,
     private entitlements: EntitlementsService,
+    private text: TextTranslationService,
   ) {}
+
+  /**
+   * `Product.city` is free text picked from the geo dataset, which ships English
+   * names only — so a Russian card read "Karnal, Индия", half translated. There
+   * is no per-product translation row for it, which is exactly the case the
+   * generic translate-on-read cache exists for; identical city strings share one
+   * cached row across every content type, so this costs one lookup, not a call
+   * per listing.
+   */
+  private localizeCities<T extends { city?: string | null }>(rows: T[], locale: Lang): Promise<T[]> {
+    return this.text.localizeRows(rows as unknown as Record<string, unknown>[], ['city'], locale) as unknown as Promise<T[]>;
+  }
 
   /**
    * A seller quotes in their own currency; every comparison downstream (price
@@ -691,7 +705,7 @@ export class ProductsService {
     const fields = await this.categories.fieldMap(locale);
     const similar = total === 0 && page === 1 ? await this.similarTo(q, where, locale, fields) : null;
     return {
-      items: items.map((p) => localizeProductWithSpecs(p, fields, locale)),
+      items: await this.localizeCities(items.map((p) => localizeProductWithSpecs(p, fields, locale)), locale),
       total,
       page,
       pageSize,
@@ -1009,7 +1023,7 @@ export class ProductsService {
         select: { name: true, translations: { where: { locale }, select: { name: true } } },
       });
       return {
-        similar: items.map((p) => localizeProductWithSpecs(p, fields, locale)),
+        similar: await this.localizeCities(items.map((p) => localizeProductWithSpecs(p, fields, locale)), locale),
         similarFrom: { id: ancestor.id, name: label?.translations[0]?.name ?? label?.name ?? ancestor.name },
       };
     }
@@ -1037,7 +1051,8 @@ export class ProductsService {
     // can't be browsed. 404 (not 403) so we don't confirm the listing exists.
     // (Expired auctions keep status 'live', so result pages still resolve.)
     if (product.status !== 'live') throw new NotFoundException('Product not found');
-    return localizeProductWithSpecs(product, await this.categories.fieldMap(locale), locale);
+    const one = localizeProductWithSpecs(product, await this.categories.fieldMap(locale), locale);
+    return (await this.localizeCities([one], locale))[0];
   }
 
   /**

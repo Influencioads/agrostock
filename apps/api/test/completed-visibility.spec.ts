@@ -3,6 +3,7 @@ import { AuctionsService } from '../src/auctions/auctions.module';
 import { BuyerBidsService } from '../src/buyer-bids/buyer-bids.module';
 import { ProductsService } from '../src/products/products.module';
 import { noQuotas } from './helpers/entitlements-stub';
+import { noTranslate } from './helpers/text-translation-stub';
 
 const PAST = new Date(Date.now() - 60_000);
 const FUTURE = new Date(Date.now() + 60_000);
@@ -165,7 +166,7 @@ describe('ProductsService browse', () => {
     // field map means no attribute specs and no facet definitions, which is
     // exactly the shape a product with no subcategory fields produces.
     fieldMap: async () => new Map(),
-  } as never, noQuotas());
+  } as never, noQuotas(), noTranslate());
 
     await svc.findAll({});
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ProductsService } from '../src/products/products.module';
 import { noQuotas } from './helpers/entitlements-stub';
+import { noTranslate } from './helpers/text-translation-stub';
 
 /** sub3 (level 2) → sub4 (level 3); `other` is an unrelated level-2 branch. */
 const NODES = [
@@ -28,7 +29,7 @@ function serviceForProducts() {
     // field map means no attribute specs and no facet definitions, which is
     // exactly the shape a product with no subcategory fields produces.
     fieldMap: async () => new Map(),
-  } as never, noQuotas()), prisma };
+  } as never, noQuotas(), noTranslate()), prisma };
 }
 
 describe('ProductsService filters', () => {

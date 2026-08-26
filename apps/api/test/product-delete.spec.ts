@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import { ProductsService } from '../src/products/products.module';
 import { noQuotas } from './helpers/entitlements-stub';
+import { noTranslate } from './helpers/text-translation-stub';
 
 const fkViolation = () =>
   new Prisma.PrismaClientKnownRequestError('Foreign key constraint failed', {
@@ -29,7 +30,7 @@ function serviceFor(opts: {
       update: vi.fn(async () => product),
     },
   };
-  return { svc: new ProductsService(prisma as never, {} as never, {} as never, {} as never, noQuotas()), prisma };
+  return { svc: new ProductsService(prisma as never, {} as never, {} as never, {} as never, noQuotas(), noTranslate()), prisma };
 }
 
 describe('ProductsService.remove', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ProductsService } from '../src/products/products.module';
 import { noQuotas } from './helpers/entitlements-stub';
+import { noTranslate } from './helpers/text-translation-stub';
 
 // RUB→USD at the fallback rate the FxService ships with.
 const fx = { toUsdCents: vi.fn(async (amount: number, currency: string) => Math.round((currency === 'RUB' ? amount / 78.5 : amount) * 100)) };
@@ -13,7 +14,7 @@ function serviceFor(existing?: Record<string, unknown>) {
       update: vi.fn(async ({ data }: { data: unknown }) => data),
     },
   };
-  const svc = new ProductsService(prisma as never, { emit: vi.fn() } as never, fx as never, {} as never, noQuotas());
+  const svc = new ProductsService(prisma as never, { emit: vi.fn() } as never, fx as never, {} as never, noQuotas(), noTranslate());
   return svc;
 }
 
