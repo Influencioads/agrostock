@@ -92,6 +92,13 @@ export class BillingPublicController {
    */
   @SkipThrottle()
   @Post('webhook/:provider')
+  // Robokassa's ResultURL method is chosen in ITS dashboard and GET is the
+  // default, so the same handler must answer both verbs. Mapping only POST
+  // returned 404 to every GET-configured callback; the acquirer then retried
+  // once a minute forever and the payment sat `pending` while the buyer saw a
+  // success screen. Both verbs, one handler — the body merge below already
+  // reads query params precisely because GET carries the fields there.
+  @Get('webhook/:provider')
   async webhook(@Param('provider') provider: string, @Req() req: Request, @Res() res: Response) {
     const key = assertProvider(provider);
     // Form-encoded (Robokassa) and JSON (YooKassa, T-Bank) both land in req.body;
