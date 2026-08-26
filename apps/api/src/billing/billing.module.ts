@@ -92,14 +92,26 @@ export class BillingPublicController {
    */
   @SkipThrottle()
   @Post('webhook/:provider')
-  // Robokassa's ResultURL method is chosen in ITS dashboard and GET is the
-  // default, so the same handler must answer both verbs. Mapping only POST
-  // returned 404 to every GET-configured callback; the acquirer then retried
-  // once a minute forever and the payment sat `pending` while the buyer saw a
-  // success screen. Both verbs, one handler — the body merge below already
-  // reads query params precisely because GET carries the fields there.
+  webhookPost(@Param('provider') provider: string, @Req() req: Request, @Res() res: Response) {
+    return this.handleCallback(provider, req, res);
+  }
+
+  /**
+   * The SAME callback over GET.
+   *
+   * Robokassa's ResultURL method is chosen in ITS dashboard and GET is the
+   * default, so we have to answer both verbs. This must be a SEPARATE method:
+   * stacking `@Get` and `@Post` on one handler does not work, because both
+   * write Nest's METHOD_METADATA and the second silently overwrites the first —
+   * leaving exactly one verb mapped and the other returning 404.
+   */
+  @SkipThrottle()
   @Get('webhook/:provider')
-  async webhook(@Param('provider') provider: string, @Req() req: Request, @Res() res: Response) {
+  webhookGet(@Param('provider') provider: string, @Req() req: Request, @Res() res: Response) {
+    return this.handleCallback(provider, req, res);
+  }
+
+  private async handleCallback(provider: string, req: Request, res: Response) {
     const key = assertProvider(provider);
     // Form-encoded (Robokassa) and JSON (YooKassa, T-Bank) both land in req.body;
     // query params cover Robokassa's GET-style ResultURL configuration.
