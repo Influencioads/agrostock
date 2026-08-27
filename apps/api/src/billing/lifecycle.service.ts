@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma, type Role } from '@prisma/client';
 import {
   UNENFORCED_LIMIT_KEYS,
+  applyDiscount,
   isPlanFeatureKey,
   isPlanLimitKey,
   type PlanFeatures,
@@ -254,15 +255,31 @@ export class LifecycleService {
         const until = day(sub.currentPeriodEnd);
 
         const ending = sub.cancelAtPeriodEnd || sub.status === 'canceled';
+        // cancel() already emails billing.canceled with the same plan and date.
+        // Without this, cancelling inside the last week produces that mail plus
+        // the 7-day notice plus the 2-day notice — three messages saying one
+        // thing, to someone who has just told us they are leaving.
+        if (ending && sub.canceledAt && now.getTime() - sub.canceledAt.getTime() < MARKETING_COOLDOWN_DAYS * DAY_MS) continue;
         const willRetry = Boolean(sub.provider && sub.providerToken);
 
         // A charge that is simply going to succeed needs telling once, early.
         if (!ending && willRetry && bucket !== NOTICE_DAYS) continue;
 
+        // Quote what we will ACTUALLY take. `subscriptions.service.liveDiscount`
+        // applies the grandfathering discount at charge time, so billing the
+        // catalogue price here would promise a comped or discounted customer a
+        // charge that never arrives — wrong in the direction people act on.
+        // Duplicated rather than injected: SubscriptionsService → Entitlements →
+        // Lifecycle would close a DI cycle.
+        const chargeMinor =
+          sub.discountPercent > 0 && !(sub.discountUntil && sub.discountUntil.getTime() < now.getTime())
+            ? applyDiscount(price.amountMinor, sub.discountPercent)
+            : price.amountMinor;
+
         const params: NotificationParams = {
           plan: sub.plan.name,
           until,
-          amount: rub(price.amountMinor),
+          amount: rub(chargeMinor),
         };
 
         // "…then you drop to 5 active listings" is the half of the message that
@@ -341,6 +358,10 @@ export class LifecycleService {
     // mostly two or three roles — so resolve each ladder once per run instead of
     // once per recipient.
     const pitches = new Map<Role, Awaited<ReturnType<LifecycleService['pitchFor']>>>();
+    // NUDGE_STEPS is indexed by POSITION while the cohort comes from the VALUE,
+    // so an admin typing "30, 12, 3" would send the "this is the last email"
+    // copy first, on day 3. Sort and dedupe rather than trusting the input.
+    days = [...new Set(days)].sort((a, b) => a - b);
     for (const [step, offset] of days.entries()) {
       const until = new Date(Date.now() - offset * DAY_MS);
       const from = new Date(until.getTime() - DAY_MS);
@@ -482,6 +503,11 @@ export class LifecycleService {
     limit: number;
     windowKey: string;
   }): Promise<void> {
+    // The kill switch has to cover this too. It is the emergency brake on a live
+    // billing system, and an operator who pulls it because customers are
+    // complaining about mail must not keep seeing quota warnings go out from the
+    // same ledger under the same feature name.
+    if (!(await this.settings()).lifecycleEmailsEnabled) return;
     await this.once(input.userId, `quota:${input.role}:${input.key}:${input.windowKey}`, () =>
       this.notifications.create({
         userId: input.userId,
