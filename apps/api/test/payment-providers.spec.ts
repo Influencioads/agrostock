@@ -19,7 +19,10 @@ const baseInput: CreatePaymentInput = {
   testMode: true,
 };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 /* ── Robokassa ──────────────────────────────────────────────────── */
 
@@ -84,6 +87,20 @@ describe('Robokassa', () => {
 
 /* ── T-Bank ─────────────────────────────────────────────────────── */
 
+/**
+ * T-Bank talks over `node:https` rather than global fetch, because its API is
+ * served under the Russian Trusted Root CA and only a per-request `ca` keeps
+ * that trust scoped to this one host. So the seam these tests stub is the
+ * provider's own `post`, not `fetch`.
+ */
+type Posts = { post(path: string, body: string): Promise<{ status: number; text: string }> };
+const stubPost = (p: TBankProvider, reply: object, capture?: (sent: Record<string, unknown>) => void) =>
+  vi.spyOn(p as unknown as Posts, 'post').mockImplementation(async (_path, body) => {
+    capture?.(JSON.parse(body) as Record<string, unknown>);
+    return { status: 200, text: JSON.stringify(reply) };
+  });
+
+
 describe('T-Bank', () => {
   const p = new TBankProvider();
   const creds = { TerminalKey: 'TERM123', Password: 'term-password' };
@@ -103,10 +120,7 @@ describe('T-Bank', () => {
 
   it('sends Amount as integer kopecks and binds the card when asked', async () => {
     let sent: Record<string, unknown> = {};
-    vi.stubGlobal('fetch', async (_url: string, init: { body: string }) => {
-      sent = JSON.parse(init.body) as Record<string, unknown>;
-      return new Response(JSON.stringify({ Success: true, PaymentId: 'tb_1', PaymentURL: 'https://securepay/x' }), { status: 200 });
-    });
+    stubPost(p, { Success: true, PaymentId: 'tb_1', PaymentURL: 'https://securepay/x' }, (b) => (sent = b));
 
     const created = await p.create({ ...baseInput, bindCard: true, customerKey: 'user_7' }, creds);
     expect(created).toEqual({ providerRef: 'tb_1', confirmationUrl: 'https://securepay/x' });
@@ -119,9 +133,7 @@ describe('T-Bank', () => {
   });
 
   it('surfaces a provider rejection as a readable error', async () => {
-    vi.stubGlobal('fetch', async () =>
-      new Response(JSON.stringify({ Success: false, ErrorCode: '9999', Details: 'Терминал не найден' }), { status: 200 }),
-    );
+    stubPost(p, { Success: false, ErrorCode: '9999', Details: 'Терминал не найден' });
     await expect(p.create(baseInput, creds)).rejects.toThrow('Терминал не найден');
   });
 

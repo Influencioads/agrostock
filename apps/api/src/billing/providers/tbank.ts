@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { request as httpsRequest } from 'node:https';
 import { BadRequestException } from '@nestjs/common';
 import type { PaymentProviderKey, PaymentStatus } from '@prisma/client';
 import { safeEqual } from '../../common/crypto';
@@ -12,6 +13,7 @@ import {
   type PaymentProvider,
   type VerifiedEvent,
 } from './provider';
+import { RUSSIAN_TRUSTED_ROOT_CA } from './russian-trusted-ca';
 
 /**
  * T-Bank (formerly Tinkoff) e-commerce acquiring — https://developer.tbank.ru/eacq/
@@ -107,15 +109,50 @@ export class TBankProvider implements PaymentProvider {
     return { terminal, password };
   }
 
+  /**
+   * POST JSON to T-Bank over TLS pinned to the Russian Trusted Root CA.
+   *
+   * `node:https` rather than global fetch: passing a per-request `ca` is the
+   * only way to scope that root to this one host. fetch would need an undici
+   * dispatcher, and undici is not a declared dependency here — it is merely
+   * hoisted by `shamefully-hoist`, which a production install would not keep.
+   *
+   * Passing `ca` REPLACES the default bundle for this connection, which is the
+   * point: this socket trusts the Russian root and nothing else, and every
+   * other outbound call in the API is untouched.
+   */
+  private post(path: string, body: string): Promise<{ status: number; text: string }> {
+    const url = new URL(`${API}${path}`);
+    return new Promise((resolve, reject) => {
+      const req = httpsRequest(
+        {
+          hostname: url.hostname,
+          port: url.port || 443,
+          path: `${url.pathname}${url.search}`,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+          ca: RUSSIAN_TRUSTED_ROOT_CA,
+          timeout: 25_000,
+        },
+        (res) => {
+          let text = '';
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => (text += chunk));
+          res.on('end', () => resolve({ status: res.statusCode ?? 0, text }));
+        },
+      );
+      // 'timeout' only fires the event; the socket must be torn down by hand or
+      // the promise hangs for as long as T-Bank keeps it open.
+      req.on('timeout', () => req.destroy(new Error('T-Bank did not respond within 25s.')));
+      req.on('error', reject);
+      req.end(body);
+    });
+  }
+
   private async call<T extends InitResponse>(path: string, params: Record<string, Scalar>, password: string, extra?: object): Promise<T> {
     const body = { ...params, Token: tbankToken(params, password), ...(extra ?? {}) };
-    const res = await fetch(`${API}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(25_000),
-    });
-    const text = await res.text();
+    const res = await this.post(path, JSON.stringify(body));
+    const text = res.text;
     let parsed: T;
     try {
       parsed = JSON.parse(text) as T;
