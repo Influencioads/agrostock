@@ -4,6 +4,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import { PrismaService } from '../prisma/prisma.service';
+import { unsubscribeToken } from '../common/crypto';
 import {
   NOTIFICATION_CREATED,
   categoryConfig,
@@ -73,6 +74,29 @@ export class MailService implements OnModuleInit {
     return this.webUrl() ? `${this.webUrl()}/console` : undefined;
   }
 
+  /** Where the API is reachable from a mail client (a different host to the web app). */
+  private apiUrl() {
+    return (this.config.get<string>('APP_API_URL') ?? `http://localhost:${this.config.get('API_PORT') ?? 3100}`).replace(/\/$/, '');
+  }
+
+  /**
+   * One-click unsubscribe URL for a promotional category. Points at the API, not
+   * the web app: the link must work with no session and no JavaScript, because
+   * the mail client itself may be the thing calling it.
+   */
+  private unsubscribeUrl(userId: string, category: string) {
+    return `${this.apiUrl()}/api/unsubscribe?token=${encodeURIComponent(unsubscribeToken(userId, category))}`;
+  }
+
+  /**
+   * RFC 8058 headers. Gmail and Yahoo require them on bulk mail, and a mailbox
+   * provider that can offer its own unsubscribe button gets far fewer spam
+   * complaints than one whose users only have the spam button.
+   */
+  private listHeaders(url: string) {
+    return { 'List-Unsubscribe': `<${url}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' };
+  }
+
   /**
    * Resolve an admin-edited template (locale translation → base). Returns null
    * when the row is missing or disabled so callers fall back to a built-in
@@ -123,7 +147,13 @@ export class MailService implements OnModuleInit {
    * Send one arbitrary transactional email. Returns false (never throws) when
    * mail is disabled or the send fails — callers decide whether that is fatal.
    */
-  async send(opts: { to: string; subject: string; html: string; text: string }): Promise<boolean> {
+  async send(opts: {
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+    headers?: Record<string, string>;
+  }): Promise<boolean> {
     if (!this.transporter) return false;
     try {
       await this.transporter.sendMail({ from: this.from, ...opts });
@@ -226,7 +256,8 @@ export class MailService implements OnModuleInit {
   @OnEvent(NOTIFICATION_CREATED)
   async onNotificationCreated({ notification, overrides }: NotificationCreatedEvent) {
     if (!this.enabled) return;
-    if (!categoryConfig(notification.system).transactional) return;
+    const cfg = categoryConfig(notification.system);
+    if (!cfg.transactional) return;
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: notification.userId },
@@ -238,6 +269,11 @@ export class MailService implements OnModuleInit {
 
       const ctaUrl = (this.absolute(notification.linkUrl) ?? this.webUrl()) || undefined;
       const settingsUrl = this.settingsUrl();
+      // Promotional mail carries the one-click link and the RFC 8058 headers;
+      // receipts and dunning deliberately do not, so a mail client cannot offer
+      // to unsubscribe someone from being told their card was declined.
+      const unsubscribeUrl = cfg.marketing ? this.unsubscribeUrl(notification.userId, notification.system) : undefined;
+      const headers = unsubscribeUrl ? this.listHeaders(unsubscribeUrl) : undefined;
 
       // Prefer an admin-edited template keyed by the notification type; fall back
       // to the built-in generic layout when none exists / is disabled.
@@ -249,13 +285,14 @@ export class MailService implements OnModuleInit {
           body: notification.body ?? '',
           ...this.scalarParams(notification.params),
         };
-        const rendered = renderEditableTemplate(tpl, vars, { name: user.name, ctaUrl, settingsUrl });
+        const rendered = renderEditableTemplate(tpl, vars, { name: user.name, ctaUrl, settingsUrl, unsubscribeUrl });
         await this.transporter!.sendMail({
           from: this.from,
           to: user.email,
           subject: rendered.subject,
           html: rendered.html,
           text: rendered.text,
+          headers,
         });
         return;
       }
@@ -267,6 +304,7 @@ export class MailService implements OnModuleInit {
         ctaLabel: ctaUrl ? 'Open AgroTraders' : undefined,
         name: user.name,
         settingsUrl,
+        unsubscribeUrl,
       });
 
       await this.transporter!.sendMail({
@@ -275,6 +313,7 @@ export class MailService implements OnModuleInit {
         subject: subjectFor(notification.system, notification.title),
         html,
         text,
+        headers,
       });
     } catch (err) {
       this.logger.error(`email dispatch failed: ${(err as Error).message}`);

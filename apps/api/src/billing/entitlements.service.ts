@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import type { Role } from '@prisma/client';
 import {
   isPeriodLimit,
@@ -9,6 +9,7 @@ import {
   type PlanLimits,
 } from '@agrotraders/types';
 import { PrismaService } from '../prisma/prisma.service';
+import { LifecycleService } from './lifecycle.service';
 
 /**
  * Quota and feature resolution — the thing that makes a paid plan mean something.
@@ -65,6 +66,14 @@ const ENTITLING = ['active', 'past_due', 'canceled'] as const;
 /** Cache TTL. Short on purpose: an upgrade must take effect immediately enough. */
 const CACHE_MS = 30_000;
 
+/**
+ * Fraction of a quota at which the account is told it is running out. Warning
+ * from the gate rather than from a nightly sweep costs nothing — the counts are
+ * already in hand — and lands at the only moment the message is useful rather
+ * than promotional.
+ */
+const WARN_AT = 0.8;
+
 interface CacheEntry {
   at: number;
   value: Entitlements;
@@ -73,8 +82,12 @@ interface CacheEntry {
 @Injectable()
 export class EntitlementsService {
   private cache = new Map<string, CacheEntry>();
+  private readonly logger = new Logger('EntitlementsService');
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private lifecycle: LifecycleService,
+  ) {}
 
   /** Drop a user's cached entitlements after any subscription/add-on write. */
   invalidate(userId: string): void {
@@ -207,10 +220,10 @@ export class EntitlementsService {
 
   /**
    * Count current usage for one quota key. Returns null when the platform has no
-   * counter for it — `savedSearches` and seller/buyer `teamMembers` are on the
-   * published price card but the underlying features do not exist yet, and
-   * inventing a counter that always reads zero would be a quota that silently
-   * never binds. They are reported as unenforced instead.
+   * counter for it — `UNENFORCED_LIMIT_KEYS` are on the published price card but
+   * the underlying features do not exist yet, and inventing a counter that always
+   * reads zero would be a quota that silently never binds. They are reported as
+   * unenforced instead, and the upgrade emails skip them for the same reason.
    */
   async usageOf(userId: string, role: Role, key: PlanLimitKey): Promise<number | null> {
     const since = isPeriodLimit(key) ? await this.windowStart(userId, role) : undefined;
@@ -273,11 +286,8 @@ export class EntitlementsService {
       case 'photosPerListing':
         return null;
 
-      // No underlying feature yet — see the doc comment above.
-      case 'savedSearches':
-      case 'teamMembers':
-        return null;
-
+      // No underlying feature yet — see the doc comment above, and
+      // UNENFORCED_LIMIT_KEYS, which is the shared statement of this fact.
       default:
         return null;
     }
@@ -326,13 +336,37 @@ export class EntitlementsService {
     const used = await this.usageOf(userId, role, key);
     if (used === null) return; // nothing to count against — do not fake a block
 
-    if (used + adding > limit) {
-      throw new ForbiddenException({
-        statusCode: 403,
-        code: 'QUOTA_EXCEEDED',
-        message: `Your plan allows ${limit} — you are using ${used}. Upgrade for more.`,
-        quota: { key, limit, used, adding, role },
-      });
+    if (used + adding <= limit) {
+      // Approaching the ceiling. Fire-and-forget: a notification must never be
+      // the reason a listing fails to save.
+      if (limit > 0 && (used + adding) / limit >= WARN_AT) {
+        void this.warnQuota(userId, role, key, used + adding, limit);
+      }
+      return;
+    }
+
+    throw new ForbiddenException({
+      statusCode: 403,
+      code: 'QUOTA_EXCEEDED',
+      message: `Your plan allows ${limit} — you are using ${used}. Upgrade for more.`,
+      quota: { key, limit, used, adding, role },
+    });
+  }
+
+  /**
+   * Tell the account it is near a ceiling, at most once per quota per billing
+   * window. The window is part of the dedupe key so the warning comes back after
+   * a per-month quota resets, but never twice inside one period.
+   */
+  private async warnQuota(userId: string, role: Role, key: PlanLimitKey, used: number, limit: number): Promise<void> {
+    try {
+      const ent = await this.forRole(userId, role);
+      const windowKey = isPeriodLimit(key)
+        ? (ent?.currentPeriodStart ?? (await this.windowStart(userId, role))).toISOString().slice(0, 10)
+        : (ent?.currentPeriodEnd?.toISOString().slice(0, 10) ?? 'live');
+      await this.lifecycle.warnApproachingQuota({ userId, role, key, used, limit, windowKey });
+    } catch (e) {
+      this.logger.warn(`quota warning skipped: ${(e as Error).message}`);
     }
   }
 

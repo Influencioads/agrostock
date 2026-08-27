@@ -41,6 +41,8 @@ export interface RenderOptions {
   name?: string;
   /** Absolute URL to notification settings for the unsubscribe footer. */
   settingsUrl?: string;
+  /** One-click unsubscribe URL; set only for promotional categories. */
+  unsubscribeUrl?: string;
 }
 
 export function esc(s: string): string {
@@ -61,6 +63,9 @@ const SUBJECT_PREFIX: Record<string, string> = {
   reviews: 'Review',
   transport: 'Transport',
   loader: 'Job',
+  billing: 'Subscription',
+  // Promotional mail gets no bracketed prefix: a marketing subject that shouts
+  // its own category is the one people filter on.
 };
 
 export function subjectFor(category: string, title: string): string {
@@ -85,11 +90,27 @@ function ctaButton(url: string, label: string): string {
  * unsubscribe footer). `innerHtml` is trusted HTML the caller has already built
  * and escaped as needed.
  */
-export function wrapBrandedShell(opts: { innerHtml: string; name?: string; settingsUrl?: string }): string {
+export function wrapBrandedShell(opts: {
+  innerHtml: string;
+  name?: string;
+  settingsUrl?: string;
+  /** Present only on promotional mail — see `unsubscribeUrl` in MailService. */
+  unsubscribeUrl?: string;
+}): string {
   const greeting = opts.name ? `Hi ${esc(opts.name)},` : 'Hi there,';
-  const footer = opts.settingsUrl
-    ? `You're receiving this because you have email notifications enabled. <a href="${esc(opts.settingsUrl)}" style="color:${BRAND.green};">Manage preferences</a>.`
-    : `You're receiving this because you have an ${APP_NAME} account.`;
+  const parts = [
+    opts.unsubscribeUrl
+      ? `You're receiving this because you have an ${APP_NAME} account.`
+      : `You're receiving this because you have email notifications enabled.`,
+    opts.settingsUrl ? `<a href="${esc(opts.settingsUrl)}" style="color:${BRAND.green};">Manage preferences</a>` : '',
+    // The one-click link lives beside the preferences link, not instead of it:
+    // people who want out entirely should not have to find a settings screen.
+    opts.unsubscribeUrl
+      ? `<a href="${esc(opts.unsubscribeUrl)}" style="color:${BRAND.green};">Unsubscribe from these emails</a>`
+      : '',
+    opts.unsubscribeUrl ? esc(POSTAL_ADDRESS()) : '',
+  ].filter(Boolean);
+  const footer = parts.join(' &middot; ');
 
   return `<!doctype html>
 <html>
@@ -117,10 +138,24 @@ export function wrapBrandedShell(opts: { innerHtml: string; name?: string; setti
 </html>`;
 }
 
-const FOOTER_TEXT = (settingsUrl?: string) =>
-  settingsUrl
-    ? "You're receiving this because you have email notifications enabled."
-    : `You're receiving this because you have an ${APP_NAME} account.`;
+/**
+ * Sender identity for promotional mail. Bulk senders that omit it get filtered,
+ * and it is a legal requirement in most of the markets this platform serves —
+ * so it is read from env rather than hard-coded, and only ever printed on the
+ * mail that actually needs it.
+ */
+const POSTAL_ADDRESS = () => process.env.MAIL_POSTAL_ADDRESS?.trim() || `${APP_NAME}, agrotraders.org`;
+
+const FOOTER_TEXT = (settingsUrl?: string, unsubscribeUrl?: string) =>
+  [
+    unsubscribeUrl
+      ? `You're receiving this because you have an ${APP_NAME} account.`
+      : "You're receiving this because you have email notifications enabled.",
+    unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : '',
+    unsubscribeUrl ? POSTAL_ADDRESS() : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 
 export function renderNotificationEmail(opts: RenderOptions): { html: string; text: string } {
   const bodyHtml = opts.body
@@ -131,7 +166,12 @@ export function renderNotificationEmail(opts: RenderOptions): { html: string; te
           ${bodyHtml}
           ${cta}`;
 
-  const html = wrapBrandedShell({ innerHtml, name: opts.name, settingsUrl: opts.settingsUrl });
+  const html = wrapBrandedShell({
+    innerHtml,
+    name: opts.name,
+    settingsUrl: opts.settingsUrl,
+    unsubscribeUrl: opts.unsubscribeUrl,
+  });
 
   const greeting = opts.name ? `Hi ${esc(opts.name)},` : 'Hi there,';
   const text = [
@@ -183,7 +223,7 @@ export interface EditableTemplateInput {
 export function renderEditableTemplate(
   tpl: EditableTemplateInput,
   vars: TemplateVars,
-  ctx: { name?: string; ctaUrl?: string; settingsUrl?: string } = {},
+  ctx: { name?: string; ctaUrl?: string; settingsUrl?: string; unsubscribeUrl?: string } = {},
 ): { subject: string; html: string; text: string } {
   const subject = interpolate(tpl.subject, vars).trim() || APP_NAME;
   const bodyHtml = interpolate(tpl.bodyHtml, vars);
@@ -191,7 +231,12 @@ export function renderEditableTemplate(
   const innerHtml = `<div style="color:${BRAND.ink};font-size:15px;line-height:1.6;">${bodyHtml}</div>
           ${cta}`;
 
-  const html = wrapBrandedShell({ innerHtml, name: ctx.name, settingsUrl: ctx.settingsUrl });
+  const html = wrapBrandedShell({
+    innerHtml,
+    name: ctx.name,
+    settingsUrl: ctx.settingsUrl,
+    unsubscribeUrl: ctx.unsubscribeUrl,
+  });
 
   const greeting = ctx.name ? `Hi ${ctx.name},` : 'Hi there,';
   const text = [

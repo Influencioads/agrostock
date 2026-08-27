@@ -65,6 +65,16 @@ export function isPlanLimitKey(v: string): v is PlanLimitKey {
 }
 
 /**
+ * Quotas that appear on the published price card but that the platform has no
+ * counter for, because the underlying feature does not exist yet. They are
+ * reported as unenforced by `EntitlementsService.usageOf`, and — the reason this
+ * list is shared rather than local to it — the upgrade emails must never pitch
+ * one: "your plan allows 1 team member" is a promise about a feature nobody can
+ * use, which is the difference between marketing and a false claim.
+ */
+export const UNENFORCED_LIMIT_KEYS: readonly PlanLimitKey[] = ['savedSearches', 'teamMembers'];
+
+/**
  * Quota keys counted inside the current billing period rather than as live rows.
  * Derived from the naming convention so the two can never drift.
  */

@@ -526,6 +526,9 @@ model User {
   subscriptions  Subscription[]
   addonPurchases AddonPurchase[]
   payments       Payment[]
+
+  // ── Scheduled / nudge email send-once ledger ──
+  lifecycleEmails LifecycleEmail[]
 }
 
 // ── Markets & profiles ──────────────────────────────────────────
@@ -3149,9 +3152,42 @@ model BillingSettings {
   dunningRetries       Int @default(3)
   dunningIntervalHours Int @default(56)
 
+  /// Kill switch for the scheduled email flow — renewal reminders, add-on expiry
+  /// and the upgrade sequence. Transactional receipts (paid / failed / cancelled)
+  /// are NOT covered by it: a customer must always be told what happened to their
+  /// money, whatever marketing is doing.
+  lifecycleEmailsEnabled Boolean @default(true)
+  /// Days after email verification on which the three upgrade nudges go out. An
+  /// admin can stretch or shorten the sequence without a deploy; an empty list
+  /// turns the sequence off while leaving the reminders running.
+  upgradeNudgeDays       Int[]   @default([3, 12, 30])
+
   /// The account subscription invoices are issued FROM. The existing Invoice model
   /// is peer-to-peer, so the platform needs a User row to sit on the issuer side.
   platformUserId String?
 
   updatedAt DateTime @updatedAt
+}
+
+/// Send-once ledger for every scheduled or nudge email (renewal reminders,
+/// add-on expiry, quota warnings, the upgrade sequence).
+///
+/// The unique index IS the anti-spam mechanism: a message is identified by a key
+/// that encodes what it is AND the thing it is about — `renewal:<subId>:<periodEnd>`,
+/// `quota:<role>:<limitKey>:<window>`, `upgrade:2` — so re-running the sweep, a
+/// second replica, or a retried cron can never send the same mail twice. Writing
+/// the row is the claim; the send happens after it succeeds.
+///
+/// Deliberately NOT the Notification table: that row is skipped entirely when a
+/// user mutes the category in-app, which would silently un-deduplicate email.
+model LifecycleEmail {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Message identity + subject. See the model doc above for the key grammar.
+  key    String
+  sentAt DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([userId, sentAt])
 }

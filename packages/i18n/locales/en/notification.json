@@ -27,6 +27,40 @@
       "transporter": "transporter",
       "loader": "loading company",
       "worker": "worker"
+    },
+    "plan_limit": {
+      "activeListings": "active listings",
+      "auctionLotsPerMonth": "auction lots per month",
+      "driverAccounts": "driver sub-accounts",
+      "enquiriesPerMonth": "enquiries received per month",
+      "hireResponsesPerMonth": "responses to hire requests per month",
+      "managedWorkers": "managed workers",
+      "operatingRegions": "operating regions",
+      "photosPerListing": "photos per listing",
+      "pricedServices": "priced services",
+      "rfqsPerMonth": "buy requests per month",
+      "savedSearches": "saved searches with alerts",
+      "serviceAreas": "service areas",
+      "teamMembers": "team members",
+      "vehicles": "vehicles in your profile"
+    },
+    "plan_feature": {
+      "analytics": "full analytics on your listings and enquiries",
+      "apiAccess": "API access",
+      "bidRoom": "the sealed bid room",
+      "bulkImport": "bulk import",
+      "directHireRequests": "direct hire requests from buyers",
+      "directoryPlacement": "top placement in the directory",
+      "directoryVisible": "a listing in the public directory",
+      "dispatchBoard": "the dispatch board",
+      "escrowPriority": "priority escrow settlement",
+      "payoutReports": "payout reports for your crew",
+      "routePriority": "priority on new routes",
+      "searchPriority": "priority placement in search results",
+      "verifiedBadge": "a verified badge on everything you publish"
+    },
+    "plan_value": {
+      "unlimited": "unlimited"
     }
   },
   "order": {
@@ -140,7 +174,27 @@
     },
     "quota_warning": {
       "title": "Approaching your plan limit",
-      "body": "You have used {{used}} of {{limit}} {{quota}}. Upgrade for more."
+      "body": "You have used {{used}} of your {{limit}} {{quota}}. Upgrade for more."
+    },
+    "renewal_upcoming": {
+      "title": "{{plan}} renews on {{until}}",
+      "body": "We will charge {{amount}} to your saved payment method on {{until}}. Nothing to do — you can change or cancel the plan any time before that date."
+    },
+    "renewal_action_needed": {
+      "title": "Add a payment method to keep {{plan}}",
+      "body": "Your {{plan}} plan runs out on {{until}} and there is no saved payment method to renew it with. Add one and the plan continues without a break."
+    },
+    "expiring_soon": {
+      "title": "{{plan}} ends on {{until}}",
+      "body": "Your cancelled {{plan}} plan stays active until {{until}}. After that the account moves to the free plan, which caps {{quota}} at {{limit}}. Resume any time before then to keep everything as it is."
+    },
+    "addon_expiring": {
+      "title": "{{addon}} ends on {{until}}",
+      "body": "Your {{addon}} purchase finishes on {{until}}. Renew it to keep the placement running without a gap."
+    },
+    "expiring_soon_plain": {
+      "title": "{{plan}} ends on {{until}}",
+      "body": "Your cancelled {{plan}} plan stays active until {{until}}, then the account moves to the free plan. Resume any time before then to keep everything as it is."
     }
   },
   "auction": {
@@ -296,6 +350,32 @@
     },
     "resolved": {
       "title": "Your ticket was resolved — rate your support"
+    }
+  },
+  "marketing": {
+    "upgrade_benefits": {
+      "title": "What {{paidPlan}} would add to your account",
+      "body": "Room to grow: your cap on {{quota}} goes from {{limit}} to {{paidLimit}}, and you get {{perk}}. It is {{price}} and you can cancel any time — your data and everything you have already published stay exactly as they are either way."
+    },
+    "upgrade_benefits_feature": {
+      "title": "What {{paidPlan}} would add to your account",
+      "body": "{{paidPlan}} gives you {{perk}}, so the people looking for what you do can find you and reach you directly. It is {{price}} and you can cancel any time — everything you have already published stays exactly as it is either way."
+    },
+    "upgrade_final": {
+      "title": "Last note about upgrading",
+      "body": "This is the last email we will send you about plans. Your free {{plan}} account carries on unchanged. If its cap of {{limit}} on {{quota}} ever gets in the way, {{paidPlan}} is {{price}} and takes a minute to start."
+    },
+    "upgrade_final_feature": {
+      "title": "Last note about upgrading",
+      "body": "This is the last email we will send you about plans. Your free {{plan}} account carries on unchanged. If you ever want {{perk}}, {{paidPlan}} is {{price}} and takes a minute to start."
+    },
+    "upgrade_intro": {
+      "title": "Your free plan caps {{quota}} at {{limit}}",
+      "body": "You are on {{plan}}, which caps {{quota}} at {{limit}}. {{paidPlan}} raises that to {{paidLimit}} and adds {{perk}} — {{price}}, cancel any time."
+    },
+    "upgrade_intro_feature": {
+      "title": "Your free plan does not include {{perk}}",
+      "body": "You are on {{plan}}, and {{perk}} is not part of it. {{paidPlan}} adds it for {{price}} — cancel any time."
     }
   }
 }

@@ -1307,6 +1307,10 @@ export interface ApiBillingSettings {
   quotasEnforced: boolean;
   dunningRetries: number;
   dunningIntervalHours: number;
+  /** Renewal reminders, add-on expiry and the upgrade sequence. Receipts are unaffected. */
+  lifecycleEmailsEnabled: boolean;
+  /** Days after email verification for each upgrade nudge. Empty = sequence off. */
+  upgradeNudgeDays: number[];
   platformUserId: string | null;
 }
 
@@ -3114,6 +3118,10 @@ export function createApiClient(opts: ApiClientOptions) {
 
       billingSettings: () => get<ApiBillingSettings>('/admin/billing/settings'),
       updateBillingSettings: (body: Partial<ApiBillingSettings>) => patch<ApiBillingSettings>('/admin/billing/settings', body),
+      /** Run the scheduled email pass now. Send-once, so a repeat run is a no-op. */
+      runLifecycleEmails: () => post<{ renewals: number; addons: number; nudges: number }>('/admin/billing/lifecycle/run', {}),
+      lifecycleHistory: (userId: string) =>
+        get<Array<{ id: string; key: string; sentAt: string }>>(`/admin/billing/lifecycle/${encodeURIComponent(userId)}`),
 
       subscriptions: (params: { status?: string; role?: string; q?: string } = {}) =>
         get<ApiAdminSubscription[]>('/admin/billing/subscriptions', params),

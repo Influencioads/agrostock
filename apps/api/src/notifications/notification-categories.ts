@@ -19,7 +19,8 @@ export type NotificationCategory =
   | 'transport'
   | 'loader'
   | 'community'
-  | 'support';
+  | 'support'
+  | 'marketing';
 
 export type NotificationChannel = 'email' | 'push' | 'inApp';
 
@@ -28,6 +29,13 @@ export interface CategoryConfig {
   label: string;
   /** Whether this category may ever send email (high-value / low-frequency). */
   transactional: boolean;
+  /**
+   * Commercial rather than transactional: promotional nudges the recipient may
+   * refuse outright. Such mail carries a one-click unsubscribe (RFC 8058) and
+   * unsubscribing from it must never touch receipts or dunning — which is why
+   * this is its own flag and not the absence of `transactional`.
+   */
+  marketing?: boolean;
   defaultEmail: boolean;
   defaultPush: boolean;
   defaultInApp: boolean;
@@ -51,6 +59,9 @@ export const NOTIFICATION_CATEGORIES: Record<NotificationCategory, CategoryConfi
   reviews: { label: 'Reviews', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
   transport: { label: 'Transport', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
   loader: { label: 'Loading jobs', transactional: true, defaultEmail: true, defaultPush: true, defaultInApp: true },
+  // Email-eligible but commercial: the upgrade sequence. Capped, send-once and
+  // one-click unsubscribable — see billing/lifecycle.service.ts.
+  marketing: { label: 'Offers & tips', transactional: true, marketing: true, defaultEmail: true, defaultPush: false, defaultInApp: true },
   bids: { label: 'Bids', transactional: false, defaultEmail: false, defaultPush: true, defaultInApp: true },
   community: { label: 'Community', transactional: false, defaultEmail: false, defaultPush: true, defaultInApp: true },
   support: { label: 'Support', transactional: false, defaultEmail: false, defaultPush: true, defaultInApp: true },

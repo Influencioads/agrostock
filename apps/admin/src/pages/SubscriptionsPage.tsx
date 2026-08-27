@@ -93,6 +93,31 @@ function SettingsCard() {
           <input type="checkbox" checked={merged.quotasEnforced} onChange={(e) => setDraft({ ...draft, quotasEnforced: e.target.checked })} />
           {t('subs.quotasEnforced')}
         </label>
+        <label className="flex items-center gap-2 text-sm font-semibold text-ink" title={t('subs.lifecycleEmailsHint')}>
+          <input
+            type="checkbox"
+            checked={merged.lifecycleEmailsEnabled}
+            onChange={(e) => setDraft({ ...draft, lifecycleEmailsEnabled: e.target.checked })}
+          />
+          {t('subs.lifecycleEmails')}
+        </label>
+        <Input
+          className="max-w-[14rem]"
+          label={t('subs.upgradeNudgeDays')}
+          placeholder="3, 12, 30"
+          value={(merged.upgradeNudgeDays ?? []).join(', ')}
+          onChange={(e) =>
+            setDraft({
+              ...draft,
+              // Free text so an operator can clear the sequence entirely by
+              // emptying the field — an empty list is a valid, meaningful value.
+              upgradeNudgeDays: e.target.value
+                .split(',')
+                .map((v) => Number(v.trim()))
+                .filter((n) => Number.isInteger(n) && n > 0),
+            })
+          }
+        />
         <Input
           className="max-w-xs"
           label={t('subs.platformAccount')}

@@ -31,6 +31,7 @@ import { PlansService } from './plans.service';
 import { EntitlementsService } from './entitlements.service';
 import { PaymentsService } from './payments.service';
 import { SubscriptionsService } from './subscriptions.service';
+import { LifecycleService } from './lifecycle.service';
 import { BillingInvoicesService } from './billing-invoices.service';
 import { RevenueService } from './revenue.service';
 import { FxModule } from '../fx/fx.module';
@@ -313,6 +314,7 @@ export class AdminBillingController {
     private gateways: GatewaysService,
     private subscriptions: SubscriptionsService,
     private revenue: RevenueService,
+    private lifecycle: LifecycleService,
     private audit: AuditService,
   ) {}
 
@@ -450,6 +452,24 @@ export class AdminBillingController {
     return result;
   }
 
+  /**
+   * Run the scheduled email pass now instead of waiting for tomorrow's cron.
+   * Safe to hit repeatedly: every message is claimed send-once, so a second run
+   * finds nothing left to send.
+   */
+  @Post('lifecycle/run')
+  async runLifecycle(@CurrentUser() admin: AuthUser) {
+    const result = await this.lifecycle.runDaily();
+    await this.audit.log({ actorId: admin.id, action: 'billing.lifecycle.run', entityType: 'BillingSettings', entityId: '1', meta: result });
+    return result;
+  }
+
+  /** Which scheduled emails one account has already been sent — support's first question. */
+  @Get('lifecycle/:userId')
+  lifecycleHistory(@Param('userId') userId: string) {
+    return this.lifecycle.historyFor(userId);
+  }
+
   /** Run the renewal for one subscription now, instead of waiting for the cron. */
   @Post('subscriptions/:id/renew')
   async renewNow(@CurrentUser() admin: AuthUser, @Param('id') id: string) {
@@ -490,7 +510,8 @@ export class AdminBillingController {
     SubscriptionsService,
     BillingInvoicesService,
     RevenueService,
+    LifecycleService,
   ],
-  exports: [EntitlementsService, PlansService, GatewaysService, PaymentsService, SubscriptionsService],
+  exports: [EntitlementsService, PlansService, GatewaysService, PaymentsService, SubscriptionsService, LifecycleService],
 })
 export class BillingModule {}

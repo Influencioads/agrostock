@@ -1299,6 +1299,8 @@
     "dunningRetries": "Dunning retries",
     "endsThen": "ends then",
     "escrowCommission": "Escrow commission (%)",
+    "lifecycleEmails": "Scheduled emails",
+    "lifecycleEmailsHint": "Renewal reminders, add-on expiry and the three upgrade nudges. Payment receipts, failed charges and cancellations are never affected by this switch.",
     "mrr": "MRR",
     "mrrByRole": "MRR by role",
     "none": "No subscriptions match.",
@@ -1325,7 +1327,8 @@
       "free": "Free",
       "past_due": "Past due"
     },
-    "statusCol": "Status"
+    "statusCol": "Status",
+    "upgradeNudgeDays": "Upgrade nudge days"
   },
   "support": {
     "notePlaceholder": "Add note…",

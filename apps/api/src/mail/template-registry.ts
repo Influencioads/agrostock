@@ -14,8 +14,12 @@
  *  - **Direct auth emails** — bespoke `auth.*` keys sent straight from
  *    `MailService` (verification, password reset, OTP, welcome).
  *
- * Every notification-driven key here must belong to a *transactional* category
- * (see notification-categories.ts) — non-transactional events never email.
+ * Every notification-driven key here must belong to an email-eligible category
+ * (`transactional: true` in notification-categories.ts) — anything else never
+ * emails, so a template for it would be dead copy. The `marketing` category is
+ * email-eligible but commercial: its templates render with a one-click
+ * unsubscribe and the sender's postal identity, added by the shell rather than
+ * by the editable body, so they cannot be edited away.
  */
 
 export type TemplateCategory =
@@ -27,7 +31,9 @@ export type TemplateCategory =
   | 'loader'
   | 'transport'
   | 'reviews'
-  | 'account';
+  | 'account'
+  | 'billing'
+  | 'marketing';
 
 export interface TemplateDef {
   key: string;
@@ -164,6 +170,36 @@ export const EMAIL_TEMPLATES: TemplateDef[] = [
 
   /* ── Reviews ─────────────────────────────────────────────────────── */
   evt('review.received', 'Review received', 'reviews', 'The recipient received a new review.', 'Review', ['author', 'stars']),
+
+  /* ── Subscriptions & payments ────────────────────────────────────── */
+  evt('billing.activated', 'Subscription active', 'billing', 'A subscription payment settled and the plan is live.', 'Subscription', ['plan', 'until'], 'View my plan'),
+  evt('billing.renewed', 'Subscription renewed', 'billing', 'An unattended renewal charge succeeded.', 'Subscription', ['plan', 'amount', 'until'], 'View my plan'),
+  evt('billing.renewal_upcoming', 'Renewal reminder', 'billing', 'Courtesy notice 7 days before a card is charged.', 'Subscription', ['plan', 'amount', 'until'], 'Manage my plan'),
+  evt('billing.renewal_action_needed', 'Renewal needs a card', 'billing', 'The period ends and there is no saved payment method to renew with.', 'Subscription', ['plan', 'until'], 'Add a payment method'),
+  evt('billing.expiring_soon', 'Plan ending soon', 'billing', 'A cancelled plan is about to lapse to free — names the free tier’s limit.', 'Subscription', ['plan', 'until', 'limit', 'quota'], 'Resume my plan'),
+  evt('billing.expiring_soon_plain', 'Plan ending soon (no quota)', 'billing', 'Same notice for ladders that carry no quotas, e.g. independent workers.', 'Subscription', ['plan', 'until'], 'Resume my plan'),
+  evt('billing.payment_failed', 'Payment failed', 'billing', 'First failed renewal charge — the retry cycle has started.', 'Subscription', ['plan', 'attempt', 'max'], 'Update payment method'),
+  evt('billing.past_due', 'Subscription past due', 'billing', 'A later dunning attempt failed.', 'Subscription', ['plan', 'attempt', 'max'], 'Update payment method'),
+  evt('billing.downgraded', 'Moved to the free plan', 'billing', 'Retries ran out and the account dropped to free.', 'Subscription', ['plan'], 'See plans'),
+  evt('billing.canceled', 'Subscription cancelled', 'billing', 'Self-serve cancellation confirmed; runs to period end.', 'Subscription', ['plan', 'until'], 'Manage my plan'),
+  evt('billing.addon_active', 'Add-on active', 'billing', 'A one-off add-on purchase was granted.', 'Subscription', ['addon', 'detail'], 'View my add-ons'),
+  evt('billing.addon_expiring', 'Add-on ending soon', 'billing', 'A promotion or badge lapses in a few days.', 'Subscription', ['addon', 'until'], 'Renew it'),
+  evt('billing.quota_warning', 'Approaching a plan limit', 'billing', 'The account passed 80% of one of its quotas.', 'Subscription', ['used', 'limit', 'quota'], 'See plans'),
+
+  /* ── Upgrade sequence (promotional) ──────────────────────────────────
+   * The only templates on the marketing ladder. Every one of them carries a
+   * one-click unsubscribe and the sender's postal identity automatically (see
+   * mail.templates.ts) — the shell adds them for any category flagged
+   * `marketing`, so an admin cannot accidentally edit them out of the copy.
+   */
+  evt('marketing.upgrade_intro', 'Upgrade nudge 1 — your free limits', 'marketing', 'First of three, a few days after signup. Names the tightest quota on the free plan.', '', ['plan', 'paidPlan', 'price', 'quota', 'limit', 'paidLimit', 'perk'], 'See what changes'),
+  evt('marketing.upgrade_benefits', 'Upgrade nudge 2 — what a plan adds', 'marketing', 'Second of three. Leads on the feature the free plan lacks.', '', ['plan', 'paidPlan', 'price', 'quota', 'limit', 'paidLimit', 'perk'], 'See plans and prices'),
+  evt('marketing.upgrade_final', 'Upgrade nudge 3 — last one', 'marketing', 'Final message of the sequence; says so in the copy. Nothing promotional follows it.', '', ['plan', 'paidPlan', 'price', 'quota', 'limit'], 'See plans and prices'),
+  // The worker ladder sells visibility, not volume — it has no quotas to quote,
+  // so its three steps lead on the feature instead. Same schedule, same caps.
+  evt('marketing.upgrade_intro_feature', 'Upgrade nudge 1 — feature ladder', 'marketing', 'First of three, for roles whose paid plan raises no quota (independent workers).', '', ['plan', 'paidPlan', 'price', 'perk'], 'See what changes'),
+  evt('marketing.upgrade_benefits_feature', 'Upgrade nudge 2 — feature ladder', 'marketing', 'Second of three on the feature ladder.', '', ['plan', 'paidPlan', 'price', 'perk'], 'See plans and prices'),
+  evt('marketing.upgrade_final_feature', 'Upgrade nudge 3 — feature ladder, last one', 'marketing', 'Final message on the feature ladder; nothing promotional follows it.', '', ['plan', 'paidPlan', 'price', 'perk'], 'See plans and prices'),
 
   /* ── Account & verification ──────────────────────────────────────── */
   evt('kyc.verified', 'Identity verified', 'account', 'KYC approved.', 'Account', []),

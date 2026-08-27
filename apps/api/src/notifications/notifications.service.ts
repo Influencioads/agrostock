@@ -174,6 +174,31 @@ export class NotificationsService {
     return resolvedPrefs(user?.notificationPrefs ?? null);
   }
 
+  /**
+   * Turn one category's email off from a signed link — no session required.
+   * Scoped to the category in the token so unsubscribing from promotional mail
+   * never silences a payment receipt, and idempotent so a mail client that
+   * pre-fetches the link twice is harmless.
+   */
+  async unsubscribeCategory(userId: string, category: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { notificationPrefs: true } });
+    if (!user) return { ok: false as const };
+    const current = (user.notificationPrefs ?? {}) as NotificationPrefs;
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        notificationPrefs: {
+          ...current,
+          categories: {
+            ...(current.categories ?? {}),
+            [category]: { ...(current.categories?.[category as NotificationCategory] ?? {}), email: false },
+          },
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+    return { ok: true as const, category };
+  }
+
   /** Shallow-merge an incoming prefs patch into the stored JSON. */
   async updatePreferences(userId: string, patch: NotificationPrefs) {
     const user = await this.prisma.user.findUnique({

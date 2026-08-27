@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsIn,
   IsInt,
@@ -163,6 +165,20 @@ export class UpdateBillingSettingsDto {
 
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) @Max(10) dunningRetries?: number;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) @Max(720) dunningIntervalHours?: number;
+
+  @ApiPropertyOptional({ description: 'Renewal reminders, add-on expiry and the upgrade sequence. Receipts and dunning are unaffected.' })
+  @IsOptional()
+  @IsBoolean()
+  lifecycleEmailsEnabled?: boolean;
+
+  @ApiPropertyOptional({ description: 'Days after email verification for each upgrade nudge. Empty = sequence off.', type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(365, { each: true })
+  upgradeNudgeDays?: number[];
 
   @ApiPropertyOptional({ description: 'User account subscription invoices are issued from' })
   @IsOptional()

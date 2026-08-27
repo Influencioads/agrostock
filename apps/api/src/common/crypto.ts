@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 /**
  * Symmetric encryption for third-party credentials at rest.
@@ -102,4 +102,43 @@ export function safeEqual(a: string, b: string): boolean {
   const x = Buffer.from(a.toLowerCase(), 'utf8');
   const y = Buffer.from(b.toLowerCase(), 'utf8');
   return x.length === y.length && timingSafeEqual(x, y);
+}
+
+/* ── unsubscribe links ──────────────────────────────────────────── */
+
+/**
+ * A signed, stateless unsubscribe token: `<userId>.<category>.<sig>`.
+ *
+ * Stateless because the link has to work from an email client that may open it
+ * months later, with no session and no database row to look up — and because a
+ * one-click unsubscribe that fails is worse than no unsubscribe at all: the
+ * recipient's next move is the spam button, which costs us every other
+ * recipient's deliverability.
+ *
+ * Scoped to ONE category so unsubscribing from promotional mail cannot silently
+ * switch off payment receipts. Signed with the payments key rather than the JWT
+ * secret for the same reason `encryptSecret` is: rotating JWTs is routine and
+ * must not break links already sitting in people's inboxes.
+ */
+function unsubKey(): Buffer {
+  const material = process.env.PAYMENTS_SECRET_KEY?.trim() || DEV_KEY_MATERIAL;
+  return createHash('sha256').update(`${material}::unsubscribe`).digest();
+}
+
+export function unsubscribeToken(userId: string, category: string): string {
+  const payload = `${userId}.${category}`;
+  const sig = createHmac('sha256', unsubKey()).update(payload).digest('base64url').slice(0, 32);
+  return `${payload}.${sig}`;
+}
+
+/** Verify a token; null when it is malformed or the signature does not match. */
+export function verifyUnsubscribeToken(token: string): { userId: string; category: string } | null {
+  const [userId, category, sig] = token.split('.');
+  if (!userId || !category || !sig) return null;
+  // Not `safeEqual`: that folds case for Robokassa's upper-case MD5, and these
+  // signatures are case-sensitive base64url.
+  const expected = Buffer.from(unsubscribeToken(userId, category).split('.')[2], 'utf8');
+  const given = Buffer.from(sig, 'utf8');
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+  return { userId, category };
 }
