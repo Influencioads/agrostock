@@ -1723,7 +1723,8 @@
       "transportBody": "Book transport from your buyer console.",
       "transportTitle": "Transport",
       "unitEquivalent": "= {{qty}} {{unit}}, the metric this listing is priced in",
-      "vatExtra": "+ VAT extra",
+      "vatExtra": "Price excludes VAT",
+      "vatIncluded": "Price includes VAT",
       "verified": "Verified",
       "watching": "{{count}}+ watching now"
     },

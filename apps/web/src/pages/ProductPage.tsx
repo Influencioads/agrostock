@@ -359,7 +359,7 @@ export function ProductPage() {
               <span className="text-ink-soft">{unitSuffix(product.unit, t)}</span>
             </div>
             {/* VAT sits directly under the price it qualifies. */}
-            {apiProduct?.vatExtra && <p className="mt-1 text-sm font-bold text-ink">{t('page.product.vatExtra')}</p>}
+            {apiProduct && <p className="mt-1 text-sm font-bold text-ink">{t(apiProduct.vatExtra ? 'page.product.vatExtra' : 'page.product.vatIncluded')}</p>}
             <p className="mt-1 text-sm text-ink-soft">
               {t('page.product.deliveryLine', {
                 delivery: isDeliveryOption(product.delivery) ? t(`enums:delivery.${product.delivery}`) : product.delivery,

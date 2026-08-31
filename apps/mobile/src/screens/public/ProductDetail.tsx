@@ -197,7 +197,7 @@ export function ProductDetail() {
               </Text>
             </View>
             {/* VAT sits directly under the price it qualifies. */}
-            {p.vatExtra ? <Text style={s.vatNote}>{t('pubX.pd.vatExtra')}</Text> : null}
+            <Text style={s.vatNote}>{t(p.vatExtra ? 'pubX.pd.vatExtra' : 'pubX.pd.vatIncluded')}</Text>
             {/* Bold: stock is what a buyer scans this card for. */}
             <Text style={s.stockNote}>{stockLabel(p, t)}</Text>
             <View style={s.priceTerms}>

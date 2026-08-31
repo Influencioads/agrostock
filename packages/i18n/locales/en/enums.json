@@ -47,9 +47,9 @@
     "truck_other": "trucks"
   },
   "delivery": {
-    "delivery": "Seller delivers",
+    "delivery": "Seller delivers — included in the price",
     "no_delivery": "No delivery or collection",
-    "self_pickup": "Buyer arranges a delivery partner"
+    "self_pickup": "Buyer arranges pickup — not included in the price"
   },
   "hire_status": {
     "accepted": "Accepted",
