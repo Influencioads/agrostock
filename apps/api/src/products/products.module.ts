@@ -363,6 +363,8 @@ export class CreateProductDto {
   @IsOptional() @IsIn(PRODUCT_UNITS as unknown as string[]) unit?: string;
   /** The listed price is net of VAT; buyers see "VAT extra" beside it. */
   @IsOptional() @IsBoolean() vatExtra?: boolean;
+  /** Seller delivers, but the delivery fee is billed on top of the price. */
+  @IsOptional() @IsBoolean() deliveryFeeExtra?: boolean;
   /** Seller's own remarks on the listing (packing, loading terms, …). */
   @IsOptional() @IsString() @MaxLength(2000) notes?: string;
   @IsOptional() @IsString() grade?: string;
@@ -1139,6 +1141,7 @@ export class ProductsService {
         // Legacy rows hold the display form ('/MT'); new writes are canonical.
         unit: toUnit(dto.unit),
         vatExtra: dto.vatExtra ?? false,
+        deliveryFeeExtra: dto.deliveryFeeExtra ?? false,
         notes: dto.notes,
         grade: dto.grade,
         moq: dto.moq,

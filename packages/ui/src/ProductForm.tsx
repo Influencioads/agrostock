@@ -79,6 +79,8 @@ export interface ProductFormValues {
   supplyCountries: string[];
   /** A `DELIVERY_OPTIONS` id (legacy listings may still hold free text). */
   delivery: string;
+  /** Seller delivers, but the fee is billed on top of the price. */
+  deliveryFeeExtra: boolean;
   marketId: string;
   isOffer: boolean;
   isAuction: boolean;
@@ -101,7 +103,7 @@ export interface ProductFormValues {
 export const blankProduct: ProductFormValues = {
   name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', vatExtra: false, qty: '', unit: 'MT', moq: '',
   flag: '🌾', notes: '',
-  origin: '', city: '', country: '', supplyCountries: [], delivery: 'delivery', marketId: '',
+  origin: '', city: '', country: '', supplyCountries: [], delivery: 'delivery', deliveryFeeExtra: false, marketId: '',
   isOffer: false, isAuction: false, safeDeal: true, negotiable: false, startBid: '', auctionEndsAt: '', stock: '',
   attributes: {},
   images: [],
@@ -129,6 +131,7 @@ export interface EditableProduct {
   country?: string | null;
   supplyCountries?: string[] | null;
   delivery?: string | null;
+  deliveryFeeExtra?: boolean | null;
   market?: { id?: string } | null;
   isOffer?: boolean | null;
   isAuction?: boolean | null;
@@ -182,6 +185,7 @@ export function productToForm(p: EditableProduct | ApiProduct): ProductFormValue
     // partner. Legacy free text ("Ready") and the retired "no_delivery" both
     // collapse onto one of them rather than showing a blank picker.
     delivery: (src.delivery ?? q.delivery) === 'self_pickup' || (src.delivery ?? q.delivery) === 'no_delivery' ? 'self_pickup' : 'delivery',
+    deliveryFeeExtra: !!q.deliveryFeeExtra,
     marketId: q.market?.id ?? '',
     isOffer: !!q.isOffer,
     isAuction: !!q.isAuction,
@@ -233,6 +237,7 @@ export function formToPayload(f: ProductFormValues) {
     ...(f.country ? { country: f.country } : {}),
     supplyCountries: f.supplyCountries,
     ...(f.delivery ? { delivery: f.delivery } : {}),
+    deliveryFeeExtra: f.deliveryFeeExtra,
     // '' means "no market"; the API maps null → detached.
     marketId: f.marketId || null,
     ...(f.attributes && Object.keys(f.attributes).length ? { attributes: f.attributes } : {}),
@@ -422,20 +427,48 @@ export function CountrySelect({
  * asking about collection when what the buyer actually needs to know is whether
  * they have to hire transport.
  */
-export function DeliverySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function DeliverySelect({
+  value,
+  onChange,
+  feeExtra,
+  onFeeChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  /** Delivery fee billed on top of the price. Only shown when the seller delivers. */
+  feeExtra?: boolean;
+  onFeeChange?: (v: boolean) => void;
+}) {
   const { t } = useTranslation([...NS]);
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.delivery')}</span>
-      <select
-        value={value === 'delivery' ? 'delivery' : 'self_pickup'}
-        onChange={(e) => onChange(e.target.value)}
-        className={selectCls}
-      >
-        <option value="delivery">{t('enums:delivery.delivery')}</option>
-        <option value="self_pickup">{t('enums:delivery.self_pickup')}</option>
-      </select>
-    </label>
+    <div>
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.delivery')}</span>
+        <select
+          value={value === 'delivery' ? 'delivery' : 'self_pickup'}
+          onChange={(e) => onChange(e.target.value)}
+          className={selectCls}
+        >
+          <option value="delivery">{t('enums:delivery.delivery')}</option>
+          <option value="self_pickup">{t('enums:delivery.self_pickup')}</option>
+        </select>
+      </label>
+      {/* Follow-up only makes sense once the seller is the one delivering:
+          is that delivery inside the quoted price, or billed on top? */}
+      {onFeeChange && value === 'delivery' && (
+        <label className="mt-2 block">
+          <span className="mb-1.5 block text-sm font-semibold text-ink">{t('web:console.productForm.deliveryFee')}</span>
+          <select
+            value={feeExtra ? 'extra' : 'included'}
+            onChange={(e) => onFeeChange(e.target.value === 'extra')}
+            className={selectCls}
+          >
+            <option value="included">{t('enums:deliveryFee.included')}</option>
+            <option value="extra">{t('enums:deliveryFee.extra')}</option>
+          </select>
+        </label>
+      )}
+    </div>
   );
 }
 
@@ -916,7 +949,7 @@ export function ProductForm({
           value={value.origin}
           onChange={(origin) => onChange({ ...value, origin, flag: countryFlag(origin) || value.flag })}
         />
-        <DeliverySelect value={value.delivery} onChange={set('delivery')} />
+        <DeliverySelect value={value.delivery} onChange={set('delivery')} feeExtra={value.deliveryFeeExtra} onFeeChange={set('deliveryFeeExtra')} />
       </div>
 
       {/* Location: where the goods physically sit */}

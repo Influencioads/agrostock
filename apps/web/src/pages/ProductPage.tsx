@@ -362,7 +362,13 @@ export function ProductPage() {
             {apiProduct && <p className="mt-1 text-sm font-bold text-ink">{t(apiProduct.vatExtra ? 'page.product.vatExtra' : 'page.product.vatIncluded')}</p>}
             <p className="mt-1 text-sm text-ink-soft">
               {t('page.product.deliveryLine', {
-                delivery: isDeliveryOption(product.delivery) ? t(`enums:delivery.${product.delivery}`) : product.delivery,
+                // Seller-arranged delivery says whether the fee is in the price;
+                // buyer-arranged pickup never is, and its label says so itself.
+                delivery: !isDeliveryOption(product.delivery)
+                  ? product.delivery
+                  : product.delivery === 'delivery'
+                    ? `${t('enums:delivery.delivery')} — ${t(`enums:deliveryFee.${apiProduct?.deliveryFeeExtra ? 'extra' : 'included'}`)}`
+                    : t(`enums:delivery.${product.delivery}`),
               })}
             </p>
             {/* Bold: stock is the one line on this panel a buyer scans for. */}

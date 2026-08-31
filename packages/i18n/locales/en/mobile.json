@@ -1909,6 +1909,7 @@
       "dealSafe": "Safe Deal (escrow protected)",
       "dealType": "Deal type",
       "delivery": "Delivery",
+      "deliveryFee": "Delivery fee",
       "editTitle": "Edit Product",
       "emoji": "Emoji",
       "fixFields": "Some fields need attention — the ones marked in red.",

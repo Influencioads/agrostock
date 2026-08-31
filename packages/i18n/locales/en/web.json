@@ -973,6 +973,7 @@
       "deleteTitle": "Delete product",
       "deleting": "Deleting…",
       "delivery": "Delivery",
+      "deliveryFee": "Delivery fee",
       "editTitle": "Edit {{name}}",
       "fixFields": "Some fields need attention — the ones marked in red below.",
       "hasOrders_one": "This listing has {{count}} order against it.",

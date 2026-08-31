@@ -43,7 +43,7 @@ const withUnit = (amount: string, unit: string) => (amount.trim() ? `${amount.tr
 const blank = {
   name: '', categoryId: '', subcategoryId: '', price: '', priceCurrency: 'USD', vatExtra: false, unit: 'MT', qty: '', moq: '',
   notes: '',
-  emoji: '🌾', origin: '', city: '', country: '', delivery: 'delivery', isOffer: false, isAuction: false,
+  emoji: '🌾', origin: '', city: '', country: '', delivery: 'delivery', deliveryFeeExtra: false, isOffer: false, isAuction: false,
   safeDeal: true, negotiable: false,
   marketId: '', startBid: '', auctionDays: '7',
   images: [] as string[],
@@ -391,7 +391,7 @@ export function SellerAddProduct() {
       setForm((f) => ({
         ...f,
         name: canon('name', p.name) ?? '', price: bareNumber(p.price), priceCurrency: p.priceCurrency ?? 'USD', unit: toUnit(p.unit),
-        vatExtra: !!p.vatExtra, notes: p.notes ?? '',
+        vatExtra: !!p.vatExtra, deliveryFeeExtra: !!p.deliveryFeeExtra, notes: p.notes ?? '',
         // The stock box reads ONLY the canonical column — no fallback to the
         // legacy free text, which is now only ever the values the migration
         // refused to interpret. Stripping those to a bare number would make the
@@ -609,6 +609,20 @@ export function SellerAddProduct() {
           ]}
           onChange={set('delivery')}
         />
+        {/* Follow-up only once the seller is the one delivering: is that
+            delivery inside the quoted price, or billed on top? */}
+        {form.delivery === 'delivery' && (
+          <PickerField
+            label={t('sellerX.add.deliveryFee')}
+            value={form.deliveryFeeExtra ? 'extra' : 'included'}
+            displayValue={t(`enums:deliveryFee.${form.deliveryFeeExtra ? 'extra' : 'included'}`)}
+            options={[
+              { value: 'included', label: t('enums:deliveryFee.included') },
+              { value: 'extra', label: t('enums:deliveryFee.extra') },
+            ]}
+            onChange={(v) => setForm((f) => ({ ...f, deliveryFeeExtra: v === 'extra' }))}
+          />
+        )}
 
         {/* Country first — the city belongs to it. */}
         <CountryPicker value={form.country} onChange={(country) => setForm((f) => ({ ...f, country, city: '' }))} />

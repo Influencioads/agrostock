@@ -1118,6 +1118,9 @@ model Product {
   unit              String         @default("/MT")
   /// The quoted price excludes VAT — the buyer sees "VAT extra" under it.
   vatExtra          Boolean        @default(false)
+  /// Seller-arranged delivery billed on top of the price. Only meaningful when
+  /// `delivery` = 'delivery'; buyer-arranged pickup is never in the price.
+  deliveryFeeExtra  Boolean        @default(false)
   /// Free-text seller notes on the listing (packing, loading terms, remarks).
   /// Not translated: it is unconstrained prose the seller may want verbatim.
   notes             String?

@@ -149,6 +149,8 @@ export interface ApiProduct {
   unit: string;
   /** The listed price is net of VAT — shown as "VAT extra" beside the price. */
   vatExtra?: boolean;
+  /** Seller delivers, but the delivery fee is billed on top of the price. */
+  deliveryFeeExtra?: boolean;
   /** Seller's own remarks on the listing (packing, loading terms, …). */
   notes?: string | null;
   /** Seller will entertain offers on the listed price. */
