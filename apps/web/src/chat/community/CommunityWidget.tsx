@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Icon, Input } from '@agrotraders/ui';
+import { Badge, Button, Icon } from '@agrotraders/ui';
 import type { Socket } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
@@ -68,7 +68,6 @@ function TabBar({ tab, setTab, s }: { tab: string; setTab: (t: string) => void; 
   const tabs = [
     ['feed', s.feed],
     ['groups', s.groups],
-    ['requirements', s.requirements],
     ['mychats', s.myChats],
   ];
   return (
@@ -303,33 +302,6 @@ function DmRoom({ peer, socket, onBack, s }: { peer: OpenDmEvent; socket: Socket
   );
 }
 
-function RequirementForm({ onDone, s }: { onDone: () => void; s: AnyRec }) {
-  const qc = useQueryClient();
-  const [f, setF] = useState({ title: '', productCategory: 'Grains', productName: '', quantity: '', unit: 'MT', buyerLocation: '' });
-  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }));
-  const submit = async () => {
-    if (!f.title || !f.productName || !f.quantity) return;
-    await api.community.createRequirement(f);
-    qc.invalidateQueries({ queryKey: ['community-requirements'] });
-    onDone();
-  };
-  return (
-    <div className="space-y-2 p-3">
-      <Input label={s.reqTitle} placeholder={s.reqTitlePh} value={f.title} onChange={(e) => set('title', e.target.value)} />
-      <Input label={s.reqProduct} placeholder={s.reqProductPh} value={f.productName} onChange={(e) => set('productName', e.target.value)} />
-      <div className="grid grid-cols-2 gap-2">
-        <Input label={s.reqQuantity} placeholder="100" value={f.quantity} onChange={(e) => set('quantity', e.target.value)} />
-        <Input label={s.reqUnit} value={f.unit} onChange={(e) => set('unit', e.target.value)} />
-      </div>
-      <Input label={s.reqLocation} placeholder={s.reqLocationPh} value={f.buyerLocation} onChange={(e) => set('buyerLocation', e.target.value)} />
-      <div className="flex gap-2 pt-1">
-        <Button size="sm" fullWidth onClick={submit}>{s.create}</Button>
-        <Button size="sm" variant="ghost" onClick={onDone}>{s.back}</Button>
-      </div>
-    </div>
-  );
-}
-
 /** Open composer for the public Feed — any signed-in user can post. */
 function FeedComposer({ onPosted, s }: { onPosted: () => void; s: AnyRec }) {
   const [body, setBody] = useState('');
@@ -373,7 +345,6 @@ export function CommunityWidget() {
   const [tab, setTab] = useState('feed');
   const [activeGroup, setActiveGroup] = useState<AnyRec | null>(null);
   const [activeDm, setActiveDm] = useState<OpenDmEvent | null>(null);
-  const [creatingReq, setCreatingReq] = useState(false);
   // Stay connected while signed in (not just while open) so the unread badge
   // and DM deep-links update live.
   const { socket } = useChatSocket('/community', !!user);
@@ -385,7 +356,6 @@ export function CommunityWidget() {
     () =>
       chatBus.onOpenDm((peer) => {
         setActiveGroup(null);
-        setCreatingReq(false);
         setActiveDm(peer);
         setOpen(true);
       }),
@@ -394,7 +364,6 @@ export function CommunityWidget() {
 
   const feed = useQuery({ queryKey: ['community-feed', lang], queryFn: () => api.community.feed(), enabled: open && tab === 'feed' });
   const groups = useQuery({ queryKey: ['community-groups', lang], queryFn: () => api.community.groups(), enabled: open && tab === 'groups' });
-  const reqs = useQuery({ queryKey: ['community-requirements', lang], queryFn: () => api.community.requirements(), enabled: open && tab === 'requirements' });
   const mine = useQuery({ queryKey: ['community-my', lang], queryFn: () => api.community.myGroups(), enabled: open && tab === 'mychats' && !!user });
 
   const join = async (id: string) => {
@@ -440,8 +409,6 @@ export function CommunityWidget() {
           <DmRoom key={activeDm.userId} peer={activeDm} socket={socket} onBack={() => setActiveDm(null)} s={s} />
         ) : activeGroup ? (
           <Room group={activeGroup} socket={socket} onBack={() => setActiveGroup(null)} s={s} />
-        ) : creatingReq ? (
-          <RequirementForm onDone={() => setCreatingReq(false)} s={s} />
         ) : (
           <>
             <TabBar tab={tab} setTab={setTab} s={s} />
@@ -468,7 +435,6 @@ export function CommunityWidget() {
                             <span className="truncate font-semibold text-ink">{p.author?.name}</span>
                             <span className="shrink-0">· {p.author?.role}</span>
                           </button>
-                          {p.type === 'trade_requirement' && <Badge tone="mango">{s.requirementBadge}</Badge>}
                         </div>
                         {p.title && <div className="mt-1 font-display font-bold text-ink">{p.title}</div>}
                         <div className="mt-0.5 whitespace-pre-wrap break-words text-sm text-ink">{p.body}</div>
@@ -507,28 +473,6 @@ export function CommunityWidget() {
                     )}
                   </div>
                 ))}
-
-              {tab === 'requirements' && (
-                <>
-                  {user && (
-                    <Button size="sm" fullWidth className="mb-2" leftIcon={<Icon name="plus" size={16} />} onClick={() => setCreatingReq(true)}>
-                      {s.newRequirement}
-                    </Button>
-                  )}
-                  {((reqs.data as AnyRec[]) ?? []).map((r) => (
-                    <div key={r.id} className="mb-2 rounded-xl border border-surface-border p-3">
-                      <div className="font-display font-bold text-ink">{r.title}</div>
-                      <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
-                        <Badge tone="green">
-                          {r.quantity} {r.unit} · {r.productName}
-                        </Badge>
-                        {r.buyerLocation && <Badge tone="slate">{r.buyerLocation}</Badge>}
-                        <Badge tone="info">{r._count?.responses ?? 0} {s.replies}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
 
               {tab === 'mychats' &&
                 (user ? (

@@ -447,6 +447,8 @@ export class CommunityService {
     const posts = await this.prisma.communityPost.findMany({
       where: {
         deletedAt: null,
+        // Trade requirements belong to the Requirements board, not the chat feed.
+        type: { not: 'trade_requirement' },
         OR: [{ groupId: null }, { group: { visibility: 'public' } }],
         ...(excluded.length ? { authorId: { notIn: excluded } } : {}),
       },

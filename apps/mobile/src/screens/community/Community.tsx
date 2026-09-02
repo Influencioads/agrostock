@@ -20,14 +20,14 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useChatSocket } from '../../chat/useChatSocket';
 import { useChatStrings } from '../../chat/strings';
 import { useI18n } from '../../i18n';
-import { Badge, Button, Card, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
+import { Badge, Button, Card, EmptyState, Row, SkeletonRows, Txt } from '../../ui';
 import { C, radius, space, type } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { backChevron } from '../../lib/rtl';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyRec = Record<string, any>;
-type Tab = 'feed' | 'groups' | 'requirements' | 'mychats';
+type Tab = 'feed' | 'groups' | 'mychats';
 type S = Record<string, string>;
 
 const baseLang = (tag?: string | null) => (tag ? tag.split('-')[0].toLowerCase() : '');
@@ -370,46 +370,6 @@ function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: str
   );
 }
 
-/* ── New Trade Requirement ────────────────────────────────────────── */
-function RequirementForm({ onDone, s }: { onDone: () => void; s: S }) {
-  const qc = useQueryClient();
-  const { t } = useI18n();
-  const [f, setF] = useState({ title: '', productCategory: 'Grains', productName: '', quantity: '', unit: 'MT', buyerLocation: '' });
-  const [busy, setBusy] = useState(false);
-  const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
-  const submit = async () => {
-    if (!f.title || !f.productName || !f.quantity) return;
-    setBusy(true);
-    try {
-      await api.community.createRequirement(f);
-      qc.invalidateQueries({ queryKey: ['community-requirements'] });
-      onDone();
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
-      <Row style={{ paddingHorizontal: space.lg, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border, backgroundColor: C.white }}>
-        <Pressable onPress={onDone} hitSlop={10} style={{ marginEnd: 8 }}>
-          <Ionicons name={backChevron()} size={22} color={C.ink} />
-        </Pressable>
-        <Txt variant="title">{s.newRequirement}</Txt>
-      </Row>
-      <View style={{ padding: space.lg, gap: 12 }}>
-        <Input label={s.title} placeholder={t('pubX.ph.reqWheatTitle')} value={f.title} onChangeText={(v) => set('title', v)} />
-        <Input label={s.product} placeholder={t('pubX.ph.millingWheat')} value={f.productName} onChangeText={(v) => set('productName', v)} />
-        <Row gap={10}>
-          <View style={{ flex: 1 }}><Input label={s.quantity} placeholder="100" keyboardType="numeric" value={f.quantity} onChangeText={(v) => set('quantity', v)} /></View>
-          <View style={{ flex: 1 }}><Input label={s.unit} value={f.unit} onChangeText={(v) => set('unit', v)} /></View>
-        </Row>
-        <Input label={s.location} placeholder={t('pubX.ph.locationMoscow')} value={f.buyerLocation} onChangeText={(v) => set('buyerLocation', v)} />
-        <Button title={s.create} icon="checkmark" loading={busy} disabled={!f.title || !f.productName || !f.quantity} onPress={submit} full />
-      </View>
-    </SafeAreaView>
-  );
-}
-
 /* ── Feed composer (any signed-in user can post publicly) ─────────── */
 function FeedComposer({ onPosted, s }: { onPosted: () => void; s: S }) {
   const [body, setBody] = useState('');
@@ -456,7 +416,6 @@ export function Community() {
   const [tab, setTab] = useState<Tab>('feed');
   const [activeGroup, setActiveGroup] = useState<AnyRec | null>(null);
   const [activeDm, setActiveDm] = useState<{ userId: string; name: string; draft?: string } | null>(null);
-  const [creatingReq, setCreatingReq] = useState(false);
   const { socket } = useChatSocket('/community', !!user);
 
   // Deep-link straight into a DM ("Chat with seller", directory Chat buttons).
@@ -472,7 +431,6 @@ export function Community() {
 
   const feed = useQuery({ queryKey: ['community-feed', lang], queryFn: () => api.community.feed(), enabled: tab === 'feed' });
   const groups = useQuery({ queryKey: ['community-groups', lang], queryFn: () => api.community.groups(), enabled: tab === 'groups' });
-  const reqs = useQuery({ queryKey: ['community-requirements', lang], queryFn: () => api.community.requirements(), enabled: tab === 'requirements' });
   const mine = useQuery({ queryKey: ['community-my', lang], queryFn: () => api.community.myGroups(), enabled: tab === 'mychats' && !!user });
 
   const join = async (id: string) => {
@@ -485,7 +443,6 @@ export function Community() {
     () => [
       ['feed', s.feed],
       ['groups', s.groups],
-      ['requirements', s.requirements],
       ['mychats', s.myChats],
     ],
     [s],
@@ -494,7 +451,6 @@ export function Community() {
   // Keyed: switching peers must remount, or the draft would carry over.
   if (activeDm) return <DmRoom key={activeDm.userId} peer={activeDm} socket={socket} onBack={() => setActiveDm(null)} s={s} />;
   if (activeGroup) return <Room group={activeGroup} socket={socket} onBack={() => setActiveGroup(null)} s={s} />;
-  if (creatingReq) return <RequirementForm onDone={() => setCreatingReq(false)} s={s} />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
@@ -546,7 +502,6 @@ export function Community() {
                         {p.author?.name} · {p.author?.role}
                       </Txt>
                     </Row>
-                    {p.type === 'trade_requirement' && <Badge label={s.requirement} tone="mango" />}
                   </Row>
                 </Pressable>
                 {p.title ? <Txt variant="title" style={{ marginTop: 4 }}>{p.title}</Txt> : null}
@@ -587,28 +542,6 @@ export function Community() {
                   </Row>
                 </Pressable>
                 {user ? <Button title={s.join} size="sm" variant="outline" onPress={() => join(g.id)} /> : null}
-              </Row>
-            </Card>
-          )}
-        />
-      )}
-
-      {tab === 'requirements' && (
-        <FlatList
-          data={(reqs.data as AnyRec[]) ?? []}
-          keyExtractor={(r) => String(r.id)}
-          contentContainerStyle={{ padding: space.lg, gap: 10 }}
-          ListHeaderComponent={
-            user ? <Button title={s.newRequirement} icon="add" size="sm" onPress={() => setCreatingReq(true)} /> : null
-          }
-          ListEmptyComponent={reqs.isLoading ? <SkeletonRows /> : <EmptyState icon="clipboard-outline" title={s.noReqs} />}
-          renderItem={({ item: r }) => (
-            <Card>
-              <Txt variant="title">{r.title}</Txt>
-              <Row gap={6} style={{ flexWrap: 'wrap', marginTop: 6 }}>
-                <Badge label={`${r.quantity} ${r.unit} · ${r.productName}`} tone="green" />
-                {r.buyerLocation ? <Badge label={r.buyerLocation} tone="slate" /> : null}
-                <Badge label={`${r._count?.responses ?? 0} ${s.replies}`} tone="info" />
               </Row>
             </Card>
           )}
