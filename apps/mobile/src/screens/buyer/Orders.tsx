@@ -3,19 +3,21 @@ import { Alert, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { canCancel, canDispute, nextStatusFor, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
+import { canCancel, canDispute, nextStatusFor, orderPayableCents, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { Badge, Button, Card, EmptyState, ErrorState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
+import { useCurrency } from '../../currency/CurrencyContext';
 import type { RootStackParamList } from '../../navigation/types';
 import { OrderDetailSheet, OrderSteps, useOrderInvalidation } from '../components/order-parts';
 import { OrderReviewButton } from '../components/ReviewSheet';
 
 export function BuyerOrders() {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -80,7 +82,8 @@ export function BuyerOrders() {
                   </View>
                 </Row>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Txt variant="title">{o.amount}</Txt>
+                  {/* Goods + the buyer's 0.5% bid fee; `o.amount` is goods only. */}
+                  <Txt variant="title">{o.buyerFeeCents ? fmtCents(orderPayableCents(o)) : o.amount}</Txt>
                   <Badge label={orderLabel[o.status] ?? o.status} tone={orderTone[o.status] ?? 'slate'} />
                 </View>
               </Row>

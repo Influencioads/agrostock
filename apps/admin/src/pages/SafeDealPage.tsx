@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar, Badge, Button, Card, Icon } from '@agrotraders/ui';
-import type { ApiAdminWallet, ApiAdminPayments } from '@agrotraders/api-client';
+import type { ApiAdminWallet, ApiAdminPayments, ApiCommissionCharge, ApiOrder } from '@agrotraders/api-client';
 import { PageHeader } from '../components/widgets';
 import { api } from '../lib/api';
+import { toast } from 'sonner';
+import { errMessage } from '../lib/errors';
 import { useI18n } from '../i18n';
 
 const usd = (cents: number) => '$' + (cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 });
@@ -55,6 +57,154 @@ function LedgerDrawer({ userId, onClose }: { userId: string; onClose: () => void
   );
 }
 
+/**
+ * The agent queue. Auction wins and awarded buyer bids are minted parked in
+ * `processing` and cannot be packed or dispatched until someone here has checked
+ * the deal and cleared it.
+ */
+function EscrowQueue() {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const { data: orders = [], isLoading } = useQuery<ApiOrder[]>({
+    queryKey: ['admin-escrow-queue'],
+    queryFn: () => api.admin.escrowQueue('false'),
+    retry: 1,
+  });
+  const verify = useMutation({
+    mutationFn: (id: string) => api.admin.verifyOrder(id),
+    onSuccess: () => {
+      toast.success(t('sd.verifyDone'));
+      qc.invalidateQueries({ queryKey: ['admin-escrow-queue'] });
+      qc.invalidateQueries({ queryKey: ['admin-orders'] });
+    },
+    onError: (e) => toast.error(errMessage(e, t('genericError'))),
+  });
+
+  return (
+    <Card padded={false} className="mb-5">
+      <div className="flex items-center justify-between border-b border-surface-border px-5 py-3">
+        <div>
+          <div className="font-display font-bold text-ink">{t('sd.escrowQueueTitle')}</div>
+          <div className="text-xs text-ink-soft">{t('sd.escrowQueueHint')}</div>
+        </div>
+        <Badge tone={orders.length ? 'mango' : 'slate'}>{orders.length}</Badge>
+      </div>
+      {isLoading ? (
+        <div className="px-5 py-8 text-center text-sm text-ink-soft">{t('common:loading')}</div>
+      ) : orders.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-ink-soft">{t('sd.escrowQueueEmpty')}</div>
+      ) : (
+        <div className="divide-y divide-surface-border">
+          {orders.map((o) => (
+            <div key={o.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+              <div className="min-w-0">
+                <div className="font-semibold text-ink">{o.reference}</div>
+                <div className="text-xs text-ink-soft">
+                  {o.note ?? '\u2014'}
+                  {o.buyerFeeCents ? ` \u00b7 ${t('sd.buyerFee')} ${usd(o.buyerFeeCents)}` : ''}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-numeric font-bold text-ink">{usd((o.amountCents ?? 0) + (o.buyerFeeCents ?? 0))}</span>
+                <Button size="sm" onClick={() => verify.mutate(o.id)} disabled={verify.isPending}>
+                  {t('sd.verify')}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * What won auctions and awarded bids owe the platform. These are RECORDS, not
+ * money movements - the agent collects off-platform and marks the row here.
+ */
+function CommissionCharges() {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const [status, setStatus] = useState('pending');
+  const { data: charges = [], isLoading } = useQuery<ApiCommissionCharge[]>({
+    queryKey: ['admin-commission-charges', status],
+    queryFn: () => api.admin.commissionCharges({ status }),
+    retry: 1,
+  });
+  const settle = useMutation({
+    mutationFn: (v: { id: string; status: 'collected' | 'waived' }) => api.admin.settleCommissionCharge(v.id, v.status),
+    onSuccess: () => {
+      toast.success(t('sd.chargeSettled'));
+      qc.invalidateQueries({ queryKey: ['admin-commission-charges'] });
+    },
+    onError: (e) => toast.error(errMessage(e, t('genericError'))),
+  });
+  const pendingTotal = charges.filter((c) => c.status === 'pending').reduce((n, c) => n + c.amountCents, 0);
+
+  return (
+    <Card padded={false} className="mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-surface-border px-5 py-3">
+        <div>
+          <div className="font-display font-bold text-ink">{t('sd.chargesTitle')}</div>
+          <div className="text-xs text-ink-soft">{t('sd.chargesHint')}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          {pendingTotal > 0 && <span className="font-numeric font-bold text-brand-dark">{usd(pendingTotal)}</span>}
+          {['pending', 'collected', 'waived'].map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatus(s)}
+              className={
+                'rounded-full px-3 py-1 text-xs font-semibold transition-colors ' +
+                (status === s ? 'bg-brand text-white' : 'bg-brand-surface text-ink-soft hover:text-ink')
+              }
+            >
+              {t(`sd.chargeStatus.${s}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+      {isLoading ? (
+        <div className="px-5 py-8 text-center text-sm text-ink-soft">{t('common:loading')}</div>
+      ) : charges.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-ink-soft">{t('sd.chargesEmpty')}</div>
+      ) : (
+        <div className="divide-y divide-surface-border">
+          {charges.map((c) => (
+            <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <Badge tone={c.kind === 'auction' ? 'green' : 'info'}>{t(`sd.chargeKind.${c.kind}`)}</Badge>
+                  <span className="font-semibold text-ink">{c.payer?.name ?? c.payerId}</span>
+                </div>
+                <div className="text-xs text-ink-soft">
+                  {t('sd.chargeBasis', { rate: (c.rateBps / 100).toFixed(2), base: usd(c.baseCents) })}
+                  {c.note ? ` \u00b7 ${c.note}` : ''}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-numeric font-bold text-ink">{usd(c.amountCents)}</span>
+                {c.status === 'pending' ? (
+                  <>
+                    <Button size="sm" onClick={() => settle.mutate({ id: c.id, status: 'collected' })} disabled={settle.isPending}>
+                      {t('sd.markCollected')}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => settle.mutate({ id: c.id, status: 'waived' })} disabled={settle.isPending}>
+                      {t('sd.waive')}
+                    </Button>
+                  </>
+                ) : (
+                  <Badge tone="slate">{t(`sd.chargeStatus.${c.status}`)}</Badge>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /** Company-wide financial oversight: every wallet, escrow, per-role balances. */
 export function SafeDealPage() {
   const { t } = useI18n();
@@ -93,6 +243,9 @@ export function SafeDealPage() {
           <div className="mt-1 font-display text-2xl font-extrabold text-ink">{usd(byRole.seller ?? 0)}</div>
         </Card>
       </div>
+
+      <EscrowQueue />
+      <CommissionCharges />
 
       <div className="mb-4 flex flex-wrap gap-2">
         {ROLES.map((r) => (

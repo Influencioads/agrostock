@@ -1010,13 +1010,11 @@
     "feature": {
       "analytics": "Analytics",
       "apiAccess": "API access",
-      "bidRoom": "Buyer bid room",
       "bulkImport": "Bulk price import",
       "directHireRequests": "Receive direct hire requests",
       "directoryPlacement": "Directory placement",
       "directoryVisible": "Appear in the directory",
       "dispatchBoard": "Dispatch board",
-      "escrowPriority": "Escrow priority",
       "payoutReports": "Earnings & payout reports",
       "routePriority": "Route-match priority",
       "searchPriority": "Search priority",
@@ -1253,16 +1251,34 @@
   },
   "sd": {
     "allRoles": "all",
+    "buyerFee": "buyer fee",
+    "chargeBasis": "{{rate}}% of {{base}}",
+    "chargeKind": {
+      "auction": "Auction · seller",
+      "buyer_bid": "Buyer bid · buyer"
+    },
+    "chargeSettled": "Charge updated.",
+    "chargeStatus": {
+      "pending": "Pending",
+      "collected": "Collected",
+      "waived": "Waived"
+    },
+    "chargesEmpty": "Nothing here.",
+    "chargesHint": "Recorded when a deal is won. Collect off-platform, then mark the row.",
+    "chargesTitle": "Platform fees owed",
     "colAccount": "Account",
     "colBalance": "Balance",
     "colLedger": "Ledger",
     "colRole": "Role",
+    "escrowQueueEmpty": "Nothing waiting — every deal is cleared.",
+    "escrowQueueHint": "Auction wins and awarded bids. The seller cannot pack or dispatch until you clear the deal.",
+    "escrowQueueTitle": "Deals awaiting verification",
     "inEscrow": "In escrow (paid orders)",
     "ledgerTitle": "Wallet ledger",
+    "markCollected": "Mark collected",
     "sellerBalances": "Seller balances",
     "sub": "Company-wide financial oversight — escrow, wallets and balances.",
     "totalOnPlatform": "Total on platform",
-    "txnsCount": "Transactions ({{count}})",
     "txType": {
       "escrow_hold": "escrow hold",
       "escrow_release": "escrow release",
@@ -1270,6 +1286,10 @@
       "refund": "refund",
       "topup": "top-up"
     },
+    "txnsCount": "Transactions ({{count}})",
+    "verify": "Verify",
+    "verifyDone": "Deal verified — cleared for dispatch.",
+    "waive": "Waive",
     "wallets": "Wallets"
   },
   "serviceOffer": {
@@ -1287,6 +1307,10 @@
     "amount": "Amount",
     "applyDiscount": "Apply",
     "arr": "Run-rate ARR",
+    "auctionCommission": "Auction commission (%)",
+    "auctionCommissionHint": "Charged to the seller when a lot sells. 0 switches it off.",
+    "buyerBidCommission": "Buyer bid commission (%)",
+    "buyerBidCommissionHint": "Added on top of the awarded price; the buyer pays it. 0 switches it off.",
     "cancel": "Cancel",
     "churn": "Churn (30d)",
     "commissionEnabled": "Commission enabled",

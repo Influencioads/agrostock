@@ -1014,13 +1014,11 @@
     "feature": {
       "analytics": "Аналитика",
       "apiAccess": "Доступ к API",
-      "bidRoom": "Комната торгов покупателя",
       "bulkImport": "Массовая загрузка цен",
       "directHireRequests": "Прямые заявки на найм",
       "directoryPlacement": "Размещение в каталоге",
       "directoryVisible": "Показ в каталоге",
       "dispatchBoard": "Доска нарядов",
-      "escrowPriority": "Приоритет безопасной сделки",
       "payoutReports": "Отчёты по выплатам",
       "routePriority": "Приоритет по маршруту",
       "searchPriority": "Приоритет в поиске",
@@ -1260,16 +1258,34 @@
   },
   "sd": {
     "allRoles": "все",
+    "buyerFee": "комиссия покупателя",
+    "chargeBasis": "{{rate}}% от {{base}}",
+    "chargeKind": {
+      "auction": "Аукцион · продавец",
+      "buyer_bid": "Заявка · покупатель"
+    },
+    "chargeSettled": "Начисление обновлено.",
+    "chargeStatus": {
+      "pending": "Ожидает",
+      "collected": "Получена",
+      "waived": "Списана"
+    },
+    "chargesEmpty": "Ничего нет.",
+    "chargesHint": "Начисляются при победе в сделке. Получите вне платформы и отметьте здесь.",
+    "chargesTitle": "Начисленные комиссии",
     "colAccount": "Аккаунт",
     "colBalance": "Баланс",
     "colLedger": "Журнал",
     "colRole": "Роль",
+    "escrowQueueEmpty": "Нет сделок на проверке.",
+    "escrowQueueHint": "Победы на аукционах и присуждённые заявки. Продавец не может упаковать или отгрузить, пока вы не подтвердите сделку.",
+    "escrowQueueTitle": "Сделки на проверке",
     "inEscrow": "В эскроу (оплаченные заказы)",
     "ledgerTitle": "Журнал кошелька",
+    "markCollected": "Отметить полученной",
     "sellerBalances": "Балансы продавцов",
     "sub": "Финансовый надзор по всей платформе — эскроу, кошельки и балансы.",
     "totalOnPlatform": "Всего на платформе",
-    "txnsCount": "Транзакции ({{count}})",
     "txType": {
       "escrow_hold": "блокировка эскроу",
       "escrow_release": "разблокировка эскроу",
@@ -1277,6 +1293,10 @@
       "refund": "возврат",
       "topup": "пополнение"
     },
+    "txnsCount": "Транзакции ({{count}})",
+    "verify": "Подтвердить",
+    "verifyDone": "Сделка подтверждена — отгрузка разрешена.",
+    "waive": "Списать",
     "wallets": "Кошельки"
   },
   "serviceOffer": {
@@ -1294,6 +1314,10 @@
     "amount": "Сумма",
     "applyDiscount": "Применить",
     "arr": "ARR в годовом выражении",
+    "auctionCommission": "Комиссия с аукциона (%)",
+    "auctionCommissionHint": "Взимается с продавца при продаже лота. 0 — выключено.",
+    "buyerBidCommission": "Комиссия с заявки покупателя (%)",
+    "buyerBidCommissionHint": "Добавляется к присуждённой цене; платит покупатель. 0 — выключено.",
     "cancel": "Отменить",
     "churn": "Отток (30 дн)",
     "commissionEnabled": "Комиссия включена",

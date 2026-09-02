@@ -3,12 +3,13 @@ import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'r
 import * as Clipboard from 'expo-clipboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { deliveryAddressLine, deliveryContactLine, ORDER_STEPS, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
+import { deliveryAddressLine, deliveryContactLine, ORDER_STEPS, orderPayableCents, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage, orderLabel, orderTone } from '../../lib/format';
 import { Badge, Button, Card, Input, ProgressBar, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space, type } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { alignEnd } from '../../lib/rtl';
 
 /**
@@ -204,6 +205,7 @@ export function OrderTimeline({ events }: { events: ApiOrderDetail['events'] }) 
 /** Bottom-sheet order detail: stepper, party OTP, shipment facts, timeline. */
 export function OrderDetailSheet({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const { t } = useI18n();
+  const { fmtCents } = useCurrency();
   const { data: order, isLoading } = useQuery<ApiOrderDetail>({
     queryKey: ['order-detail', orderId],
     queryFn: () => api.orders.get(orderId),
@@ -236,6 +238,23 @@ export function OrderDetailSheet({ orderId, onClose }: { orderId: string; onClos
                   <Badge label={orderLabel[order.status] ?? order.status} tone={orderTone[order.status] ?? 'slate'} />
                 </View>
               </Row>
+
+              {!!order.buyerFeeCents && (
+                <Card>
+                  <Row style={{ justifyContent: 'space-between' }}>
+                    <Txt variant="muted">{t('compX.order.goods')}</Txt>
+                    <Txt>{fmtCents(order.amountCents ?? 0)}</Txt>
+                  </Row>
+                  <Row style={{ justifyContent: 'space-between', marginTop: 4 }}>
+                    <Txt variant="muted">{t('compX.order.buyerFee')}</Txt>
+                    <Txt>{fmtCents(order.buyerFeeCents)}</Txt>
+                  </Row>
+                  <Row style={{ justifyContent: 'space-between', marginTop: 4 }}>
+                    <Txt variant="title">{t('compX.order.buyerPays')}</Txt>
+                    <Txt variant="title">{fmtCents(orderPayableCents(order))}</Txt>
+                  </Row>
+                </Card>
+              )}
 
               <ProgressBar pct={progressOf(order.status)} />
 

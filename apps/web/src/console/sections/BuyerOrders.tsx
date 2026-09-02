@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge, Button, Card } from '@agrotraders/ui';
-import { nextStatusFor, canCancel, canDispute, type ApiOrder } from '@agrotraders/api-client';
+import { nextStatusFor, canCancel, canDispute, orderPayableCents, type ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
-import { orderLabel, orderTone } from '../lib';
+import { orderLabel, orderTone, usd } from '../lib';
 import { OrderDrawer, OrderStepper, errMessage, useOrderInvalidation } from './order-parts';
 import { OrderReviewButtons } from '../components/OrderReviewButtons';
 import { ErrorState } from '../../components/ErrorState';
@@ -73,7 +73,11 @@ export function BuyerOrders() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-display text-lg font-extrabold text-ink">{o.amount}</span>
+                    {/* The buyer pays goods + their 0.5% bid fee; `o.amount` is
+                        the goods total the seller is owed. */}
+                    <span className="font-display text-lg font-extrabold text-ink">
+                      {o.buyerFeeCents ? usd(orderPayableCents(o)) : o.amount}
+                    </span>
                     <Badge tone={orderTone[o.status] ?? 'slate'}>{orderText(o.status)}</Badge>
                   </div>
                 </div>

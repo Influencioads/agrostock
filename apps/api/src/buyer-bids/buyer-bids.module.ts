@@ -42,6 +42,7 @@ const SAFE_IMAGE_REF = /^(?:https?:\/\/|\/)[^\s]*$/i;
 import { assertSafeDealSettlement, requireSafeDeal } from '../products/safe-deal';
 import { MAX_MONEY_CENTS, MAX_QTY } from '../common/limits';
 import { PrismaService } from '../prisma/prisma.service';
+import { DealCommissionModule, DealCommissionService } from '../billing/deal-commission.module';
 import { EntitlementsService } from '../billing/entitlements.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { flagFor, maskName } from '../common/masking';
@@ -200,6 +201,10 @@ export class BuyerBidsService {
     private fx: FxService,
     private categories: CategoriesService,
     private entitlements: EntitlementsService,
+    // Appended LAST on purpose: the unit specs construct this service with a
+    // positional argument list, so inserting a dependency mid-list silently
+    // shifts every mock after it.
+    private dealCommission: DealCommissionService,
   ) {}
 
   /**
@@ -252,7 +257,9 @@ export class BuyerBidsService {
   // ── buyer ──────────────────────────────────────────────────────
 
   async create(buyer: AuthUser, dto: CreateBuyerBidDto) {
-    // Buy requests are the buyer plan's headline quota, counted per billing period.
+    // Unlimited on every plan today, but still enforced so the per-plan number
+    // stays meaningful when an admin sets one. The platform is paid on SUCCESS
+    // instead, by the 0.5% added to the awarded price in `award()`.
     await this.entitlements.assertWithin(buyer.id, 'buyer', 'rfqsPerMonth');
     // A buyer posts ONE thing — what they need — and sellers underbid each other
     // for it. `dto.mode` is ignored: sealed quote mode is legacy, kept only so
@@ -364,7 +371,13 @@ export class BuyerBidsService {
     if (!sellerBid || sellerBid.buyerBidId !== buyerBidId) throw new NotFoundException('Bid not found');
     if (sellerBid.status !== 'submitted') throw new BadRequestException('That bid is no longer available.');
 
+    // Goods value is what the seller is owed and what `amountCents` keeps
+    // meaning. The buyer's 0.5% is carried alongside it in `buyerFeeCents` and
+    // added at the point of payment, so seller proceeds and the revenue
+    // dashboards that parse `amount` are not silently inflated by the fee.
     const amountCents = Math.round(sellerBid.priceCents * sellerBid.qtyValue);
+    const { buyerBidBps } = await this.dealCommission.rates();
+    const buyerFeeCents = DealCommissionService.fee(amountCents, buyerBidBps);
 
     const result = await this.prisma.$transaction(async (tx) => {
       // F15: claim the requirement AND the winning bid with conditional
@@ -406,6 +419,10 @@ export class BuyerBidsService {
           // Numeric + display string move together — analytics parse the string.
           amountCents,
           amount: usd(amountCents),
+          // Buyer pays amountCents + buyerFeeCents; the seller is owed amountCents.
+          buyerFeeCents,
+          // Escrow-protected: an agent checks this deal before it can be packed.
+          verifyRequired: true,
           unitPriceCents: sellerBid.priceCents,
           qtyValue: sellerBid.qtyValue,
           qtyUnit: buyerBid.qtyUnit,
@@ -419,6 +436,17 @@ export class BuyerBidsService {
       });
       await tx.orderEvent.create({
         data: { orderId: order.id, type: 'order_placed', actorId: user.id, toStatus: 'processing', note: `Awarded from ${buyerBid.reference}` },
+      });
+      await this.dealCommission.record(tx, {
+        kind: 'buyer_bid',
+        ref: `buyer_bid:${buyerBidId}`,
+        payerId: buyerBid.buyerId,
+        baseCents: amountCents,
+        rateBps: buyerBidBps,
+        amountCents: buyerFeeCents,
+        orderId: order.id,
+        buyerBidId,
+        note: `Buyer fee on ${buyerBid.reference} — ${buyerBid.title}`,
       });
       await tx.sellerBid.updateMany({ where: { buyerBidId, id: { not: sellerBidId }, status: 'submitted' }, data: { status: 'rejected' } });
       const updatedBuyerBid = await tx.buyerBid.update({
@@ -837,7 +865,7 @@ export class AdminBuyerBidsController {
 }
 
 @Module({
-  imports: [FxModule, CatalogModule],
+  imports: [FxModule, CatalogModule, DealCommissionModule],
   controllers: [BuyerBidsController, AdminBuyerBidsController],
   providers: [BuyerBidsService],
   exports: [BuyerBidsService],

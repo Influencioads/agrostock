@@ -458,6 +458,7 @@ model User {
   roleDecisions       RoleRequest[]            @relation("RequestDecider")
   payoutRequests      PayoutRequest[]          @relation("PayoutUser")
   payoutDecisions     PayoutRequest[]          @relation("PayoutDecider")
+  commissionCharges   CommissionCharge[]       @relation("CommissionPayer")
   emailTokens         EmailVerificationToken[]
   passwordResetTokens PasswordResetToken[]
   loginOtpTokens      LoginOtpToken[]
@@ -1245,6 +1246,22 @@ model Order {
   currency       String  @default("USD")
   note           String?
 
+  /// Buyer-bid platform fee, added ON TOP of `amountCents`. The buyer pays
+  /// `amountCents + buyerFeeCents`; the seller is still owed `amountCents`.
+  /// Kept as its own column precisely so seller proceeds and the revenue
+  /// analytics that parse `amount` are not inflated by the fee.
+  buyerFeeCents  Int     @default(0)
+
+  /// Manual escrow verification. Auction wins and awarded buyer bids are checked
+  /// by an agent before anything is dispatched, so they are minted with
+  /// `verifyRequired` and refuse to move past `processing` until `verifiedAt` is
+  /// stamped. Ordinary direct-deal orders leave the flag false and are not gated.
+  /// The flag is stored rather than derived from the listing: `Product.safeDeal`
+  /// defaults true on ordinary listings too, so it cannot tell the two apart.
+  verifyRequired Boolean   @default(false)
+  verifiedAt     DateTime?
+  verifiedById   String?
+
   /// Where the buyer wants it delivered, captured at checkout. The order had no
   /// destination at all before this — dispatch and hire both fell back to
   /// `buyer.country`. The origin side is NOT snapshotted: it is read live off
@@ -1577,6 +1594,53 @@ model Office {
   tz    String?
   langs String?
   staff Int     @default(0)
+}
+
+/// What a won auction or awarded buyer bid owes the platform.
+///
+/// Deliberately a RECORD, not a money movement: escrow is settled by an agent
+/// off-platform for now, so the charge is raised at award time and someone marks
+/// it collected. `ref` is the idempotency key — a retried settlement collides on
+/// insert instead of double-charging. `rateBps`/`baseCents` are snapshotted so a
+/// later rate change never restates an old charge.
+enum CommissionChargeKind {
+  auction
+  buyer_bid
+}
+
+enum CommissionChargeStatus {
+  pending
+  collected
+  waived
+}
+
+model CommissionCharge {
+  id          String                 @id @default(cuid())
+  ref         String                 @unique
+  kind        CommissionChargeKind
+  status      CommissionChargeStatus @default(pending)
+
+  /// Who owes it: the SELLER on an auction, the BUYER on a buyer bid.
+  payerId String
+  payer   User   @relation("CommissionPayer", fields: [payerId], references: [id])
+
+  baseCents   Int
+  rateBps     Int
+  amountCents Int
+  currency    String @default("USD")
+
+  orderId    String?
+  productId  String?
+  buyerBidId String?
+  note       String?
+
+  createdAt     DateTime  @default(now())
+  collectedAt   DateTime?
+  collectedById String?
+
+  @@index([status, kind])
+  @@index([payerId])
+  @@index([createdAt])
 }
 
 model Wallet {
@@ -3146,6 +3210,15 @@ model BillingSettings {
   orderCommissionBps  Int     @default(0)
   escrowCommissionBps Int     @default(0)
   commissionEnabled   Boolean @default(false)
+
+  /// Competitive-bidding take rates, charged ON AWARD and recorded as a
+  /// CommissionCharge for an agent to collect offline — they move no money, so
+  /// they are deliberately NOT behind `commissionEnabled` (which gates the
+  /// wallet deduction on orders/hires). A rate of 0 switches one off.
+  /// Auction: owed by the SELLER, deducted from their proceeds.
+  /// Buyer bid: owed by the BUYER, ADDED ON TOP of the goods total.
+  auctionCommissionBps  Int @default(100)
+  buyerBidCommissionBps Int @default(50)
 
   /// Master switch for quota enforcement. The plan's Phase 0 keeps everything
   /// free while supply is landed, so quotas can be built now and armed later.

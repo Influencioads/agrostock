@@ -57,16 +57,31 @@ function CycleToggle({ cycle, onChange }: { cycle: ApiBillingCycle; onChange: (c
   );
 }
 
+/**
+ * Quota keys that are settled by a success fee rather than a published cap.
+ * When the plan leaves one uncapped the card shows the fee instead — see the
+ * comment at the render site.
+ */
+const FEE_FOR_LIMIT: Partial<Record<string, 'auction' | 'buyerBid'>> = {
+  auctionLotsPerMonth: 'auction',
+  rfqsPerMonth: 'buyerBid',
+};
+
+/** Basis points → the percent a trader reads. 100 → "1", 50 → "0.5". */
+const pctOf = (bps: number) => String(Number((bps / 100).toFixed(2)));
+
 function PlanColumn({
   plan,
   cycle,
   highlight,
   onChoose,
+  fees,
 }: {
   plan: ApiPlan;
   cycle: ApiBillingCycle;
   highlight: boolean;
   onChoose: (plan: ApiPlan) => void;
+  fees?: { auctionBps: number; buyerBidBps: number };
 }) {
   const { t } = useI18n();
   const { fmtMinor } = useCurrency();
@@ -112,6 +127,24 @@ function PlanColumn({
       <ul className="mt-4 space-y-2 text-sm">
         {PLAN_LIMIT_KEYS.filter((k) => k in plan.limits).map((k) => {
           const n = plan.limits[k];
+          // Auctions and buy requests carry no published cap today. Rather than
+          // advertise "unlimited" — a promise that gets awkward the moment a cap
+          // is introduced — the row shows the success fee that actually applies
+          // to that flow. Set a number on the plan and the cap renders as normal.
+          const fee = n === null ? FEE_FOR_LIMIT[k] : undefined;
+          if (fee) {
+            const bps = fee === 'auction' ? fees?.auctionBps : fees?.buyerBidBps;
+            if (!bps || bps <= 0) return null;
+            return (
+              <li key={k} className="flex items-start gap-2">
+                <Icon name="check" className="mt-0.5 shrink-0 text-brand-leaf" />
+                <span className="text-ink">
+                  <strong className="font-numeric">{t('pricing.successFee.pct', { pct: pctOf(bps) })}</strong>{' '}
+                  {t(`pricing.successFee.${fee}`)}
+                </span>
+              </li>
+            );
+          }
           return (
             <li key={k} className="flex items-start gap-2">
               <Icon name="check" className="mt-0.5 shrink-0 text-brand-leaf" />
@@ -167,6 +200,10 @@ export function PricingPage() {
 
   const { data: plans = [], isLoading } = useQuery<ApiPlan[]>({ queryKey: ['plans'], queryFn: () => api.billing.plans() });
   const { data: addons = [] } = useQuery<ApiAddonSpec[]>({ queryKey: ['addons'], queryFn: () => api.billing.addons() });
+  // Read live rather than written into the copy: an admin can change either
+  // rate whenever they like, and a hardcoded percentage would quietly start
+  // advertising a fee the platform no longer charges.
+  const { data: fees } = useQuery({ queryKey: ['commission-rates'], queryFn: () => api.billing.commissionRates() });
 
   const active = ROLE_TABS.find((r) => r.key === tab) ?? ROLE_TABS[0];
   const columns = useMemo(() => {
@@ -211,7 +248,7 @@ export function PricingPage() {
           {columns.map((p) => (
             // The middle rung is the anchor — it is expected to carry roughly
             // three quarters of paid accounts, so it is the one highlighted.
-            <PlanColumn key={p.id} plan={p} cycle={cycle} highlight={p.tier === 1 && columns.length > 2} onChoose={choose} />
+            <PlanColumn key={p.id} plan={p} cycle={cycle} highlight={p.tier === 1 && columns.length > 2} onChoose={choose} fees={fees} />
           ))}
         </div>
       )}

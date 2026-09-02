@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import {
+  orderPayableCents,
   deliveryAddressLine,
   deliveryContactLine,
   ORDER_STEPS,
@@ -12,7 +13,7 @@ import {
 } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
-import { orderLabel, orderTone } from '../lib';
+import { orderLabel, orderTone, usd } from '../lib';
 import { ErrorState } from '../../components/ErrorState';
 
 /** Refresh every list/detail that can show an order after it moves. */
@@ -358,6 +359,26 @@ export function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: ()
               <Badge tone={orderTone[order.status] ?? 'slate'}>{t(`enums:order_status.${order.status}`, { defaultValue: orderLabel[order.status] ?? order.status })}</Badge>
             </div>
           </div>
+
+          {/* Shown to both parties on purpose: the seller is owed the goods
+              total, the buyer pays that plus their fee, and a single figure
+              cannot say both. */}
+          {!!order.buyerFeeCents && (
+            <div className="rounded-xl border border-surface-border bg-brand-surface/40 p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-ink-soft">{t('console.order.goods')}</span>
+                <span className="font-numeric text-ink">{usd(order.amountCents)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-ink-soft">{t('console.order.buyerFee')}</span>
+                <span className="font-numeric text-ink">{usd(order.buyerFeeCents)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between border-t border-surface-border pt-1 font-bold">
+                <span className="text-ink">{t('console.order.buyerPays')}</span>
+                <span className="font-numeric text-ink">{usd(orderPayableCents(order))}</span>
+              </div>
+            </div>
+          )}
 
           <OrderStepper status={order.status} />
 

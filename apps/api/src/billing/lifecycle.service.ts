@@ -68,13 +68,11 @@ const MARKETING_COOLDOWN_DAYS = 4;
  */
 const PERK_PRIORITY = [
   'verifiedBadge',
-  'bidRoom',
   'dispatchBoard',
   'searchPriority',
   'routePriority',
   'directoryPlacement',
   'analytics',
-  'escrowPriority',
   'payoutReports',
   'apiAccess',
   'bulkImport',

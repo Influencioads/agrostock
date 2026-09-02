@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import type { ApiOrder } from '@agrotraders/api-client';
+import { orderPayableCents, type ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { orderLabel } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -43,7 +43,7 @@ export function BuyerSafeDeal() {
             <Row style={{ justifyContent: 'space-between' }}>
               <Txt variant="title">{o.product?.name ?? t('buyerX.safeDeal.orderFallback')} · #{o.reference}</Txt>
               <Row gap={8}>
-                <Txt variant="title">{o.amount}</Txt>
+                <Txt variant="title">{o.buyerFeeCents ? fmtCents(orderPayableCents(o)) : o.amount}</Txt>
                 <Badge label={orderLabel[o.status] ?? o.status} tone="gold" />
               </Row>
             </Row>

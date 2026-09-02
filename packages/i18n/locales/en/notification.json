@@ -47,13 +47,11 @@
     "plan_feature": {
       "analytics": "full analytics on your listings and enquiries",
       "apiAccess": "API access",
-      "bidRoom": "the sealed bid room",
       "bulkImport": "bulk import",
       "directHireRequests": "direct hire requests from buyers",
       "directoryPlacement": "top placement in the directory",
       "directoryVisible": "a listing in the public directory",
       "dispatchBoard": "the dispatch board",
-      "escrowPriority": "priority escrow settlement",
       "payoutReports": "payout reports for your crew",
       "routePriority": "priority on new routes",
       "searchPriority": "priority placement in search results",

@@ -160,6 +160,20 @@ export class UpdateBillingSettingsDto {
   @Max(5000)
   escrowCommissionBps?: number;
 
+  @ApiPropertyOptional({ description: 'Auction take rate in basis points, owed by the SELLER; 100 = 1%. 0 switches it off.' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(5000)
+  auctionCommissionBps?: number;
+
+  @ApiPropertyOptional({ description: 'Buyer-bid take rate in basis points, added ON TOP for the BUYER; 50 = 0.5%. 0 switches it off.' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(5000)
+  buyerBidCommissionBps?: number;
+
   @ApiPropertyOptional() @IsOptional() @IsBoolean() commissionEnabled?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() quotasEnforced?: boolean;
 

@@ -94,10 +94,8 @@ export const PLAN_FEATURE_KEYS = [
   'verifiedBadge',
   'searchPriority',
   'analytics',
-  'bidRoom',
   'apiAccess',
   'bulkImport',
-  'escrowPriority',
   'routePriority',
   'dispatchBoard',
   'payoutReports',
@@ -220,7 +218,7 @@ export const PLAN_SEED: PlanSeed[] = [
     role: 'seller',
     tier: 0,
     name: 'Basic',
-    limits: { activeListings: 5, auctionLotsPerMonth: 1, photosPerListing: 3, teamMembers: 1 },
+    limits: { activeListings: 5, auctionLotsPerMonth: null, photosPerListing: 3, teamMembers: 1 },
     features: { verifiedBadge: false, searchPriority: 'none', analytics: 'none' },
   },
   {
@@ -229,7 +227,7 @@ export const PLAN_SEED: PlanSeed[] = [
     tier: 1,
     name: 'Standard',
     prices: { monthly: rub(2900), quarterly: rub(7900), yearly: rub(24900) },
-    limits: { activeListings: 50, auctionLotsPerMonth: 5, photosPerListing: 10, teamMembers: 3 },
+    limits: { activeListings: 50, auctionLotsPerMonth: null, photosPerListing: 10, teamMembers: 3 },
     features: { verifiedBadge: true, searchPriority: 'standard', analytics: 'basic' },
   },
   {
@@ -248,8 +246,8 @@ export const PLAN_SEED: PlanSeed[] = [
     role: 'buyer',
     tier: 0,
     name: 'Basic',
-    limits: { rfqsPerMonth: 3, savedSearches: 3, teamMembers: 1 },
-    features: { bidRoom: false, apiAccess: false, escrowPriority: false },
+    limits: { rfqsPerMonth: null, savedSearches: 3, teamMembers: 1 },
+    features: { apiAccess: false },
   },
   {
     code: 'buyer_business',
@@ -257,8 +255,8 @@ export const PLAN_SEED: PlanSeed[] = [
     tier: 1,
     name: 'Business',
     prices: { monthly: rub(1900), quarterly: rub(5100), yearly: rub(15900) },
-    limits: { rfqsPerMonth: 30, savedSearches: 25, teamMembers: 5 },
-    features: { bidRoom: true, apiAccess: false, escrowPriority: false },
+    limits: { rfqsPerMonth: null, savedSearches: 25, teamMembers: 5 },
+    features: { apiAccess: false },
   },
   {
     code: 'buyer_corporate',
@@ -267,7 +265,7 @@ export const PLAN_SEED: PlanSeed[] = [
     name: 'Corporate',
     prices: { monthly: rub(5900), quarterly: rub(15900), yearly: rub(49900) },
     limits: { rfqsPerMonth: null, savedSearches: null, teamMembers: 25 },
-    features: { bidRoom: true, apiAccess: true, escrowPriority: true },
+    features: { apiAccess: true },
   },
 
   /* ── transporters ── independent hauliers and fleet operators ── */

@@ -227,6 +227,33 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, { to: OrderStatus; by: Order
   cancelled: [],
 };
 
+/**
+ * Escrow-protected deals are checked by an AgroTraders agent before anything is
+ * dispatched.
+ *
+ * Auction wins and awarded buyer bids are minted with `verifyRequired` and park
+ * in `processing` until an agent stamps `verifiedAt` from the admin console.
+ * Ordinary direct-deal orders carry the flag false and are not gated at all.
+ *
+ * Gating `packed` is what actually stops a dispatch: `dispatch()` refuses any
+ * order that is not `packed`/`paid`, so the goods cannot leave without passing
+ * through here. `dispatch()` re-checks anyway — the two entry points are
+ * independent, and a guard that only covers one of them is not a guard.
+ *
+ * Cancelling and raising a dispute stay open: an unverified deal must still be
+ * abandonable. Admins bypass it, because the admin IS the verifying agent.
+ */
+export function assertEscrowVerified(
+  order: { verifyRequired: boolean; verifiedAt: Date | null; reference: string },
+  user: AuthUser,
+): void {
+  if (!order.verifyRequired || order.verifiedAt || isAdmin(user)) return;
+  throw new BadRequestException(
+    `Order ${order.reference} is escrow-protected and is still being checked by an AgroTraders agent. ` +
+      'It can be packed and dispatched once that check clears.',
+  );
+}
+
 /** Status → the timeline event we record when an order lands on it. */
 const EVENT_FOR_STATUS: Partial<Record<OrderStatus, OrderEventType>> = {
   enquiry: 'enquiry_raised',
@@ -697,6 +724,10 @@ export class OrdersService {
       }
     }
 
+    // Escrow deals wait for the agent before they can be packed (and therefore
+    // before they can be dispatched).
+    if (status === 'packed') assertEscrowVerified(order, user);
+
     // BL-08: accepting a quote (quote → processing) reserves stock atomically,
     // just like Buy-now's place(). Guarded to the `quote` origin so a dispute
     // re-open (dispute → processing) can't double-reserve. Runs before the flip so
@@ -774,6 +805,9 @@ export class OrdersService {
     if (order.status !== 'packed' && order.status !== 'paid') {
       throw new BadRequestException('Mark the order packed (or paid) before dispatching it.');
     }
+    // Independent of the `packed` gate in setStatus: an order an admin moved
+    // straight to `paid`, or a legacy row, must not slip past the agent check.
+    assertEscrowVerified(order, user);
     if (order.dispatchedAt) throw new BadRequestException('This order was already dispatched.');
 
     // The listing's own city is a far better origin than the seller's country, and

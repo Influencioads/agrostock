@@ -1305,6 +1305,10 @@ export interface ApiBillingSettings {
   /** Basis points; 200 = 2%. */
   orderCommissionBps: number;
   escrowCommissionBps: number;
+  /** Auction take rate, owed by the SELLER; 100 = 1%. 0 switches it off. */
+  auctionCommissionBps: number;
+  /** Buyer-bid take rate, added ON TOP for the BUYER; 50 = 0.5%. 0 switches it off. */
+  buyerBidCommissionBps: number;
   commissionEnabled: boolean;
   quotasEnforced: boolean;
   dunningRetries: number;
@@ -1314,6 +1318,37 @@ export interface ApiBillingSettings {
   /** Days after email verification for each upgrade nudge. Empty = sequence off. */
   upgradeNudgeDays: number[];
   platformUserId: string | null;
+}
+
+/**
+ * What the BUYER actually pays: the goods total plus any buyer-borne platform
+ * fee. `amountCents` alone is what the SELLER is owed, so a buyer-facing surface
+ * that shows it un-adjusted under-quotes the bill by the fee.
+ */
+export function orderPayableCents(o: { amountCents?: number | null; buyerFeeCents?: number | null }): number {
+  return (o.amountCents ?? 0) + (o.buyerFeeCents ?? 0);
+}
+
+/** A platform fee owed on a won auction (seller) or an awarded buyer bid (buyer). */
+export interface ApiCommissionCharge {
+  id: string;
+  ref: string;
+  kind: 'auction' | 'buyer_bid';
+  status: 'pending' | 'collected' | 'waived';
+  payerId: string;
+  payer?: { id: string; name: string; email: string; role: string } | null;
+  /** Goods value the rate was applied to, and the rate as it stood at award. */
+  baseCents: number;
+  rateBps: number;
+  amountCents: number;
+  currency: string;
+  orderId: string | null;
+  productId: string | null;
+  buyerBidId: string | null;
+  note: string | null;
+  createdAt: string;
+  collectedAt: string | null;
+  collectedById: string | null;
 }
 
 export interface ApiRevenueSummary {
@@ -1495,6 +1530,15 @@ export interface ApiOrder {
   status: ApiOrderStatus;
   createdAt?: string;
   amountCents?: number | null;
+  /**
+   * Buyer-bid platform fee, added ON TOP of `amountCents`. The buyer pays
+   * `amountCents + buyerFeeCents`; the seller is owed `amountCents`. Use
+   * `orderPayableCents()` rather than reading `amountCents` on a buyer surface.
+   */
+  buyerFeeCents?: number | null;
+  /** Escrow deal: an agent checks it before the seller may pack or dispatch. */
+  verifyRequired?: boolean;
+  verifiedAt?: string | null;
   unitPriceCents?: number | null;
   qtyValue?: number | null;
   qtyUnit?: string | null;
@@ -3013,6 +3057,17 @@ export function createApiClient(opts: ApiClientOptions) {
         get<ApiOrder[]>('/admin/orders', params as Record<string, unknown> | undefined),
       orderDetail: (id: string) => get<Record<string, unknown>>(`/admin/orders/${id}`),
       setOrderStatus: (id: string, status: string, note?: string) => patch(`/admin/orders/${id}/status`, { status, note }),
+      /** Escrow deals awaiting the agent's manual check (`verified`: 'false' | 'true' | 'all'). */
+      escrowQueue: (verified?: string) =>
+        get<ApiOrder[]>('/admin/escrow-queue', verified ? { verified } : undefined),
+      /** Clear one escrow deal for dispatch. */
+      verifyOrder: (id: string, note?: string) => post(`/admin/orders/${id}/verify`, { note }),
+      /** Platform fees owed on won auctions and awarded buyer bids. */
+      commissionCharges: (params?: { status?: string; kind?: string }) =>
+        get<ApiCommissionCharge[]>('/admin/commission-charges', params as Record<string, unknown> | undefined),
+      /** Mark one fee collected off-platform, or waive it. Moves no money. */
+      settleCommissionCharge: (id: string, status: 'collected' | 'waived', note?: string) =>
+        post<ApiCommissionCharge>(`/admin/commission-charges/${id}/settle`, { status, note }),
       disputes: () => get<ApiOrder[]>('/admin/disputes'),
       resolveDispute: (id: string, body: { resolution: 'release_to_seller' | 'refund_buyer' | 'partial'; amountCents?: number; note?: string }) =>
         post(`/admin/orders/${id}/dispute/resolve`, body),
@@ -3239,6 +3294,8 @@ export function createApiClient(opts: ApiClientOptions) {
       plans: (params: { role?: string; locale?: string } = {}) => get<ApiPlan[]>('/billing/plans', params),
       /** Pay-as-you-go price list, available to free accounts too. */
       addons: () => get<ApiAddonSpec[]>('/billing/addons'),
+      /** Success fees on auctions and buyer bids, in basis points. Public. */
+      commissionRates: () => get<{ auctionBps: number; buyerBidBps: number }>('/billing/commission-rates'),
       /** Acquirers the checkout may offer. Never carries credentials. */
       gateways: () => get<ApiGateway[]>('/billing/gateways'),
 

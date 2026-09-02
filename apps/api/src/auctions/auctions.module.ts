@@ -23,6 +23,9 @@ import { JwtAuthGuard, OptionalJwtAuthGuard, Roles, RolesGuard } from '../auth/g
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
+import { assertSafeDealSettlement } from '../products/safe-deal';
+import { secureReference } from '../common/secure-random';
+import { DealCommissionModule, DealCommissionService } from '../billing/deal-commission.module';
 import { Locale, localize } from '../common/locale';
 import type { Lang } from '@agrotraders/i18n';
 
@@ -35,6 +38,33 @@ const PRODUCT_TR_FIELDS = ['name', 'grade', 'origin', 'moq', 'delivery'] as cons
 // API-13: these are DOLLARS, converted to int4 `amountCents` on write — cap at
 // the dollar equivalent of MAX_MONEY_CENTS so the conversion can't overflow.
 const MAX_BID_DOLLARS = MAX_MONEY_CENTS / 100;
+
+/** Display mirror of `amountCents` — analytics parse this string, so it moves with it. */
+const usd = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** What settleAuction needs to close a lot AND mint the winner's order. */
+type SettleableLot = {
+  id: string;
+  name: string;
+  slug: string;
+  sellerId: string | null;
+  reserveCents: number | null;
+  safeDeal: boolean;
+  unit: string | null;
+  stockQty: number | null;
+};
+
+/** The `select` that produces a SettleableLot — shared by both close paths. */
+const SETTLE_SELECT = {
+  id: true,
+  name: true,
+  slug: true,
+  sellerId: true,
+  reserveCents: true,
+  safeDeal: true,
+  unit: true,
+  stockQty: true,
+} as const;
 
 export class PlaceBidDto {
   @IsNumber() @Min(1) @Max(MAX_BID_DOLLARS) amount!: number; // dollars
@@ -86,6 +116,7 @@ export class AuctionsService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private dealCommission: DealCommissionService,
   ) {}
 
   /**
@@ -411,10 +442,16 @@ export class AuctionsService {
    * BL-09: settle one auction exactly once — find the winner, send the
    * won/sold/no-bid notifications, and stamp `auctionSettledAt`. The stamp is
    * claimed conditionally so a manual `close()` racing the scheduled closer can't
-   * double-notify. Called by both paths. (Minting the winner's order/escrow is
-   * Phase J territory — this only closes and notifies.)
+   * double-notify. Called by both paths.
+   *
+   * A won lot also mints the winner's Order and raises the seller's 1% platform
+   * fee. Before this, an auction win ended at the notification and the buyer had
+   * no way to convert it — `assertProductSellable` rejects auction lots on the
+   * direct-buy path, so the trade fell off the platform entirely. The order is
+   * minted here for the same reason `BuyerBidsService.award` mints one: it is the
+   * object escrow, dispatch and the agent's verification all hang off.
    */
-  private async settleAuction(product: { id: string; name: string; slug: string; sellerId: string | null; reserveCents: number | null }) {
+  private async settleAuction(product: SettleableLot) {
     const claimed = await this.prisma.product.updateMany({
       where: { id: product.id, auctionSettledAt: null },
       data: { auctionSettledAt: new Date() },
@@ -429,15 +466,76 @@ export class AuctionsService {
     // BL-09: a reserve that wasn't met means the lot did NOT sell — treat as no winner.
     const winner = top && (product.reserveCents == null || top.amountCents >= product.reserveCents) ? top : null;
 
+    // The lot sold: turn the win into a real order the two parties can transact
+    // against, and record what the seller owes the platform for it.
+    let order: { id: string; reference: string } | null = null;
+    if (winner && product.sellerId) {
+      // Reads the STORED flag, exactly like the buyer-bid award path. An auction
+      // lot written before Safe Deal became mandatory cannot settle outside it.
+      assertSafeDealSettlement(product);
+      const { auctionBps } = await this.dealCommission.rates();
+      const feeCents = DealCommissionService.fee(winner.amountCents, auctionBps);
+      const qtyValue = product.stockQty;
+      const sellerId = product.sellerId;
+      order = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.order.create({
+          data: {
+            reference: secureReference('AG'),
+            status: 'processing',
+            // The winning bid is the price of the WHOLE lot.
+            amountCents: winner.amountCents,
+            amount: usd(winner.amountCents),
+            unitPriceCents:
+              qtyValue && qtyValue > 0 ? Math.round(winner.amountCents / qtyValue) : winner.amountCents,
+            qtyValue,
+            qtyUnit: product.unit,
+            qty: qtyValue != null ? `${qtyValue} ${product.unit ?? 'MT'}` : null,
+            // The seller bears this one, so it is NOT added to what the buyer pays.
+            buyerFeeCents: 0,
+            // Escrow-protected: an agent checks this deal before it can be packed.
+            verifyRequired: true,
+            note: `Auction win — ${product.name}`,
+            productId: product.id,
+            buyerId: winner.bidderId,
+            sellerId,
+          },
+          select: { id: true, reference: true },
+        });
+        await tx.orderEvent.create({
+          data: {
+            orderId: created.id,
+            type: 'order_placed',
+            actorId: winner.bidderId,
+            toStatus: 'processing',
+            note: `Won auction ${product.slug}`,
+          },
+        });
+        await this.dealCommission.record(tx, {
+          kind: 'auction',
+          // One lot settles once, so the lot id is the natural idempotency key —
+          // a manual close racing the cron cannot charge the seller twice.
+          ref: `auction:${product.id}`,
+          payerId: sellerId,
+          baseCents: winner.amountCents,
+          rateBps: auctionBps,
+          amountCents: feeCents,
+          orderId: created.id,
+          productId: product.id,
+          note: `Seller fee on auction ${product.slug}`,
+        });
+        return created;
+      });
+    }
+
     if (winner) {
-      const priceLabel = `$${(winner.amountCents / 100).toLocaleString()}`;
+      const priceLabel = usd(winner.amountCents);
       await this.notifications.create({
         userId: winner.bidderId,
         system: 'auctions',
         type: 'auction.won',
         params: { amount: priceLabel, product: product.name },
-        data: { productId: product.id, slug: product.slug, amountCents: winner.amountCents },
-        linkUrl: `/product/${product.slug}`,
+        data: { productId: product.id, slug: product.slug, amountCents: winner.amountCents, orderId: order?.id ?? null },
+        linkUrl: order ? '/console/orders' : `/product/${product.slug}`,
       });
       if (product.sellerId) {
         await this.notifications.create({
@@ -473,7 +571,7 @@ export class AuctionsService {
   async closeLapsedAuctions() {
     const lapsed = await this.prisma.product.findMany({
       where: { isAuction: true, auctionSettledAt: null, auctionEndsAt: { not: null, lte: new Date() } },
-      select: { id: true, name: true, slug: true, sellerId: true, reserveCents: true },
+      select: SETTLE_SELECT,
       take: 200,
     });
     for (const p of lapsed) {
@@ -613,5 +711,9 @@ export class AdminAuctionsController {
   }
 }
 
-@Module({ controllers: [AuctionsController, AdminAuctionsController], providers: [AuctionsService] })
+@Module({
+  imports: [DealCommissionModule],
+  controllers: [AuctionsController, AdminAuctionsController],
+  providers: [AuctionsService],
+})
 export class AuctionsModule {}

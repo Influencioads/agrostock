@@ -74,6 +74,21 @@ export class BillingPublicController {
     return this.plans.list({ role: role as Role | undefined, locale });
   }
 
+  /**
+   * Success fees on competitive bidding, for the pricing page.
+   *
+   * Public and unauthenticated for the same reason the plan catalogue is: a fee
+   * a buyer only discovers after winning is a bad surprise. Served live off the
+   * settings singleton so the published percentage can never drift from the one
+   * actually charged — an admin edit changes both at once.
+   */
+  @Get('commission-rates')
+  @ApiOperation({ summary: 'Auction and buyer-bid success fees, in basis points' })
+  async commissionRates() {
+    const s = await this.prisma.billingSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1 } });
+    return { auctionBps: s.auctionCommissionBps, buyerBidBps: s.buyerBidCommissionBps };
+  }
+
   /** The add-on price list (pay-as-you-go, available to free accounts too). */
   @Get('addons')
   addons() {

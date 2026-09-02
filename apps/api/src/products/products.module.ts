@@ -1122,6 +1122,12 @@ export class ProductsService {
     // Plan quotas are enforced at WRITE time. Checking on read instead would let
     // a downgraded seller keep publishing and quietly teach everyone that the
     // plan is optional. An auction lot IS a Product, so both quotas apply here.
+    //
+    // Auctions ship UNLIMITED on every plan (`auctionLotsPerMonth` is null in the
+    // seed and on the live rows), so this costs a seller nothing today — but the
+    // check stays wired up, because the number is editable per plan in the admin
+    // console and a knob that is not enforced is a lie. The platform is paid on
+    // SUCCESS instead, by the seller's 1% raised when the lot sells.
     await this.entitlements.assertWithin(sellerId, 'seller', 'activeListings');
     if (dto.isAuction) await this.entitlements.assertWithin(sellerId, 'seller', 'auctionLotsPerMonth');
 

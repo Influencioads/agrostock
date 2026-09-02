@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Badge, Button, Card, Input, Stat, Table } from '@agrotraders/ui';
@@ -24,17 +24,32 @@ const STATUS_TONE: Record<string, 'green' | 'warn' | 'error' | 'slate'> = {
   expired: 'slate',
 };
 
+/** The percent-entry fields on the billing card. */
+type RateKey = 'orderCommissionBps' | 'escrowCommissionBps' | 'auctionCommissionBps' | 'buyerBidCommissionBps';
+
 /** Commission and dunning switches — the levers the plan turns on over time. */
 function SettingsCard() {
   const { t } = useI18n();
   const qc = useQueryClient();
   const { data } = useQuery<ApiBillingSettings>({ queryKey: ['billing-settings'], queryFn: () => api.admin.billingSettings() });
   const [draft, setDraft] = useState<Partial<ApiBillingSettings>>({});
+  /**
+   * Rate fields hold the RAW TEXT while they are being typed, exactly like the
+   * price inputs on the plans page.
+   *
+   * They used to round-trip through a number on every keystroke — percent → bps →
+   * percent — which silently ate the decimal point: typing "0." became
+   * `Number("0.")` = 0, re-rendered as "0", and the "5" of "0.5" could never be
+   * reached. Any rate below 1% was literally unreachable from this form. The text
+   * is only parsed when the card is saved.
+   */
+  const [rateText, setRateText] = useState<Partial<Record<RateKey, string>>>({});
 
   const save = useMutation({
     mutationFn: (body: Partial<ApiBillingSettings>) => api.admin.updateBillingSettings(body),
     onSuccess: () => {
       setDraft({});
+      setRateText({});
       toast.success(t('subs.settingsSaved'));
       void qc.invalidateQueries({ queryKey: ['billing-settings'] });
     },
@@ -43,10 +58,24 @@ function SettingsCard() {
 
   if (!data) return null;
   const merged = { ...data, ...draft };
-  const dirty = Object.keys(draft).length > 0;
+  const dirty = Object.keys(draft).length > 0 || Object.keys(rateText).length > 0;
   // Basis points are the storage unit; percent is what an operator thinks in.
   const pct = (bps: number) => String(bps / 100);
   const bps = (v: string) => Math.round((Number(v.replace(',', '.')) || 0) * 100);
+
+  // One helper for every rate field: show the text being typed if there is any,
+  // otherwise the stored value formatted as a percent. A comma is accepted for
+  // the decimal separator, which is what a Russian keyboard produces.
+  const rateProps = (key: RateKey) => ({
+    inputMode: 'decimal' as const,
+    value: rateText[key] ?? pct(merged[key]),
+    onChange: (e: ChangeEvent<HTMLInputElement>) => setRateText((p) => ({ ...p, [key]: e.target.value })),
+  });
+
+  // Parsed only here, at the point of saving.
+  const ratePatch = Object.fromEntries(
+    Object.entries(rateText).map(([k, v]) => [k, bps(v as string)]),
+  ) as Partial<ApiBillingSettings>;
 
   return (
     <Card className="mb-4">
@@ -56,15 +85,21 @@ function SettingsCard() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           label={t('subs.orderCommission')}
-          inputMode="decimal"
-          value={pct(merged.orderCommissionBps)}
-          onChange={(e) => setDraft({ ...draft, orderCommissionBps: bps(e.target.value) })}
+          {...rateProps('orderCommissionBps')}
         />
         <Input
           label={t('subs.escrowCommission')}
-          inputMode="decimal"
-          value={pct(merged.escrowCommissionBps)}
-          onChange={(e) => setDraft({ ...draft, escrowCommissionBps: bps(e.target.value) })}
+          {...rateProps('escrowCommissionBps')}
+        />
+        <Input
+          label={t('subs.auctionCommission')}
+          hint={t('subs.auctionCommissionHint')}
+          {...rateProps('auctionCommissionBps')}
+        />
+        <Input
+          label={t('subs.buyerBidCommission')}
+          hint={t('subs.buyerBidCommissionHint')}
+          {...rateProps('buyerBidCommissionBps')}
         />
         <Input
           label={t('subs.dunningRetries')}
@@ -129,7 +164,7 @@ function SettingsCard() {
 
       {dirty && (
         <div className="mt-3 flex gap-2">
-          <Button disabled={save.isPending} onClick={() => save.mutate(draft)}>
+          <Button disabled={save.isPending} onClick={() => save.mutate({ ...draft, ...ratePatch })}>
             {save.isPending ? t('subs.saving') : t('subs.saveSettings')}
           </Button>
           <Button variant="ghost" onClick={() => setDraft({})}>

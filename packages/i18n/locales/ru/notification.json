@@ -87,13 +87,11 @@
     "plan_feature": {
       "analytics": "полную аналитику по объявлениям и запросам",
       "apiAccess": "доступ к API",
-      "bidRoom": "закрытую комнату торгов",
       "bulkImport": "массовую загрузку",
       "directHireRequests": "прямые заявки на наём от покупателей",
       "directoryPlacement": "верхнее место в каталоге",
       "directoryVisible": "размещение в публичном каталоге",
       "dispatchBoard": "доску диспетчеризации",
-      "escrowPriority": "приоритетное раскрытие эскроу",
       "payoutReports": "отчёты по выплатам бригаде",
       "routePriority": "приоритет на новых маршрутах",
       "searchPriority": "приоритетное место в результатах поиска",

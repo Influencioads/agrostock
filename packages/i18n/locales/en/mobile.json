@@ -618,6 +618,8 @@
       "title": "Arrange logistics — #{{ref}}"
     },
     "order": {
+      "buyerFee": "Platform fee (buyer)",
+      "buyerPays": "Buyer pays",
       "checking": "Checking…",
       "confirm": "Confirm",
       "copied": "Copied",
@@ -637,6 +639,7 @@
         "route": "Route",
         "vehicle": "Vehicle"
       },
+      "goods": "Goods",
       "invoices": "Invoices",
       "noActivity": "No activity yet.",
       "notDispatched": "Not dispatched yet.",

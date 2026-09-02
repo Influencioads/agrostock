@@ -140,6 +140,18 @@ export class UpdateOrderStatusDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() note?: string;
 }
 
+export class VerifyOrderDto {
+  @ApiProperty({ required: false }) @IsOptional() @IsString() note?: string;
+}
+
+export class SettleCommissionChargeDto {
+  @ApiProperty({ enum: ['collected', 'waived'] })
+  @IsIn(['collected', 'waived'])
+  status!: 'collected' | 'waived';
+
+  @ApiProperty({ required: false }) @IsOptional() @IsString() note?: string;
+}
+
 export class ResolveDisputeDto {
   @ApiProperty({ enum: ['release_to_seller', 'refund_buyer', 'partial'] })
   @IsIn(['release_to_seller', 'refund_buyer', 'partial'])
@@ -801,6 +813,114 @@ export class AdminService {
     await this.escrow.settle(
       kind === 'release' ? { orderId, releaseCents: hold.amountCents, note } : { orderId, refundCents: hold.amountCents, note },
     );
+  }
+
+  /**
+   * The agent's queue: escrow-protected deals (auction wins, awarded buyer bids)
+   * still waiting on a manual check before the seller may pack or dispatch.
+   */
+  escrowQueue(verified?: string) {
+    const where: Prisma.OrderWhereInput = { verifyRequired: true };
+    if (verified === 'true') where.verifiedAt = { not: null };
+    else if (verified !== 'all') where.verifiedAt = null;
+    return this.prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: {
+        buyer: { select: { id: true, name: true, country: true } },
+        seller: { select: { id: true, name: true, country: true } },
+        product: { select: { name: true, slug: true, isAuction: true } },
+      },
+    });
+  }
+
+  /**
+   * Agent clears a deal for dispatch. Stamped once — re-verifying is a no-op
+   * rather than an error, so a double click cannot rewrite who checked it.
+   */
+  async verifyOrder(id: string, adminId: string, note?: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      select: { id: true, reference: true, verifyRequired: true, verifiedAt: true, buyerId: true, sellerId: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    if (!order.verifyRequired) throw new BadRequestException('This order is not an escrow-protected deal.');
+    if (order.verifiedAt) return order;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const o = await tx.order.update({
+        where: { id },
+        data: { verifiedAt: new Date(), verifiedById: adminId },
+      });
+      await tx.orderEvent.create({
+        data: {
+          orderId: id,
+          type: 'note',
+          actorId: adminId,
+          note: note ?? 'Escrow deal verified by an AgroTraders agent — cleared for dispatch.',
+        },
+      });
+      return o;
+    });
+
+    for (const userId of [order.buyerId, order.sellerId]) {
+      if (!userId) continue;
+      await this.notifications.create({
+        userId,
+        system: 'orders',
+        type: 'order.status_changed',
+        params: { reference: order.reference, status: { enum: 'order_status', value: 'processing' } },
+        data: { orderId: id },
+        linkUrl: `/orders/${id}`,
+      });
+    }
+    await this.audit.log({ actorId: adminId, action: 'order.verify', entityType: 'Order', entityId: id, meta: { note } });
+    return updated;
+  }
+
+  /** Platform fees owed on won auctions and awarded bids, newest first. */
+  commissionCharges(opts: { status?: string; kind?: string } = {}) {
+    const where: Prisma.CommissionChargeWhereInput = {};
+    if (opts.status && ['pending', 'collected', 'waived'].includes(opts.status)) {
+      where.status = opts.status as never;
+    }
+    if (opts.kind && ['auction', 'buyer_bid'].includes(opts.kind)) where.kind = opts.kind as never;
+    return this.prisma.commissionCharge.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 300,
+      include: { payer: { select: { id: true, name: true, email: true, role: true } } },
+    });
+  }
+
+  /**
+   * Mark a fee collected (the agent took the money off-platform) or waived.
+   *
+   * No wallet is touched: this ledger records what is owed, it does not move
+   * money, which is exactly why it is not behind the legacy-finance guard.
+   */
+  async settleCommissionCharge(id: string, status: 'collected' | 'waived', adminId: string, note?: string) {
+    const charge = await this.prisma.commissionCharge.findUnique({ where: { id } });
+    if (!charge) throw new NotFoundException('Charge not found');
+    if (charge.status !== 'pending') throw new BadRequestException('This charge is already settled.');
+    const updated = await this.prisma.commissionCharge.update({
+      where: { id },
+      data: {
+        status,
+        collectedAt: new Date(),
+        collectedById: adminId,
+        ...(note ? { note } : {}),
+      },
+    });
+    await this.audit.log({
+      actorId: adminId,
+      action: 'commission.settle',
+      entityType: 'CommissionCharge',
+      entityId: id,
+      meta: { status, amountCents: charge.amountCents, note },
+    });
+    return updated;
   }
 
   disputes() {
@@ -1604,6 +1724,39 @@ export class AdminController {
   @RequirePermissions('orders_manage')
   setOrderStatus(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: UpdateOrderStatusDto) {
     return this.admin.setOrderStatus(id, body.status, admin.id, body.note);
+  }
+
+  // ── escrow agent queue ───────────────────────────────────────
+  // All on `finance_manage`, the permission the Safe Deal console already runs
+  // under: checking a deal and collecting the fee on it are one person's job, and
+  // a dedicated AdminPermission would be a schema-enum migration of its own.
+
+  @Get('escrow-queue')
+  @RequirePermissions('finance_manage')
+  escrowQueue(@Query('verified') verified?: string) {
+    return this.admin.escrowQueue(verified);
+  }
+
+  @Post('orders/:id/verify')
+  @RequirePermissions('finance_manage')
+  verifyOrder(@CurrentUser() admin: AuthUser, @Param('id') id: string, @Body() body: VerifyOrderDto) {
+    return this.admin.verifyOrder(id, admin.id, body?.note);
+  }
+
+  @Get('commission-charges')
+  @RequirePermissions('finance_manage')
+  commissionCharges(@Query('status') status?: string, @Query('kind') kind?: string) {
+    return this.admin.commissionCharges({ status, kind });
+  }
+
+  @Post('commission-charges/:id/settle')
+  @RequirePermissions('finance_manage')
+  settleCommissionCharge(
+    @CurrentUser() admin: AuthUser,
+    @Param('id') id: string,
+    @Body() body: SettleCommissionChargeDto,
+  ) {
+    return this.admin.settleCommissionCharge(id, body.status, admin.id, body.note);
   }
 
   @Get('disputes')
