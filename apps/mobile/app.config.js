@@ -64,6 +64,10 @@ module.exports = ({ config }) => {
       },
     },
     plugins: [
+      // First in the array = last mod to run (Expo chains manifest mods in
+      // reverse), which is what this one needs: it edits meta-data that
+      // expo-notifications has to have written already.
+      './plugins/with-firebase-notification-defaults',
       ...config.plugins.filter((p) => p !== 'expo-build-properties'),
       [
         'expo-build-properties',
