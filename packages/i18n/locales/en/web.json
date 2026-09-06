@@ -1972,51 +1972,10 @@
       "title": "Page not found"
     },
     "offices": {
-      "list": {
-        "blackSea": {
-          "city": "Odesa, Ukraine",
-          "name": "Black Sea Hub"
-        },
-        "centralAsia": {
-          "city": "Almaty, Kazakhstan",
-          "name": "Central Asia"
-        },
-        "cis": {
-          "city": "Moscow, Russia",
-          "name": "AgroTraders CIS"
-        },
-        "eu": {
-          "city": "Hamburg, Germany",
-          "name": "EU Office"
-        },
-        "hq": {
-          "city": "Dubai, UAE",
-          "name": "AgroTraders HQ"
-        },
-        "latam": {
-          "city": "São Paulo, Brazil",
-          "name": "LATAM"
-        },
-        "southAsia": {
-          "city": "Mumbai, India",
-          "name": "South Asia"
-        },
-        "turkiye": {
-          "city": "Istanbul, Türkiye",
-          "name": "Türkiye & Levant"
-        }
-      },
+      "empty": "No offices listed yet.",
       "requestCallback": "Request Callback",
-      "sub": "24 offices across 6 regions · interactive map in Phase 6",
-      "type": {
-        "country": "Country Office",
-        "head": "Head Office",
-        "regional": "Regional Office",
-        "representative": "Representative Office",
-        "sales": "Sales Office",
-        "support": "Support Office",
-        "warehouse": "Warehouse Hub"
-      }
+      "sub_one": "{{count}} office worldwide",
+      "sub_other": "{{count}} offices worldwide"
     },
     "otpLogin": {
       "code": "6-digit code",
