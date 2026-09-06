@@ -408,6 +408,16 @@ export interface ApiGeoPoint {
   label: string;
 }
 
+/**
+ * A city suggestion. `value` is the canonical English name — what every city
+ * filter and directory row matches on, so it is what gets stored; `label` is the
+ * same place in the reader's language.
+ */
+export interface ApiCityOption {
+  value: string;
+  label: string;
+}
+
 export interface ApiGeoRoute {
   from: ApiGeoPoint;
   to: ApiGeoPoint;
@@ -2771,7 +2781,7 @@ export function createApiClient(opts: ApiClientOptions) {
        * as `"City, Country"` and a query of 2+ characters is required.
        */
       cities: (country: string, q?: string) =>
-        get<string[]>('/geo/cities', q ? { country, q } : { country }),
+        get<ApiCityOption[]>('/geo/cities', q ? { country, q } : { country }),
     },
     loaders: {
       // teams

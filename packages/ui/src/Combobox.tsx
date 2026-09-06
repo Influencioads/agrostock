@@ -1,12 +1,24 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { cn } from './cn';
 
+/**
+ * A suggestion whose stored value differs from what the row reads — a city is
+ * stored under its canonical English name but shown in the reader's language.
+ */
+export interface ComboboxOption {
+  value: string;
+  label: string;
+}
+
 export interface ComboboxProps {
   label?: string;
   value: string;
   onChange: (value: string) => void;
-  /** Suggestions. Pass an already-filtered list when the source is remote. */
-  options: string[];
+  /**
+   * Suggestions. Pass an already-filtered list when the source is remote, and
+   * `{ value, label }` objects where the two differ (localized city names).
+   */
+  options: (string | ComboboxOption)[];
   placeholder?: string;
   hint?: string;
   error?: string;
@@ -54,21 +66,32 @@ export function Combobox({
   const listId = `${inputId}-list`;
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  // True while the user is editing, so their own text is never overwritten by a
+  // label. Reset on pick, which is when `value` becomes an option again.
+  const [typing, setTyping] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
+  const opts = useMemo(
+    () => options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o)),
+    [options],
+  );
+  // What the box shows: the picked option's label, or the raw value for free
+  // text. The STORED value stays canonical — only the label is localized.
+  const text = typing ? value : opts.find((o) => o.value === value)?.label ?? value;
+
   const visible = useMemo(() => {
-    const term = value.trim().toLowerCase();
-    if (!filterLocally || !term) return options.slice(0, MAX_VISIBLE);
-    const starts: string[] = [];
-    const contains: string[] = [];
-    for (const o of options) {
-      const lower = o.toLowerCase();
+    const term = text.trim().toLowerCase();
+    if (!filterLocally || !term) return opts.slice(0, MAX_VISIBLE);
+    const starts: ComboboxOption[] = [];
+    const contains: ComboboxOption[] = [];
+    for (const o of opts) {
+      const lower = o.label.toLowerCase();
       if (lower.startsWith(term)) starts.push(o);
-      else if (lower.includes(term)) contains.push(o);
+      else if (lower.includes(term) || o.value.toLowerCase().includes(term)) contains.push(o);
       if (starts.length >= MAX_VISIBLE) break;
     }
     return [...starts, ...contains].slice(0, MAX_VISIBLE);
-  }, [options, value, filterLocally]);
+  }, [opts, text, filterLocally]);
 
   // Close when focus or a click lands outside — a listbox that outlives its
   // field ends up floating over the next section of the form.
@@ -85,8 +108,9 @@ export function Combobox({
     };
   }, [open]);
 
-  const pick = (option: string) => {
-    onChange(option);
+  const pick = (option: ComboboxOption) => {
+    onChange(option.value);
+    setTyping(false);
     setOpen(false);
     setActive(-1);
   };
@@ -135,8 +159,9 @@ export function Combobox({
           disabled={disabled}
           className={cn('w-full bg-transparent text-sm outline-none placeholder:text-ink-soft', compact ? 'h-9' : 'h-11')}
           placeholder={placeholder}
-          value={value}
+          value={text}
           onChange={(e) => {
+            setTyping(true);
             onChange(e.target.value);
             setOpen(true);
             setActive(-1);
@@ -157,11 +182,11 @@ export function Combobox({
             <li className="px-3 py-2 text-sm text-ink-soft">{emptyLabel ?? '—'}</li>
           ) : (
             visible.map((option, i) => (
-              <li key={option}>
+              <li key={option.value}>
                 <button
                   type="button"
                   role="option"
-                  aria-selected={option === value}
+                  aria-selected={option.value === value}
                   // onMouseDown, not onClick: the input's blur would tear the
                   // list down before a click ever registered.
                   onMouseDown={(e) => {
@@ -174,7 +199,7 @@ export function Combobox({
                     i === active ? 'bg-brand-surface' : 'hover:bg-brand-surface',
                   )}
                 >
-                  {option}
+                  {option.label}
                 </button>
               </li>
             ))

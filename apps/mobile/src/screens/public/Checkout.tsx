@@ -338,7 +338,7 @@ export function Checkout() {
               label={t('pubX.checkout.deliveryCity')}
               placeholder={to.country ? t('auth.signUp.cityRegionPh') : t('auth.signUp.pickCountryFirst')}
               value={to.city}
-              options={cities.map((c) => ({ value: c }))}
+              options={cities}
               error={errorOn('city')}
               onChange={(city) => setDelivery({ ...to, city })}
               onSearch={setCitySearch}

@@ -38,7 +38,7 @@ export interface ProductFormApi {
   categories: { list: () => Promise<ApiCategory[]> };
   markets: { list: () => Promise<ApiMarket[]> };
   products: { uploadImages: (files: File[]) => Promise<{ imageUrls: string[] }> };
-  geo: { cities: (country: string, q?: string) => Promise<string[]> };
+  geo: { cities: (country: string, q?: string) => Promise<{ value: string; label: string }[]> };
 }
 
 /** Namespaces the form reads; every key below is explicitly prefixed, because

@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from '@agrotraders/ui';
 
 /**
@@ -27,8 +27,12 @@ export function TagInput({
   onChange: (next: string[]) => void;
   placeholder?: string;
   hint?: string;
-  /** Suggestions. Already filtered when they come from a server-side search. */
-  options?: string[];
+  /**
+   * Suggestions. Already filtered when they come from a server-side search.
+   * Pass `{ value, label }` where the stored name differs from the shown one
+   * (a city is stored in English, shown in the reader's language).
+   */
+  options?: (string | { value: string; label: string })[];
   loading?: boolean;
   /** Fires as the user types — lets the caller drive a remote search. */
   onDraftChange?: (draft: string) => void;
@@ -36,20 +40,35 @@ export function TagInput({
   const [draft, setDraft] = useState('');
   const [open, setOpen] = useState(false);
 
+  const opts = useMemo(
+    () => (options ?? []).map((o) => (typeof o === 'string' ? { value: o, label: o } : o)),
+    [options],
+  );
+  // Chips outlive the search page they were picked from, so remember every label
+  // seen — otherwise a chosen city drops back to English on the next keystroke.
+  const seen = useRef<Record<string, string>>({});
+  for (const o of opts) seen.current[o.value] = o.label;
+  const labelOf = (v: string) => seen.current[v] ?? v;
+
   const suggestions = useMemo(() => {
-    if (!options?.length) return [];
     const term = draft.trim().toLowerCase();
     const chosen = new Set(value.map((v) => v.toLowerCase()));
-    return options
-      .filter((o) => !chosen.has(o.toLowerCase()) && (!term || o.toLowerCase().includes(term)))
+    return opts
+      .filter(
+        (o) =>
+          !chosen.has(o.value.toLowerCase()) &&
+          (!term || o.label.toLowerCase().includes(term) || o.value.toLowerCase().includes(term)),
+      )
       .slice(0, 50);
-  }, [options, draft, value]);
+  }, [opts, draft, value]);
 
   const add = (raw: string) => {
     const v = raw.trim();
     if (!v) return;
-    // Snap to the canonical option when one matches, so casing/spelling is stable.
-    const canonical = options?.find((o) => o.toLowerCase() === v.toLowerCase()) ?? v;
+    // Snap to the canonical option when one matches, so casing/spelling is stable
+    // — and so a label typed or clicked in another language stores the English name.
+    const canonical =
+      opts.find((o) => o.value.toLowerCase() === v.toLowerCase() || o.label.toLowerCase() === v.toLowerCase())?.value ?? v;
     // De-dupe case-insensitively while keeping the first-entered casing.
     if (value.some((t) => t.toLowerCase() === canonical.toLowerCase())) {
       setDraft('');
@@ -82,12 +101,12 @@ export function TagInput({
             key={`${tag}-${i}`}
             className="inline-flex items-center gap-1 rounded-full bg-brand-surface px-2 py-0.5 text-xs font-semibold text-brand-dark"
           >
-            {tag}
+            {labelOf(tag)}
             <button
               type="button"
               onClick={() => removeAt(i)}
               className="rounded-full text-brand-dark/70 hover:text-status-error"
-              aria-label={`Remove ${tag}`}
+              aria-label={`Remove ${labelOf(tag)}`}
             >
               <Icon name="x" size={12} />
             </button>
@@ -117,16 +136,16 @@ export function TagInput({
       {open && suggestions.length > 0 && (
         <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-md border border-surface-border bg-white py-1 shadow-lg">
           {suggestions.map((option) => (
-            <li key={option}>
+            <li key={option.value}>
               <button
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  add(option);
+                  add(option.value);
                 }}
                 className="block w-full px-3 py-2 text-start text-sm text-ink hover:bg-brand-surface"
               >
-                {option}
+                {option.label}
               </button>
             </li>
           ))}

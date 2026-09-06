@@ -46,8 +46,17 @@ export class GoogleTranslateClient {
    * strings unchanged when the client is disabled. Pass `source = undefined`
    * (or 'auto') to let Google auto-detect the source language — used for chat,
    * where the writer's language is not fixed.
+   *
+   * `format: 'html'` keeps markup out of the translation — the city picker wraps
+   * its country hint in `<span translate="no">` so the hint comes back verbatim
+   * and can be cut off again. In 'text' mode Google strips such markup instead.
    */
-  async translate(texts: string[], target: string, source: string | undefined = 'en'): Promise<string[]> {
+  async translate(
+    texts: string[],
+    target: string,
+    source: string | undefined = 'en',
+    format: 'text' | 'html' = 'text',
+  ): Promise<string[]> {
     if (!this.key || texts.length === 0) return texts;
 
     const autodetect = !source || source === 'auto';
@@ -63,7 +72,7 @@ export class GoogleTranslateClient {
             q: chunk,
             ...(autodetect ? {} : { source: GoogleTranslateClient.toGoogleCode(source) }),
             target: GoogleTranslateClient.toGoogleCode(target),
-            format: 'text',
+            format,
           }),
         },
       );

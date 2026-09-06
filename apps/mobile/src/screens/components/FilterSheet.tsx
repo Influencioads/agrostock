@@ -238,7 +238,7 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
         // Already filtered by the API — filtering again locally would hide the
         // tail of a long result page.
         return renderRadio(
-          cityOptions.map((c) => ({ value: c, label: c })),
+          cityOptions,
           draft.city,
           (v) => setDraft((d) => ({ ...d, city: v })),
           true,

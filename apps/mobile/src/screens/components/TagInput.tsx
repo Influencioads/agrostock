@@ -37,6 +37,9 @@ export function TagInput({
   const [draft, setDraft] = useState('');
   const [picking, setPicking] = useState(false);
 
+  // Chips store the canonical (English) name; show the localized label for it.
+  const labelOf = (v: string) => options?.find((o) => o.value === v)?.label ?? v;
+
   const add = (raw: string) => {
     const v = raw.trim().replace(/,$/, '').trim();
     setDraft('');
@@ -66,7 +69,7 @@ export function TagInput({
                 paddingHorizontal: 10,
               }}
             >
-              <Txt style={{ color: C.dark, fontSize: 13, fontWeight: '700' }}>{tag}</Txt>
+              <Txt style={{ color: C.dark, fontSize: 13, fontWeight: '700' }}>{labelOf(tag)}</Txt>
               <Ionicons name="close" size={13} color={C.dark} />
             </Pressable>
           ))}

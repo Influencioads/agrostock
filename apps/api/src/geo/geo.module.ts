@@ -15,6 +15,47 @@ import { ConfigService } from '@nestjs/config';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
+import { Locale } from '../common/locale';
+import type { Lang } from '@agrotraders/i18n';
+import { TextTranslationService } from '../translation/text-translation.service';
+
+/**
+ * A city suggestion. `value` is the canonical English spelling — what every city
+ * filter, market row and directory entry matches on, so it is what a picker must
+ * store; `label` is that name in the reader's language.
+ */
+export interface CityOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * A bare city name translates as an ordinary word — Google turns Reading into
+ * "Чтение", Orange into "Апельсин" and Bath into "Ванна". Naming the country
+ * beside it pins the name to a place, and `translate="no"` keeps that hint in
+ * English so it can be cut back out whatever order the language puts it in
+ * ("Рединг, United Kingdom" but "United Kingdom雷丁").
+ */
+export const withCountry = (city: string, country: string) =>
+  `${city}, <span translate="no">${country}</span>`;
+
+const ENTITIES: Record<string, string> = { '&amp;': '&', '&#39;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>' };
+
+/**
+ * Undo {@link withCountry}: drop the hint and the separator left behind. A
+ * result without the hint means the markup did not survive (or translation is
+ * off), so the English name — which is always truthful — shows through.
+ */
+export function cityLabel(translated: string, english: string): string {
+  if (!translated.includes('<span')) return english;
+  return (
+    translated
+      .replace(/<span translate="no">[\s\S]*?<\/span>/, '')
+      // Whatever punctuation the language joined them with, on either side.
+      .replace(/^[\s,،、·]+|[\s,،、·]+$/g, '')
+      .replace(/&(?:amp|#39|quot|lt|gt);/g, (m) => ENTITIES[m] ?? m) || english
+  );
+}
 
 /** A resolved place: the query we looked up, its coordinates and a display label. */
 export interface GeoPoint {
@@ -248,12 +289,41 @@ export class CityRefService {
 @ApiTags('geo')
 @Controller('geo')
 export class GeoRefController {
-  constructor(private readonly svc: CityRefService) {}
+  constructor(
+    private readonly svc: CityRefService,
+    private readonly text: TextTranslationService,
+  ) {}
 
-  /** City names for a country name, e.g. `/geo/cities?country=India&q=mum`. */
+  /**
+   * City names for a country name, e.g. `/geo/cities?country=India&q=mum`.
+   *
+   * Labels are translated on read and cached like every other free-text string,
+   * so a Russian picker reads Russian while still storing the English name. The
+   * country-less form is already `"City, Country"`, which carries its own
+   * context, so it translates whole.
+   *
+   * ponytail: only the page returned is translated, so `q` still matches the
+   * English names — typing Cyrillic finds nothing. Pre-translating whole country
+   * lists is the fix if search-in-your-own-script is ever asked for.
+   */
   @Get('cities')
-  cities(@Query('country') country: string, @Query('q') q?: string) {
-    return this.svc.cities(country ?? '', q);
+  async cities(
+    @Query('country') country: string,
+    @Locale() locale: Lang,
+    @Query('q') q?: string,
+  ): Promise<CityOption[]> {
+    const names = await this.svc.cities(country ?? '', q);
+    const scope = (country ?? '').trim();
+    if (!scope) {
+      const whole = await this.text.localizeMany(names, locale);
+      return names.map((value, i) => ({ value, label: (whole[i] as string) || value }));
+    }
+    const hinted = await this.text.localizeMany(
+      names.map((city) => withCountry(city, scope)),
+      locale,
+      'html',
+    );
+    return names.map((value, i) => ({ value, label: cityLabel(String(hinted[i] ?? ''), value) }));
   }
 }
 

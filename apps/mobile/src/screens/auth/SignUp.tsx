@@ -62,7 +62,8 @@ export function SignUp() {
     staleTime: 3600e3,
     retry: 1,
   });
-  const cityOptions = cities.map((c) => ({ value: c }));
+  // Stored English, shown in the reader's language — the API sends both.
+  const cityOptions = cities;
 
   const isTransporter = form.role === 'transporter';
   // Both labour companies collect the same operational fields.

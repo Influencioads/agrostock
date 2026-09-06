@@ -28,7 +28,7 @@ function useCities(country: string | undefined, q: string) {
     staleTime: 3600e3,
     retry: 1,
   });
-  return { options: data.map((c) => ({ value: c })), loading: isFetching };
+  return { options: data, loading: isFetching };
 }
 
 /**

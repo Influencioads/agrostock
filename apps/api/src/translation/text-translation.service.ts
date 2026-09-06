@@ -44,7 +44,11 @@ export class TextTranslationService {
    * pass through. Never throws: a translation failure logs and falls back to the
    * source text so a read is never broken by the translator being down.
    */
-  async localizeMany(texts: (string | null | undefined)[], locale: string): Promise<(string | null | undefined)[]> {
+  async localizeMany(
+    texts: (string | null | undefined)[],
+    locale: string,
+    format: 'text' | 'html' = 'text',
+  ): Promise<(string | null | undefined)[]> {
     if (locale === FALLBACK_LNG || !this.google.enabled) return texts;
 
     // Unique, non-empty sources → hashes. Preserve alignment via an index map.
@@ -67,7 +71,7 @@ export class TextTranslationService {
       const missHashes = hashes.filter((h) => !resolved.has(h));
       if (missHashes.length > 0) {
         const missTexts = missHashes.map((h) => needed.get(h)!);
-        const translated = await this.google.translate(missTexts, locale, FALLBACK_LNG);
+        const translated = await this.google.translate(missTexts, locale, FALLBACK_LNG, format);
         const rows = missHashes.map((h, i) => ({ sourceHash: h, locale, text: translated[i] }));
         // Concurrent readers may race on the same string; skipDuplicates makes the
         // write idempotent against the @@unique([sourceHash, locale]) constraint.

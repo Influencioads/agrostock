@@ -266,7 +266,9 @@ export function PickerField({
       <Txt variant="label">{label}</Txt>
       <Pressable onPress={() => !disabled && setOpen(true)} style={[s.field, disabled && { opacity: 0.55 }, error ? { borderColor: C.error } : null]}>
         <Text style={[s.fieldText, { color: value ? C.ink : C.inkMuted }]} numberOfLines={1}>
-          {(value && (displayValue ?? value)) || placeholder || ''}
+          {/* A city is stored in English but shown in the reader's language, so
+              fall back to the matching option's label before the raw value. */}
+          {(value && (displayValue ?? options.find((o) => o.value === value)?.label ?? value)) || placeholder || ''}
         </Text>
         <Ionicons name="chevron-down" size={18} color={C.inkSoft} />
       </Pressable>
