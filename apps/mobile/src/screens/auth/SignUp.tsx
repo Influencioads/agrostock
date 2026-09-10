@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
 import { countryOptions } from '../../lib/countries';
 import { useI18n } from '../../i18n';
+import { useApiError } from '../../lib/useApiError';
 import { Button, Card, Input, Screen, Txt } from '../../ui';
 import { C, radius, space, type } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
@@ -36,6 +37,7 @@ export function SignUp() {
   const COUNTRY_OPTIONS = countryOptions(lang);
   const nav = useNavigation<Nav>();
   const { register } = useAuth();
+  const apiError = useApiError();
   const [form, setForm] = useState({ name: '', email: '', password: '', country: '', role: 'buyer', phone: '', location: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [ops, setOps] = useState({
@@ -118,8 +120,10 @@ export function SignUp() {
       }
       if (nav.canGoBack()) nav.goBack();
       else nav.navigate('App');
-    } catch {
-      setErr(t('auth.signUp.error'));
+    } catch (e) {
+      // "Email already registered" has its own code and translation; a blanket
+      // message left people retrying an address that could never work.
+      setErr(apiError(e, t('auth.signUp.error')));
     } finally {
       setBusy(false);
     }

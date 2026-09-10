@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthProvider';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
+import { useApiError } from '../../lib/useApiError';
 import type { RootStackParamList } from '../../navigation/types';
 import { Button, Input, Txt } from '../../ui';
 import { C, space, type } from '../../theme/tokens';
@@ -23,6 +24,7 @@ export function OtpSignIn() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const apiError = useApiError();
 
   async function requestCode() {
     setErr('');
@@ -30,6 +32,9 @@ export function OtpSignIn() {
     try {
       await api.auth.requestOtp(email);
       setStep('code');
+    } catch (e) {
+      // Without this the request just vanished: no step change, no message.
+      setErr(apiError(e, t('auth.otpLogin.invalid')));
     } finally {
       setBusy(false);
     }
@@ -58,6 +63,9 @@ export function OtpSignIn() {
           <Text style={s.subtitle}>{step === 'email' ? t('auth.otpLogin.subtitle') : t('auth.otpLogin.codeSent')}</Text>
 
           <View style={s.form}>
+            {/* Above the step switch: "Send code" can fail too, and its message
+                used to be set into state that only the code step rendered. */}
+            {err ? <Txt color={C.error} variant="small">{err}</Txt> : null}
             {step === 'email' ? (
               <>
                 <Input
@@ -88,7 +96,6 @@ export function OtpSignIn() {
                   value={code}
                   onChangeText={(v) => setCode(v.replace(/[^0-9]/g, ''))}
                 />
-                {err ? <Txt color={C.error} variant="small">{err}</Txt> : null}
                 <Button
                   title={busy ? t('auth.otpLogin.verifying') : t('auth.otpLogin.verify')}
                   full

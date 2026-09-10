@@ -24,7 +24,10 @@ export function SellerInventory() {
   const { data: products = [], isLoading, isError, refetch } = useQuery<SellerProduct[]>({ queryKey: ['products', 'mine'], queryFn: () => api.products.mine() as Promise<SellerProduct[]>, enabled: !!user });
   const remove = useMutation({
     mutationFn: (id: string) => api.products.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['products', 'mine'] }),
+    // The bare ['products'] prefix also matches ['products','mine'], so one key
+    // refreshes the seller's list AND every public list the deleted listing was
+    // still showing on (Home, Browse, Offers, Search).
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
     onError: (e) => Alert.alert(t('sellerX.inventory.deleteFailTitle'), errMessage(e, t('common:errorBody'))),
   });
 

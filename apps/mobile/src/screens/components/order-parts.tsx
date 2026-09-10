@@ -249,7 +249,8 @@ export function OrderDetailSheet({ orderId, onClose }: { orderId: string; onClos
                   <Txt variant="muted">{order.qty} · {order.seller?.name}</Txt>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Txt variant="title">{order.amount}</Txt>
+                  {/* From cents, so this header agrees with its own "Buyer pays" line. */}
+                  <Txt variant="title">{fmtCents(orderPayableCents(order))}</Txt>
                   <Badge label={orderLabel[order.status] ?? order.status} tone={orderTone[order.status] ?? 'slate'} />
                 </View>
               </Row>

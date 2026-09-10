@@ -95,7 +95,13 @@ function JobSheet({ jobId, onClose, onChanged }: { jobId: string; onClose: () =>
   const { data: workers = [] } = useQuery<ApiLoaderWorker[]>({ queryKey: ['workers'], queryFn: () => api.loaders.workers() });
   const { data: teams = [] } = useQuery<ApiLoaderTeam[]>({ queryKey: ['teams'], queryFn: () => api.loaders.teams() });
 
-  const invalidate = () => { qc.invalidateQueries({ queryKey: ['loader-job', jobId] }); onChanged(); };
+  // Staffing a job moves worker.status server-side, so the crew list has to go
+  // with it — otherwise assigned workers still read "available" for 30s.
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['loader-job', jobId] });
+    qc.invalidateQueries({ queryKey: ['workers'] });
+    onChanged();
+  };
   const claim = useMutation({ mutationFn: () => api.loaders.claimJob(jobId), onSuccess: () => { invalidate(); onClose(); } });
   const assign = useMutation({ mutationFn: (teamId?: string) => api.loaders.assign(jobId, { workerIds: [...picked], teamId }), onSuccess: () => { invalidate(); setPicked(new Set()); } });
   const unassign = useMutation({ mutationFn: (workerId: string) => api.loaders.unassign(jobId, workerId), onSuccess: invalidate });

@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { useWishlist } from '../../lib/useWishlist';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Card, EmptyState, ErrorState, Row, Screen, SkeletonRows, Txt } from '../../ui';
@@ -21,6 +22,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
  * empty are distinguished explicitly (F28).
  */
 export function BuyerSaved() {
+  // Stored `price` is a raw "$6,400/MT" string; fmtPrice converts it.
+  const { fmtPrice } = useCurrency();
   const { t } = useI18n();
   const nav = useNavigation<Nav>();
   const { user } = useAuth();
@@ -53,7 +56,7 @@ export function BuyerSaved() {
                 </View>
                 <View>
                   <Txt variant="title">{p.name}</Txt>
-                  <Txt variant="muted">{p.flag} {p.price}{unitSuffix(p.unit, t)}</Txt>
+                  <Txt variant="muted">{p.flag} {fmtPrice(p)}{unitSuffix(p.unit, t)}</Txt>
                 </View>
               </Row>
               <Row gap={8}>

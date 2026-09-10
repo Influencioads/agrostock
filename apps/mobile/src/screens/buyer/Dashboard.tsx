@@ -26,7 +26,9 @@ export function BuyerDashboard() {
   const { data: orders = [] } = useQuery<ApiOrder[]>({ queryKey: ['orders', 'mine'], queryFn: () => api.orders.mine() as Promise<ApiOrder[]>, enabled: !!user });
 
   const kpis = dash?.kpis ?? {};
-  const deliveries = orders.filter((o) => ['shipped', 'in_transit'].includes(o.status)).slice(0, 4);
+  // `dispatched` is a live shipment too — omitting it made the tile read empty
+  // for an order the Transport screen was already tracking.
+  const deliveries = orders.filter((o) => ['dispatched', 'shipped', 'in_transit'].includes(o.status)).slice(0, 4);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
@@ -47,7 +49,7 @@ export function BuyerDashboard() {
           />
           <QuickGrid
             items={[
-              { icon: 'document-text-outline', label: t('dash.quickPostRfq'), onPress: () => nav.navigate('BuyerBidsBoard') },
+              { icon: 'document-text-outline', label: t('dash.quickPostRfq'), onPress: () => nav.navigate('Section', { role: 'buyer', section: 'bids', title: t('dash.quickPostRfq') }) },
               { icon: 'car-outline', label: t('dash.quickHireTransport'), onPress: () => nav.navigate('Directory', { type: 'transporters', title: t('nav:directory.transporters') }) },
               { icon: 'card-outline', label: t('dash.quickWallet'), onPress: () => nav.navigate('Section', { role: 'buyer', section: 'wallet', title: t('dash.quickWallet') }) },
               { icon: 'shield-checkmark-outline', label: t('dash.quickKyc'), onPress: () => nav.navigate('Kyc') },

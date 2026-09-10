@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common
 import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { parseAcceptLanguage } from '../common/locale';
 import { AuthService, type SessionMeta } from './auth.service';
 import {
   ForgotPasswordDto,
@@ -28,7 +29,14 @@ export class AuthController {
     // X-Forwarded-For only for the configured trusted proxy hop (see main.ts
     // `trust proxy`). Reading the raw header directly trusted a spoofable,
     // client-controlled value.
-    return { device: req.headers['user-agent'], ip: req.ip ?? undefined };
+    return {
+      device: req.headers['user-agent'],
+      ip: req.ip ?? undefined,
+      // The app sets Accept-Language from its live UI language on every request,
+      // so this is the user's actual choice — including a guest's, picked before
+      // they ever signed up.
+      locale: parseAcceptLanguage(req.headers['accept-language']),
+    };
   }
 
   /**

@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import type { Lang } from '@agrotraders/i18n';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -32,6 +33,15 @@ const ACCOUNT_MAIL_MAX = 5;
 export interface SessionMeta {
   device?: string;
   ip?: string;
+  /**
+   * The client's UI language, from Accept-Language. Stamped onto the account at
+   * registration and backfilled on login, because `User.locale` is what every
+   * SERVER-initiated send reads — notifications and every mail template fall
+   * back to English when it is null, and the only writer was PUT /me/locale,
+   * which fires solely when an already-signed-in user toggles the picker. A
+   * visitor who picked Russian before registering still got English forever.
+   */
+  locale?: Lang;
 }
 
 @Injectable()
@@ -235,6 +245,7 @@ export class AuthService {
           role: role as never,
           roles: { set: tradingRoles as never[] },
           country: dto.country,
+          locale: meta?.locale,
         },
       });
       // Operational fields live on the Profile for transporters & loader companies.
@@ -575,6 +586,14 @@ export class AuthService {
     // admin-created and loader-created accounts are stamped verified on creation.
     if (!user.emailVerifiedAt) {
       throw AppException.forbidden('auth.email_not_verified', 'Confirm your email address to sign in');
+    }
+    // Backfill accounts that registered before their language was recorded. Only
+    // when null — an explicit PUT /me/locale choice must never be overwritten by
+    // whatever device happens to sign in next.
+    if (user.locale == null && meta?.locale) {
+      await this.prisma.user
+        .update({ where: { id: user.id }, data: { locale: meta.locale } })
+        .catch(() => undefined);
     }
     return { user: this.safe(user), ...(await this.issueSession(user, meta)) };
   }

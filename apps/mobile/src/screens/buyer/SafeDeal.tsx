@@ -44,7 +44,7 @@ export function BuyerSafeDeal() {
             <Row style={{ justifyContent: 'space-between' }}>
               <Txt variant="title">{o.product?.name ?? t('buyerX.safeDeal.orderFallback')} · #{o.reference}</Txt>
               <Row gap={8}>
-                <Txt variant="title">{o.buyerFeeCents ? fmtCents(orderPayableCents(o)) : o.amount}</Txt>
+                <Txt variant="title">{fmtCents(orderPayableCents(o))}</Txt>
                 <Badge label={orderLabel[o.status] ?? o.status} tone="gold" />
               </Row>
             </Row>

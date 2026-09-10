@@ -62,7 +62,7 @@ export function BidPanel({ slug }: { slug: string }) {
   const autoMaxCents = standing?.autoMaxCents ?? null;
 
   useEffect(() => {
-    if (autoMaxCents != null) { setAutoOpen(true); if (!autoMax) setAutoMax(String(Math.round(inDisplay(autoMaxCents)))); }
+    if (autoMaxCents != null) { setAutoOpen(true); if (!autoMax) setAutoMax(String(inDisplay(autoMaxCents))); }
   }, [autoMaxCents]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const requireBuyer = () => {

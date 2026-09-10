@@ -84,8 +84,11 @@ export function BuyerOrders() {
                   </View>
                 </Row>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  {/* Goods + the buyer's 0.5% bid fee; `o.amount` is goods only. */}
-                  <Txt variant="title">{o.buyerFeeCents ? fmtCents(orderPayableCents(o)) : o.amount}</Txt>
+                  {/* Goods + the buyer's 0.5% bid fee; `o.amount` is goods only.
+                      Always from cents: the `o.amount` fallback is a stored "$..."
+                      string, so an order without a bid fee ignored the display
+                      currency and sat next to converted rows. */}
+                  <Txt variant="title">{fmtCents(orderPayableCents(o))}</Txt>
                   <Badge label={orderLabel[o.status] ?? o.status} tone={orderTone[o.status] ?? 'slate'} />
                 </View>
               </Row>

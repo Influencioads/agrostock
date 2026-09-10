@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { api } from '../../lib/api';
 import { useI18n } from '../../i18n';
+import { useApiError } from '../../lib/useApiError';
 import type { RootStackParamList } from '../../navigation/types';
 import { Button, Input, Txt } from '../../ui';
 import { C, space, type } from '../../theme/tokens';
@@ -19,12 +20,17 @@ export function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const apiError = useApiError();
 
   async function submit() {
     setBusy(true);
+    setError('');
     try {
       await api.auth.forgotPassword(email);
       setSent(true);
+    } catch (e) {
+      setError(apiError(e, t('common:errorBody')));
     } finally {
       setBusy(false);
     }
@@ -53,6 +59,7 @@ export function ForgotPassword() {
                   keyboardType="email-address"
                   value={email}
                   onChangeText={setEmail}
+                  error={error || undefined}
                 />
                 <Button
                   title={busy ? t('auth.forgotPassword.sending') : t('auth.forgotPassword.send')}
