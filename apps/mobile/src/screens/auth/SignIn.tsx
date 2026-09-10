@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
+import { useApiError } from '../../lib/useApiError';
 import type { RootStackParamList } from '../../navigation/types';
 import { Button, Input, Row, Txt } from '../../ui';
 import { C, space, type } from '../../theme/tokens';
@@ -17,6 +18,7 @@ export function SignIn() {
   const { t } = useI18n();
   const nav = useNavigation<Nav>();
   const { login, user } = useAuth();
+  const apiError = useApiError();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -42,7 +44,14 @@ export function SignIn() {
       await fn();
     } catch (e) {
       // Admins are blocked on mobile (see AuthProvider.login) — show that message.
-      setErr(e instanceof Error && e.message.includes('admin.agrotraders.org') ? e.message : t('auth.signIn.invalid'));
+      // Not every failure is a bad password: an unverified email has its own
+      // code, and reporting it as "invalid credentials" sent people round in
+      // circles retyping a password that was right.
+      setErr(
+        e instanceof Error && e.message.includes('admin.agrotraders.org')
+          ? e.message
+          : apiError(e, t('auth.signIn.invalid')),
+      );
     } finally {
       setBusy(null);
     }

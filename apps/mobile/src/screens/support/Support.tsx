@@ -59,17 +59,25 @@ function Thread({ ticketId, socket, onBack, s }: { ticketId: string; socket: Soc
     if (tk?.conversation?.messages) setMessages(tk.conversation.messages as AnyRec[]);
   }, [tk?.conversation?.messages]);
 
+  // The /support namespace fans every ticket's frames to the socket, so the open
+  // thread has to ignore the ones that belong to other tickets.
+  const convId = tk?.conversation?.id as string | undefined;
+
   useEffect(() => {
     if (!socket) return;
     socket.emit('ticket:join', { ticketId });
     socket.emit('read', { ticketId });
     const onNew = (m: AnyRec) => {
-      setMessages((prev) => {
-        if (prev.some((x) => x.id === m.id || x.__tempId === m.tempId)) {
-          return prev.map((x) => (x.__tempId === m.tempId ? m : x));
-        }
-        return [...prev, m];
-      });
+      if (convId && m.conversationId !== convId) return;
+      // An agent's reply carries no tempId, so `x.__tempId === m.tempId` was
+      // undefined === undefined for EVERY pending bubble — the map then replaced
+      // the whole thread with copies of that one message.
+      const sameTemp = (x: AnyRec) => m.tempId != null && x.__tempId === m.tempId;
+      setMessages((prev) =>
+        prev.some((x) => x.id === m.id || sameTemp(x))
+          ? prev.map((x) => (sameTemp(x) ? m : x))
+          : [...prev, m],
+      );
     };
     const onUpdate = () => qc.invalidateQueries({ queryKey: ['support-ticket', ticketId] });
     socket.on('message:new', onNew);
@@ -78,7 +86,7 @@ function Thread({ ticketId, socket, onBack, s }: { ticketId: string; socket: Soc
       socket.off('message:new', onNew);
       socket.off('ticket:update', onUpdate);
     };
-  }, [socket, ticketId, qc]);
+  }, [socket, ticketId, qc, convId]);
 
   const send = () => {
     const body = text.trim();

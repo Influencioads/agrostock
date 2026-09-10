@@ -24,6 +24,9 @@ const ROLE_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   seller: 'cube-outline',
   transporter: 'car-outline',
   loaderco: 'people-outline',
+  // `workerco` is offered as a signup role but had no glyph, so that one card
+  // rendered iconless next to five that did not.
+  workerco: 'business-outline',
   worker: 'person-outline',
 };
 
@@ -266,9 +269,13 @@ const s = StyleSheet.create({
     backgroundColor: C.white,
     borderRadius: radius.card,
     paddingHorizontal: 16,
-    height: 56,
+    // minHeight, not a fixed height: a long localized label ("Компания-подрядчик",
+    // "Погрузочная компания") needs two lines and was clipped against 56.
+    minHeight: 56,
+    paddingVertical: 8,
   },
   roleCardActive: { borderColor: C.green, backgroundColor: C.surface },
-  roleLabel: { ...type.title, fontSize: 15, color: C.ink },
+  // flex so the label wraps inside the card instead of overflowing past the icon.
+  roleLabel: { ...type.title, fontSize: 15, color: C.ink, flex: 1 },
   terms: { ...type.caption, color: C.inkMuted, textAlign: 'center', marginTop: 4 },
 });

@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiRoleRequest } from '@agrotraders/api-client';
+import { Role, ROLES } from '@agrotraders/types';
 import type { Tone } from '../lib/format';
 import { api } from '../lib/api';
 import { useAuth } from '../auth/AuthProvider';
 import { useI18n } from '../i18n';
 import { Badge, Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from '../ui';
 
-const REQUESTABLE = ['buyer', 'seller', 'transporter', 'loaderco', 'worker'];
 const STATUS_TONE: Record<string, Tone> = { pending: 'warn', approved: 'green', rejected: 'error' };
 
 function errMessage(e: unknown, fallback: string): string {
@@ -38,7 +38,12 @@ export function RolesAccess() {
   });
 
   const pendingFor = (role: string) => requests.some((r) => r.role === role && r.status === 'pending');
-  const available = REQUESTABLE.filter((r) => !roles.includes(r));
+  // Derived from the shared Role enum, not a hand-kept literal — that literal
+  // listed 5 of the 11 requestable roles, so the whole service-provider vertical
+  // (accountant, packer, processor, fulfilment/finance partner) and workerco
+  // could never be applied for from mobile. Same expression the web console uses;
+  // `enums:role.*` already has a translated label for every one of them.
+  const available = ROLES.filter((r) => r !== Role.Admin && !roles.includes(r));
 
   return (
     <Screen>

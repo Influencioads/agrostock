@@ -29,6 +29,7 @@ import { linking } from './src/navigation/linking';
 import { registerForPush, unregisterForPush } from './src/lib/push';
 import { C } from './src/theme/tokens';
 import { useAppFonts } from './src/theme/fonts';
+import { ErrorBoundary } from './src/ui/ErrorBoundary';
 
 /** Registers/tears down FCM push as the signed-in user changes. */
 function PushManager() {
@@ -65,25 +66,30 @@ function Gate() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <I18nProvider>
-            <CurrencyProvider>
-              <ChatBadgeProvider>
-                <BasketProvider>
-                  <DeliverToProvider>
-                    <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingNotificationRoute}>
-                      <StatusBar style="dark" />
-                      <Gate />
-                    </NavigationContainer>
-                  </DeliverToProvider>
-                </BasketProvider>
-              </ChatBadgeProvider>
-            </CurrencyProvider>
-          </I18nProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    // Outermost, and OUTSIDE every provider: a throw from a provider's own render
+    // (i18n resources, currency, secure-store) is exactly the case that would
+    // otherwise leave a release build on a blank screen with no way back.
+    <ErrorBoundary onReset={() => queryClient.clear()}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <I18nProvider>
+              <CurrencyProvider>
+                <ChatBadgeProvider>
+                  <BasketProvider>
+                    <DeliverToProvider>
+                      <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingNotificationRoute}>
+                        <StatusBar style="dark" />
+                        <Gate />
+                      </NavigationContainer>
+                    </DeliverToProvider>
+                  </BasketProvider>
+                </ChatBadgeProvider>
+              </CurrencyProvider>
+            </I18nProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

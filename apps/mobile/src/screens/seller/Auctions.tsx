@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -173,7 +173,19 @@ function BidBookSheet({
               icon="hammer-outline"
               full
               disabled={allocating}
-              onPress={onAllocate}
+              onPress={() =>
+                Alert.alert(
+                  t('sellerX.auctions.allocateTopBid'),
+                  t('sellerX.auctions.allocateTo', {
+                    name: top.bidderName ?? top.masked,
+                    amount: fmtCents(top.amountCents),
+                  }),
+                  [
+                    { text: t('common:cancel'), style: 'cancel' },
+                    { text: t('sellerX.auctions.allocateTopBid'), style: 'destructive', onPress: onAllocate },
+                  ],
+                )
+              }
             />
           ) : null}
         </ScrollView>
@@ -260,7 +272,16 @@ export function SellerAuctions() {
                       size="sm"
                       full
                       disabled={close.isPending}
-                      onPress={() => { setError(''); close.mutate(p.slug); }}
+                      // Allocating is irreversible — it mints the winner's order
+                      // and charges commission. A lot WITH bids opens the book so
+                      // the seller sees who wins and confirms there; only an
+                      // empty lot (which merely ends) closes from the card. Same
+                      // two-step the web console has always required.
+                      onPress={() => {
+                        setError('');
+                        if (p.bidCount > 0) setViewing(p);
+                        else close.mutate(p.slug);
+                      }}
                     />
                   </View>
                 )}
