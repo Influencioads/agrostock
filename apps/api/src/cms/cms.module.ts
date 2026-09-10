@@ -17,6 +17,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Locale, localize } from '../common/locale';
 import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { PermissionsGuard, RequirePermissions } from '../auth/permissions.guard';
+import { AuditService } from '../common/audit.service';
+import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
+import { TextTranslationService } from '../translation/text-translation.service';
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -33,9 +36,29 @@ export class UpdateCmsPageDto {
   @IsOptional() @IsBoolean() published?: boolean;
 }
 
+/**
+ * Every copy field is nullable on purpose: sending `null` clears the override
+ * and the app falls back to its own built-in string. `@IsOptional()` skips
+ * validation for both `undefined` and `null`, so that clear path type-checks.
+ */
+export class UpdateHomeBannersDto {
+  @IsOptional() @IsBoolean() promoEnabled?: boolean;
+  @IsOptional() @IsString() promoTitle?: string | null;
+  @IsOptional() @IsString() promoBody?: string | null;
+  @IsOptional() @IsString() promoCta?: string | null;
+  @IsOptional() @IsBoolean() heroEnabled?: boolean;
+  @IsOptional() @IsString() heroTag?: string | null;
+  @IsOptional() @IsString() heroTitle?: string | null;
+  @IsOptional() @IsString() heroCta?: string | null;
+}
+
+const HOME_BANNERS_ID = 1;
+/** Admin-typed English; translated on read like office names. */
+const BANNER_COPY = ['promoTitle', 'promoBody', 'promoCta', 'heroTag', 'heroTitle', 'heroCta'] as const;
+
 @Injectable()
 export class CmsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private text: TextTranslationService) {}
 
   async listPublished(locale: Lang = FALLBACK_LNG) {
     const pages = await this.prisma.cmsPage.findMany({
@@ -72,6 +95,38 @@ export class CmsService {
     if (!existing) throw new NotFoundException('Page not found');
     return this.prisma.cmsPage.update({ where: { id }, data: dto });
   }
+
+  /**
+   * The singleton is created on first read rather than seeded — prod deploys
+   * never run seeds, so a missing row must not be an error.
+   */
+  private homeBannersRow() {
+    return this.prisma.homeBanners.upsert({
+      where: { id: HOME_BANNERS_ID },
+      update: {},
+      create: { id: HOME_BANNERS_ID },
+    });
+  }
+
+  /** Public read — copy comes back in the caller's language. */
+  async homeBanners(locale: Lang = FALLBACK_LNG) {
+    const row = await this.homeBannersRow();
+    const [localized] = await this.text.localizeRows([row], BANNER_COPY, locale);
+    return localized;
+  }
+
+  /** Admin read — always the stored English, never a translation. */
+  adminHomeBanners() {
+    return this.homeBannersRow();
+  }
+
+  updateHomeBanners(dto: UpdateHomeBannersDto) {
+    return this.prisma.homeBanners.upsert({
+      where: { id: HOME_BANNERS_ID },
+      update: dto,
+      create: { id: HOME_BANNERS_ID, ...dto },
+    });
+  }
 }
 
 @ApiTags('cms')
@@ -81,6 +136,10 @@ export class CmsController {
 
   @Get() list(@Locale() locale: Lang) {
     return this.cms.listPublished(locale);
+  }
+  // Must stay above `:slug`, which would otherwise swallow it and 404.
+  @Get('home-banners') banners(@Locale() locale: Lang) {
+    return this.cms.homeBanners(locale);
   }
   @Get(':slug') get(@Param('slug') slug: string, @Locale() locale: Lang) {
     return this.cms.getPublished(slug, locale);
@@ -94,10 +153,25 @@ export class CmsController {
 @RequirePermissions('cms_manage')
 @Controller('admin/cms')
 export class AdminCmsController {
-  constructor(private cms: CmsService) {}
+  constructor(private cms: CmsService, private audit: AuditService) {}
 
   @Get() list() {
     return this.cms.listAll();
+  }
+  @Get('home-banners') banners() {
+    return this.cms.adminHomeBanners();
+  }
+  // Above `:id` for the same reason as the public route.
+  @Patch('home-banners') async updateBanners(@Body() dto: UpdateHomeBannersDto, @CurrentUser() admin: AuthUser) {
+    const row = await this.cms.updateHomeBanners(dto);
+    await this.audit.log({
+      actorId: admin.id,
+      action: 'homeBanners.update',
+      entityType: 'HomeBanners',
+      entityId: String(HOME_BANNERS_ID),
+      meta: { fields: Object.keys(dto) },
+    });
+    return row;
   }
   @Post() create(@Body() dto: CreateCmsPageDto) {
     return this.cms.create(dto);

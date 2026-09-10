@@ -435,6 +435,23 @@ export interface ApiCmsPage {
   createdAt: string;
 }
 
+/**
+ * Copy + on/off switches for the two banners on the mobile home screen. A null
+ * copy field means "the app's own built-in string" — same contract as
+ * ApiBranding — so a client can ship before an admin ever opens the editor.
+ */
+export interface ApiHomeBanners {
+  promoEnabled: boolean;
+  promoTitle: string | null;
+  promoBody: string | null;
+  promoCta: string | null;
+  heroEnabled: boolean;
+  heroTag: string | null;
+  heroTitle: string | null;
+  heroCta: string | null;
+  updatedAt: string;
+}
+
 export interface ApiEmailTemplateTranslation {
   id: string;
   locale: string;
@@ -2918,6 +2935,8 @@ export function createApiClient(opts: ApiClientOptions) {
     },
     cms: {
       list: () => get<ApiCmsPage[]>('/cms'),
+      /** Locale-aware — copy comes back in the caller's language. */
+      homeBanners: () => get<ApiHomeBanners>('/cms/home-banners'),
       get: (slug: string) => get<ApiCmsPage>(`/cms/${slug}`),
     },
     branding: {
@@ -2994,6 +3013,10 @@ export function createApiClient(opts: ApiClientOptions) {
         post<ApiCmsPage>('/admin/cms', body),
       updateCmsPage: (id: string, body: { title?: string; body?: string; published?: boolean }) =>
         patch<ApiCmsPage>(`/admin/cms/${id}`, body),
+      homeBanners: () => get<ApiHomeBanners>('/admin/cms/home-banners'),
+      /** `null` on a copy field clears the override and restores the app default. */
+      updateHomeBanners: (body: Partial<Omit<ApiHomeBanners, 'updatedAt'>>) =>
+        patch<ApiHomeBanners>('/admin/cms/home-banners', body),
       // ── Email templates ──
       emailTemplates: () => get<ApiEmailTemplate[]>('/admin/email-templates'),
       emailTemplate: (key: string) => get<ApiEmailTemplate>(`/admin/email-templates/${key}`),

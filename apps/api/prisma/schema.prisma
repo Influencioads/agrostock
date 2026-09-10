@@ -2181,6 +2181,26 @@ model Branding {
   updatedAt  DateTime @updatedAt
 }
 
+/// Admin-editable copy + on/off switches for the two banners on the mobile home
+/// screen: the amber first-order promo strip and the green gradient hero.
+/// Singleton (id = 1) like Branding, self-creating on first read because seeds
+/// are not run on prod. A NULL copy column means "use the app's own built-in
+/// string", so an untouched row renders exactly what shipped in the bundle and
+/// an admin can clear a field to get the default back. Copy is stored in
+/// English and translated on read (TextTranslationService), same as offices.
+model HomeBanners {
+  id           Int      @id @default(1)
+  promoEnabled Boolean  @default(true)
+  promoTitle   String?
+  promoBody    String?
+  promoCta     String?
+  heroEnabled  Boolean  @default(true)
+  heroTag      String?
+  heroTitle    String?
+  heroCta      String?
+  updatedAt    DateTime @updatedAt
+}
+
 // ════════════════════════════════════════════════════════════════════
 //  CHAT SYSTEM 1 — AGROTRADERS COMMUNITY (public marketplace chat)
 //  Kept strictly separate from Live Support (System 2) in models/enums.

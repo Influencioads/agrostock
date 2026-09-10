@@ -201,6 +201,24 @@
     "subStats": "{{subs}} subcategories · {{products}} products"
   },
   "cmsAdmin": {
+    "banners": {
+      "clearHint": "Clear a box to restore the app's built-in text.",
+      "hero": "Hero card",
+      "heroCta": "Button",
+      "heroTag": "Eyebrow",
+      "heroTitle": "Headline",
+      "hidden": "Hidden",
+      "placeholder": "App default",
+      "promo": "First-order promo strip",
+      "promoBody": "Sub-line",
+      "promoCta": "Action label",
+      "promoTitle": "Headline",
+      "saveFailed": "Could not save the banners",
+      "saved": "Banners saved",
+      "shown": "Shown",
+      "sub": "Copy and on/off switches for the two banners on the app's home screen. Leave a box empty to use the app's own translated text.",
+      "title": "Mobile home banners"
+    },
     "draft": "Draft",
     "publish": "Publish",
     "published": "Published",
