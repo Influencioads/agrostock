@@ -1784,6 +1784,7 @@
       "cancel": "Cancel",
       "empty": "No open requirements — post the first one.",
       "fBudget": "Budget (optional)",
+      "fCategory": "Category",
       "fDeliverTo": "Deliver to",
       "fProduct": "Product",
       "fQuantity": "Quantity",

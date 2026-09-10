@@ -50,13 +50,16 @@ interface Group {
  * mirrors automatically under RTL — so the rail correctly becomes the right
  * pane in Arabic and Persian with no extra work.
  */
-export function FilterSheet({ visible, onClose, applied, onApply, categories }: {
+export function FilterSheet({ visible, onClose, applied, onApply, categories, categoriesError, onRetryCategories }: {
   visible: boolean;
   onClose: () => void;
   /** The currently committed filters — the draft is seeded from these each open. */
   applied: Filters;
   onApply: (next: Filters) => void;
   categories: ApiCategory[];
+  /** Passed straight through to the picker — see `CategorySheet`. */
+  categoriesError?: boolean;
+  onRetryCategories?: () => void;
 }) {
   const { t, lang } = useI18n();
   const [draft, setDraft] = useState<Filters>(applied);
@@ -366,6 +369,8 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
           visible={catSheet}
           onClose={() => setCatSheet(false)}
           categories={categories}
+          categoriesError={categoriesError}
+          onRetryCategories={onRetryCategories}
           selection={draft.selection}
           onSelect={setSelection}
         />

@@ -372,7 +372,7 @@ export function SellerAddProduct() {
   // decimal separator; `Number('840,5')` is NaN, which blocked submit forever.
   const setNum = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v.replace(',', '.') }));
 
-  const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
+  const { data: categories = [], isError: categoriesError, refetch: refetchCategories } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   // The picker hands back the resolved attribute fields, so the form never has
   // to walk the tree itself.
   const [taxonomy, setTaxonomy] = useState<CategorySelection>(EMPTY_SELECTION);
@@ -577,6 +577,8 @@ export function SellerAddProduct() {
           visible={catSheet}
           onClose={() => setCatSheet(false)}
           categories={categories}
+          categoriesError={categoriesError}
+          onRetryCategories={() => void refetchCategories()}
           selection={taxonomy}
           onSelect={(next) => {
             setTaxonomy(next);

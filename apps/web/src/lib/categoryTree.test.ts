@@ -7,6 +7,28 @@ const sub = (id: string, name: string, parentId: string | null = null, attrField
   ({ id, name, slug: id, parentId, categoryId: 'cat', sort: 0, emoji: null, options: [], attrFields, _count: { products: 0 } }) as ApiSubcategory;
 
 describe('category tree helpers', () => {
+  // Guards the linear rebuild. The previous implementation re-filtered the whole
+  // flat array once per node, which is quadratic: at the real size of the biggest
+  // category (1615 nodes) that measured 119ms of blocked JS thread inside a
+  // render-phase useMemo. 4000 nodes would take multiple seconds quadratically
+  // and a few milliseconds linearly, so the budget separates them without being
+  // tight enough to flake.
+  it('rebuilds a large flat taxonomy without going quadratic', () => {
+    const rows: ApiSubcategory[] = [];
+    for (let level = 0; level < 4; level++) {
+      for (let i = 0; i < 1000; i++) {
+        rows.push(sub(`n${level}-${i}`, `Node ${level}-${i}`, level === 0 ? null : `n${level - 1}-${i}`));
+      }
+    }
+    const started = performance.now();
+    const tree = buildSubcategoryTree(rows);
+    const elapsed = performance.now() - started;
+
+    expect(tree).toHaveLength(1000);
+    expect(findSubcategoryPath(tree, 'n3-7').map((n) => n.id)).toEqual(['n0-7', 'n1-7', 'n2-7', 'n3-7']);
+    expect(elapsed).toBeLessThan(500);
+  });
+
   it('finds the full drill path for a nested subcategory', () => {
     const tree = buildSubcategoryTree([
       sub('grain', 'Grain'),

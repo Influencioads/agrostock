@@ -43,16 +43,40 @@ const MATCH_LIMIT = 200;
 /** Settle delay for the in-category search. See `typed` vs `q` below. */
 const SEARCH_DEBOUNCE_MS = 180;
 
+/**
+ * Match a taxon on the label shown AND on its canonical English name.
+ *
+ * Only 6.5% of subcategory rows carry a Russian translation, so a ru-locale
+ * buyer sees a list that is mostly English with a scattering of translated
+ * rows. Filtering on the displayed name alone made each row findable in exactly
+ * one language — and which language varied row by row — so "seed" hid the
+ * translated rows and "семена" hid the untranslated ones. The API's own product
+ * search already ORs the base name against its translations; this is the picker
+ * catching up.
+ */
+const hit = (taxon: { name: string; nameEn?: string }, needle: string) =>
+  taxon.name.toLowerCase().includes(needle) ||
+  (taxon.nameEn ? taxon.nameEn.toLowerCase().includes(needle) : false);
+
 export function CategorySheet({
   visible,
   onClose,
   categories,
+  categoriesError,
+  onRetryCategories,
   selection,
   onSelect,
 }: {
   visible: boolean;
   onClose: () => void;
   categories: ApiCategory[];
+  /** The owner's `/categories` fetch failed. Without this an empty `categories`
+   *  array is indistinguishable from an empty catalogue, and the sheet opens
+   *  onto "nothing matches" with nothing to tap — the same defect the subtree
+   *  fetch had, one level up. */
+  categoriesError?: boolean;
+  /** Retry that failed `/categories` fetch. */
+  onRetryCategories?: () => void;
   selection: CategorySelection;
   /** Commit a selection. `EMPTY_SELECTION` clears everything. */
   onSelect: (next: CategorySelection) => void;
@@ -114,7 +138,7 @@ export function CategorySheet({
     // out the debounce here would only add lag to something already instant.
     const needle = typed.trim().toLowerCase();
     if (!needle) return categories;
-    return categories.filter((c) => c.name.toLowerCase().includes(needle));
+    return categories.filter((c) => hit(c, needle));
   }, [categories, typed]);
 
   // Searching inside a category spans every level, not just the one on screen.
@@ -122,7 +146,7 @@ export function CategorySheet({
   const matches = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle || !drill) return null;
-    const hits = flat.filter(({ node }) => node.name.toLowerCase().includes(needle));
+    const hits = flat.filter(({ node }) => hit(node, needle));
     return {
       total: hits.length,
       rows: hits.slice(0, MATCH_LIMIT).map(({ node }) => ({ node, path: pathById.get(node.id) ?? [] })),
@@ -134,6 +158,7 @@ export function CategorySheet({
   // refresh failed. The error and spinner belong only to "there is nothing to
   // show". `isFetching` rather than `isLoading` because after a failure the
   // status is 'error', not 'pending' — so a retry would otherwise spin nothing.
+  const catsFailed = !drill && !!categoriesError && categories.length === 0;
   const nothingLoaded = subs.length === 0;
   const showSpinner = !!drill && isFetching && nothingLoaded;
   const showError = !!drill && !isFetching && isError && nothingLoaded;
@@ -278,7 +303,7 @@ export function CategorySheet({
 
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: space.xl }}>
           {/* "All" reset row — always available at the top of each level */}
-          {!drill ? (
+          {catsFailed ? null : !drill ? (
             <Pressable onPress={() => { onSelect(EMPTY); close(); }} style={rowStyle}>
               <Ionicons name="apps-outline" size={20} color={C.green} />
               <Txt style={{ flex: 1, fontWeight: selection.categoryId === '' ? '800' : '600', color: selection.categoryId === '' ? C.green : C.ink }}>
@@ -298,8 +323,10 @@ export function CategorySheet({
             </Pressable>
           )}
 
+          {catsFailed && <QueryError onRetry={onRetryCategories} />}
+
           {/* level 1: categories */}
-          {!drill &&
+          {!drill && !catsFailed &&
             filteredCats.map((c) => {
               const active = c.id === selection.categoryId;
               return (
@@ -360,7 +387,15 @@ export function CategorySheet({
               return (
                 <Pressable
                   key={node.id}
-                  onPress={() => (hasChildren ? setStack((s) => [...s, node]) : commit(drill, [...stack, node]))}
+                  onPress={() => {
+                    // Level rows are still on screen during the debounce window,
+                    // so a tap here can land before `q` settles — without this
+                    // the pending search would then paint whole-category hits
+                    // over the level just opened, header still naming the level.
+                    search('');
+                    if (hasChildren) setStack((st) => [...st, node]);
+                    else commit(drill, [...stack, node]);
+                  }}
                   style={rowStyle}
                 >
                   {node.emoji ? <Txt style={{ fontSize: 16 }}>{node.emoji}</Txt> : null}
@@ -375,7 +410,7 @@ export function CategorySheet({
             })}
 
           {/* empty states */}
-          {((!drill && filteredCats.length === 0) ||
+          {((!drill && !catsFailed && filteredCats.length === 0) ||
             (showRows && (matches ? matches.total === 0 : levelNodes.length === 0))) && (
             <Txt variant="small" color={C.inkSoft} style={{ textAlign: 'center', padding: space.xl }}>
               {t('pubX.browse.noneMatch')}
