@@ -22,11 +22,25 @@ const path = require('path');
  */
 const MARKER = 'AgroTraders: allow non-modular includes';
 
+/**
+ * Pods whose ObjC headers import React-Core types non-modularly AND are
+ * themselves compiled as a module under static frameworks. Clang then rejects
+ * the import outright ("declaration of 'RCTViewManager' must be imported from
+ * module 'react_native_maps.AIRMapCalloutManager' before it is required") —
+ * allowing non-modular includes is not enough, the target has to stop being
+ * built with module semantics. Kept to a named list: Firebase needs its modules
+ * for Swift interop, so this must never be applied project-wide.
+ */
+const NO_MODULES_PODS = ['react-native-maps', 'react-native-google-maps'];
+
 const SNIPPET = `
     # ${MARKER} — see plugins/with-ios-nonmodular-headers.js
     installer.pods_project.targets.each do |pod_target|
       pod_target.build_configurations.each do |pod_config|
         pod_config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        if ${JSON.stringify(NO_MODULES_PODS)}.include?(pod_target.name)
+          pod_config.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
+        end
       end
     end
 `;

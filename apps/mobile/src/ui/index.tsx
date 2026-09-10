@@ -381,7 +381,7 @@ export function Accordion({ title, children, defaultOpen = false, count }: {
 
 /* ── Input ────────────────────────────────────────────────────────── */
 export function Input({
-  label, error, style, icon, trailing, secureTextEntry, ...rest
+  label, error, style, icon, trailing, secureTextEntry, onChangeText, keyboardType, ...rest
 }: TextInputProps & {
   label?: string;
   error?: string;
@@ -391,6 +391,17 @@ export function Input({
   trailing?: ReactNode;
 }) {
   const { t } = useI18n();
+  /**
+   * Android's numeric keyboards in comma-decimal locales (Russian among them)
+   * offer ONLY a comma, and `Number('840,5')` is NaN — so every numeric field
+   * silently failed its own `!Number(x)` guard and left Save disabled forever
+   * with no error to explain it. `AddProduct` carried a local `setNum`
+   * workaround for exactly this; normalising here covers the ~30 other numeric
+   * inputs that did not. Display is unaffected: the user still sees what they
+   * typed, the comma is just swapped for a dot on the way out.
+   */
+  const numeric = keyboardType === 'numeric' || keyboardType === 'decimal-pad';
+  const handleChangeText = numeric && onChangeText ? (v: string) => onChangeText(v.replace(',', '.')) : onChangeText;
   const [showSecureText, setShowSecureText] = useState(false);
   const canToggleSecureText = secureTextEntry === true && !trailing;
   const effectiveTrailing = trailing ?? (canToggleSecureText ? (
@@ -417,6 +428,8 @@ export function Input({
             placeholderTextColor={C.inkMuted}
             style={[{ flex: 1, ...type.body, fontSize: 15, color: C.ink, paddingVertical: 0 }, style]}
             secureTextEntry={effectiveSecureTextEntry}
+            keyboardType={keyboardType}
+            onChangeText={handleChangeText}
             {...rest}
           />
           {effectiveTrailing}
@@ -426,6 +439,8 @@ export function Input({
           placeholderTextColor={C.inkMuted}
           style={[s.input, error ? { borderColor: C.error } : null, style]}
           secureTextEntry={effectiveSecureTextEntry}
+          keyboardType={keyboardType}
+          onChangeText={handleChangeText}
           {...rest}
         />
       )}
