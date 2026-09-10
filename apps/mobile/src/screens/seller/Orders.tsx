@@ -4,7 +4,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { canCancel, nextStatusFor, orderLogistics, type ApiDirectoryEntry, type ApiOrder, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, orderLabel, orderTone } from '../../lib/format';
+import { errMessage, orderTone } from '../../lib/format';
+import { useOrderLabel } from '../../lib/useFormat';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, ChipSelect, EmptyState, Input, Row, Screen, Segmented, SkeletonRows, Txt, QueryError } from '../../ui';
@@ -145,6 +146,7 @@ function DispatchSheet({ order, onClose }: { order: ApiOrder; onClose: () => voi
 
 export function SellerOrders() {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   const { user } = useAuth();
   const [respondTo, setRespondTo] = useState<ApiOrder | null>(null);
   const [dispatchOrder, setDispatchOrder] = useState<ApiOrder | null>(null);
@@ -201,9 +203,9 @@ export function SellerOrders() {
                 </View>
                 <Txt variant="title">{o.amount}</Txt>
               </Row>
-              <Row style={{ justifyContent: 'space-between' }}>
+              <Row style={{ justifyContent: 'space-between' }} wrap>
                 <Badge label={orderLabel[o.status] ?? o.status} tone={orderTone[o.status] ?? 'slate'} />
-                <Row gap={8}>
+                <Row gap={8} wrap>
                   {o.status === 'enquiry' && <Button title={t('sellerX.orders.respond')} size="sm" onPress={() => setRespondTo(o)} />}
                   {!!next && o.status !== 'enquiry' && (
                     <Button title={t('sellerX.orders.mark', { status: orderLabel[next] })} size="sm" loading={advance.isPending} onPress={() => advance.mutate({ id: o.id, status: next })} />

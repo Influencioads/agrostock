@@ -5,8 +5,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiCategory, ApiMarket, ApiProduct } from '@agrotraders/api-client';
-import { countryFlag } from '@agrotraders/api-client';
+import type { ApiCategory, ApiMarket, ApiProduct, ApiSubcategory } from '@agrotraders/api-client';
+import {
+  buildSubcategoryTree,
+  countryFlag,
+  findSubcategoryPath,
+  resolveAttrFields,
+  schemaName,
+} from '@agrotraders/api-client';
 import {
   CURRENCIES,
   CURRENCY_SYMBOLS,
@@ -399,6 +405,10 @@ export function SellerAddProduct() {
         qty: p.stockQty != null ? String(p.stockQty) : '',
         moq: bareNumber(canon('moq', p.moq)), emoji: p.emoji ?? '🌾',
         origin: canon('origin', p.origin) ?? '', city: p.city ?? '', country: p.country ?? '',
+        // Both ids, or Save posts a blank category: the API then can't match the
+        // subcategory to it, drops the subcategory, and sanitizes every
+        // attribute value away with it.
+        categoryId: (p.category && typeof p.category === 'object' ? (p.category as { id?: string }).id : '') ?? '',
         subcategoryId: (p.subcategory && typeof p.subcategory === 'object' ? (p.subcategory as { id?: string }).id : '') ?? '',
         attributes: canon('attributes', p.attributes as Record<string, unknown>) ?? {},
         supplyCountries: p.supplyCountries ?? [],
@@ -416,6 +426,35 @@ export function SellerAddProduct() {
       }));
     }
   }, [editingId, mine]);
+
+  // Edit mode also has to rebuild the PICKER's selection, not just the ids: the
+  // trigger label and the whole attribute panel render off `taxonomy`, so
+  // leaving it EMPTY_SELECTION showed a blank category and no attribute fields
+  // when editing. Same query key as CategorySheet, so the cache is shared.
+  const { data: editSubs = [] } = useQuery<ApiSubcategory[]>({
+    queryKey: ['category-subtree', form.categoryId],
+    queryFn: () => api.categories.subtree(form.categoryId, { depth: 'all' }),
+    enabled: !!editingId && !!form.categoryId,
+    staleTime: 5 * 60 * 1000,
+  });
+  useEffect(() => {
+    if (!editingId || !form.categoryId || taxonomy.categoryId === form.categoryId) return;
+    const category = categories.find((c) => c.id === form.categoryId);
+    if (!category) return;
+    // A listing may sit on the category itself, with no subcategory at all.
+    const path = form.subcategoryId ? findSubcategoryPath(buildSubcategoryTree(editSubs), form.subcategoryId) : [];
+    if (form.subcategoryId && path.length === 0) return; // subtree not loaded yet
+    const leaf = path[path.length - 1];
+    setTaxonomy({
+      categoryId: category.id,
+      categoryName: category.name,
+      categoryNameEn: schemaName(category),
+      subcategoryId: leaf?.id ?? '',
+      subcategoryName: leaf?.name ?? '',
+      trail: [category.name, ...path.map((n) => n.name)],
+      attrFields: resolveAttrFields(path),
+    });
+  }, [editingId, form.categoryId, form.subcategoryId, categories, editSubs, taxonomy.categoryId]);
 
   // Drop attribute values that don't belong to the current subcategory's fields.
   // The API sanitizes on save too — this is so the seller SEES what is dropped.
@@ -463,7 +502,14 @@ export function SellerAddProduct() {
       };
       if (isAuction) {
         if (startBid) payload.startBidCents = Math.round(Number(startBid) * 100);
-        payload.auctionEndsAt = new Date(Date.now() + Math.max(Number(auctionDays) || 7, 1) * 864e5).toISOString();
+        // The countdown belongs to the LOT, not to this form. `auctionDays` is
+        // never prefilled on edit, so it always reads the blank default of 7 —
+        // saving any other change pushed a live lot's deadline out another week,
+        // and revived an already-ended one. Only set a deadline for a lot that
+        // has none (create, or flipping an existing listing to an auction).
+        if (!mine.find((x) => x.id === editingId)?.auctionEndsAt) {
+          payload.auctionEndsAt = new Date(Date.now() + Math.max(Number(auctionDays) || 7, 1) * 864e5).toISOString();
+        }
       }
       return editingId ? api.products.update(editingId, payload) : api.products.create(payload);
     },

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { formatCompact, formatDate, formatMonthYear, formatNumber, formatRelative } from '@agrotraders/api-client';
+import { formatCompact, formatDate, formatMonthYear, formatNumber, formatRelative, ORDER_LABELS } from '@agrotraders/api-client';
 import { useI18n } from '../i18n';
 
 /**
@@ -11,6 +11,28 @@ import { useI18n } from '../i18n';
  *
  * Hermes ships Intl.NumberFormat and Intl.DateTimeFormat, so these work on device.
  */
+/**
+ * Order-status labels in the reader's language.
+ *
+ * `ORDER_LABELS` in the api-client is hardcoded English, so a Russian buyer's
+ * order cards read "Order placed" / "Packed & ready". The translated strings
+ * already exist for every locale under `enums:order_status`; this reads those,
+ * falling back to the English constant for any status the catalog misses.
+ */
+export function useOrderLabel(): Record<string, string> {
+  const { t } = useI18n();
+  return useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(ORDER_LABELS).map(([status, en]) => [
+          status,
+          t(`enums:order_status.${status}`, { defaultValue: en }),
+        ]),
+      ),
+    [t],
+  );
+}
+
 export function useFormat() {
   const { lang } = useI18n();
   return useMemo(

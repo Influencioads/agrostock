@@ -562,7 +562,7 @@ export function Community() {
             renderItem={({ item: g }) => (
               <Card onPress={() => (g.chatKind === 'dm' ? setActiveDm({ userId: g.userId, name: g.name }) : setActiveGroup(g))}>
                 <Row style={{ justifyContent: 'space-between' }}>
-                  <Row gap={10}>
+                  <Row gap={10} style={{ flex: 1 }}>
                     <Txt style={{ fontSize: 22 }}>{g.emoji ?? '💬'}</Txt>
                     <Txt variant="title">{g.name}</Txt>
                   </Row>

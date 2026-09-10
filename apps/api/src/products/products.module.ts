@@ -1251,9 +1251,15 @@ export class ProductsService {
     // `qty`/`stockQty` are pulled out of `rest` deliberately: they are never
     // written straight through. `stockPatch` below decides both from the one
     // figure, so an update cannot set them to different numbers.
-    const { categoryId, subcategoryId, auctionEndsAt, price, priceCurrency, startBidCents, images, marketId, attributes, qty: _qty, stockQty: _stockQty, ...rest } = data;
+    const { categoryId: rawCategoryId, subcategoryId, auctionEndsAt, price, priceCurrency, startBidCents, images, marketId, attributes, qty: _qty, stockQty: _stockQty, ...rest } = data;
     void _qty;
     void _stockQty;
+    // An empty string is "not supplied", not "move to category ''". The write
+    // below already treats it that way (`categoryId ? …`); without normalising
+    // here, `touchedSub` fired on a blank and `validSubcategory('', sub)` could
+    // never match, so the listing lost its subcategory AND — via
+    // `cleanAttributes(null, …)` returning {} — every attribute value with it.
+    const categoryId = rawCategoryId || undefined;
     const effectiveCategoryId = categoryId ?? existing.categoryId;
     // Re-validate the subcategory whenever category or subcategory is touched.
     // `nextSubcategoryId` is wherever the listing ENDS UP — attribute cleaning

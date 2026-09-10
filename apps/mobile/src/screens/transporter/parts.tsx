@@ -33,7 +33,7 @@ export function FormModal({
           <ScrollView contentContainerStyle={{ padding: space.lg, paddingTop: 4, gap: 12 }} keyboardShouldPersistTaps="handled">
             {children}
           </ScrollView>
-          <Row gap={10} style={{ paddingHorizontal: space.lg, paddingTop: 8 }}>
+          <Row gap={10} style={{ paddingHorizontal: space.lg, paddingTop: 8 }} wrap>
             <View style={{ flex: 1 }}><Button title={t('mobile2.form.cancel')} variant="outline" full onPress={onClose} /></View>
             <View style={{ flex: 1 }}><Button title={submitLabel ?? t('mobile2.form.save')} full loading={submitting} disabled={!canSubmit} onPress={onSubmit} /></View>
           </Row>

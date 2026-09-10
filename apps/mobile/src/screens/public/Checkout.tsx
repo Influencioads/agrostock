@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -12,10 +12,11 @@ import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useBasket, type BasketLine } from '../../basket/BasketContext';
 import { AppBar, Button, EmptyState, Input, SkeletonRows, Txt } from '../../ui';
-import { C, radius, space, type } from '../../theme/tokens';
+import { C, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { ProductRow } from '../components';
+import { useOrderInvalidation } from '../components/order-parts';
 import { PickerField } from '../components/PickerSheet';
 import { countryOptions } from '../../lib/countries';
 import { useDeliverTo } from '../../lib/deliverTo';
@@ -55,6 +56,11 @@ export function Checkout() {
   const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const basket = useBasket();
+  const invalidateOrders = useOrderInvalidation();
+  // The per-line result block renders at the TOP of this ScrollView, but the
+  // submit buttons are pinned to the BOTTOM — so a buyer who placed an order saw
+  // nothing at all happen. Scroll them back up to the references.
+  const scroller = useRef<ScrollView>(null);
   const { place: deliverTo } = useDeliverTo();
   // Which button leads — set by the listing screen's Buy / Request quote.
   const intent = params?.intent ?? 'buy';
@@ -187,7 +193,9 @@ export function Checkout() {
     },
     onSuccess: (out) => {
       out.filter((r) => r.reference).forEach((r) => basket.remove(r.slug));
+      if (out.some((r) => r.reference)) invalidateOrders();
       setResults(out);
+      scroller.current?.scrollTo({ y: 0, animated: true });
     },
   });
 
@@ -219,7 +227,7 @@ export function Checkout() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={[]}>
       <AppBar title={t('pubX.checkout.title')} onBack={() => nav.goBack()} />
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scroller} contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} keyboardShouldPersistTaps="handled">
         {/* What each line did. First on the screen: after a submit it is the only
             thing the buyer is looking for. */}
         {results ? (
@@ -407,6 +415,9 @@ export function Checkout() {
                 variant={i === 0 ? 'primary' : 'outline'}
                 title={kind === 'buy' ? t('pubX.checkout.placeOrder') : t('pubX.pd.requestQuote')}
                 loading={submit.isPending && submit.variables === kind}
+                // Both buttons post real orders — leaving the other one live while
+                // one is in flight let a buyer place an order AND an enquiry.
+                disabled={submit.isPending}
                 onPress={() => start(kind)}
               />
             ))}

@@ -77,11 +77,21 @@ export async function registerForPush(): Promise<string | null> {
   const messaging = loadMessaging();
   if (!messaging) return null;
   try {
-    const authStatus = await messaging().requestPermission();
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-    if (!enabled) return null;
+    // RNFB's requestPermission() returns AUTHORIZED on Android WITHOUT prompting
+    // (messaging 25.1.0: `if (isAndroid) return AuthorizationStatus.AUTHORIZED`).
+    // Android 13+ still needs the POST_NOTIFICATIONS runtime grant, which nothing
+    // was asking for — so every modern Android device registered a token and then
+    // showed nothing. expo-notifications requests exactly that permission.
+    if (Platform.OS === 'android') {
+      const { granted } = await Notifications.requestPermissionsAsync();
+      if (!granted) return null;
+    } else {
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      if (!enabled) return null;
+    }
 
     await ensureAndroidChannel();
 

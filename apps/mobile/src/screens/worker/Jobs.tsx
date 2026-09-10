@@ -50,7 +50,7 @@ export function WorkerJobs() {
               </View>
               <Badge label={a.status.replace('_', ' ')} tone={tone[a.status] ?? 'slate'} />
             </Row>
-            <Row gap={8}>
+            <Row gap={8} wrap>
               {a.status === 'assigned' ? <Button title={t('compX.jobs.accept')} size="sm" loading={accept.isPending} onPress={() => accept.mutate(a.id)} /> : null}
               {a.status === 'accepted' ? <Button title={t('compX.jobs.checkin')} size="sm" variant="accent" loading={checkin.isPending} onPress={() => checkin.mutate(a.id)} /> : null}
               {a.status === 'checked_in' ? <Button title={t('compX.jobs.checkout')} size="sm" variant="outline" loading={checkout.isPending} onPress={() => checkout.mutate(a.id)} /> : null}

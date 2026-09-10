@@ -17,7 +17,7 @@ import { useI18n } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useBasketAction } from '../../basket/useBasketAction';
 import { DeliverToSheet, useDeliverTo } from '../../lib/deliverTo';
-import { isShopRole } from '../../navigation/RoleRouter';
+import { isShopRole } from '../../navigation/menu';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -109,7 +109,10 @@ export function Home() {
   // Guests have no profile to load — send them to sign in instead of the
   // profile form, which would otherwise hang on a /me call that never resolves.
   const openProfile = () => (user ? nav.navigate('ProfileForm') : nav.navigate('SignIn', {}));
-  const toSearch = (category?: string) => nav.navigate('Search', category ? { category, title: category } : undefined);
+  // The ID, not `c.name`: category names arrive localized, and the API matches
+  // the `category` filter against the English column — so a Russian chip
+  // searched for "Овощи" and every result set came back empty.
+  const toSearch = (categoryId?: string) => nav.navigate('Search', categoryId ? { categoryId } : undefined);
   // "See all" lands on the matching tab where the shop tabs exist; other
   // consoles have no Offers/Browse tab, so they get the search screen instead.
   const shop = isShopRole(role);
@@ -156,7 +159,7 @@ export function Home() {
         {/* The one category selector. */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRail}>
           {categories.map((c, i) => (
-            <CategoryChip key={c.id} cat={c} index={i} onPress={() => toSearch(c.name)} />
+            <CategoryChip key={c.id} cat={c} index={i} onPress={() => toSearch(c.id)} />
           ))}
           <Pressable onPress={() => toSearch()} style={({ pressed }) => [s.chip, pressed && { opacity: 0.7 }]}>
             <View style={[s.chipIcon, { backgroundColor: C.surface }]}><Ionicons name="grid-outline" size={16} color={C.green} /></View>

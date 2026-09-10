@@ -27,6 +27,12 @@ export const linking: LinkingOptions<RootStackParamList> = {
     'https://www.agrotraders.org',
   ],
   config: {
+    // Seed the stack with `App` beneath any deep-linked route. Without it
+    // getStateFromPath returns a SINGLE-route stack, `canGoBack()` is false, and
+    // the back control on a linked screen does nothing — Search, Cart and
+    // Checkout draw their own AppBar (headerShown: false) so they never get the
+    // stack's guarded BackButton.
+    initialRouteName: 'App',
     screens: {
       // The role tabs live under "App" and own the root URL.
       App: '',

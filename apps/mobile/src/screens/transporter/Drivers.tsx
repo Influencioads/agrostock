@@ -41,7 +41,7 @@ export function TransporterDrivers() {
         drivers.map((d) => (
           <Card key={d.id} style={{ gap: 10 }}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Row gap={10}>
+              <Row gap={10} style={{ flex: 1 }}>
                 {d.photoUrl ? <Image source={{ uri: assetUrl(d.photoUrl) }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.surface }} /> : <Avatar name={d.name} size={44} />}
                 <View style={{ flexShrink: 1 }}>
                   <Txt variant="title">{d.name}</Txt>
@@ -59,7 +59,7 @@ export function TransporterDrivers() {
                 ) : null}
               </View>
             )}
-            <Row gap={8}>
+            <Row gap={8} wrap>
               <View style={{ flex: 1 }}><Button title={t('transX.actions.edit')} variant="outline" size="sm" full onPress={() => { setEditing(d); setOpen(true); }} /></View>
               <View style={{ flex: 1 }}><Button title={d.status === 'active' ? t('transX.drivers.offDuty') : t('transX.drivers.activate')} variant="outline" size="sm" full onPress={() => toggle.mutate({ id: d.id, status: d.status === 'active' ? 'off' : 'active' })} /></View>
               <View style={{ flex: 1 }}><Button title={t('transX.actions.remove')} variant="outline" size="sm" full loading={del.isPending} onPress={() => del.mutate(d.id)} /></View>

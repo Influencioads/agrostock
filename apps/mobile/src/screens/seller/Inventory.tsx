@@ -52,7 +52,7 @@ export function SellerInventory() {
         products.map((p) => (
           <Card key={p.id} style={{ gap: 10 }}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Row gap={10}>
+              <Row gap={10} style={{ flex: 1 }}>
                 <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {p.imageUrl ? <Image source={{ uri: assetUrl(p.imageUrl) }} style={{ width: '100%', height: '100%' }} /> : <Txt style={{ fontSize: 22 }}>{p.emoji ?? '🌾'}</Txt>}
                 </View>
@@ -63,7 +63,7 @@ export function SellerInventory() {
               </Row>
               <Txt variant="title">{p.price}{unitSuffix(p.unit, t)}</Txt>
             </Row>
-            <Row gap={6}>
+            <Row gap={6} wrap>
               {p.isOffer ? <Badge label={t('sellerX.inventory.offer')} tone="mango" /> : null}
               {p.isAuction ? <Badge label={t('sellerX.inventory.auction')} tone="info" /> : null}
               <View style={{ flex: 1 }} />

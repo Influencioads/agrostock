@@ -178,9 +178,9 @@ export function LoaderAttendance() {
             const open = openRowFor(w.id);
             return (
               <Card key={w.id}>
-                <Row style={{ justifyContent: 'space-between' }}>
+                <Row style={{ justifyContent: 'space-between' }} wrap>
                   <View><Txt variant="title">{w.name}</Txt>{w.skill ? <Txt variant="muted">{w.skill}</Txt> : null}</View>
-                  <Row gap={8}>
+                  <Row gap={8} wrap>
                     <Badge label={w.status.replace('_', ' ')} tone={w.status === 'on_site' ? 'info' : w.status === 'available' ? 'green' : 'slate'} />
                     {open ? (
                       <Button title={t('loaderX.attendance.checkOut')} size="sm" variant="outline" loading={checkout.isPending} onPress={() => checkout.mutate(open.id)} />

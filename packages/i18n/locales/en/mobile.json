@@ -332,7 +332,7 @@
       "errSubmit": "Could not submit your bid.",
       "fieldEta": "ETA (days)",
       "fieldMessage": "Message (optional)",
-      "fieldPrice": "Your price /{{unit}}",
+      "fieldPrice": "Your price /{{unit}} ({{currency}})",
       "fieldQty": "Qty you can supply ({{unit}})",
       "lowestBid": "Lowest",
       "lowestSoFar": "Lowest offer so far {{price}}/{{unit}} — the cheapest offer wins.",

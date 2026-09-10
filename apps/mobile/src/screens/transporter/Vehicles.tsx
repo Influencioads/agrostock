@@ -48,7 +48,7 @@ export function TransporterVehicles() {
               </View>
               <Badge label={v.status.replace('_', ' ')} tone={v.status === 'available' ? 'green' : v.status === 'on_trip' ? 'info' : 'warn'} />
             </Row>
-            <Row gap={8}>
+            <Row gap={8} wrap>
               <View style={{ flex: 1 }}><Button title={t('transX.actions.edit')} variant="outline" size="sm" full onPress={() => { setEditing(v); setOpen(true); }} /></View>
               <View style={{ flex: 1 }}><Button title={t('transX.actions.remove')} variant="outline" size="sm" full loading={del.isPending} onPress={() => del.mutate(v.id)} /></View>
             </Row>

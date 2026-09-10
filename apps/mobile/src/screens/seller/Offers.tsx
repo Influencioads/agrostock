@@ -38,7 +38,7 @@ export function SellerOffers() {
         products.map((p) => (
           <Card key={p.id}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Row gap={10}>
+              <Row gap={10} style={{ flex: 1 }}>
                 <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' }}>
                   <Txt style={{ fontSize: 20 }}>{p.emoji ?? '🌾'}</Txt>
                 </View>

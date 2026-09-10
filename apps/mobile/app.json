@@ -14,11 +14,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.agrotraders.org"
+      "bundleIdentifier": "com.agrotraders.org",
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.agrotraders.org",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#178E4B"

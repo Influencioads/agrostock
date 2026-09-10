@@ -90,7 +90,14 @@ export function RootNavigator() {
       <Stack.Screen name="Requirements" component={RequirementsBoard} options={title('Requirements')} />
       <Stack.Screen name="ProfileForm" component={ProfileForm} options={title('ProfileForm')} />
       <Stack.Screen name="Hires" component={HiresScreen} options={title('Hires')} />
-      <Stack.Screen name="Section" component={SectionScreen} options={({ route }) => ({ title: route.params.title })} />
+      {/* Menu taps pass a ready label; a `console/:role/:section` deep link does
+          not, and React Navigation then fell back to the route NAME — the header
+          on a deep-linked console section literally read "Section". */}
+      <Stack.Screen
+        name="Section"
+        component={SectionScreen}
+        options={({ route }) => ({ title: route.params.title || t(`nav:section.${route.params.section}`) })}
+      />
     </Stack.Navigator>
   );
 }

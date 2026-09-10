@@ -319,7 +319,7 @@ export function Directory({ type }: { type: DirectoryType }) {
                 );
               })()}
               <Txt variant="muted">{statLine}</Txt>
-              <Row gap={8}>
+              <Row gap={8} wrap>
                 <View style={{ flex: 1 }}>
                   <Button
                     title={t('pubX.dir.chat')}

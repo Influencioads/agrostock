@@ -1,13 +1,13 @@
 import { isServiceRole } from '@agrotraders/types';
 import { useAuth } from '../auth/AuthProvider';
+import type { ConsoleRole } from './menu';
 import { LoaderTabs, SellerTabs, ServiceTabs, ShopTabs, TransporterTabs, WorkerTabs } from './tabs';
 
 /**
- * Roles with a console of their own. A general labour company runs the same
- * console as a loading company; they differ only in which worker types they
- * may publish.
+ * The tabs behind each console role. Keyed by `ConsoleRole`, so this map and
+ * `CONSOLE_ROLES` in `./menu` cannot drift apart silently.
  */
-const CONSOLE_TABS: Record<string, () => JSX.Element> = {
+const CONSOLE_TABS: Record<ConsoleRole, () => JSX.Element> = {
   seller: SellerTabs,
   transporter: TransporterTabs,
   loaderco: LoaderTabs,
@@ -15,10 +15,9 @@ const CONSOLE_TABS: Record<string, () => JSX.Element> = {
   worker: WorkerTabs,
 };
 
-/** True when `role` lands on the shop tabs (Home / Offers / Browse / Orders / Account). */
-export function isShopRole(role: string | null): boolean {
-  return !(role && role in CONSOLE_TABS) && !isServiceRole(role);
-}
+// `isShopRole` now lives in ./menu — a module with no navigator imports — so
+// screens can call it without the RoleRouter -> tabs -> Home -> RoleRouter
+// require cycle. Import it from there, not from here.
 
 /** Picks the bottom-tab navigator from the signed-in role. Guests get the shop. */
 export function RoleRouter() {
@@ -26,6 +25,6 @@ export function RoleRouter() {
   // All five service roles share one console. Without this they fell through
   // to the buyer shop, so a packing partner had no way to reach their own
   // enquiries, profile or invoices on mobile at all.
-  const Tabs = (role && CONSOLE_TABS[role]) || (isServiceRole(role) ? ServiceTabs : ShopTabs);
+  const Tabs = (role && CONSOLE_TABS[role as ConsoleRole]) || (isServiceRole(role) ? ServiceTabs : ShopTabs);
   return <Tabs />;
 }

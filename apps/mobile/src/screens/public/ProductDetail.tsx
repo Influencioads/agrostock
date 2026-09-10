@@ -80,10 +80,12 @@ export function ProductDetail() {
   // so the price always stays per the unit the seller quoted.
   const [qtyUnit, setQtyUnit] = useState('');
   const { data: p, isLoading, isError, refetch } = useQuery<ApiProduct>({ queryKey: ['product', params.slug], queryFn: () => api.products.get(params.slug) });
-  const categoryName = p?.category && 'name' in p.category ? p.category.name : undefined;
+  // ID, not name — see Home's chip rail: the joined taxon is localized too, so
+  // "Related products" was empty in every non-English locale.
+  const categoryId = p?.category && 'id' in p.category ? p.category.id : undefined;
   const { data: related = [] } = useQuery<ApiProduct[]>({
-    queryKey: ['related', categoryName, params.slug],
-    queryFn: async () => (await api.products.list({ category: categoryName })).filter((x) => x.slug !== params.slug).slice(0, 6),
+    queryKey: ['related', categoryId, params.slug],
+    queryFn: async () => (await api.products.list({ categoryId })).filter((x) => x.slug !== params.slug).slice(0, 6),
     enabled: !!p,
   });
   // When this seller is reachable — shown on every listing of theirs, because

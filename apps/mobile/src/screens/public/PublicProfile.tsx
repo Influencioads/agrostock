@@ -102,7 +102,7 @@ export function PublicProfile() {
             ) : null}
           </View>
           {!isMe && (
-            <Row gap={8} style={{ marginTop: 4 }}>
+            <Row gap={8} style={{ marginTop: 4 }} wrap>
               <View style={{ flex: 1 }}>
                 <Button title={t('pubX.dir.chat')} icon="chatbubbles-outline" full onPress={() => nav.navigate('Community', { dmUserId: p.id, dmName: p.name })} />
               </View>

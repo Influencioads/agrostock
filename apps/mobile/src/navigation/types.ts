@@ -2,7 +2,9 @@
 export type RootStackParamList = {
   App: undefined;
   ProductDetail: { slug: string };
-  Search: { q?: string; category?: string; title?: string } | undefined;
+  /** Filter by category ID, never by name: `ApiCategory.name` is localized and
+   *  the API matches the filter against the canonical English column. */
+  Search: { q?: string; categoryId?: string } | undefined;
   Cart: undefined;
   /** `qty`/`unit` carry the buyer's pick from the listing into the review screen. */
   /** The basket is the subject; `intent` only decides which button leads. */
@@ -34,7 +36,9 @@ export type RootStackParamList = {
   Requirements: undefined;
   ProfileForm: undefined;
   Hires: undefined;
-  Section: { role: string; section: string; title: string; productId?: string };
+  /** `title` is optional: a deep link (`console/:role/:section`) carries no label,
+   *  so the header falls back to `nav:section.<section>`. */
+  Section: { role: string; section: string; title?: string; productId?: string };
 };
 
 declare global {

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrotraders/api-client';
 import { api, setApiActiveRole, setApiToken, setApiRefreshToken, setAuthFailureListener, TOKEN_KEY, REFRESH_KEY } from '../lib/api';
@@ -45,6 +45,12 @@ const Ctx = createContext<AuthValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<ApiUser | null>(null);
+  /**
+   * Bumped on every sign-in and sign-out. `logout` fires the push-unregister
+   * without awaiting it, so this is what tells that callback whether the session
+   * it was clearing is still the current one.
+   */
+  const sessionEpoch = useRef(0);
   const [activeRole, setActiveRoleState] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -137,6 +143,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // data loads. Without this, signing in as user B on user A's device served
     // A's cached orders/wallet/notifications (staleTime 30s) until refetch.
     queryClient.clear();
+    // Claim the session: a still-in-flight logout must not null THESE tokens
+    // when its push-unregister finally settles. See `logout`.
+    sessionEpoch.current += 1;
     setApiToken(token);
     setApiRefreshToken(refresh);
     setApiActiveRole(u.role);
@@ -192,16 +201,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // present, otherwise the unregister call is unauthenticated and the device
     // keeps receiving notifications after logout. Best-effort and idempotent, so
     // repeated logout is safe.
-    await unregisterForPush().catch(() => {});
-    // F39: revoke the refresh session server-side before clearing local state.
-    const refreshToken = await storage.get(REFRESH_KEY).catch(() => null);
-    if (refreshToken) await api.auth.logout(refreshToken).catch(() => {});
-    setApiToken(null);
-    setApiRefreshToken(null);
-    setApiActiveRole(null);
+    // ...but NOT blocking on it. The api-client sets no request timeout, so
+    // awaiting this (and /auth/logout) left the tap dead and the previous user's
+    // dashboard on screen for as long as the network hung. Fire it loose and
+    // drop the api-client token caches only once it settles, which keeps F26's
+    // authenticated-unregister guarantee without making the user wait for it.
+    const epoch = (sessionEpoch.current += 1);
+    void unregisterForPush().finally(() => {
+      // Sign back in before the unregister settles and this would otherwise null
+      // the NEW session's tokens; the epoch says whether we still own them.
+      if (sessionEpoch.current !== epoch) return;
+      setApiToken(null);
+      setApiRefreshToken(null);
+      setApiActiveRole(null);
+    });
+    // F39: revoke the refresh session server-side. /auth/logout authenticates on
+    // the refresh token in the body, not the access token, so it is safe to fire
+    // loose even after the caches above are gone.
+    void storage
+      .get(REFRESH_KEY)
+      .then((refreshToken) => (refreshToken ? api.auth.logout(refreshToken) : null))
+      .catch(() => {});
+    // Everything the UI reads is cleared NOW — logging out must be instant.
     setUser(null);
     setActiveRoleState(null);
-    await Promise.all([
+    void Promise.all([
       storage.del(TOKEN_KEY),
       storage.del(REFRESH_KEY),
       storage.del(USER_KEY),

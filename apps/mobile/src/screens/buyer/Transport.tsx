@@ -3,7 +3,8 @@ import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiOrder, ApiOrderDetail } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, orderLabel, orderTone } from '../../lib/format';
+import { errMessage, orderTone } from '../../lib/format';
+import { useOrderLabel } from '../../lib/useFormat';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Input, ProgressBar, Row, Screen, Segmented, SkeletonRows, Txt } from '../../ui';
@@ -24,6 +25,7 @@ const blank = { fromCity: '', toCity: '', cargo: '', weightMt: '' };
  */
 function ShipmentCard({ order, onOpen }: { order: ApiOrder; onOpen: () => void }) {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   const { data: detail } = useQuery<ApiOrderDetail>({
     queryKey: ['order-detail', order.id],
     queryFn: () => api.orders.get(order.id),

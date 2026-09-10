@@ -128,7 +128,7 @@ export function LabourOfferings() {
                 {o.headcount != null ? ` · ${t('labour.upTo', { count: o.headcount })}` : ''}
                 {o.minHours != null ? ` · ${t('labour.minHoursShort', { count: o.minHours })}` : ''}
               </Txt>
-              <Row gap={8}>
+              <Row gap={8} wrap>
                 <Button title={t(o.isActive ? 'labour.hide' : 'labour.show')} variant="outline" onPress={() => toggleActive.mutate(o)} />
                 <Button title={t('labour.remove')} variant="ghost" onPress={() => remove.mutate(o.id)} />
               </Row>

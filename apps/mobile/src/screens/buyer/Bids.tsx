@@ -367,7 +367,7 @@ export function BuyerBids() {
               return (
                 <Card key={r.id} onPress={() => nav.navigate('BuyerBidRoom', { id: r.id })} style={{ gap: 10 }}>
                   <Row style={{ justifyContent: 'space-between' }}>
-                    <Row gap={6}>
+                    <Row gap={6} style={{ flex: 1 }}>
                       <Badge label={isAuction ? t('buyerX.bids.reverseAuction') : t('buyerX.bids.bids')} tone={isAuction ? 'mango' : 'info'} />
                       <Badge label={r.status} tone={r.status === 'open' ? 'green' : 'slate'} />
                     </Row>

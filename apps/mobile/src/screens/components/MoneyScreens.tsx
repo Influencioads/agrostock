@@ -50,7 +50,7 @@ function StatementButtons() {
     }
   };
   return (
-    <Row gap={8}>
+    <Row gap={8} wrap>
       <Button title={busy === 'pdf' ? '…' : 'PDF'} size="sm" variant="outline" icon="download-outline" disabled={busy !== null} onPress={() => open('pdf')} />
       <Button title={busy === 'csv' ? '…' : 'CSV'} size="sm" variant="outline" icon="download-outline" disabled={busy !== null} onPress={() => open('csv')} />
     </Row>

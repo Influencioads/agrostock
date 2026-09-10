@@ -225,7 +225,7 @@ export function SellerAuctions() {
           return (
             <Card key={p.id} style={{ gap: 10 }}>
               <Row style={{ justifyContent: 'space-between' }}>
-                <Row gap={10}>
+                <Row gap={10} style={{ flex: 1 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' }}>
                     <Txt style={{ fontSize: 22 }}>{p.emoji ?? '🌾'}</Txt>
                   </View>
@@ -247,7 +247,7 @@ export function SellerAuctions() {
                 </Txt>
               </Row>
 
-              <Row gap={8}>
+              <Row gap={8} wrap>
                 <View style={{ flex: 1 }}><Button title={t('sellerX.auctions.viewBids')} variant="outline" size="sm" full onPress={() => setViewing(p)} /></View>
                 {!ended && (
                   <View style={{ flex: 1 }}>

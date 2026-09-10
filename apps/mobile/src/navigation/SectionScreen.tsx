@@ -8,5 +8,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Section'>;
 export function SectionScreen({ route }: Props) {
   const { role, section, title } = route.params;
   const Comp = getSection(role, section);
-  return Comp ? <Comp /> : <Placeholder title={title} />;
+  // A deep link carries no label; the section id is a better last resort than blank.
+  return Comp ? <Comp /> : <Placeholder title={title ?? section} />;
 }

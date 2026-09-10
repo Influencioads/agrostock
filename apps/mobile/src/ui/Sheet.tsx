@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { C, elevation, radius, space, type } from '../theme/tokens';
@@ -28,6 +28,12 @@ export function Sheet({
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      {/* iOS does not resize a modal for the keyboard, so a short bottom-anchored
+          sheet (ReviewSheet is ~340pt) ends up entirely underneath it — field and
+          footer button both unreachable, and the only way out is the backdrop,
+          which discards the draft. Android needs nothing: RN's Modal sets
+          SOFT_INPUT_ADJUST_RESIZE on the dialog window, hence behavior undefined. */}
+      <KeyboardAvoidingView style={s.avoider} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {!fullScreen ? <Pressable style={s.backdrop} onPress={onClose} /> : null}
       {/* `statusBarTranslucent` puts the modal behind the status bar, so a
           full-height panel has to inset its own header; a partial sheet starts
@@ -69,11 +75,13 @@ export function Sheet({
 
         {footer ? <View style={s.footer}>{footer}</View> : null}
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const s = StyleSheet.create({
+  avoider: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: C.overlay },
   panel: { backgroundColor: C.white, ...elevation.sheet },
   panelPartial: { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, maxHeight: '86%' },

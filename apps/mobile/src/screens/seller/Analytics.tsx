@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiOrder, ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { parseAmount, orderLabel, orderTone } from '../../lib/format';
+import { parseAmount, orderTone } from '../../lib/format';
+import { useOrderLabel } from '../../lib/useFormat';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
@@ -17,6 +18,7 @@ type SellerProduct = ApiProduct & { _count?: { orders: number; auctionBids: numb
 /** Analytics — performance across the seller's catalogue. */
 export function SellerAnalytics() {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   const { fmtCompactCents } = useCurrency();
   const { user } = useAuth();
   const { data: products = [], isLoading } = useQuery<SellerProduct[]>({

@@ -47,7 +47,7 @@ export function BuyerMessages() {
         [...contacts.values()].map((c) => (
           <Card key={c.id} onPress={() => nav.navigate('Community', { dmUserId: c.id, dmName: c.name })}>
             <Row style={{ justifyContent: 'space-between' }}>
-              <Row gap={10}>
+              <Row gap={10} style={{ flex: 1 }}>
                 <Avatar name={c.name} size={40} />
                 <View style={{ flexShrink: 1 }}>
                   <Txt variant="title">{c.name}</Txt>

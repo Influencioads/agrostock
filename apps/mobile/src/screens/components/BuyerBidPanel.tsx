@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { ApiBuyerBidDetail } from '@agrotraders/api-client';
+import { convertCents, toUsdAmount, type ApiBuyerBidDetail } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
@@ -43,9 +43,14 @@ function OwnerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
  */
 function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
   const { t } = useI18n();
-  const { fmtCents } = useCurrency();
+  const { fmtCents, displayCurrency, rate } = useCurrency();
   const qc = useQueryClient();
-  const [price, setPrice] = useState(bid.yourBestPriceCents != null ? String(bid.yourBestPriceCents / 100) : '');
+  // Every price on this card is printed in the viewer's DISPLAY currency, so the
+  // offer is typed there too — same fix `BidPanel` already carries for auctions.
+  // Seeded converted, converted back to USD cents on submit; without this a
+  // seller shown "₽8,400/MT" who types 8000 offers $8,000, ~84x their intent.
+  const inDisplay = (usdCents: number) => Math.round(convertCents(usdCents, rate) * 100) / 100;
+  const [price, setPrice] = useState(bid.yourBestPriceCents != null ? String(inDisplay(bid.yourBestPriceCents)) : '');
   const [qty, setQty] = useState(String(bid.qtyValue));
   const [eta, setEta] = useState('');
   const [message, setMessage] = useState('');
@@ -54,7 +59,7 @@ function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
   const submit = useMutation({
     mutationFn: () =>
       api.buyerBids.submitBid(bid.id, {
-        priceCents: Math.round(Number(price) * 100),
+        priceCents: Math.round(toUsdAmount(Number(price), rate) * 100),
         qtyValue: Number(qty),
         etaDays: eta ? Number(eta) : undefined,
         message: message || undefined,
@@ -93,7 +98,7 @@ function SellerPanel({ bid }: { bid: ApiBuyerBidDetail }) {
 
       {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
 
-      <Input label={t('buyerX.room.fieldPrice', { unit: bid.qtyUnit })} keyboardType="numeric" value={price} onChangeText={setPrice} />
+      <Input label={t('buyerX.room.fieldPrice', { unit: bid.qtyUnit, currency: displayCurrency })} keyboardType="numeric" value={price} onChangeText={setPrice} />
       <Row gap={10}>
         <View style={{ flex: 1 }}><Input label={t('buyerX.room.fieldQty', { unit: bid.qtyUnit })} keyboardType="numeric" value={qty} onChangeText={setQty} /></View>
         <View style={{ flex: 1 }}><Input label={t('buyerX.room.fieldEta')} keyboardType="numeric" value={eta} onChangeText={setEta} /></View>

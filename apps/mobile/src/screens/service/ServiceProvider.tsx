@@ -136,7 +136,7 @@ export function ServiceEnquiries() {
             {/* Only a pending enquiry is decidable — the API enforces the same, so
                 a stale screen cannot accept something already cancelled. */}
             {h.status === 'pending' ? (
-              <Row gap={8}>
+              <Row gap={8} wrap>
                 <View style={{ flex: 1 }}>
                   <Button
                     title={t('service.accept')}

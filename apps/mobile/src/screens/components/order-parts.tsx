@@ -5,7 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { deliveryAddressLine, deliveryContactLine, ORDER_STEPS, orderPayableCents, type ApiOrderDetail, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, orderLabel, orderTone } from '../../lib/format';
+import { errMessage, orderTone } from '../../lib/format';
+import { useOrderLabel } from '../../lib/useFormat';
 import { Badge, Button, Card, Input, ProgressBar, Row, SkeletonRows, Txt } from '../../ui';
 import { C, space, type } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
@@ -72,7 +73,19 @@ const ts = StyleSheet.create({
 export function useOrderInvalidation() {
   const qc = useQueryClient();
   return () => {
-    for (const key of [['orders'], ['order-detail'], ['invoices'], ['me', 'dashboard']]) {
+    // These must be the keys the screens actually register. `['me','dashboard']`
+    // matched nothing — every dashboard registers the single-segment
+    // `['me-dashboard']` — so the KPI tiles went stale after every order move.
+    // Trips/wallet/earnings are here too: confirming delivery pays a trip out.
+    for (const key of [
+      ['orders'],
+      ['order-detail'],
+      ['invoices'],
+      ['trips', 'mine'],
+      ['me-dashboard'],
+      ['me-wallet'],
+      ['me-earnings'],
+    ]) {
       qc.invalidateQueries({ queryKey: key });
     }
   };
@@ -181,6 +194,7 @@ export function ShipmentFacts({ order }: { order: ApiOrderDetail }) {
 /** Real timeline straight off `OrderEvent[]`. */
 export function OrderTimeline({ events }: { events: ApiOrderDetail['events'] }) {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   if (events.length === 0) return <Txt variant="muted">{t('compX.order.noActivity')}</Txt>;
   return (
     <View style={{ gap: 10 }}>
@@ -205,6 +219,7 @@ export function OrderTimeline({ events }: { events: ApiOrderDetail['events'] }) 
 /** Bottom-sheet order detail: stepper, party OTP, shipment facts, timeline. */
 export function OrderDetailSheet({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   const { fmtCents } = useCurrency();
   const { data: order, isLoading } = useQuery<ApiOrderDetail>({
     queryKey: ['order-detail', orderId],

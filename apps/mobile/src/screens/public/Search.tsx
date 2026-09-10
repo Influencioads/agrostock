@@ -41,7 +41,7 @@ export function Search() {
   // Typing shouldn't fire a request per keystroke; the query runs on the settled value.
   const [debounced, setDebounced] = useState(q);
   const [recent, setRecent] = useState<string[]>([]);
-  const category = route.params?.category;
+  const categoryId = route.params?.categoryId;
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(q), 300);
@@ -63,12 +63,12 @@ export function Search() {
     });
   }, []);
 
-  const active = debounced.trim().length > 1 || !!category;
+  const active = debounced.trim().length > 1 || !!categoryId;
 
   const { data: results = [], isLoading, isError, refetch } = useQuery<ApiProduct[]>({
-    queryKey: ['products', 'search', debounced, category],
+    queryKey: ['products', 'search', debounced, categoryId],
     queryFn: async () => {
-      const items = await api.products.list({ search: debounced, category });
+      const items = await api.products.list({ search: debounced, categoryId });
       remember(debounced);
       return items;
     },
@@ -160,7 +160,7 @@ export function Search() {
                   {cats.slice(0, 8).map((c) => (
                     <Pressable
                       key={c.id}
-                      onPress={() => nav.navigate('Search', { category: c.name, title: c.name })}
+                      onPress={() => nav.navigate('Search', { categoryId: c.id })}
                       style={s.trendChip}
                     >
                       <Ionicons name="trending-up" size={15} color={C.green} />

@@ -68,6 +68,9 @@ module.exports = ({ config }) => {
       // reverse), which is what this one needs: it edits meta-data that
       // expo-notifications has to have written already.
       './plugins/with-firebase-notification-defaults',
+      // Podfile post_install hook — order-independent (it is a dangerous mod on
+      // the Podfile, not a manifest mod), but kept with its sibling plugin.
+      './plugins/with-ios-nonmodular-headers',
       ...config.plugins.filter((p) => p !== 'expo-build-properties'),
       [
         'expo-build-properties',

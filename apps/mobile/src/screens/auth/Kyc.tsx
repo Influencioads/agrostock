@@ -107,7 +107,7 @@ export function Kyc() {
             </Row>
 
             {uploaded.map((d) => (
-              <Row key={d.id} style={{ alignItems: 'center', gap: 8, backgroundColor: C.surface, borderRadius: 10, padding: 8 }}>
+              <Row key={d.id} style={{ alignItems: 'center', gap: 8, backgroundColor: C.surface, borderRadius: 10, padding: 8 }} wrap>
                 <Ionicons name="checkmark-circle" size={18} color={C.green} />
                 <Txt variant="small" style={{ flex: 1 }} numberOfLines={1}>{d.originalName ?? d.mime}</Txt>
                 <Button title={t('pubX.kyc.view')} variant="ghost" size="sm" onPress={() => view(d.id)} />

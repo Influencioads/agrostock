@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { orderPayableCents, type ApiOrder } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { orderLabel } from '../../lib/format';
+import { useOrderLabel } from '../../lib/useFormat';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
@@ -12,6 +12,7 @@ import { C } from '../../theme/tokens';
 /** Safe Deal — escrow balance + orders held until delivery is confirmed. */
 export function BuyerSafeDeal() {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const { data: wallet } = useQuery<{ balanceCents: number }>({

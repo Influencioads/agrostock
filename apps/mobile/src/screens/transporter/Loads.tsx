@@ -2,7 +2,8 @@ import { Image, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiOrder } from '@agrotraders/api-client';
 import { api, assetUrl } from '../../lib/api';
-import { orderLabel, orderTone } from '../../lib/format';
+import { orderTone } from '../../lib/format';
+import { useOrderLabel } from '../../lib/useFormat';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Card, EmptyState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C, radius } from '../../theme/tokens';
@@ -15,6 +16,7 @@ import { OtpEntry } from '../components/order-parts';
  */
 export function TransporterLoads() {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   const { user } = useAuth();
   const { data: orders = [], isLoading } = useQuery<ApiOrder[]>({
     queryKey: ['orders', 'transporting'],

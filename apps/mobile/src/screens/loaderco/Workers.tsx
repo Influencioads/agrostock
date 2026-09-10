@@ -33,7 +33,7 @@ export function LoaderWorkers() {
         <EmptyState icon="people-outline" title={t('loaderX.workers.emptyTitle')} body={t('loaderX.workers.emptyBody')} />
       ) : workers.map((w) => (
         <Card key={w.id}>
-          <Row style={{ justifyContent: 'space-between' }}>
+          <Row style={{ justifyContent: 'space-between' }} wrap>
             <View style={{ flex: 1 }}>
               <Txt variant="title">{w.name}</Txt>
               <Txt variant="muted">{w.skill ?? t('loaderX.workers.generalCrew')} · ★ {w.rating ?? '—'}{w.team?.name ? ` · ${w.team.name}` : ''}</Txt>
@@ -42,7 +42,7 @@ export function LoaderWorkers() {
             </View>
             <View style={{ gap: 8, alignItems: 'flex-end' }}>
               <Badge label={w.status.replace('_', ' ')} tone={STATUS_TONE[w.status as keyof typeof STATUS_TONE] ?? 'slate'} />
-              <Row gap={6}>
+              <Row gap={6} wrap>
                 <Button title={t('loaderX.common.edit')} variant="outline" size="sm" onPress={() => setEditing(w)} />
                 <Button title={t('loaderX.common.remove')} variant="ghost" size="sm" onPress={() => del.mutate(w.id)} />
               </Row>

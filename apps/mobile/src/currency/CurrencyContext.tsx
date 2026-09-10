@@ -8,8 +8,15 @@ import { storage } from '../lib/storage';
 import { Chip } from '../ui';
 
 interface CurrencyContextValue {
+  /** What the user PICKED — drives the picker's active chip. */
   currency: string;
   setCurrency: (c: string) => void;
+  /**
+   * What money is actually printed in. Equals `currency` whenever its rate is
+   * known, and falls back to USD when it is not — so any input whose value is
+   * quoted in the display currency must label itself with THIS, not `currency`.
+   */
+  displayCurrency: string;
   rate: number;
   /** Format USD cents in the selected currency. */
   fmtCents: (usdCents: number | null | undefined) => string;
@@ -54,22 +61,32 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     storage.set('agrotraders_currency', c).catch(() => {});
   }, []);
 
-  const rate = fx?.rates?.[currency] ?? 1;
+  /**
+   * What money is actually RENDERED in. Falling back to `rate = 1` while keeping
+   * the selected currency printed USD digits under a foreign symbol — a buyer
+   * with RUB selected saw "₽6,400" for a $6,400/MT lot until the rates query
+   * resolved, and forever if it failed. No rate means no conversion, so say USD.
+   * `fmtMinor` below already worked this way; the rest now agrees with it.
+   */
+  const { currency: displayCurrency, rate } = useMemo(() => {
+    const r = currency === 'USD' ? 1 : fx?.rates?.[currency];
+    return r && r > 0 ? { currency, rate: r } : { currency: 'USD', rate: 1 };
+  }, [currency, fx]);
 
   const fmtCents = useCallback(
-    (usdCents: number | null | undefined) => (usdCents == null ? '—' : formatMoney(usdCents, currency, fx?.rates?.[currency] ?? 1, lang)),
-    [currency, fx, lang],
+    (usdCents: number | null | undefined) => (usdCents == null ? '—' : formatMoney(usdCents, displayCurrency, rate, lang)),
+    [displayCurrency, rate, lang],
   );
 
   const fmtCompactCents = useCallback(
     (usdCents: number | null | undefined) => {
       if (usdCents == null) return '—';
-      const amount = convertCents(usdCents, fx?.rates?.[currency] ?? 1);
+      const amount = convertCents(usdCents, rate);
       // Hermes' bundled ICU on Android does NOT include compact decimal
       // patterns, so `Intl … notation:'compact'` silently throws — a straight
       // currency format would then overflow a KPI card ("₹3,620,400"). Compact
       // manually (K/M/B/T) with the currency symbol so it always fits.
-      const sym = SYMBOLS[currency] ?? `${currency} `;
+      const sym = SYMBOLS[displayCurrency] ?? `${displayCurrency} `;
       const abs = Math.abs(amount);
       const round1 = (n: number) => (Math.round(n * 10) / 10).toString().replace(/\.0$/, '');
       let body: string;
@@ -80,7 +97,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       else body = Math.round(amount).toLocaleString(lang ?? 'en');
       return sym + body;
     },
-    [currency, fx, lang],
+    [displayCurrency, rate, lang],
   );
 
   const fmtPrice = useCallback(
@@ -91,13 +108,13 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       // puts differently-formatted prices side by side in the same grid.
       const cents = p.priceCents ?? parsePriceCents(p.price);
       if (cents != null) {
-        return formatMoney(cents, currency, currency === 'USD' ? 1 : (fx?.rates?.[currency] ?? 1), lang);
+        return formatMoney(cents, displayCurrency, rate, lang);
       }
       // Unparseable prices ("POA", ranges) fall back to the stored text. The
       // unit is stripped because callers append `unitSuffix(unit)` themselves.
       return stripUnit(p.price);
     },
-    [currency, fx, lang],
+    [displayCurrency, rate, lang],
   );
 
   /**
@@ -120,8 +137,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ currency, setCurrency, rate, fmtCents, fmtCompactCents, fmtPrice, fmtMinor }),
-    [currency, setCurrency, rate, fmtCents, fmtCompactCents, fmtPrice, fmtMinor],
+    () => ({ currency, setCurrency, displayCurrency, rate, fmtCents, fmtCompactCents, fmtPrice, fmtMinor }),
+    [currency, setCurrency, displayCurrency, rate, fmtCents, fmtCompactCents, fmtPrice, fmtMinor],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

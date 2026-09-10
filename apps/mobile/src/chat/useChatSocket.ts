@@ -23,7 +23,9 @@ export function useChatSocket(
       setConnected(false);
       return;
     }
-    const s = createChatSocket({ baseURL: API_BASE, namespace, token });
+    // The GETTER, not the snapshot: this socket outlives the 15m access-token TTL,
+    // and socket.io replays whatever it was given on every reconnect.
+    const s = createChatSocket({ baseURL: API_BASE, namespace, token: getApiToken });
     ref.current = s;
     s.on('connect', () => setConnected(true));
     s.on('disconnect', () => setConnected(false));

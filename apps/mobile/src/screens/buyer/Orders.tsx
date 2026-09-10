@@ -5,7 +5,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { canCancel, canDispute, nextStatusFor, orderPayableCents, type ApiOrder, type ApiOrderStatus } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
-import { errMessage, orderLabel, orderTone } from '../../lib/format';
+import { errMessage, orderTone } from '../../lib/format';
+import { useOrderLabel } from '../../lib/useFormat';
 import { Badge, Button, Card, EmptyState, ErrorState, Row, Screen, SkeletonRows, Txt } from '../../ui';
 import { C } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthProvider';
@@ -17,6 +18,7 @@ import { OrderReviewButton } from '../components/ReviewSheet';
 
 export function BuyerOrders() {
   const { t } = useI18n();
+  const orderLabel = useOrderLabel();
   const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -72,7 +74,7 @@ export function BuyerOrders() {
           return (
             <Card key={o.id} style={{ gap: 12 }}>
               <Row style={{ justifyContent: 'space-between' }}>
-                <Row gap={10}>
+                <Row gap={10} style={{ flex: 1 }}>
                   <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' }}>
                     <Txt style={{ fontSize: 20 }}>{o.product?.emoji ?? '🌾'}</Txt>
                   </View>
@@ -90,7 +92,7 @@ export function BuyerOrders() {
 
               <OrderSteps status={o.status} />
 
-              <Row gap={8} style={{ justifyContent: 'flex-end' }}>
+              <Row gap={8} style={{ justifyContent: 'flex-end' }} wrap>
                 <Button
                   title={o.status === 'dispatched' || o.status === 'in_transit' ? t('buyerX.orders.detailsOtp') : t('buyerX.orders.details')}
                   size="sm"

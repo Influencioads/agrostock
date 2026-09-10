@@ -111,7 +111,7 @@ function Thread({ ticketId, socket, onBack, s }: { ticketId: string; socket: Soc
           {tk?.assignments?.[0]?.agent?.name ? ` · ${s.agent}: ${tk.assignments[0].agent.name}` : ` · ${s.unassigned}`}
         </Txt>
         {isAdmin && (
-          <Row gap={8} style={{ marginTop: 8 }}>
+          <Row gap={8} style={{ marginTop: 8 }} wrap>
             <Button title={s.assignToMe} size="sm" variant="outline" onPress={() => api.support.assign(ticketId).then(refetch)} />
             {!resolved && <Button title={s.resolve} size="sm" onPress={() => api.support.resolve(ticketId).then(refetch)} />}
           </Row>

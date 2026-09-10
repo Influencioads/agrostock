@@ -1,5 +1,26 @@
 import type { Ionicons } from '@expo/vector-icons';
-import { SERVICE_ROLES } from '@agrotraders/types';
+import { isServiceRole, SERVICE_ROLES } from '@agrotraders/types';
+
+/**
+ * Roles with a console of their own. A general labour company runs the same
+ * console as a loading company; they differ only in which worker types they
+ * may publish.
+ *
+ * The NAMES live here, apart from the components `RoleRouter` maps them to, so
+ * that plain callers (`Home`) can ask "is this the shop?" without importing the
+ * navigator — that import was a require cycle
+ * (RoleRouter -> tabs -> Home -> RoleRouter), which RN warns can leave values
+ * uninitialized. Same split as `categorySelection.ts` and
+ * `sectionRegistryKeys.ts`. `RoleRouter`'s map is typed off this list, so
+ * adding a console role without its tabs is a compile error, not drift.
+ */
+export const CONSOLE_ROLES = ['seller', 'transporter', 'loaderco', 'workerco', 'worker'] as const;
+export type ConsoleRole = (typeof CONSOLE_ROLES)[number];
+
+/** True when `role` lands on the shop tabs (Home / Offers / Browse / Orders / Account). */
+export function isShopRole(role: string | null): boolean {
+  return !(role && (CONSOLE_ROLES as readonly string[]).includes(role)) && !isServiceRole(role);
+}
 
 export interface MenuItem {
   /** Section registry key, and the key into `nav:section` for the visible label. */

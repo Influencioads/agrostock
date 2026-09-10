@@ -3370,15 +3370,26 @@ export type ApiClient = ReturnType<typeof createApiClient>;
 export function createChatSocket(opts: {
   baseURL: string;
   namespace: '/community' | '/support';
-  token: string | null | undefined;
+  /**
+   * Pass a GETTER wherever the access token rotates under a long-lived socket
+   * (mobile keeps one mounted across a 15m token TTL). A plain string is frozen
+   * at construction and socket.io replays it on every reconnect, so the first
+   * reconnect after expiry re-handshakes with a dead token and the gateway
+   * disconnects it — silently, for good. The callback form is re-invoked per
+   * connection attempt, so a rotated token is picked up automatically.
+   */
+  token: string | null | undefined | (() => string | null | undefined);
 }): Socket {
   const root = opts.baseURL.replace(/\/$/, '');
+  const read = typeof opts.token === 'function' ? opts.token : () => opts.token as string | null | undefined;
   return io(root + opts.namespace, {
-    auth: { token: opts.token ?? '' },
+    auth: (cb: (data: object) => void) => cb({ token: read() ?? '' }),
     transports: ['websocket'],
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: 10,
+    // No attempt cap (socket.io's own default): capping at 10 meant ~30s offline
+    // — a lift, a tunnel — permanently killed chat with no way back short of a
+    // remount, which is the same silent-death this getter exists to prevent.
     reconnectionDelay: 500,
   });
 }

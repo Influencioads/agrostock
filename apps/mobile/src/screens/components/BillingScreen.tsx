@@ -135,7 +135,7 @@ export function BillingScreen() {
         </Row>
 
         {current && current.status !== 'expired' && (
-          <Row gap={8} style={s.mt12}>
+          <Row gap={8} style={s.mt12} wrap>
             {current.cancelAtPeriodEnd ? (
               <Button title={t('billing.resume')} size="sm" variant="outline" onPress={() => resume.mutate()} />
             ) : (

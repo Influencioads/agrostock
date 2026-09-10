@@ -78,7 +78,9 @@ export function RfqBasket() {
           title: product.name,
           productName: product.name,
           qtyValue: line.qty,
-          qtyUnit: toUnit(product.unit),
+          // The quantity is the BUYER's, so the metric must be theirs too. Sending
+          // the listing's unit turned "15000 KG" into a 15000 MT requirement.
+          qtyUnit: line.unit ? toUnit(line.unit) : toUnit(product.unit),
           categoryId,
           notes: t('pubX.rfq.noteFromBasket', { supplier: group.name }),
         });

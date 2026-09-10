@@ -50,7 +50,7 @@ export function TransporterRoutes() {
                 </View>
                 {intl ? <Badge label={t('transX.routes.international')} tone="info" /> : null}
               </Row>
-              <Row gap={8}>
+              <Row gap={8} wrap>
                 <View style={{ flex: 1 }}><Button title={t('transX.actions.edit')} variant="outline" size="sm" full onPress={() => { setEditing(r); setOpen(true); }} /></View>
                 <View style={{ flex: 1 }}><Button title={t('transX.actions.remove')} variant="outline" size="sm" full loading={del.isPending} onPress={() => del.mutate(r.id)} /></View>
               </Row>

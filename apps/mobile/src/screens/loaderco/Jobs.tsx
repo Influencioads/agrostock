@@ -48,13 +48,13 @@ export function LoaderJobs() {
           <EmptyState icon="cube-outline" title={t('loaderX.jobs.emptyRequestsTitle')} body={t('loaderX.jobs.emptyRequestsBody')} />
         ) : open.map((j) => (
           <Card key={j.id}>
-            <Row style={{ justifyContent: 'space-between' }}>
+            <Row style={{ justifyContent: 'space-between' }} wrap>
               <View style={{ flex: 1 }}>
                 <Txt variant="title">{j.location}</Txt>
                 <Txt variant="muted">#{j.reference} · {t('loaderX.plurals.workers', { count: j.workersNeeded })}{j.payCents != null ? ` · ${fmtCents(j.payCents)}` : ''}</Txt>
                 {jobContext(j, t) ? <Txt variant="small" color={C.dark}>{jobContext(j, t)}</Txt> : null}
               </View>
-              <Row gap={8}>
+              <Row gap={8} wrap>
                 <Button title={t('loaderX.jobs.details')} size="sm" variant="outline" onPress={() => setManageId(j.id)} />
                 <Button title={t('loaderX.jobs.claim')} size="sm" loading={claim.isPending} onPress={() => claim.mutate(j.id)} />
               </Row>

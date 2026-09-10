@@ -66,7 +66,7 @@ function HireCard({ h, incoming, onAction }: { h: ApiHireRequest; incoming: bool
       {h.order?.product?.name ? <Txt variant="muted">{t('compX.hires.orderGoods', { name: h.order.product.name })}{h.order.amount ? ` · ${h.order.amount}` : ''}</Txt> : null}
       {h.message ? <Txt variant="muted">“{h.message}”</Txt> : null}
       {h.budgetCents != null ? <Txt variant="title" color={C.dark}>{t('compX.hires.budgetLabel')} ${(h.budgetCents / 100).toLocaleString()}</Txt> : null}
-      <Row gap={8}>
+      <Row gap={8} wrap>
         {other ? (
           <View style={{ flex: 1 }}>
             <Button title={t('compX.hires.message')} variant="outline" size="sm" icon="chatbubbles-outline" full onPress={() => nav.navigate('Community', { dmUserId: other.id, dmName: other.name })} />

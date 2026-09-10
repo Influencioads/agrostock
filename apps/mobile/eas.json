@@ -25,7 +25,10 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.agrotraders.org"
       },
-      "environment": "production"
+      "environment": "production",
+      "ios": {
+        "buildConfiguration": "Release"
+      }
     }
   }
 }

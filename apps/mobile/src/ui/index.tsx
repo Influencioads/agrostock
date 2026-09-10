@@ -104,6 +104,11 @@ export function Screen({
           style={{ flex: 1 }}
           contentContainerStyle={[{ paddingBottom: footer ? 16 : 32 }, pad]}
           showsVerticalScrollIndicator={false}
+          // Without this, RN's default swallows the first tap on any button while
+          // the keyboard is up (it goes to dismissing the keyboard instead) — on
+          // Sign up and Add Product the CTA sits right under the last field. Every
+          // other scroller in the app already sets it; `Screen` was the holdout.
+          keyboardShouldPersistTaps="handled"
         >
           {body}
         </ScrollView>
@@ -628,8 +633,32 @@ export function Loading({ label }: { label?: string }) {
 }
 
 /* ── Row helper ───────────────────────────────────────────────────── */
-export function Row({ children, gap = 8, style }: { children: ReactNode; gap?: number; style?: ViewStyle }) {
-  return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
+/**
+ * A row. `wrap` lets the children flow onto a second line instead of running off
+ * both screen edges — which is what a row of action buttons does as soon as the
+ * labels get long (Russian "Написать продавцу" / "Отменить заказ" overflowed the
+ * card on every order). `gap` is RN's shorthand for row+column gap, so wrapped
+ * lines are spaced without any extra style.
+ *
+ * Opt-in rather than the default: rows that pair a growing label with a fixed
+ * badge want the label to ELLIPSIZE, not to shove the badge onto its own line.
+ */
+export function Row({
+  children,
+  gap = 8,
+  wrap = false,
+  style,
+}: {
+  children: ReactNode;
+  gap?: number;
+  wrap?: boolean;
+  style?: ViewStyle;
+}) {
+  return (
+    <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, wrap && { flexWrap: 'wrap' }, style]}>
+      {children}
+    </View>
+  );
 }
 
 const s = StyleSheet.create({

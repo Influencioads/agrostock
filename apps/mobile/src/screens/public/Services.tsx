@@ -118,7 +118,7 @@ export function Services() {
                   : t('service.onEnquiry')}
               </Txt>
 
-              <Row gap={8}>
+              <Row gap={8} wrap>
                 <View style={{ flex: 1 }}>
                   {/* No auth check: HireModal shows its own sign-in prompt, which
                       keeps the chosen provider in view instead of bouncing away. */}

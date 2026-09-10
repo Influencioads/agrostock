@@ -102,7 +102,7 @@ function PostRequirement({ onDone }: { onDone: () => void }) {
       </Row>
       <Input label={t('pubX.req.fBudget')} placeholder={t('pubX.ph.reqBudget')} value={f.budget} onChangeText={set('budget')} />
       <CountryField label={t('pubX.req.fDeliverTo')} placeholder={t('pubX.ph.reqDeliverTo')} value={f.destinationCountry} onChange={set('destinationCountry')} />
-      <Row gap={8}>
+      <Row gap={8} wrap>
         <View style={{ flex: 1 }}><Button title={busy ? t('pubX.req.posting') : t('pubX.req.post')} icon="checkmark" loading={busy} full onPress={submit} /></View>
         <View style={{ flex: 1 }}><Button title={t('pubX.req.cancel')} variant="outline" full onPress={onDone} /></View>
       </Row>
