@@ -58,10 +58,15 @@ module.exports = ({ config }) => {
     ios: {
       ...config.ios,
       googleServicesFile: process.env.GOOGLE_SERVICES_INFO_PLIST ?? './GoogleService-Info.plist',
-      config: {
-        ...config.ios?.config,
-        ...(mapsApiKey ? { googleMapsApiKey: mapsApiKey } : {}),
-      },
+      // NOTE: deliberately no `googleMapsApiKey` here — iOS ships WITHOUT maps.
+      // Setting this key is what makes prebuild add the `react-native-google-maps`
+      // pod (AirGoogleMaps), which cannot coexist with Firebase under
+      // `use_frameworks! :static`: it fails with "declaration of 'RCTViewManager'
+      // must be imported from module 'react_native_maps.AIRMapCalloutManager'".
+      // react-native-maps is excluded from iOS autolinking in react-native.config.js
+      // and TrackingMap.ios.tsx renders nothing; see those two files and
+      // plugins/with-ios-nonmodular-headers.js. Android keeps Google Maps below.
+      config: { ...config.ios?.config },
     },
     plugins: [
       // First in the array = last mod to run (Expo chains manifest mods in

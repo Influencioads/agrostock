@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -10,7 +10,12 @@ const appConfig = require(join(ROOT, 'app.config.js')) as (input: {
 
 function cleartextFlag(env: Record<string, string | undefined>): boolean {
   const saved = { ...process.env };
-  Object.assign(process.env, { EAS_BUILD_PROFILE: undefined, ALLOW_CLEARTEXT_HTTP: undefined, ...env });
+  // `process.env.X = undefined` stores the STRING "undefined" — it does not unset the
+  // variable — so the default-deny case has to delete first to exercise a genuinely
+  // absent env var rather than a truthy "undefined" string.
+  delete process.env.EAS_BUILD_PROFILE;
+  delete process.env.ALLOW_CLEARTEXT_HTTP;
+  Object.assign(process.env, env);
   try {
     const result = appConfig({ config: { plugins: [] } });
     const buildProps = result.plugins.find(
@@ -43,7 +48,14 @@ describe('Android cleartext policy (F42)', () => {
     expect(cleartextFlag({ EAS_BUILD_PROFILE: 'preview', ALLOW_CLEARTEXT_HTTP: '1' })).toBe(true);
   });
 
-  it('the committed main manifest denies cleartext (debug overlay re-enables it)', () => {
+  // android/ is gitignored and produced by `expo prebuild`, so these two assertions can
+  // only run where a prebuild has happened. On a fresh CI checkout the directory does not
+  // exist and readFileSync would throw ENOENT, failing the suite for the wrong reason.
+  // The committed contract is app.config.js, covered by the three cases above; this case
+  // additionally checks that the contract survives into generated output when it is there.
+  const prebuilt = existsSync(join(ROOT, 'android/app/src/main/AndroidManifest.xml'));
+
+  it.skipIf(!prebuilt)('the generated main manifest denies cleartext (debug overlay re-enables it)', () => {
     const main = readFileSync(join(ROOT, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
     expect(main).toContain('android:usesCleartextTraffic="false"');
     const debug = readFileSync(join(ROOT, 'android/app/src/debug/AndroidManifest.xml'), 'utf8');
