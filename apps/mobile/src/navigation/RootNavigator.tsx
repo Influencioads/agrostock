@@ -96,7 +96,13 @@ export function RootNavigator() {
       <Stack.Screen
         name="Section"
         component={SectionScreen}
-        options={({ route }) => ({ title: route.params.title || t(`nav:section.${route.params.section}`) })}
+        options={({ route }) => ({
+          // A deep link can name any section, including one with no catalog entry
+          // (`console/seller/inventory` is a TAB, not a registry section) — and
+          // i18next returns the KEY on a miss, so the header read
+          // "section.inventory". Fall back to the id itself.
+          title: route.params.title || t(`nav:section.${route.params.section}`, { defaultValue: route.params.section }),
+        })}
       />
     </Stack.Navigator>
   );
