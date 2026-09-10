@@ -5,34 +5,49 @@ const path = require('path');
 /**
  * Makes @react-native-firebase and react-native-maps coexist on iOS.
  *
- * RNFB needs the Firebase pods linked statically. The obvious way to get that is
- * `use_frameworks! :linkage => :static` (what `expo-build-properties`'
- * `ios.useFrameworks` sets), but that is also what breaks react-native-maps:
- * under it, maps compiles as a Clang module and its non-modular RCTViewManager
- * import is rejected outright —
+ * The two pull in opposite directions and both constraints are real:
  *
- *   declaration of 'RCTViewManager' must be imported from module
- *   'react_native_maps.AIRMapCalloutManager' before it is required
+ *  - Firebase's Swift dependencies CANNOT be built as static libraries. Without
+ *    `use_frameworks! :linkage => :static` (set by `ios.useFrameworks` in
+ *    app.config.js) `pod install` fails outright with "The following Swift pods
+ *    cannot yet be integrated as static libraries". So use_frameworks stays.
  *
- * and disabling modules for that one pod only trades it for "use of '@import'
- * when modules are disabled", because maps uses @import itself. Both are
- * symptoms of use_frameworks.
+ *  - react-native-maps cannot be built as a framework. Under use_frameworks it
+ *    compiles as a Clang module and its own non-modular React import is rejected:
+ *    "declaration of 'RCTViewManager' must be imported from module
+ *    'react_native_maps.AIRMapCalloutManager' before it is required". Turning
+ *    modules off for that pod only trades it for "use of '@import' when modules
+ *    are disabled", because maps uses @import itself.
  *
- * `$RNFirebaseAsStaticFramework` is RNFB's supported alternative (RNFBApp.podspec
- * :66-68 in the pinned app@25.1.0): the Firebase pods mark themselves
- * `static_framework`, so the project needs no use_frameworks at all and maps
- * builds normally. `useFrameworks` is correspondingly dropped from app.config.js.
+ * `use_frameworks!` is project-wide, but CocoaPods lets an individual pod opt out
+ * by overriding its `build_type` in `pre_install`. That is what the hook below
+ * does: everything keeps frameworks (Firebase is happy), and only the map pods
+ * fall back to static libraries (maps is happy).
  *
- * The post_install setting stays as cheap insurance for any pod that still mixes
- * modular and non-modular React headers; it was what cleared the original RNFB
- * failure (build 92182d0a) and costs nothing now.
+ * The post_install setting is separate and still earns its place: it is what
+ * cleared the ORIGINAL failure on this project (build 92182d0a), where RNFB's
+ * own ObjC sources import React-Core headers non-modularly.
  */
-const MARKER = 'AgroTraders: allow non-modular includes';
+const MARKER = 'AgroTraders: iOS pod build settings';
 
-const FIREBASE_GLOBAL = '$RNFirebaseAsStaticFramework = true\n';
+/** Pods that must stay static libraries even though the project uses frameworks. */
+const STATIC_LIBRARY_PODS = ['react-native-maps', 'react-native-google-maps'];
 
-const SNIPPET = `
-    # ${MARKER} — see plugins/with-ios-nonmodular-headers.js
+const PRE_INSTALL = `
+# ${MARKER} — see plugins/with-ios-nonmodular-headers.js
+pre_install do |installer|
+  installer.pod_targets.each do |pod|
+    if ${JSON.stringify(STATIC_LIBRARY_PODS)}.include?(pod.name)
+      def pod.build_type
+        Pod::BuildType.static_library
+      end
+    end
+  end
+end
+`;
+
+const POST_INSTALL_SNIPPET = `
+    # ${MARKER}
     installer.pods_project.targets.each do |pod_target|
       pod_target.build_configurations.each do |pod_config|
         pod_config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
@@ -53,12 +68,13 @@ module.exports = (config) =>
       if (!hookPattern.test(src)) {
         throw new Error(
           '[with-ios-nonmodular-headers] No `post_install do |installer|` block in the generated Podfile — ' +
-            'the Expo template changed. Update this plugin instead of letting the build fail on RNFB headers.',
+            'the Expo template changed. Update this plugin instead of letting the build fail on pod integration.',
         );
       }
 
-      const withGlobal = src.includes('RNFirebaseAsStaticFramework') ? src : FIREBASE_GLOBAL + src;
-      fs.writeFileSync(podfile, withGlobal.replace(hookPattern, (m) => m + SNIPPET), 'utf8');
+      // pre_install must be top level, not nested inside the target block.
+      const next = PRE_INSTALL + src.replace(hookPattern, (m) => m + POST_INSTALL_SNIPPET);
+      fs.writeFileSync(podfile, next, 'utf8');
       return cfg;
     },
   ]);

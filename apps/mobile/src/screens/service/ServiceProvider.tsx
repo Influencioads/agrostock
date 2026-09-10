@@ -250,6 +250,10 @@ export function ServiceProfile() {
           <Txt variant="title" style={{ flex: 1 }}>{profile?.listed ? t('service.listed') : t('service.notListed')}</Txt>
         </Row>
         <Txt variant="muted">{profile?.listed ? t('service.listedHint') : t('service.notListedHint')}</Txt>
+        {/* The API rejects listing a profile with no categories saved. Without
+            this the toggle just bounced back with nothing said — same render
+            the save button below already does for its own mutation. */}
+        {toggleListed.error ? <Txt style={{ color: C.error }}>{errText(toggleListed.error, t('service.saveError'))}</Txt> : null}
         <Button
           title={profile?.listed ? t('service.notListed') : t('service.listed')}
           variant={profile?.listed ? 'outline' : 'primary'}
