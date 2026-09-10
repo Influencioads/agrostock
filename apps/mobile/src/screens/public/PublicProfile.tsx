@@ -8,7 +8,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { useCurrency } from '../../currency/CurrencyContext';
-import { Badge, Button, Card, Loading, Row, Txt } from '../../ui';
+import { Badge, Button, Card, Loading, Row, Txt, QueryError } from '../../ui';
 import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from '../components/HireModal';
 import { rateLabel } from '../components/LabourOfferings';
@@ -28,7 +28,7 @@ export function PublicProfile() {
   const { fmtPrice, fmtCents } = useCurrency();
   const [hire, setHire] = useState<HireTarget | null>(null);
 
-  const { data: p, isLoading } = useQuery({
+  const { data: p, isLoading, isError, refetch } = useQuery({
     queryKey: ['public-profile', params.userId],
     queryFn: () => api.directory.profile(params.userId),
   });
@@ -62,6 +62,9 @@ export function PublicProfile() {
     retry: false,
   });
 
+  // `retry: false` above means a failed fetch never resolves `p`, so the old
+  // `isLoading || !p` spinner sat there forever with no way to retry.
+  if (isError && !p) return <View style={{ flex: 1, backgroundColor: C.bg }}><QueryError onRetry={() => refetch()} /></View>;
   if (isLoading || !p) return <View style={{ flex: 1, backgroundColor: C.bg }}><Loading label={t('compX.profile.loading')} /></View>;
 
   const roles = Array.from(new Set(profileRoles));

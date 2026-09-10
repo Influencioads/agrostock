@@ -76,9 +76,12 @@ module.exports = ({ config }) => {
         'expo-build-properties',
         {
           android: { usesCleartextTraffic: allowCleartext },
-          // @react-native-firebase requires the iOS Firebase SDK to be linked as
-          // static frameworks, otherwise the CocoaPods install fails.
-          ios: { useFrameworks: 'static' },
+          // NO `ios.useFrameworks` here on purpose. RNFB does need the Firebase
+          // pods linked statically, but use_frameworks is project-wide and makes
+          // react-native-maps compile as a module, which Clang then refuses. The
+          // `$RNFirebaseAsStaticFramework` global in
+          // plugins/with-ios-nonmodular-headers.js gives Firebase what it needs
+          // without imposing frameworks on every other pod.
         },
       ],
     ],

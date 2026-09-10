@@ -7,6 +7,7 @@ import { api, assetUrl } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Button, Card, EmptyState, Row, Screen, SkeletonRows, Txt, QueryError } from '../../ui';
 import { stockLabel } from '../components';
 import { C } from '../../theme/tokens';
@@ -17,6 +18,7 @@ type SellerProduct = ApiProduct & { _count?: { orders: number } };
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export function SellerInventory() {
+  const { fmtPrice } = useCurrency();
   const { t } = useI18n();
   const nav = useNavigation<Nav>();
   const qc = useQueryClient();
@@ -64,9 +66,13 @@ export function SellerInventory() {
                   <Txt variant="muted">{p.flag} {stockLabel(p, t)} · {t('sellerX.inventory.orders', { count: p._count?.orders ?? 0 })}</Txt>
                 </View>
               </Row>
-              <Txt variant="title">{p.price}{unitSuffix(p.unit, t)}</Txt>
+              <Txt variant="title">{fmtPrice(p)}{unitSuffix(p.unit, t)}</Txt>
             </Row>
             <Row gap={6} wrap>
+              {/* A new listing is not public until an admin approves it; without
+                  this the seller sees it looking live and wonders why nobody
+                  finds it. Same badge web's seller list shows. */}
+              {p.approved === false ? <Badge label={t('sellerX.ads.pendingReview')} tone="warn" /> : null}
               {p.isOffer ? <Badge label={t('sellerX.inventory.offer')} tone="mango" /> : null}
               {p.isAuction ? <Badge label={t('sellerX.inventory.auction')} tone="info" /> : null}
               <View style={{ flex: 1 }} />
