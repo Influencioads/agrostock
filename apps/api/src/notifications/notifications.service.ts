@@ -199,7 +199,14 @@ export class NotificationsService {
     return { ok: true as const, category };
   }
 
-  /** Shallow-merge an incoming prefs patch into the stored JSON. */
+  /**
+   * Merge an incoming prefs patch into the stored JSON, PER CATEGORY.
+   *
+   * Clients send one switch at a time (`{ categories: { orders: { push: false } } }`),
+   * so a one-level spread replaced the whole `orders` object and silently reset
+   * that category's other two channels to their defaults — turning email or
+   * in-app notifications back on for someone who had deliberately turned them off.
+   */
   async updatePreferences(userId: string, patch: NotificationPrefs) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -208,7 +215,12 @@ export class NotificationsService {
     const current = (user?.notificationPrefs ?? {}) as NotificationPrefs;
     const merged: NotificationPrefs = {
       emailUnsubscribedAll: patch.emailUnsubscribedAll ?? current.emailUnsubscribedAll,
-      categories: { ...(current.categories ?? {}), ...(patch.categories ?? {}) },
+      categories: Object.fromEntries(
+        Object.entries({ ...(current.categories ?? {}), ...(patch.categories ?? {}) }).map(([key, value]) => [
+          key,
+          { ...(current.categories?.[key as keyof NotificationPrefs['categories']] ?? {}), ...value },
+        ]),
+      ) as NotificationPrefs['categories'],
     };
     await this.prisma.user.update({
       where: { id: userId },
