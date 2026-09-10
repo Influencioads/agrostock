@@ -7,7 +7,7 @@ import { api, assetUrl } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Button, Card, Row, SkeletonRows, Txt } from '../../ui';
-import { C, radius, space } from '../../theme/tokens';
+import { C, radius, space, type } from '../../theme/tokens';
 import { BuyerBidPanel } from '../components/BuyerBidPanel';
 import { useI18n } from '../../i18n';
 
@@ -30,9 +30,12 @@ function ago(iso: string) {
 
 function TimeBox({ value, label, danger }: { value: string; label: string; danger?: boolean }) {
   return (
-    <View style={{ width: 74, alignItems: 'center', borderRadius: radius.md, paddingVertical: 8, backgroundColor: danger ? C.error : 'rgba(255,255,255,0.10)' }}>
-      <Txt style={{ fontSize: 30, fontWeight: '800', color: C.white }}>{value}</Txt>
-      <Txt style={{ fontSize: 9, letterSpacing: 1, color: danger ? '#f3d3ce' : C.leaf, marginTop: 4 }}>{label}</Txt>
+    // Shares the row rather than claiming a fixed 74px, so a three-digit hour
+    // and a long label ("СЕКУНДЫ") both fit. Figures use the numeric face —
+    // never `fontWeight`, which Android fakes by widening the body font.
+    <View style={{ flex: 1, alignItems: 'center', borderRadius: radius.md, paddingVertical: 8, paddingHorizontal: 4, backgroundColor: danger ? C.error : 'rgba(255,255,255,0.10)' }}>
+      <Txt numberOfLines={1} style={{ ...type.numeric, fontSize: 30, lineHeight: 36, color: C.white }}>{value}</Txt>
+      <Txt numberOfLines={1} style={{ fontSize: 9, letterSpacing: 1, color: danger ? '#f3d3ce' : C.leaf, marginTop: 4 }}>{label}</Txt>
     </View>
   );
 }
@@ -101,15 +104,15 @@ export function BuyerBidRoom({ id }: { id: string }) {
         <View style={{ backgroundColor: C.evergreen, borderRadius: radius.xl, padding: space.lg, alignItems: 'center', gap: 12 }}>
           <Row style={{ alignSelf: 'stretch', justifyContent: 'space-between' }}>
             <Badge label={isAuction ? t('buyerX.room.reverseAuction') : t('buyerX.room.quotes')} tone={isAuction ? 'error' : 'slate'} />
-            <Txt style={{ color: C.leaf, fontSize: 11 }}>#{bid.reference}</Txt>
+            <Txt numberOfLines={1} style={{ color: C.leaf, fontSize: 11, flexShrink: 1 }}>#{bid.reference}</Txt>
           </Row>
           <Txt style={{ fontSize: 10, letterSpacing: 1.4, color: C.leaf }}>
             {timer.ended ? t('buyerX.room.ended') : isAuction ? t('auction.closesIn') : t('buyerX.room.deadlineIn')}
           </Txt>
-          <Row style={{ gap: 8 }}>
+          <Row style={{ gap: 8, alignSelf: 'stretch' }}>
             <TimeBox value={timer.h} label={t('auction.hours')} />
             <TimeBox value={timer.m} label={t('auction.minutes')} />
-            <TimeBox value={timer.s} label={t('auction.seconds')} danger />
+            <TimeBox value={timer.s} label={t('auction.seconds')} danger={!timer.ended} />
           </Row>
         </View>
 

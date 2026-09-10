@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,20 +16,30 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function SignIn() {
   const { t } = useI18n();
   const nav = useNavigation<Nav>();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState('');
 
+  /**
+   * One exit for every way a session can appear: this form, or Sign-up and the
+   * OTP screen, both of which only `goBack()` — which used to land an already
+   * signed-in user back on this login form. Every caller navigates here behind
+   * a `!user` check, so a session existing means we are done.
+   */
+  useEffect(() => {
+    if (!user) return;
+    if (nav.canGoBack()) nav.goBack();
+    else nav.navigate('App');
+  }, [user, nav]);
+
   async function run(fn: () => Promise<unknown>, tag: string) {
     setErr('');
     setBusy(tag);
     try {
       await fn();
-      if (nav.canGoBack()) nav.goBack();
-      else nav.navigate('App');
     } catch (e) {
       // Admins are blocked on mobile (see AuthProvider.login) — show that message.
       setErr(e instanceof Error && e.message.includes('admin.agrotraders.org') ? e.message : t('auth.signIn.invalid'));

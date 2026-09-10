@@ -6,7 +6,7 @@ import { toUnit } from '@agrotraders/types';
 import { api, assetUrl } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Card, Row, Txt } from '../../ui';
-import { C, radius, space } from '../../theme/tokens';
+import { C, font, radius, space, type } from '../../theme/tokens';
 import { BidPanel } from '../components/BidPanel';
 import { useI18n } from '../../i18n';
 
@@ -29,9 +29,13 @@ function ago(iso: string) {
 
 function TimeBox({ value, label, danger }: { value: string; label: string; danger?: boolean }) {
   return (
-    <View style={{ width: 74, alignItems: 'center', borderRadius: radius.md, paddingVertical: 8, backgroundColor: danger ? C.error : 'rgba(255,255,255,0.10)' }}>
-      <Txt style={{ fontSize: 30, fontWeight: '800', color: C.white }}>{value}</Txt>
-      <Txt style={{ fontSize: 9, letterSpacing: 1, color: danger ? '#f3d3ce' : C.leaf, marginTop: 4 }}>{label}</Txt>
+    // Shares the row rather than claiming a fixed 74px: a three-digit hour
+    // ("168" on a week-long lot) and a long label ("СЕКУНДЫ") both have to fit,
+    // and the figures use the numeric face — never `fontWeight`, which Android
+    // fakes by widening the body font.
+    <View style={{ flex: 1, alignItems: 'center', borderRadius: radius.md, paddingVertical: 8, paddingHorizontal: 4, backgroundColor: danger ? C.error : 'rgba(255,255,255,0.10)' }}>
+      <Txt numberOfLines={1} style={{ ...type.numeric, fontSize: 30, lineHeight: 36, color: C.white }}>{value}</Txt>
+      <Txt numberOfLines={1} style={{ fontSize: 9, letterSpacing: 1, color: danger ? '#f3d3ce' : C.leaf, marginTop: 4 }}>{label}</Txt>
     </View>
   );
 }
@@ -55,14 +59,17 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
         {/* countdown header */}
         <View style={{ backgroundColor: C.evergreen, borderRadius: radius.xl, padding: space.lg, alignItems: 'center', gap: 12 }}>
           <Row style={{ alignSelf: 'stretch', justifyContent: 'space-between' }}>
-            <Badge label={t('compX.bid.live')} tone="error" />
-            <Txt style={{ color: C.leaf, fontSize: 11 }}>#{slug.slice(0, 8).toUpperCase()}</Txt>
+            <Badge label={timer.ended ? t('compX.bid.ended') : t('compX.bid.live')} tone={timer.ended ? 'slate' : 'error'} />
+            <Txt numberOfLines={1} style={{ color: C.leaf, fontSize: 11, flexShrink: 1 }}>#{slug.slice(0, 8).toUpperCase()}</Txt>
           </Row>
-          <Txt style={{ fontSize: 10, letterSpacing: 1.4, color: C.leaf }}>{t('auction.closesIn')}</Txt>
-          <Row style={{ gap: 8 }}>
+          <Txt numberOfLines={1} style={{ fontSize: 10, letterSpacing: 1.4, color: C.leaf }}>
+            {timer.ended ? t('compX.bid.ended') : t('auction.closesIn')}
+          </Txt>
+          {/* Stretched so the three boxes divide the card evenly at any width. */}
+          <Row style={{ gap: 8, alignSelf: 'stretch' }}>
             <TimeBox value={timer.h} label={t('auction.hours')} />
             <TimeBox value={timer.m} label={t('auction.minutes')} />
-            <TimeBox value={timer.s} label={t('auction.seconds')} danger />
+            <TimeBox value={timer.s} label={t('auction.seconds')} danger={!timer.ended} />
           </Row>
         </View>
 
@@ -90,8 +97,8 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
         {/* masked bid history — above the bid panel */}
         <Card style={{ gap: 10 }}>
           <Row style={{ justifyContent: 'space-between' }}>
-            <Txt variant="h3">{t('auction.bidHistory')}</Txt>
-            {!timer.ended ? <Txt variant="small" color={C.error} style={{ fontWeight: '700' }}>{t('auction.liveBids', { count: auction?.bidCount ?? 0 })}</Txt> : null}
+            <Txt variant="h3" numberOfLines={1} style={{ flexShrink: 1 }}>{t('auction.bidHistory')}</Txt>
+            {!timer.ended ? <Txt variant="small" color={C.error} style={{ fontFamily: font.bodyBold }}>{t('auction.liveBids', { count: auction?.bidCount ?? 0 })}</Txt> : null}
           </Row>
           <Txt variant="muted">{t('auction.maskedNote')}</Txt>
           {bids.length === 0 ? (
@@ -103,10 +110,10 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
             >
               <Txt style={{ fontSize: 15 }}>{b.flag}</Txt>
               <View style={{ flex: 1 }}>
-                <Txt style={{ fontSize: 12, fontWeight: '600' }}>{b.masked}{b.auto ? ` · ${t('auction.auto')}` : ''}</Txt>
+                <Txt numberOfLines={1} style={{ ...type.title, fontSize: 12 }}>{b.masked}{b.auto ? ` · ${t('auction.auto')}` : ''}</Txt>
                 <Txt style={{ fontSize: 10, color: C.inkSoft }}>{ago(b.createdAt)}</Txt>
               </View>
-              <Txt style={{ fontSize: 13, fontWeight: '700', color: b.isTop ? C.success : C.ink }}>{fmtCents(b.amountCents)}</Txt>
+              <Txt numberOfLines={1} style={{ ...type.numeric, fontSize: 13, color: b.isTop ? C.success : C.ink }}>{fmtCents(b.amountCents)}</Txt>
             </Row>
           ))}
         </Card>

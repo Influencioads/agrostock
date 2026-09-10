@@ -20,6 +20,7 @@ import {
   type Filters,
 } from '../components/filterState';
 import { useI18n } from '../../i18n';
+import { useBasketAction } from '../../basket/useBasketAction';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -43,6 +44,7 @@ export function Browse() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [filterSheet, setFilterSheet] = useState(false);
   const [sortSheet, setSortSheet] = useState(false);
+  const basketAction = useBasketAction();
 
   const query = useMemo(() => toQuery(filters, search, sort), [filters, search, sort]);
 
@@ -121,7 +123,7 @@ export function Browse() {
   // too would leave an empty band above the header.
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={[]}>
-      <AppBar title={t('pubX.browse.title')}>
+      <AppBar title={t('pubX.browse.title')} actions={[basketAction]}>
         <View style={{ paddingHorizontal: space.lg }}>
           <SearchBar value={search} onChangeText={setSearch} placeholder={t('pubX.browse.searchPlaceholder')} />
         </View>

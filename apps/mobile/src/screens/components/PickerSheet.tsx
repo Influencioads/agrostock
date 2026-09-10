@@ -100,7 +100,22 @@ export function PickerSheet({
         keyExtractor={(o) => o.value}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          loading ? null : (
+          loading ? null : onSearch && q.trim() ? (
+            // A remote list can be legitimately empty — dozens of countries ship
+            // no city file at all — and checkout requires a delivery city, so an
+            // empty sheet used to be a dead end. Let the typed name stand, the
+            // way the web combobox does.
+            <Pressable
+              onPress={() => {
+                onSelect(q.trim());
+                close();
+              }}
+              style={s.row}
+            >
+              <Text style={s.rowLabel} numberOfLines={1}>{q.trim()}</Text>
+              <Ionicons name="add" size={18} color={C.green} />
+            </Pressable>
+          ) : (
             <Txt variant="small" color={C.inkMuted} style={{ padding: space.lg }}>
               {emptyLabel ?? '—'}
             </Txt>

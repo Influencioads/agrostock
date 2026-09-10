@@ -29,25 +29,27 @@ export function Skeleton({ width, height, radius: r = radius.card, style }: {
   );
 }
 
-/** Placeholder matching a `ProductCard`: 4:5 image, then three text lines. */
+/** Placeholder matching a `ProductCard`: 10:11 image, then name, price and a meta line. */
 export function SkeletonCard({ width }: { width?: number }) {
   return (
     <View style={{ width: width ?? '100%', gap: 8 }}>
-      <Skeleton height={width ? width * 1.25 : 210} radius={radius.card} />
-      <Skeleton height={9} width="45%" />
-      <Skeleton height={12} width="85%" />
-      <Skeleton height={13} width="55%" />
+      <Skeleton height={width ? width * 1.1 : 180} radius={radius.card} />
+      <Skeleton height={13} width="85%" />
+      <Skeleton height={14} width="55%" />
+      <Skeleton height={10} width="45%" />
     </View>
   );
 }
 
-/** A 2-column grid of card placeholders, matching the PLP layout. */
+/** A 2-column grid of card placeholders, on the same rows/gap as `ProductGrid`. */
 export function SkeletonGrid({ count = 6 }: { count?: number }) {
+  const rows = Array.from({ length: Math.ceil(count / 2) }, (_, i) => i);
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-      {Array.from({ length: count }, (_, i) => (
-        <View key={i} style={{ width: '48%' }}>
-          <SkeletonCard />
+    <View style={{ gap: space.md }}>
+      {rows.map((r) => (
+        <View key={r} style={{ flexDirection: 'row', gap: space.md }}>
+          <View style={{ flex: 1 }}><SkeletonCard /></View>
+          <View style={{ flex: 1 }}>{r * 2 + 1 < count ? <SkeletonCard /> : null}</View>
         </View>
       ))}
     </View>

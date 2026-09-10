@@ -35,6 +35,7 @@ export { Sheet } from './Sheet';
 export { FilterBar } from './FilterBar';
 export { Carousel } from './Carousel';
 export { Tile } from './Tile';
+export { ProduceMark } from './Illustration';
 
 /* ── Text ─────────────────────────────────────────────────────────── */
 type TxtVariant =
@@ -45,8 +46,13 @@ export function Txt({
 }: { children: ReactNode; variant?: TxtVariant; color?: string; style?: object; numberOfLines?: number }) {
   // The caps treatment is locale-dependent, so it can't live in the StyleSheet.
   const casing = variant === 'micro' ? microLabel() : null;
+  // A caller that overrides `fontSize` without a `lineHeight` of its own kept
+  // the variant's: a 30px countdown digit or price drawn inside `body`'s 20px
+  // line box, clipped top and bottom. Drop it and let the platform measure.
+  const over = StyleSheet.flatten(style) as TextStyle | undefined;
+  const line = over?.fontSize != null && over.lineHeight == null ? { lineHeight: undefined } : null;
   return (
-    <Text numberOfLines={numberOfLines} style={[txt[variant], casing, color ? { color } : null, style]}>
+    <Text numberOfLines={numberOfLines} style={[txt[variant], casing, color ? { color } : null, style, line]}>
       {children}
     </Text>
   );
@@ -491,9 +497,9 @@ export function RatingStars({ n, size = 13, onChange }: { n: number; size?: numb
 export function RatingPill({ avg, count }: { avg: number; count: number }) {
   return (
     <View style={s.ratingPill}>
-      <Text style={{ ...type.micro, color: C.ink, fontSize: 10.5 }}>{avg.toFixed(1)}</Text>
-      <Ionicons name="star" size={9} color={C.mangoDeep} />
-      <Text style={{ ...type.caption, fontSize: 10, color: C.inkMuted }}>| {count}</Text>
+      <Text style={{ ...type.title, fontSize: 12, lineHeight: 15, color: C.ink }}>{avg.toFixed(1)}</Text>
+      <Ionicons name="star" size={10} color={C.mangoDeep} />
+      <Text style={{ ...type.caption, color: C.inkSoft }}>| {count}</Text>
     </View>
   );
 }

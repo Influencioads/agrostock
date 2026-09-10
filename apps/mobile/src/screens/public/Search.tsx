@@ -96,7 +96,7 @@ export function Search() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-      {/* Header — circular back + a rounded search field with a voice affordance. */}
+      {/* Header — circular back + a rounded search field. */}
       <View style={s.header}>
         <Pressable onPress={() => nav.goBack()} hitSlop={8} style={s.backBtn}>
           <Ionicons name="arrow-back" size={20} color={C.ink} />
@@ -115,9 +115,7 @@ export function Search() {
           />
           {q ? (
             <Pressable onPress={() => setQ('')} hitSlop={8}><Ionicons name="close-circle" size={18} color={C.inkMuted} /></Pressable>
-          ) : (
-            <Ionicons name="mic-outline" size={19} color={C.green} />
-          )}
+          ) : null}
         </View>
       </View>
 

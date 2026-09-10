@@ -1587,14 +1587,12 @@
       "title": "Filters"
     },
     "home": {
+      "allCategories": "All categories",
       "cantFindBody": "Post an RFQ and get sealed quotes in hours.",
       "cantFindTitle": "Can't find your commodity?",
-      "catAll": "All",
       "categories": "Shop by category",
-      "communityA11y": "AgroTraders Community",
-      "dealOfDay": "Deal of the day",
       "deliverTo": "Deliver to",
-      "deliverToUnset": "Set your country",
+      "deliverToUnset": "Choose a city",
       "featured": "Featured",
       "freshArrivals": "Fresh arrivals",
       "heroCta": "Explore lots",

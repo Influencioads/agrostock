@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, countryLabel, type ApiProduct, type ApiReviewSummary } from '@agrotraders/api-client';
-import { comparableUnits, convertQty, parseQtyIn, toUnit, unitSuffix } from '@agrotraders/types';
+import { comparableUnits, convertQty, minOrderQty, stockDisplay, toUnit, unitSuffix } from '@agrotraders/types';
 import { api, assetUrl } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
-import { Accordion, Avatar, Badge, Button, Divider, ErrorState, KeyValue, Loading, ProgressBar, RatingStars, Row, SectionHeader, SkeletonRows, Txt } from '../../ui';
-import { C, font, radius, space, type } from '../../theme/tokens';
+import { Accordion, Avatar, Badge, Button, Divider, ErrorState, KeyValue, Loading, ProduceMark, ProgressBar, RatingStars, Row, SectionHeader, SkeletonRows, Txt } from '../../ui';
+import { C, elevation, font, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { AuctionRoom } from './AuctionRoom';
 import { ProductCard, stockLabel } from '../components';
@@ -23,7 +23,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, 'ProductDetail'>;
 
 /** Full-bleed swipeable gallery with dot indicators. */
-function Gallery({ photos, emoji }: { photos: string[]; emoji: string | null | undefined }) {
+function Gallery({ photos }: { photos: string[] }) {
   const width = Dimensions.get('window').width;
   const [index, setIndex] = useState(0);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -34,7 +34,7 @@ function Gallery({ photos, emoji }: { photos: string[]; emoji: string | null | u
   if (photos.length === 0) {
     return (
       <View style={[s.slide, { width, height: width * 0.9 }]}>
-        <Text style={{ fontSize: 96 }}>{emoji ?? '🌾'}</Text>
+        <ProduceMark size={120} />
       </View>
     );
   }
@@ -71,7 +71,7 @@ function Gallery({ photos, emoji }: { photos: string[]; emoji: string | null | u
 export function ProductDetail() {
   const nav = useNavigation<Nav>();
   const { params } = useRoute<R>();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { fmtPrice } = useCurrency();
   const { t, lang } = useI18n();
   const basket = useBasket();
@@ -109,11 +109,9 @@ export function ProductDetail() {
   const buyerUnit = qtyUnit ? toUnit(qtyUnit) : listingUnit;
   // The listing's minimum order, in the metric the buyer is counting in. The API
   // rejects anything under it, so the stepper never offers a quantity that
-  // cannot be ordered — this used to be printed beside the price and nowhere else.
-  const minQty = Math.max(
-    Math.round((convertQty(parseQtyIn(p?.moq, listingUnit) ?? 0, listingUnit, buyerUnit) ?? 0) * 1000) / 1000,
-    1,
-  );
+  // cannot be ordered. The shared helper, not a local floor of 1: checkout and
+  // web both use it, and a 0.5 MT MOQ must read the same on all three.
+  const minQty = minOrderQty(p?.moq, listingUnit, buyerUnit);
   useEffect(() => setQty((q) => Math.max(q, minQty)), [minQty]);
 
   // F28: a failed load shows a retryable error instead of a spinner that never
@@ -139,6 +137,15 @@ export function ProductDetail() {
     nav.navigate('Checkout', { intent: 'buy' });
   };
   const sellerId = p.seller?.id;
+  // Nobody is offered a Buy they cannot complete: `POST /orders` is buyer-only
+  // (a transporter/loader account is refused with a bare 403), the seller can't
+  // order their own lot, and an empty lot has nothing to reserve.
+  const isOwn = !!sellerId && sellerId === user?.id;
+  const canBuy = !isOwn && (!user || roles.includes('buyer'));
+  const stock = stockDisplay(p.stockQty, p.unit);
+  // The stepper's ceiling, in the metric the buyer is counting in.
+  const maxQty =
+    stock.kind === 'count' ? convertQty(stock.count, stock.unit, buyerUnit) ?? Infinity : Infinity;
   // Older rows may predate the gallery; fall back to the single cover image.
   const photos = p.images?.length ? p.images : p.imageUrl ? [p.imageUrl] : [];
   const rated = (p.ratingCount ?? 0) > 0;
@@ -153,18 +160,10 @@ export function ProductDetail() {
   const equivalent =
     buyerUnit !== listingUnit && convertedQty !== undefined ? Math.round(convertedQty * 1000) / 1000 : undefined;
 
-  // No guest basket, same rule as Buy above: an account comes first, so nobody
-  // fills a basket and only then learns they need one.
-  const addToRfq = () => {
-    if (!user) return nav.navigate('SignIn', { reason: 'buy' });
-    basket.add(p, qty, qtyUnit || undefined);
-    Alert.alert(t('pubX.rfq.addedTitle'), t('pubX.rfq.addedBody', { name: p.name }));
-  };
-
   return (
     <View style={{ flex: 1, backgroundColor: C.page }}>
       <ScrollView contentContainerStyle={{ paddingBottom: space.lg, gap: space.sm }} showsVerticalScrollIndicator={false}>
-        <Gallery photos={photos} emoji={p.emoji} />
+        <Gallery photos={photos} />
 
         {/* headline block — trust pills, then title, then rating + origin line */}
         <View style={s.block}>
@@ -205,6 +204,8 @@ export function ProductDetail() {
                 // No quantity cell here: `stockLabel` prints the one stock
                 // figure directly above, and this strip used to repeat it from
                 // the free-text column under an "Available" label.
+                // Whether the price is open to offers lives here, not on the card.
+                { label: t('pubX.pd.price'), value: t(p.negotiable ? 'compX.product.negotiable' : 'compX.product.fixedPrice') },
                 { label: t('pubX.pd.delivery'), value: p.delivery ?? '—' },
                 ...(p.origin ? [{ label: t('pubX.pd.origin'), value: p.origin }] : []),
               ].map((it, i) => (
@@ -212,12 +213,15 @@ export function ProductDetail() {
                   {i > 0 ? <View style={s.termRule} /> : null}
                   <View style={{ flex: 1, paddingHorizontal: space.sm, gap: 3 }}>
                     <Text numberOfLines={1} style={s.termValue}>{it.value}</Text>
-                    <Text numberOfLines={1} style={[s.termLabel, microLabel()]}>{it.label}</Text>
+                    <Text numberOfLines={1} style={s.termLabel}>{it.label}</Text>
                   </View>
                 </View>
               ))}
             </View>
+            {/* Quantity only: the one Buy Now lives in the sticky bar below, in
+                reach from anywhere on the page. */}
             <View style={s.qtyRow} accessibilityRole="adjustable" accessibilityLabel={t('pubX.pd.quantity')} accessibilityValue={{ now: qty }}>
+              <Text style={s.termLabel}>{t('pubX.pd.quantity')}</Text>
               <View style={s.stepper}>
                 {/* F34: icon-only steppers need explicit labels for screen readers. */}
                 <Pressable
@@ -233,17 +237,16 @@ export function ProductDetail() {
                 </Pressable>
                 <Text style={s.stepValue}>{qty}</Text>
                 <Pressable
-                  onPress={() => setQty((q) => q + 1)}
+                  onPress={() => setQty((q) => Math.min(maxQty, q + 1))}
                   hitSlop={12}
                   style={s.stepBtn}
                   accessibilityRole="button"
                   accessibilityLabel={t('pubX.pd.increaseQty')}
+                  disabled={qty >= maxQty}
+                  accessibilityState={{ disabled: qty >= maxQty }}
                 >
                   <Ionicons name="add" size={18} color={C.ink} />
                 </Pressable>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Button full title={t('pubX.pd.buyNow')} variant="primaryOutline" onPress={onBuy} />
               </View>
             </View>
             {/* Count in whatever metric the buyer works in. Only shown when the
@@ -256,7 +259,15 @@ export function ProductDetail() {
                     return (
                       <Pressable
                         key={u}
-                        onPress={() => setQtyUnit(u)}
+                        // Switching metric restates the quantity: 1000 KG is
+                        // 1 MT, not 1000 MT — which is what the basket, and
+                        // then the order, would otherwise carry.
+                        onPress={() => {
+                          const next = toUnit(u);
+                          const restated = convertQty(qty, buyerUnit, next) ?? qty;
+                          setQtyUnit(u);
+                          setQty(Math.max(minOrderQty(p.moq, listingUnit, next), Math.round(restated * 1000) / 1000));
+                        }}
                         accessibilityRole="radio"
                         accessibilityState={{ selected: on }}
                         style={[s.unitChip, on && s.unitChipOn]}
@@ -335,7 +346,7 @@ export function ProductDetail() {
             <View style={s.specGrid}>
               {attrRows.map((r) => (
                 <View key={r.key} style={s.specCard}>
-                  <Text numberOfLines={1} style={[s.specLabel, microLabel()]}>{r.label}</Text>
+                  <Text numberOfLines={1} style={s.specLabel}>{r.label}</Text>
                   <Text numberOfLines={2} style={s.specValue}>{r.value}</Text>
                 </View>
               ))}
@@ -434,20 +445,25 @@ export function ProductDetail() {
         ) : null}
       </ScrollView>
 
-      {/* sticky action bar — chat the seller, or add the lot to the RFQ basket */}
-      <View style={s.bar}>
-        <View style={{ width: 118 }}>
-          <Button
-            full
-            title={t('pubX.pd.chat')}
-            variant="outline"
-            onPress={() => (sellerId ? nav.navigate('Community', { dmUserId: sellerId, dmName: p.seller?.name ?? t('pubX.pd.sellerFallback') }) : undefined)}
-          />
+      {/* sticky action bar — chat the seller, or buy the lot. Your own listing
+          gets neither: you are already looking at it from the seller console. */}
+      {isOwn ? null : (
+        <View style={s.bar}>
+          <View style={canBuy ? { width: 118 } : { flex: 1 }}>
+            <Button
+              full
+              title={t('pubX.pd.chat')}
+              variant="outline"
+              onPress={() => (sellerId ? nav.navigate('Community', { dmUserId: sellerId, dmName: p.seller?.name ?? t('pubX.pd.sellerFallback') }) : undefined)}
+            />
+          </View>
+          {canBuy ? (
+            <View style={{ flex: 1 }}>
+              <Button full title={t('pubX.pd.buyNow')} onPress={onBuy} disabled={stock.kind === 'out'} />
+            </View>
+          ) : null}
         </View>
-        <View style={{ flex: 1 }}>
-          <Button full title={t('pubX.pd.addToRfq')} onPress={addToRfq} />
-        </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -464,19 +480,21 @@ const s = StyleSheet.create({
   sellerName: { ...type.title, fontSize: 15 },
 
   pill: { borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
-  pillText: { ...type.micro, fontSize: 11, letterSpacing: 0.4 },
+  pillText: { ...type.micro, fontSize: 12, lineHeight: 15, letterSpacing: 0.3 },
 
-  priceCard: { backgroundColor: C.white, borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, padding: space.lg, gap: space.md, shadowColor: '#0F2819', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  priceCard: { backgroundColor: C.white, borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, padding: space.lg, gap: space.md, ...elevation.card },
   priceHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   bigPrice: { ...type.numeric, fontSize: 32, lineHeight: 38, color: C.ink, letterSpacing: -0.5 },
   priceUnit: { ...type.body, color: C.inkMuted },
   priceTerms: { flexDirection: 'row', paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.hairline },
   termRule: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: C.hairline },
   termValue: { ...type.title, fontSize: 14, color: C.ink },
-  termLabel: { ...type.micro, fontSize: 9.5, color: C.inkMuted },
+  // Data labels, not eyebrows: plain case at caption size, since these name the
+  // figure directly above them and are read, not scanned past.
+  termLabel: { ...type.caption, color: C.inkSoft },
   escrowRow: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.hairline },
   escrowText: { ...type.caption, color: C.inkSoft },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
   // Per-weight family, never fontWeight — that double-bolds on Android.
   vatNote: { ...type.caption, fontFamily: font.bodyBold, color: C.ink },
   stockNote: { ...type.caption, fontFamily: font.bodyBold, color: C.ink },
@@ -487,7 +505,7 @@ const s = StyleSheet.create({
 
   specGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   specCard: { width: '47%', flexGrow: 1, backgroundColor: C.page, borderRadius: radius.input, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
-  specLabel: { ...type.micro, fontSize: 10, color: C.inkMuted },
+  specLabel: { ...type.caption, color: C.inkSoft },
   specValue: { ...type.h3, fontSize: 16, color: C.ink },
 
   bigRating: { ...type.display, fontSize: 34, color: C.ink },
@@ -506,6 +524,8 @@ const s = StyleSheet.create({
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    minWidth: 132,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
     borderRadius: radius.card,

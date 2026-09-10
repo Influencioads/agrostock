@@ -22,6 +22,7 @@ import { I18nProvider } from './src/i18n';
 import { CurrencyProvider } from './src/currency/CurrencyContext';
 import { ChatBadgeProvider } from './src/chat/ChatBadgeContext';
 import { BasketProvider } from './src/basket/BasketContext';
+import { DeliverToProvider } from './src/lib/deliverTo';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { flushPendingNotificationRoute, navigationRef } from './src/navigation/navigationRef';
 import { linking } from './src/navigation/linking';
@@ -71,10 +72,12 @@ export default function App() {
             <CurrencyProvider>
               <ChatBadgeProvider>
                 <BasketProvider>
-                  <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingNotificationRoute}>
-                    <StatusBar style="dark" />
-                    <Gate />
-                  </NavigationContainer>
+                  <DeliverToProvider>
+                    <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingNotificationRoute}>
+                      <StatusBar style="dark" />
+                      <Gate />
+                    </NavigationContainer>
+                  </DeliverToProvider>
                 </BasketProvider>
               </ChatBadgeProvider>
             </CurrencyProvider>

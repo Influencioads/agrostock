@@ -10,6 +10,7 @@ import { C, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { ProductGrid } from '../components/ProductGrid';
 import { useI18n } from '../../i18n';
+import { useBasketAction } from '../../basket/useBasketAction';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -17,6 +18,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function Offers() {
   const nav = useNavigation<Nav>();
   const { t } = useI18n();
+  const basketAction = useBasketAction();
   const { data: offers = [], isLoading, isError, refetch } = useQuery<ApiProduct[]>({
     queryKey: ['products', 'offer'],
     queryFn: () => api.products.list({ offer: true }),
@@ -25,7 +27,7 @@ export function Offers() {
   // AppBar owns the status-bar inset — see Browse.tsx.
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={[]}>
-      <AppBar title={t('pubX.offers.title')} />
+      <AppBar title={t('pubX.offers.title')} actions={[basketAction]} />
       <ScrollView contentContainerStyle={{ paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
         <View style={s.head}>
           <Text style={[s.sub, microLabel()]}>{t('pubX.offers.sub')}</Text>

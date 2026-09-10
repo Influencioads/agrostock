@@ -3,13 +3,14 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { countryFlag, type ApiProduct } from '@agrotraders/api-client';
 import { stockDisplay, unitSuffix } from '@agrotraders/types';
-import { C, font, radius, space, type } from '../theme/tokens';
+import { C, radius, space, type } from '../theme/tokens';
 import { microLabel } from '../theme/casing';
 import { assetUrl } from '../lib/api';
 import { useCurrency } from '../currency/CurrencyContext';
 import { useWishlist } from '../lib/useWishlist';
-import { RatingPill } from '../ui';
+import { ProduceMark, RatingPill } from '../ui';
 import { useI18n } from '../i18n';
+import { cardBadges } from './components/cardBadges';
 
 /**
  * F02: the wishlist heart overlaid on a card image. A real add/remove control
@@ -39,45 +40,35 @@ function SaveHeart({ productId }: { productId: string }) {
 /**
  * Product cards, B2B edition.
  *
- * The layout borrows retail-grade density — image bleeding to the card edge at
- * a tall aspect ratio, a two-line text block, one figure per line — but the
- * content is trade data, not retail: supplier in the "brand" slot, price per
- * unit, MOQ and the one stock figure. There is deliberately no discount badge,
- * strikethrough price or wishlist heart; none of those exist in this market.
+ * Built to be compared across a grid, so every card carries the same four
+ * lines in the same order — name, price per unit, minimum order, where the
+ * goods are — and nothing else. Supplier, settlement mode, market and the
+ * stock figure moved to the product page; a sold-out listing is flagged on the
+ * image instead of costing a text line.
  */
 
-/** Trust markers overlaid on the image. Kept to two so the strip stays one line. */
-function ImageBadges({ product, t, sponsored }: { product: ApiProduct; t: (k: string) => string; sponsored?: boolean }) {
-  const marks: { label: string; bg: string; fg: string }[] = [];
-  // F30: a paid placement is disclosed first, ahead of trust markers.
-  if (sponsored) marks.push({ label: t('compX.product.sponsored'), bg: C.dark, fg: C.white });
-  if (product.isAuction) marks.push({ label: t('compX.product.auction'), bg: C.mangoDeep, fg: C.white });
-  if (product.verified) marks.push({ label: t('compX.product.verified'), bg: C.evergreen, fg: C.white });
-  // Both settlement modes are labelled: the absence of a "Safe Deal" mark used
-  // to be the only hint that a listing was settled directly.
-  else marks.push(
-    product.safeDeal
-      ? { label: t('compX.product.safeDeal'), bg: C.white, fg: C.dark }
-      : { label: t('compX.product.directDeal'), bg: C.white, fg: C.dark },
-  );
+/** Trust/state marks overlaid on the image. See `cardBadges` for the order. */
+function ImageBadges({ product, sponsored }: { product: ApiProduct; sponsored?: boolean }) {
+  const { t } = useI18n();
+  const marks = cardBadges(product, sponsored);
   if (marks.length === 0) return null;
   return (
     <View style={s.badgeStrip}>
-      {marks.slice(0, 2).map((m) => (
-        <View key={m.label} style={[s.imgBadge, { backgroundColor: m.bg }]}>
-          <Text numberOfLines={1} style={[{ ...type.micro, fontSize: 9, color: m.fg }, microLabel()]}>{m.label}</Text>
+      {marks.map((m) => (
+        <View key={m.key} style={[s.imgBadge, { backgroundColor: m.bg }]}>
+          <Text numberOfLines={1} style={[s.imgBadgeText, { color: m.fg }]}>{t(`compX.product.${m.key}`)}</Text>
         </View>
       ))}
     </View>
   );
 }
 
-/** The image well, or the product emoji when there is no artwork. */
+/** The image well, or the shared produce mark when there is no artwork. */
 function Cover({ product, height }: { product: ApiProduct; height: number | undefined }) {
   const [failed, setFailed] = useState(false);
   const uri = failed ? undefined : assetUrl(product.imageUrl);
   return (
-    <View style={[s.cover, height ? { height } : { aspectRatio: 4 / 5 }]}>
+    <View style={[s.cover, height ? { height } : { aspectRatio: 10 / 11 }]}>
       {uri ? (
         <Image
           source={{ uri }}
@@ -86,17 +77,13 @@ function Cover({ product, height }: { product: ApiProduct; height: number | unde
           onError={() => setFailed(true)}
         />
       ) : (
-        <Text style={{ fontSize: 46 }}>{product.emoji ?? '🌾'}</Text>
+        <ProduceMark size={56} />
       )}
     </View>
   );
 }
 
-/**
- * Supply line: "MOQ 20 MT". Stock is NOT repeated here — `stockLabel` already
- * prints it right above, and this line used to add a second figure from the
- * free-text `qty` column that could disagree with it.
- */
+/** Supply line: "MOQ 20 MT". */
 function useSupplyLine(product: ApiProduct): string | null {
   const { t } = useI18n();
   return product.moq ? t('compX.product.moq', { value: product.moq }) : null;
@@ -136,11 +123,12 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [s.card, { width: width ?? '100%', opacity: pressed ? 0.85 : 1 }]}
+      // A grid card fills its cell so the two cards in a row stay the same height.
+      style={({ pressed }) => [s.card, width ? { width } : s.cardFill, { opacity: pressed ? 0.85 : 1 }]}
     >
       <View>
-        <Cover product={product} height={width ? width * 1.25 : undefined} />
-        <ImageBadges product={product} t={t} sponsored={sponsored} />
+        <Cover product={product} height={width ? width * 1.1 : undefined} />
+        <ImageBadges product={product} sponsored={sponsored} />
         <SaveHeart productId={product.id} />
         {rated ? (
           <View style={s.ratingSlot}>
@@ -150,24 +138,14 @@ export function ProductCard({ product, onPress, width, sponsored }: { product: A
       </View>
 
       <View style={s.body}>
-        {product.seller?.name ? (
-          <Text numberOfLines={1} style={[s.supplier, microLabel()]}>{product.seller.name}</Text>
-        ) : null}
-        <Text numberOfLines={1} style={s.name}>{product.name}</Text>
+        {/* Two lines reserved even for a short name, so prices line up across the row. */}
+        <Text numberOfLines={2} style={s.name}>{product.name}</Text>
         <Text numberOfLines={1} style={s.price}>
           {fmtPrice(product)}
           <Text style={s.unit}>{unitSuffix(product.unit, t)}</Text>
         </Text>
-        <Text numberOfLines={1} style={s.meta}>
-          {product.negotiable ? t('compX.product.negotiable') : t('compX.product.fixedPrice')}
-        </Text>
         {supply ? <Text numberOfLines={1} style={s.meta}>{supply}</Text> : null}
         {place ? <Text numberOfLines={1} style={s.meta}>{place}</Text> : null}
-        {product.market?.name ? <Text numberOfLines={1} style={s.meta}>🏪 {product.market.name}</Text> : null}
-        {/* Stock is the only bold line under the name — it is what a buyer
-            scanning a grid of cards is actually comparing, and it is now the
-            only quantity on the card. */}
-        <Text numberOfLines={1} style={[s.meta, s.metaStrong]}>{stockLabel(product, t)}</Text>
       </View>
     </Pressable>
   );
@@ -208,7 +186,7 @@ export function ProductRow({ product, onPress, right, subtitle }: {
         {uri ? (
           <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" onError={() => setFailed(true)} />
         ) : (
-          <Text style={{ fontSize: 26 }}>{product.emoji ?? '🌾'}</Text>
+          <ProduceMark size={36} />
         )}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
@@ -228,23 +206,24 @@ export function ProductRow({ product, onPress, right, subtitle }: {
 }
 
 const s = StyleSheet.create({
-  card: { backgroundColor: C.white, borderRadius: radius.card, overflow: 'hidden' },
+  // Cards sit flat: the page colour and a hairline separate them, never a shadow.
+  card: { backgroundColor: C.white, borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, overflow: 'hidden' },
+  cardFill: { flex: 1 },
   cover: { width: '100%', backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  badgeStrip: { position: 'absolute', bottom: 6, start: 6, flexDirection: 'row', gap: 4, maxWidth: '90%' },
-  imgBadge: { borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2.5 },
-  ratingSlot: { position: 'absolute', bottom: 6, end: 6 },
+  badgeStrip: { position: 'absolute', bottom: 8, start: 8, flexDirection: 'row', gap: 4, maxWidth: '90%' },
+  imgBadge: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  imgBadgeText: { ...type.title, fontSize: 12, lineHeight: 15 },
+  ratingSlot: { position: 'absolute', bottom: 8, end: 8 },
   heart: {
-    position: 'absolute', top: 6, end: 6, width: 28, height: 28, borderRadius: 14,
+    position: 'absolute', top: 8, end: 8, width: 30, height: 30, borderRadius: 15,
     backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center',
   },
-  body: { padding: space.md, gap: 2 },
-  supplier: { ...type.micro, fontSize: 10.5, color: C.ink },
-  name: { ...type.body, color: C.inkMuted },
-  price: { ...type.numeric, color: C.ink, marginTop: 2 },
-  unit: { ...type.caption, color: C.inkMuted },
-  meta: { ...type.caption, fontSize: 11, color: C.inkMuted },
-  // Per-weight family, never fontWeight — that double-bolds on Android.
-  metaStrong: { fontFamily: font.bodyBold, color: C.ink },
+  body: { padding: space.md, gap: 3 },
+  supplier: { ...type.micro, fontSize: 11, color: C.inkSoft },
+  name: { ...type.title, color: C.ink, minHeight: type.title.lineHeight * 2 },
+  price: { ...type.numeric, fontSize: 16, lineHeight: 21, color: C.ink, marginTop: 2 },
+  unit: { ...type.caption, color: C.inkSoft },
+  meta: { ...type.caption, color: C.inkSoft },
   row: { flexDirection: 'row', gap: space.md, backgroundColor: C.white, padding: space.md, alignItems: 'center' },
-  rowCover: { width: 76, height: 95, borderRadius: radius.card, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  rowCover: { width: 76, height: 84, borderRadius: radius.card, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

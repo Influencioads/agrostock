@@ -11,7 +11,7 @@ import { useApiError } from '../../lib/useApiError';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Button, Card, Input, Row, Txt } from '../../ui';
-import { C, radius } from '../../theme/tokens';
+import { C, radius, type } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 import { useI18n } from '../../i18n';
 
@@ -101,9 +101,11 @@ export function BidPanel({ slug }: { slug: string }) {
     <Card style={{ gap: 12 }}>
       {/* current highest */}
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View>
+        {/* Flexes so a six-figure converted price (₽ / ₹ / Rp) shrinks the
+            headline instead of shoving the bid count off the card. */}
+        <View style={{ flex: 1, paddingEnd: 8 }}>
           <Txt variant="muted">{t('compX.bid.currentHighest')}</Txt>
-          <Txt style={{ fontSize: 30, fontWeight: '800', color: C.dark }}>
+          <Txt style={{ ...type.numeric, fontSize: 30, lineHeight: 36, color: C.dark }}>
             {fmtCents(currentCents)}
             <Txt variant="muted" style={{ fontSize: 14 }}>{unit}</Txt>
           </Txt>
@@ -114,7 +116,7 @@ export function BidPanel({ slug }: { slug: string }) {
       {/* your standing */}
       {standing && standing.yourRank != null ? (
         <Row style={{ gap: 10, backgroundColor: standing.leading ? C.surface : C.mangoSoft, borderRadius: radius.md, paddingHorizontal: 11, paddingVertical: 9 }}>
-          <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: standing.leading ? C.dark : C.gold, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ minWidth: 26, minHeight: 26, paddingHorizontal: 5, borderRadius: 8, backgroundColor: standing.leading ? C.dark : C.gold, alignItems: 'center', justifyContent: 'center' }}>
             <Txt style={{ color: C.white, fontSize: 11, fontWeight: '700' }}>#{standing.yourRank}</Txt>
           </View>
           <Txt variant="small" style={{ flex: 1, fontWeight: '600' }}>
@@ -134,9 +136,9 @@ export function BidPanel({ slug }: { slug: string }) {
               <Pressable onPress={() => step(-1)} style={{ width: 46, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
                 <Txt style={{ fontSize: 22, color: C.dark }}>−</Txt>
               </Pressable>
-              <View style={{ flex: 1, alignItems: 'center' }}>
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
                 {/* Cents matter now that a lot can be priced per KG. */}
-                <Txt style={{ fontSize: 22, fontWeight: '800' }}>{fmtCents(Math.round(usdAmount * 100))}</Txt>
+                <Txt numberOfLines={1} style={{ ...type.numeric, fontSize: 22, lineHeight: 28 }}>{fmtCents(Math.round(usdAmount * 100))}</Txt>
               </View>
               <Pressable onPress={() => step(1)} style={{ width: 46, height: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
                 <Txt style={{ fontSize: 22, color: C.dark }}>+</Txt>

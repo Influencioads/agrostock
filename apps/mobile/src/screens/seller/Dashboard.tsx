@@ -16,7 +16,7 @@ import { BarChart } from '../../ui/charts';
 import { Button, Input, ProgressBar, Row, Txt } from '../../ui';
 import { DashHeader, DashSection, StatCards } from '../components/dash-parts';
 import { PickerField } from '../components/PickerSheet';
-import { C, radius, space, type } from '../../theme/tokens';
+import { C, elevation, radius, space, type } from '../../theme/tokens';
 import type { RootStackParamList } from '../../navigation/types';
 
 type SellerProduct = ApiProduct & { _count?: { orders: number; auctionBids: number } };
@@ -182,6 +182,6 @@ function AvailabilitySection() {
 }
 
 const s = StyleSheet.create({
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.green, borderRadius: radius.pill, paddingHorizontal: 16, height: 42, ...({ shadowColor: C.green, shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 5 }) },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.green, borderRadius: radius.pill, paddingHorizontal: 16, height: 42, ...elevation.cta },
   addBtnText: { ...type.title, fontSize: 14, color: C.white },
 });

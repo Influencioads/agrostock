@@ -18,6 +18,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { ProductRow } from '../components';
 import { PickerField } from '../components/PickerSheet';
 import { countryOptions } from '../../lib/countries';
+import { useDeliverTo } from '../../lib/deliverTo';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -54,6 +55,7 @@ export function Checkout() {
   const { fmtCents } = useCurrency();
   const { user } = useAuth();
   const basket = useBasket();
+  const { place: deliverTo } = useDeliverTo();
   // Which button leads — set by the listing screen's Buy / Request quote.
   const intent = params?.intent ?? 'buy';
 
@@ -73,7 +75,7 @@ export function Checkout() {
       queryKey: ['product', l.slug],
       queryFn: () => api.products.get(l.slug),
       staleTime: 60e3,
-      retry: 0,
+      retry: 1,
     })),
   });
   const loading = products.some((r) => r.isLoading);
@@ -95,15 +97,20 @@ export function Checkout() {
     enabled: !!user,
     staleTime: 300e3,
   });
-  // The account's own country is often the legacy "🇮🇳 India" display form. Seed
-  // the canonical name, and seed NOTHING when it does not resolve: the order's
-  // country routes the shipment and filters every provider list, so an
-  // unmatchable string is worse than an empty field the guard makes them fill.
+  // The "Deliver to" pick on Home is the first seed — it is what the buyer said
+  // they ship to. Failing that, the account's own place: its country is often
+  // the legacy "🇮🇳 India" display form, so seed the canonical name, and seed
+  // NOTHING when it does not resolve: the order's country routes the shipment
+  // and filters every provider list, so an unmatchable string is worse than an
+  // empty field the guard makes them fill.
   const to =
-    delivery ?? {
-      city: myProfile?.originCity ?? myProfile?.location ?? '',
-      country: findCountry(myProfile?.originCountry ?? user?.country)?.name ?? '',
-    };
+    delivery ??
+    (deliverTo?.city
+      ? { city: deliverTo.city, country: findCountry(deliverTo.country)?.name ?? '' }
+      : {
+          city: myProfile?.originCity ?? myProfile?.location ?? '',
+          country: findCountry(myProfile?.originCountry ?? user?.country)?.name ?? '',
+        });
   const COUNTRY_OPTIONS = countryOptions(lang);
   // ~134k cities live on the API, not in the bundle — searched per country.
   const { data: cities = [], isFetching: citiesLoading } = useQuery({
@@ -264,6 +271,23 @@ export function Checkout() {
             ))}
           </View>
         ))}
+
+        {/* A line whose listing will not load — archived since it was added, or
+            a request that failed twice — is shown rather than silently dropped:
+            it is left out of the order, and until it leaves the basket the
+            action bar stays hidden with nothing on screen explaining why. */}
+        {loading
+          ? null
+          : rows
+              .filter((r) => !r.product)
+              .map(({ line }) => (
+                <View key={line.slug} style={[s.block, s.deadLine]}>
+                  <Txt variant="small" color={C.error} style={{ flex: 1 }}>{t('common:errorBody')}</Txt>
+                  <Pressable onPress={() => basket.remove(line.slug)} hitSlop={8} accessibilityRole="button">
+                    <Ionicons name="close" size={18} color={C.inkSoft} />
+                  </Pressable>
+                </View>
+              ))}
 
         {/* Who signs for the goods. The account is the trading company; the
             person at the gate is someone else. */}
@@ -468,6 +492,7 @@ const s = StyleSheet.create({
   supplier: { ...type.title, fontSize: 13, color: C.ink, flex: 1 },
   groupSum: { ...type.numeric, fontSize: 13, color: C.ink },
   qtyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
+  deadLine: { flexDirection: 'row', alignItems: 'center' },
   totalRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   result: { ...type.caption, lineHeight: 19 },
   safe: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.surface, paddingHorizontal: space.lg, paddingVertical: space.md },
