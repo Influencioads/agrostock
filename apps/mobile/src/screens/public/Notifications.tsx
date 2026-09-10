@@ -9,6 +9,7 @@ import { Button, Card, EmptyState, QueryError, Row, Screen, SkeletonRows, Txt } 
 import { C, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { useI18n } from '../../i18n';
+import { navigateToLink } from '../../navigation/navigationRef';
 import type { RootStackParamList } from '../../navigation/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -74,9 +75,11 @@ export function Notifications() {
 
   const open = (n: AnyRec) => {
     if (!n.readAt) api.notifications.read(n.id).then(() => qc.invalidateQueries({ queryKey: ['notifications'] }));
-    // F05: honor an explicit product link before the coarse system fallback.
-    const product = typeof n.linkUrl === 'string' ? n.linkUrl.match(/^\/product\/([^/?#]+)/) : null;
-    if (product) { nav.navigate('ProductDetail', { slug: product[1] }); return; }
+    // Route on the link first. This used to re-implement only the /product/
+    // case, so tapping an ORDER notification in this list did nothing at all —
+    // `navigateToLink` is the same resolver a push tap uses, so the in-app list
+    // and the notification tray now behave identically.
+    if (navigateToLink(n.linkUrl)) return;
     if (n.system === 'community') nav.navigate('Community');
     else if (n.system === 'support') nav.navigate('Support');
   };

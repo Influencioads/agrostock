@@ -11,6 +11,8 @@ import { Badge, Button, Card, EmptyState, Row, Segmented, Txt } from '../ui';
 import { C, space } from '../theme/tokens';
 import type { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n';
+import { useApiError } from '../lib/useApiError';
+import { useCurrency } from '../currency/CurrencyContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -21,6 +23,9 @@ const TONE: Record<string, 'green' | 'mango' | 'slate' | 'error'> = {
 function HireCard({ h, incoming, onAction }: { h: ApiHireRequest; incoming: boolean; onAction: () => void }) {
   const { t } = useI18n();
   const nav = useNavigation<Nav>();
+  const apiError = useApiError();
+  const { fmtCents } = useCurrency();
+  const [err, setErr] = useState('');
   const other = incoming ? h.requester : h.targetUser;
   const detail = [h.cargo, h.fromCity && h.toCity ? `${h.fromCity} → ${h.toCity}` : null, h.location, h.workersNeeded ? t('compX.hires.workersCount', { count: h.workersNeeded }) : null]
     .filter(Boolean)
@@ -38,9 +43,18 @@ function HireCard({ h, incoming, onAction }: { h: ApiHireRequest; incoming: bool
   };
   const answers = h.details ? Object.entries(h.details) : [];
 
+  // Accept/decline/cancel used to swallow every rejection, so the button simply
+  // did nothing — including the common "already decided" 400, where the card the
+  // user is looking at is stale. Refresh either way, and say what happened.
   const act = async (fn: () => Promise<unknown>) => {
-    await fn();
-    onAction();
+    setErr('');
+    try {
+      await fn();
+    } catch (e) {
+      setErr(apiError(e, t('common:errorBody')));
+    } finally {
+      onAction();
+    }
   };
   return (
     <Card style={{ gap: 8 }}>
@@ -65,7 +79,8 @@ function HireCard({ h, incoming, onAction }: { h: ApiHireRequest; incoming: bool
       ))}
       {h.order?.product?.name ? <Txt variant="muted">{t('compX.hires.orderGoods', { name: h.order.product.name })}{h.order.amount ? ` · ${h.order.amount}` : ''}</Txt> : null}
       {h.message ? <Txt variant="muted">“{h.message}”</Txt> : null}
-      {h.budgetCents != null ? <Txt variant="title" color={C.dark}>{t('compX.hires.budgetLabel')} ${(h.budgetCents / 100).toLocaleString()}</Txt> : null}
+      {h.budgetCents != null ? <Txt variant="title" color={C.dark}>{t('compX.hires.budgetLabel')} {fmtCents(h.budgetCents)}</Txt> : null}
+      {err ? <Txt variant="small" color={C.error}>{err}</Txt> : null}
       <Row gap={8} wrap>
         {other ? (
           <View style={{ flex: 1 }}>
