@@ -1449,6 +1449,7 @@
       },
       "maxPrice": "Max price",
       "minPrice": "Min price",
+      "moreMatches": "Showing the first {{shown}} of {{total}} matches — keep typing to narrow it down.",
       "noneMatch": "Nothing matches your search.",
       "searchInList": "Search…",
       "searchPlaceholder": "Search products…",

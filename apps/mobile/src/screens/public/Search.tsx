@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -109,7 +109,13 @@ export function Search() {
             onSubmitEditing={() => setDebounced(q)}
             placeholder={t('pubX.search.placeholder')}
             placeholderTextColor={C.inkMuted}
-            autoFocus
+            // Arriving from a category chip is a request to BROWSE, not to type:
+            // auto-focusing there throws the keyboard over the results grid the
+            // tap just asked for, which reads as the chip having done nothing.
+            // This only covers arrivals from OFF this screen (the home rail),
+            // since autoFocus is read once at mount; the in-screen chips below
+            // dismiss the keyboard themselves.
+            autoFocus={!categoryId}
             returnKeyType="search"
             style={s.searchInput}
           />
@@ -160,7 +166,13 @@ export function Search() {
                   {cats.slice(0, 8).map((c) => (
                     <Pressable
                       key={c.id}
-                      onPress={() => nav.navigate('Search', { categoryId: c.id })}
+                      // Same-route navigate: it swaps the params without
+                      // remounting, so autoFocus never re-runs and the keyboard
+                      // would otherwise stay up over the results it just loaded.
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        nav.navigate('Search', { categoryId: c.id });
+                      }}
                       style={s.trendChip}
                     >
                       <Ionicons name="trending-up" size={15} color={C.green} />
