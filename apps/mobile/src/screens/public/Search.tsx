@@ -109,13 +109,12 @@ export function Search() {
             onSubmitEditing={() => setDebounced(q)}
             placeholder={t('pubX.search.placeholder')}
             placeholderTextColor={C.inkMuted}
-            // Arriving from a category chip is a request to BROWSE, not to type:
-            // auto-focusing there throws the keyboard over the results grid the
-            // tap just asked for, which reads as the chip having done nothing.
-            // This only covers arrivals from OFF this screen (the home rail),
-            // since autoFocus is read once at mount; the in-screen chips below
-            // dismiss the keyboard themselves.
-            autoFocus={!categoryId}
+            // Only the search pill asks for the keyboard. Every other way in —
+            // a category chip, "see all", the hero — is a browse intent, and
+            // auto-focusing those threw the keyboard over the results grid the
+            // tap had just asked for, which reads as the tap doing nothing.
+            // Mount-only, so the in-screen rows below dismiss it themselves.
+            autoFocus={route.params?.focus === true}
             returnKeyType="search"
             style={s.searchInput}
           />
@@ -133,7 +132,14 @@ export function Search() {
             error={isError}
             onRetry={() => refetch()}
             onOpen={(p) => nav.navigate('ProductDetail', { slug: p.slug })}
-            empty={{ title: t('pubX.search.noMatchTitle'), body: t('pubX.search.noMatchBody', { q: debounced }) }}
+            empty={{
+              title: t('pubX.search.noMatchTitle'),
+              // Browsing a category carries no search term, so quoting one back
+              // would read "No results for ''".
+              body: debounced.trim()
+                ? t('pubX.search.noMatchBody', { q: debounced })
+                : t('pubX.browse.emptyBody'),
+            }}
           />
         ) : (
           <View style={{ paddingHorizontal: space.lg, paddingTop: space.lg }}>
@@ -147,7 +153,14 @@ export function Search() {
                 </View>
                 <View style={{ marginBottom: space.xl }}>
                   {recent.map((term) => (
-                    <Pressable key={term} onPress={() => setQ(term)} style={s.recentRow}>
+                    <Pressable
+                      key={term}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setQ(term);
+                      }}
+                      style={s.recentRow}
+                    >
                       <Ionicons name="time-outline" size={18} color={C.inkMuted} />
                       <Text numberOfLines={1} style={s.recentText}>{term}</Text>
                       <Pressable onPress={() => removeRecent(term)} hitSlop={10}>
@@ -171,6 +184,8 @@ export function Search() {
                       // would otherwise stay up over the results it just loaded.
                       onPress={() => {
                         Keyboard.dismiss();
+                        setQ('');
+                        setDebounced('');
                         nav.navigate('Search', { categoryId: c.id });
                       }}
                       style={s.trendChip}

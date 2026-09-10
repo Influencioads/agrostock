@@ -13,7 +13,7 @@ import {
 } from '@agrotraders/api-client';
 import { QueryError, Row, Txt } from '../../ui';
 import { api } from '../../lib/api';
-import { backChevron, forwardChevron, isRTL } from '../../lib/rtl';
+import { backChevron, forwardChevron } from '../../lib/rtl';
 import { C, radius, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { EMPTY_SELECTION, type CategorySelection } from './categorySelection';
@@ -186,7 +186,7 @@ export function CategorySheet({
    * on the way. iOS never fires this for a slide-up modal.
    */
   const requestClose = () => {
-    if (typed.trim()) search('');
+    if (typed.length > 0) search('');
     else if (drill) back();
     else close();
   };
@@ -202,8 +202,12 @@ export function CategorySheet({
   };
 
   const headerTitle = drill ? (current?.name ?? drill.name) : t('pubX.browse.category');
-  // Arabic and Persian read right-to-left, so every directional glyph flips.
-  const crumbSeparator = isRTL() ? '‹' : '›';
+  // NOT flipped for RTL: U+203A is Bidi_Mirrored, so the text engine already
+  // renders it pointing the other way inside an RTL run. Substituting U+2039
+  // here would mirror an already-mirrored glyph and point it back the wrong way.
+  // The chevron ICONS are a different matter — those are Ionicons glyphs with no
+  // bidi behaviour of their own, which is what `rtl.ts` is for.
+  const crumbSeparator = '›';
   const trailSeparator = `  ${crumbSeparator}  `;
 
   return (
@@ -230,7 +234,7 @@ export function CategorySheet({
         {/* breadcrumb — tap any ancestor to jump back to it */}
         {drill && stack.length > 0 && (
           <Row gap={4} style={{ flexWrap: 'wrap', paddingHorizontal: space.lg, paddingBottom: space.sm }}>
-            <Pressable onPress={() => setStack([])}>
+            <Pressable onPress={() => { search(''); setStack([]); }}>
               <Txt variant="small" style={{ color: C.green, fontWeight: '700' }}>
                 {drill.name}
               </Txt>
@@ -240,7 +244,7 @@ export function CategorySheet({
                 <Txt variant="small" color={C.inkSoft}>
                   {crumbSeparator}
                 </Txt>
-                <Pressable onPress={() => setStack((s) => s.slice(0, i + 1))}>
+                <Pressable onPress={() => { search(''); setStack((st) => st.slice(0, i + 1)); }}>
                   <Txt
                     variant="small"
                     style={{ color: i === stack.length - 1 ? C.ink : C.green, fontWeight: '700' }}
