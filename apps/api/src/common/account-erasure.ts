@@ -67,6 +67,14 @@ export const ACCOUNT_FOOTPRINT_SELECT = {
       requirementResponses: true,
       ownedCommunityGroups: true,
       supportMessages: true,
+      // Billing rows cascade from User (Payment/Subscription/AddonPurchase all
+      // declare onDelete: Cascade), so leaving them uncounted meant a subscriber
+      // with no orders looked "clean" and the hard delete silently destroyed
+      // their gateway payment history — financial records we are least entitled
+      // to shred. Counting them routes such accounts to anonymization instead.
+      payments: true,
+      subscriptions: true,
+      addonPurchases: true,
     },
   },
   wallet: { select: { balanceCents: true, _count: { select: { txns: true } } } },
@@ -110,6 +118,13 @@ export function personalRowDeletions(prisma: PrismaService, userId: string) {
     prisma.wallet.deleteMany({ where: { userId } }),
     prisma.kycRecord.deleteMany({ where: { userId } }),
     prisma.profile.deleteMany({ where: { userId } }),
+    // `Worker.userId` is optional with no onDelete, so the Postgres default is
+    // SET NULL: deleting the user would leave behind a Worker row still holding
+    // that person's name and phone, detached from any account and invisible to
+    // every "delete my data" path. Drop it here instead. If the row is pinned by
+    // assignments or attendance the delete raises P2003 and the caller falls back
+    // to anonymization, which is the correct outcome for a worker with history.
+    prisma.worker.deleteMany({ where: { userId } }),
     prisma.user.delete({ where: { id: userId } }),
   ];
 }

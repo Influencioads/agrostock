@@ -1570,7 +1570,11 @@
       "passwordPlaceholder": "Your password",
       "preflightFailed": "We couldn't check your account just now. You can still continue — anything outstanding will be reported when you confirm.",
       "signIn": "Sign in to manage your account.",
-      "title": "Delete account"
+      "title": "Delete account",
+      "warn": {
+        "wallet_balance": "Your wallet still holds {{amount}}. Deleting your account gives it up — withdraw it first if you want to keep it."
+      },
+      "warnTitle": "Before you go"
     },
     "dir": {
       "availableNow": "Available now",

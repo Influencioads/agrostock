@@ -543,7 +543,15 @@ export interface AdminCommunityAnalytics {
   openReports: number;
 }
 /** What a Guideline 1.2 report can point at. `product` is a marketplace listing. */
-export type ApiReportTargetType = 'post' | 'message' | 'user' | 'group' | 'product';
+export type ApiReportTargetType =
+  | 'post'
+  | 'message'
+  | 'user'
+  | 'group'
+  | 'product'
+  | 'review'
+  | 'requirement'
+  | 'buyer_bid';
 
 export interface ApiReportInput {
   targetType: ApiReportTargetType;
@@ -1260,8 +1268,13 @@ export type ApiDeletionBlockerCode =
   | 'live_bids';
 
 export interface ApiDeletionPreflight {
-  /** `count` is a row count, except for `wallet_balance` where it is minor units. */
+  /** Live obligations to a counterparty. Deletion is refused while any remain. */
   blockers: { code: ApiDeletionBlockerCode; count: number }[];
+  /**
+   * Surfaced to the user but NOT enforced — deleting anyway is their call.
+   * `wallet_balance`'s `count` is USD minor units, not a row count.
+   */
+  warnings: { code: ApiDeletionBlockerCode; count: number }[];
   canDelete: boolean;
 }
 

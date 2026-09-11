@@ -44,6 +44,7 @@ export function DeleteAccount() {
   }
 
   const blockers = preflight.data?.blockers ?? [];
+  const warnings = preflight.data?.warnings ?? [];
   // A failed preflight must NOT wedge the screen: `canDelete` used to be
   // `data?.canDelete === true`, so any network error left the button disabled with
   // nothing on screen explaining why and no way to retry — an account that could
@@ -115,7 +116,7 @@ export function DeleteAccount() {
                 <Ionicons name="alert-circle-outline" size={16} color={C.error} />
                 <Txt variant="small" style={s.grow}>
                   {b.code === 'wallet_balance'
-                    ? t('pubX.deleteAccount.blocker.wallet_balance', { amount: fmtMinor(b.count) })
+                    ? t('pubX.deleteAccount.blocker.wallet_balance', { amount: fmtMinor(b.count, 'USD') })
                     : t(`pubX.deleteAccount.blocker.${b.code}`, { count: b.count })}
                 </Txt>
               </Row>
@@ -123,6 +124,22 @@ export function DeleteAccount() {
           </View>
         </Card>
       ) : null}
+
+      {warnings.length > 0 && (
+        <Card style={s.warnCard}>
+          <Txt variant="label">{t('pubX.deleteAccount.warnTitle')}</Txt>
+          {warnings.map((w) => (
+            <Row key={w.code} gap={8} style={s.blockRow}>
+              <Ionicons name="wallet-outline" size={16} color={C.inkSoft} />
+              <Txt variant="small" style={s.grow}>
+                {w.code === 'wallet_balance'
+                  ? t('pubX.deleteAccount.warn.wallet_balance', { amount: fmtMinor(w.count, 'USD') })
+                  : t(`pubX.deleteAccount.blocker.${w.code}`, { count: w.count })}
+              </Txt>
+            </Row>
+          ))}
+        </Card>
+      )}
 
       <Card style={s.mt12}>
         <Txt variant="label">{t('pubX.deleteAccount.confirmPassword')}</Txt>
@@ -157,6 +174,7 @@ const s = StyleSheet.create({
   grow: { flex: 1 },
   mt8: { marginTop: space.sm },
   mt12: { marginTop: space.md },
+  warnCard: { marginTop: space.md, borderWidth: StyleSheet.hairlineWidth, borderColor: C.hairline, borderRadius: radius.md },
   blockCard: { marginTop: space.md, borderWidth: StyleSheet.hairlineWidth, borderColor: C.error, borderRadius: radius.md },
   blockRow: { paddingVertical: space.xs },
 });

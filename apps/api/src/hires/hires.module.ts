@@ -207,6 +207,23 @@ export class HiresService {
     }
     const target = await this.prisma.user.findFirst({ where: { id: dto.targetUserId, active: true } });
     if (!target) throw new NotFoundException('User not found');
+    // Guideline 1.2 asks for the ability to "block abusive users from the
+    // service", and community.sendDm already refuses a blocked pair. A hire
+    // request carries the requester's free-text message straight into the
+    // target's inbox, so without the same check blocking someone still left them
+    // a direct channel to you — the block looked enforced and was not. Checked in
+    // BOTH directions, matching the DM rule: blocking is mutual silence, not a
+    // one-way mute.
+    const blocked = await this.prisma.communityUserBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: requester.id, blockedId: dto.targetUserId },
+          { blockerId: dto.targetUserId, blockedId: requester.id },
+        ],
+      },
+      select: { id: true },
+    });
+    if (blocked) throw new ForbiddenException('Messaging is blocked between these users');
     const targetRoles = new Set<string>([target.role, ...target.roles]);
     // `service_provider` is an umbrella: the enquiry targets whichever of the
     // five service roles the user actually holds, so the flow does not fork five

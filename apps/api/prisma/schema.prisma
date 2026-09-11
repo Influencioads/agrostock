@@ -2255,6 +2255,14 @@ enum CommunityReportTargetType {
   /// A marketplace listing. Reports are raised from the app's product screens,
   /// but they land in the same moderation queue as community content.
   product
+  /// A rating's free-text body. Reviews are transaction-gated (you must have
+  /// taken delivery to write one) but they are still public prose about another
+  /// trader, which is squarely what Guideline 1.2 is about.
+  review
+  /// A buyer's posted requirement / RFQ, and the offers answering it.
+  requirement
+  /// A reverse-auction lot: buyer-authored title and notes.
+  buyer_bid
 }
 
 model CommunityGroup {

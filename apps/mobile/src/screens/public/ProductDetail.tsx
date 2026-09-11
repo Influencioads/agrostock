@@ -426,7 +426,16 @@ export function ProductDetail() {
                   <View key={r.id} style={{ paddingVertical: space.md, gap: 4 }}>
                     <Row style={{ justifyContent: 'space-between' }}>
                       <Txt variant="title">{r.rater?.name ?? t('reviews.reviewerFallback')}</Txt>
-                      <RatingStars n={r.stars} />
+                      <Row gap={10}>
+                        <RatingStars n={r.stars} />
+                        {/* A review is another trader's public prose about this
+                            seller — UGC in its own right, and the listing's ⋯
+                            reports the LISTING, not the person who wrote this. */}
+                        <ModerationButton
+                          size={16}
+                          target={{ type: 'review', id: String(r.id), authorId: r.raterId, authorName: r.rater?.name }}
+                        />
+                      </Row>
                     </Row>
                     {!!r.text && <Txt variant="body" color={C.inkMuted}>{r.text}</Txt>}
                     <Txt variant="muted">{new Date(r.createdAt).toLocaleDateString()}</Txt>

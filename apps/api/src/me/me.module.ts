@@ -196,13 +196,21 @@ export class MeService {
       this.prisma.auctionBid.count({ where: { bidderId: userId, product: liveAuction } }),
     ]);
     const blockers: { code: string; count: number }[] = [];
+    const warnings: { code: string; count: number }[] = [];
     const balance = wallet?.balanceCents ?? 0;
-    if (balance > 0) blockers.push({ code: 'wallet_balance', count: balance });
+    // A wallet balance WARNS, it does not block. Withdrawal UI exists for
+    // sellers, transporters, workers and loader companies but NOT for buyers, so
+    // refusing here made deletion permanently impossible for a whole role — and
+    // Apple is explicit that an app which "makes it unnecessarily difficult for a
+    // user to delete their account will not pass review". The user is told what
+    // they are giving up and decides; every other entry below is a live
+    // obligation to a counterparty and resolves on its own as the trade closes.
+    if (balance > 0) warnings.push({ code: 'wallet_balance', count: balance });
     if (openOrders > 0) blockers.push({ code: 'open_orders', count: openOrders });
     if (escrowHeld > 0) blockers.push({ code: 'escrow_held', count: escrowHeld });
     if (liveAuctions > 0) blockers.push({ code: 'live_auctions', count: liveAuctions });
     if (liveBids > 0) blockers.push({ code: 'live_bids', count: liveBids });
-    return { blockers, canDelete: blockers.length === 0 };
+    return { blockers, warnings, canDelete: blockers.length === 0 };
   }
 
   /**
@@ -290,6 +298,13 @@ export class MeService {
       // NOT a trade record, so they go on this path too — the hard-delete path
       // already dropped them, and leaving them here meant the one account most in
       // need of erasure (a user who only ever uploaded ID) kept its passport scan.
+      // Same orphan problem as the hard-delete path, one level down: the Worker
+      // row keeps the person's name and phone whether or not the account row
+      // survives, so it has to be scrubbed here too.
+      this.prisma.worker.updateMany({
+        where: { userId },
+        data: { name: 'Deleted user', phone: null, skill: null, originCity: null, originCountry: null },
+      }),
       // KycDocument.record is onDelete: Cascade, so the documents go with it.
       // The rows go; the bytes behind KycDocument.storageKey still need a
       // private-store sweep, which belongs to a real erasure job.

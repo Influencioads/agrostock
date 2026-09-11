@@ -5,6 +5,7 @@ import { schemaName, type ApiCategory } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Button, Card, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
+import { ModerationButton } from '../../moderation/ModerationButton';
 import { C, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { CountryField } from '../components/GeoFields';
@@ -56,7 +57,13 @@ export function RequirementsBoard() {
         ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="clipboard-outline" title={t('pubX.req.empty')} />}
         renderItem={({ item: r }) => (
           <Card style={{ gap: 8 }}>
-            <Txt variant="title">{r.title}</Txt>
+            <Row style={{ justifyContent: 'space-between' }} gap={8}>
+              <Txt variant="title" style={{ flex: 1 }}>{r.title}</Txt>
+              {/* A requirement is buyer-authored free text on a public board. */}
+              <ModerationButton
+                target={{ type: 'requirement', id: String(r.id), authorId: r.author?.id, authorName: r.author?.name }}
+              />
+            </Row>
             <Row gap={6} style={{ flexWrap: 'wrap' }}>
               <Badge label={`${r.quantity} ${r.unit} · ${r.productName}`} tone="green" />
               {r.budget ? <Badge label={t('pubX.req.budget', { value: r.budget })} tone="mango" /> : null}

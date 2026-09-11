@@ -23,6 +23,8 @@ type Counts = {
   footprint?: boolean;
   /** Make the hard delete fail the way an uncounted FK relation would. */
   fkViolation?: boolean;
+  /** A subscription/payment exists — must route to anonymization, never a drop. */
+  billing?: boolean;
 };
 
 async function serviceFor(counts: Counts = {}) {
@@ -42,7 +44,10 @@ async function serviceFor(counts: Counts = {}) {
     user: {
       findUnique: vi.fn(async () => ({
         passwordHash,
-        _count: { products: counts.footprint ? 1 : 0 },
+        _count: {
+          products: counts.footprint ? 1 : 0,
+          payments: counts.billing ? 1 : 0,
+        },
         wallet: { balanceCents: counts.balanceCents ?? 0, _count: { txns: 0 } },
       })),
       update: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
@@ -81,6 +86,13 @@ async function serviceFor(counts: Counts = {}) {
       }),
     },
     deviceToken: { deleteMany: vi.fn(async () => ({ count: 1 })) },
+    worker: {
+      ...del('worker'),
+      updateMany: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+        updates.worker = data;
+        return { count: 1 };
+      }),
+    },
     roleRequest: del('roleRequest'),
     communityMessageReaction: del('communityMessageReaction'),
     communitySavedPost: del('communitySavedPost'),
@@ -96,7 +108,7 @@ async function serviceFor(counts: Counts = {}) {
 describe('account deletion (Guideline 5.1.1(v))', () => {
   it('really deletes a clean account — Apple rejects deactivation-only', async () => {
     const { svc, prisma, deleted } = await serviceFor();
-    await expect(svc.deletionBlockers('u1')).resolves.toEqual({ blockers: [], canDelete: true });
+    await expect(svc.deletionBlockers('u1')).resolves.toEqual({ blockers: [], warnings: [], canDelete: true });
     await expect(svc.deleteAccount('u1', { password: PASSWORD })).resolves.toEqual({ ok: true, erased: 'deleted' });
     // The row itself is gone, not merely flagged inactive.
     expect(deleted).toContain('user.delete');
@@ -119,7 +131,6 @@ describe('account deletion (Guideline 5.1.1(v))', () => {
   });
 
   it.each([
-    ['wallet_balance', { balanceCents: 2500 }],
     ['open_orders', { openOrders: 1 }],
     ['escrow_held', { escrowHeld: 1 }],
     ['live_auctions', { liveAuctions: 1 }],
@@ -134,16 +145,23 @@ describe('account deletion (Guideline 5.1.1(v))', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('reports a wallet blocker in minor units, so the UI can show the amount', async () => {
-    const { svc } = await serviceFor({ balanceCents: 2500 });
-    const { blockers } = await svc.deletionBlockers('u1');
-    expect(blockers).toContainEqual({ code: 'wallet_balance', count: 2500 });
+  it('warns about a wallet balance but does NOT refuse — buyers have no way to withdraw', async () => {
+    const { svc, prisma } = await serviceFor({ balanceCents: 2500 });
+    const { blockers, warnings, canDelete } = await svc.deletionBlockers('u1');
+    // Refusing here made deletion permanently impossible for the buyer role,
+    // which is exactly the "unnecessarily difficult" Apple rejects.
+    expect(blockers).toEqual([]);
+    expect(canDelete).toBe(true);
+    expect(warnings).toContainEqual({ code: 'wallet_balance', count: 2500 });
+    await expect(svc.deleteAccount('u1', { password: PASSWORD })).resolves.toMatchObject({ ok: true });
+    expect(prisma.$transaction).toHaveBeenCalled();
   });
 
   it('lists every outstanding obligation at once, not just the first', async () => {
     const { svc } = await serviceFor({ balanceCents: 100, openOrders: 2, liveBids: 3 });
-    const { blockers } = await svc.deletionBlockers('u1');
-    expect(blockers.map((b) => b.code).sort()).toEqual(['live_bids', 'open_orders', 'wallet_balance']);
+    const { blockers, warnings } = await svc.deletionBlockers('u1');
+    expect(blockers.map((b) => b.code).sort()).toEqual(['live_bids', 'open_orders']);
+    expect(warnings.map((w) => w.code)).toEqual(['wallet_balance']);
   });
 
   it('anonymizes an account with trade history: no personal data survives', async () => {
@@ -209,5 +227,26 @@ describe('account deletion (Guideline 5.1.1(v))', () => {
       await svc.deleteAccount('u1', { password: PASSWORD });
       expect(deleted, `KYC survived for ${JSON.stringify(counts)}`).toContain('kycRecord');
     }
+  });
+
+  it('keeps the row when a subscription or payment references it — those must not cascade away', async () => {
+    // Payment/Subscription/AddonPurchase all declare onDelete: Cascade, so an
+    // uncounted billing relation meant the hard delete shredded payment history.
+    const { svc, deleted } = await serviceFor({ billing: true });
+    await expect(svc.deleteAccount('u1', { password: PASSWORD })).resolves.toMatchObject({ erased: 'anonymized' });
+    expect(deleted).not.toContain('user.delete');
+  });
+
+  it("scrubs the worker row's name and phone, which survive on both paths otherwise", async () => {
+    // Worker.userId is optional with no onDelete, so Postgres SET NULLs it and
+    // leaves an orphan holding personal data.
+    const { svc, deleted } = await serviceFor();
+    await svc.deleteAccount('u1', { password: PASSWORD });
+    expect(deleted).toContain('worker');
+
+    const { svc: svc2, updates } = await serviceFor({ footprint: true });
+    await svc2.deleteAccount('u1', { password: PASSWORD });
+    expect((updates.worker as { name: string; phone: null }).name).toBe('Deleted user');
+    expect((updates.worker as { phone: null }).phone).toBeNull();
   });
 });
