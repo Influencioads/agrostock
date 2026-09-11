@@ -17,6 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Socket } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
+import { ModerationButton } from '../../moderation/ModerationButton';
+import { useModeration } from '../../moderation/ModerationProvider';
 import { useChatSocket } from '../../chat/useChatSocket';
 import { useChatStrings } from '../../chat/strings';
 import { useI18n } from '../../i18n';
@@ -78,6 +80,7 @@ function BubbleBody({ m, mine }: { m: AnyRec; mine: boolean }) {
 /* ── Chat room (realtime) ─────────────────────────────────────────── */
 function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | null; onBack: () => void; s: S }) {
   const { user } = useAuth();
+  const { promptReport } = useModeration();
   const { lang } = useI18n();
   const [displayGroup, setDisplayGroup] = useState<AnyRec>(group);
   const [messages, setMessages] = useState<AnyRec[]>([]);
@@ -147,6 +150,7 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
           <Txt variant="title" numberOfLines={1}>{displayGroup.name}</Txt>
           {typing ? <Txt variant="muted">{s.typing}</Txt> : null}
         </View>
+        <ModerationButton target={{ type: 'group', id: String(group.id) }} />
       </Row>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -161,7 +165,15 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
             const mine = m.sender?.id === user?.id;
             return (
               <View style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                <View
+                <Pressable
+                  // Long-press is the chat convention for per-message actions;
+                  // the header ⋯ covers discoverability for the group itself.
+                  onLongPress={
+                    mine
+                      ? undefined
+                      : () => promptReport({ type: 'message', id: String(m.id), authorId: m.sender?.id, authorName: m.sender?.name })
+                  }
+                  delayLongPress={350}
                   style={{
                     maxWidth: '82%',
                     backgroundColor: mine ? C.green : C.white,
@@ -181,7 +193,7 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
                       {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   ) : null}
-                </View>
+                </Pressable>
               </View>
             );
           }}
@@ -229,6 +241,7 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
 function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: string; draft?: string }; socket: Socket | null; onBack: () => void; s: S }) {
   const { t, lang } = useI18n();
   const { user } = useAuth();
+  const { promptReport } = useModeration();
   const [messages, setMessages] = useState<AnyRec[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
   // Seeded from the opener (an order card passes "About order #…"), so the
@@ -297,6 +310,8 @@ function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: str
           <Txt variant="title" numberOfLines={1}>{peer.name}</Txt>
           <Txt variant="muted">{t('compX.community.dmSubtitle')}</Txt>
         </View>
+        {/* Guideline 1.2: report or block the person you are talking to. */}
+        <ModerationButton target={{ type: 'user', id: peer.userId, authorName: peer.name }} />
       </Row>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -311,7 +326,13 @@ function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: str
             const mine = m.sender?.id === user?.id;
             return (
               <View style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                <View
+                <Pressable
+                  onLongPress={
+                    mine
+                      ? undefined
+                      : () => promptReport({ type: 'message', id: String(m.id), authorId: peer.userId, authorName: peer.name })
+                  }
+                  delayLongPress={350}
                   style={{
                     maxWidth: '82%',
                     backgroundColor: mine ? C.green : C.white,
@@ -330,7 +351,7 @@ function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: str
                       {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   ) : null}
-                </View>
+                </Pressable>
               </View>
             );
           }}
@@ -502,6 +523,8 @@ export function Community() {
                         {p.author?.name} · {p.author?.role}
                       </Txt>
                     </Row>
+                    {/* Guideline 1.2: report/block on every post that isn't yours. */}
+                    <ModerationButton target={{ type: 'post', id: String(p.id), authorId: p.author?.id, authorName: p.author?.name }} />
                   </Row>
                 </Pressable>
                 {p.title ? <Txt variant="title" style={{ marginTop: 4 }}>{p.title}</Txt> : null}

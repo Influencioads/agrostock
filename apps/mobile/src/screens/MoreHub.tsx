@@ -177,7 +177,9 @@ export function MoreHub() {
         <Group title={t('hub.account')}>
           <MenuRow icon="briefcase-outline" label={t('hub.myHires')} onPress={() => nav.navigate('Hires')} />
           <MenuRow icon="id-card-outline" label={t('hub.myProfile')} onPress={() => nav.navigate('ProfileForm')} />
-          <MenuRow icon="git-branch-outline" label={t('hub.rolesAccess')} last onPress={() => nav.navigate('RolesAccess')} />
+          <MenuRow icon="git-branch-outline" label={t('hub.rolesAccess')} onPress={() => nav.navigate('RolesAccess')} />
+          {/* Guideline 5.1.1(v): deletion must be reachable from inside the app. */}
+          <MenuRow icon="trash-outline" label={t('hub.deleteAccount')} danger last onPress={() => nav.navigate('DeleteAccount')} />
         </Group>
 
         {/* role-specific sections */}
@@ -200,6 +202,21 @@ export function MoreHub() {
         </Group>
 
         <LanguageGroup />
+
+        {/* Guidelines 1.2 / 3.1.2: the legal documents must be reachable in-app. */}
+        <Group title={t('hub.legal')}>
+          <MenuRow
+            icon="document-text-outline"
+            label={t('pubX.legal.terms')}
+            onPress={() => nav.navigate('LegalPage', { slug: 'terms', title: t('pubX.legal.terms') })}
+          />
+          <MenuRow
+            icon="shield-checkmark-outline"
+            label={t('pubX.legal.privacy')}
+            last
+            onPress={() => nav.navigate('LegalPage', { slug: 'privacy', title: t('pubX.legal.privacy') })}
+          />
+        </Group>
 
         <Group>
           <MenuRow icon="notifications-outline" label={t('hub.notifications')} onPress={() => nav.navigate('Notifications')} />

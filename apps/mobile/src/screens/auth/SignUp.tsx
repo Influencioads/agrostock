@@ -245,7 +245,20 @@ export function SignUp() {
       </View>
 
       <Button title={t('auth.signUp.cta')} full size="lg" loading={busy} disabled={!form.name || !form.email || !form.password || !confirmPassword} onPress={submit} />
-      <Text style={s.terms}>{t('auth.signUp.terms')}</Text>
+      {/* Guidelines 1.2 / 3.1.2: the terms and privacy policy a user is agreeing
+          to have to be readable from inside the app, so these are real links
+          rather than the flat sentence this used to be. */}
+      <Text style={s.terms}>
+        {t('auth.signUp.termsPrefix')}
+        <Text style={s.termsLink} onPress={() => nav.navigate('LegalPage', { slug: 'terms', title: t('pubX.legal.terms') })}>
+          {t('auth.signUp.termsLink')}
+        </Text>
+        {t('auth.signUp.termsAnd')}
+        <Text style={s.termsLink} onPress={() => nav.navigate('LegalPage', { slug: 'privacy', title: t('pubX.legal.privacy') })}>
+          {t('auth.signUp.privacyLink')}
+        </Text>
+        {t('auth.signUp.termsSuffix')}
+      </Text>
     </Screen>
   );
 }
@@ -282,4 +295,5 @@ const s = StyleSheet.create({
   // flex so the label wraps inside the card instead of overflowing past the icon.
   roleLabel: { ...type.title, fontSize: 15, color: C.ink, flex: 1 },
   terms: { ...type.caption, color: C.inkMuted, textAlign: 'center', marginTop: 4 },
+  termsLink: { color: C.green, fontWeight: '700', textDecorationLine: 'underline' },
 });

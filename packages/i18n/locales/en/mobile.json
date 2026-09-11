@@ -85,10 +85,14 @@
       "phone": "Phone (private — admins only)",
       "phonePh": "+971 50 123 4567",
       "pickCountryFirst": "Select a country first",
+      "privacyLink": "Privacy Policy",
       "resend": "Resend the link",
       "resent": "Link sent — check your inbox",
       "subtitle": "Pick your role — you can add more later.",
-      "terms": "By continuing you agree to the Terms and Privacy policy.",
+      "termsAnd": " and ",
+      "termsLink": "Terms of Service",
+      "termsPrefix": "By continuing you agree to the ",
+      "termsSuffix": ".",
       "title": "Create your account"
     }
   },
@@ -121,6 +125,8 @@
     "finishPayment": "Finish payment",
     "free": "Free",
     "historyTitle": "Payment history",
+    "iosUpgradeBody": "Plan upgrades aren't available in the iOS app. Your current plan and usage are shown above.",
+    "iosUpgradeTitle": "Plan upgrades",
     "limit": {
       "activeListings": "active listings",
       "auctionLotsPerMonth": "auction lots per month",
@@ -1137,8 +1143,10 @@
     "account": "Account",
     "activeDashboard": "Active dashboard",
     "community": "Community",
+    "deleteAccount": "Delete account",
     "displayCurrency": "Display currency",
     "kycVerified": "KYC verified",
+    "legal": "Legal",
     "logOut": "Log out",
     "marketplace": "Marketplace",
     "myHires": "My Hires",
@@ -1400,6 +1408,40 @@
       "title": "Active Trips"
     }
   },
+  "moderation": {
+    "menuTitle": "Report or block",
+    "reportAction": "Report",
+    "blockAction": "Block",
+    "reportTitle": "Report this content",
+    "reportUserTitle": "Report this account",
+    "reportBody": "Tell us what's wrong. Our moderators review every report, usually within 24 hours.",
+    "reason": {
+      "spam": "Spam or misleading",
+      "scam": "Scam or fraud",
+      "offensive": "Offensive or abusive",
+      "harassment": "Harassment or bullying",
+      "illegal": "Illegal goods or activity",
+      "other": "Something else"
+    },
+    "detailLabel": "Details (optional)",
+    "detailPlaceholder": "Anything that helps us understand…",
+    "submit": "Submit report",
+    "thanksTitle": "Report received",
+    "thanksBody": "Thanks — our moderators will review this. You can also block this person so you stop seeing their content.",
+    "alsoBlock": "Block them too",
+    "notNow": "Not now",
+    "reportFailed": "Could not send your report. Please try again.",
+    "blockTitle": "Block {{name}}?",
+    "thisUser": "this user",
+    "blockBody": "You will stop seeing their posts, listings and messages, and neither of you can message the other. You can undo this later.",
+    "blockCta": "Block",
+    "blockedTitle": "Blocked",
+    "blockedBody": "You will no longer see their content.",
+    "blockFailed": "Could not block this user. Please try again.",
+    "failedTitle": "Something went wrong",
+    "signInTitle": "Sign in required",
+    "signInBody": "Sign in to report or block."
+  },
   "pubX": {
     "auc": {
       "biddersN_one": "{{count}} bidder",
@@ -1498,6 +1540,32 @@
       "splitLine": "{{orders}} orders to {{sellers}} sellers — each is placed, shipped and paid separately.",
       "summary": "Summary",
       "title": "Checkout"
+    },
+    "deleteAccount": {
+      "title": "Delete account",
+      "body": "This deletes your account and your personal details, and releases your email address so it can be used again. If you have past orders or invoices, those records are kept for your trading partners and for tax purposes — but stripped of your name and contact details. This cannot be undone.",
+      "signIn": "Sign in to manage your account.",
+      "blockedTitle": "Finish these first",
+      "blockedBody": "Other people are still relying on these. Settle them and come back — your account will be ready to delete.",
+      "blocker": {
+        "wallet_balance": "Withdraw your wallet balance of {{amount}}",
+        "open_orders_one": "{{count}} order still in progress",
+        "open_orders_other": "{{count}} orders still in progress",
+        "escrow_held_one": "{{count}} payment still held in escrow",
+        "escrow_held_other": "{{count}} payments still held in escrow",
+        "live_auctions_one": "{{count}} auction of yours is still running",
+        "live_auctions_other": "{{count}} auctions of yours are still running",
+        "live_bids_one": "{{count}} live bid you have placed",
+        "live_bids_other": "{{count}} live bids you have placed"
+      },
+      "confirmPassword": "Confirm it's you",
+      "passwordHint": "Enter your password to confirm this request.",
+      "passwordPlaceholder": "Your password",
+      "cta": "Delete my account",
+      "confirmTitle": "Delete your account?",
+      "confirmBody": "Your personal details will be erased and you will be signed out everywhere. This cannot be undone.",
+      "confirmCta": "Delete",
+      "failed": "Could not delete your account. Please try again."
     },
     "dir": {
       "availableNow": "Available now",
@@ -1651,6 +1719,14 @@
       "uploadFailTitle": "Upload failed",
       "uploading": "Uploading…",
       "view": "View"
+    },
+    "legal": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "title": "Legal",
+      "unavailableBody": "We couldn't load this document. Check your connection and try again.",
+      "unavailableTitle": "Not available right now",
+      "updated": "Last updated {{date}}"
     },
     "nav": {
       "loadingCompanies": "Loading Companies",

@@ -238,8 +238,8 @@
     "fEmoji": "Emoji",
     "fName": "Name",
     "glance": "Community at a glance",
-    "groupsCount": "Groups ({{count}})",
     "groupStats": "{{members}} members · {{posts}} posts · {{messages}} messages",
+    "groupsCount": "Groups ({{count}})",
     "inGroup": "in {{name}}",
     "metric": {
       "groups": "Groups",
@@ -261,6 +261,7 @@
       "groups": "groups",
       "reports": "reports"
     },
+    "takedown": "Take down",
     "unpin": "Unpin"
   },
   "companies": {

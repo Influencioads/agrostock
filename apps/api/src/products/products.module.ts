@@ -30,7 +30,7 @@ import { FxModule, FxService } from '../fx/fx.module';
 import { EntitlementsService } from '../billing/entitlements.service';
 import { CatalogModule, CategoriesService, MAX_TAXONOMY_DEPTH } from '../catalog/catalog.module';
 import { PrismaService } from '../prisma/prisma.service';
-import { JwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
+import { JwtAuthGuard, OptionalJwtAuthGuard, Roles, RolesGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
 import { PRODUCT_UPSERTED, type ContentUpsertedEvent } from '../translation/translation.events';
@@ -661,8 +661,26 @@ export class ProductsService {
     return where;
   }
 
-  async findAll(q: Record<string, string | undefined>, locale: Lang = 'en') {
+  /**
+   * Sellers the viewer has blocked (or who blocked them). Blocking is a
+   * Guideline 1.2 obligation and it has to mean "I stop seeing this person" on
+   * every surface, not just in the community feed — a blocked seller's listings
+   * would otherwise still fill the catalog.
+   */
+  private async blockedSellerIds(viewerId: string): Promise<string[]> {
+    const rows = await this.prisma.communityUserBlock.findMany({
+      where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    return [...new Set(rows.map((r) => (r.blockerId === viewerId ? r.blockedId : r.blockerId)))];
+  }
+
+  async findAll(q: Record<string, string | undefined>, locale: Lang = 'en', viewerId?: string) {
     const where = await this.buildWhere(q, locale);
+    if (viewerId) {
+      const blocked = await this.blockedSellerIds(viewerId);
+      if (blocked.length) where.sellerId = { ...(where.sellerId as object | undefined), notIn: blocked };
+    }
 
     // Every sort key here has ties — a batch import shares a `createdAt` to the
     // millisecond, and price/rating repeat constantly. Postgres does not promise
@@ -1385,9 +1403,10 @@ export class ProductsController {
     private uploads: UploadsService,
   ) {}
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  findAll(@Query() q: Record<string, string>, @Locale() locale: Lang) {
-    return this.products.findAll(q, locale);
+  findAll(@Query() q: Record<string, string>, @Locale() locale: Lang, @CurrentUser() user?: AuthUser) {
+    return this.products.findAll(q, locale, user?.id);
   }
 
   /**

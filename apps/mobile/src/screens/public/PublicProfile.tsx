@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
+import { ModerationButton } from '../../moderation/ModerationButton';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Button, Card, Loading, Row, Txt, QueryError } from '../../ui';
 import { C, space } from '../../theme/tokens';
@@ -88,6 +89,8 @@ export function PublicProfile() {
                 {roles.map((r) => <Badge key={r} label={t(`enums:role.${r}`)} tone="slate" />)}
               </Row>
             </View>
+            {/* Guideline 1.2: report or block this account. */}
+            <ModerationButton target={{ type: 'user', id: p.id, authorName: p.name }} />
           </Row>
           {p.profile?.bio ? <Txt variant="muted">{p.profile.bio}</Txt> : null}
           <View style={{ gap: 6 }}>

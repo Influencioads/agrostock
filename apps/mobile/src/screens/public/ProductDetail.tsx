@@ -12,6 +12,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { Accordion, Avatar, Badge, Button, Divider, ErrorState, KeyValue, Loading, ProduceMark, ProgressBar, RatingStars, Row, SectionHeader, SkeletonRows, Txt } from '../../ui';
 import { C, elevation, font, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
+import { ModerationButton } from '../../moderation/ModerationButton';
 import { AuctionRoom } from './AuctionRoom';
 import { ProductCard, stockLabel } from '../components';
 import { useBasket } from '../../basket/BasketContext';
@@ -301,7 +302,14 @@ export function ProductDetail() {
             style={s.block}
             onPress={() => (sellerId ? nav.navigate('PublicProfile', { userId: sellerId }) : undefined)}
           >
-            <Text style={[s.blockLabel, microLabel()]}>{t('pubX.pd.supplier')}</Text>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <Text style={[s.blockLabel, microLabel()]}>{t('pubX.pd.supplier')}</Text>
+              {/* Guideline 1.2: a listing is user-generated content, so it needs
+                  its own report path — not just the seller's profile. */}
+              <ModerationButton
+                target={{ type: 'product', id: String(p.id), authorId: sellerId, authorName: p.seller.name }}
+              />
+            </Row>
             <Row gap={space.md} style={{ marginTop: space.sm }}>
               <Avatar name={p.seller.name} size={42} />
               <View style={{ flex: 1 }}>

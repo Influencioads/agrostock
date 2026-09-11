@@ -11,6 +11,8 @@ import { RfqBasket } from '../screens/public/RfqBasket';
 import { Checkout } from '../screens/public/Checkout';
 import { Notifications } from '../screens/public/Notifications';
 import { NotificationSettings } from '../screens/public/NotificationSettings';
+import { DeleteAccount } from '../screens/public/DeleteAccount';
+import { LegalPage } from '../screens/public/LegalPage';
 import { LiveTracking } from '../screens/public/LiveTracking';
 import { SignIn } from '../screens/auth/SignIn';
 import { SignUp } from '../screens/auth/SignUp';
@@ -65,6 +67,12 @@ export function RootNavigator() {
       <Stack.Screen name="Checkout" component={Checkout} options={{ headerShown: false }} />
       <Stack.Screen name="Notifications" component={Notifications} options={title('Notifications')} />
       <Stack.Screen name="NotificationSettings" component={NotificationSettings} options={{ title: t('mobile:pubX.notif.settingsTitle') }} />
+      <Stack.Screen name="DeleteAccount" component={DeleteAccount} options={{ title: t('mobile:pubX.deleteAccount.title') }} />
+      <Stack.Screen
+        name="LegalPage"
+        component={LegalPage}
+        options={({ route }) => ({ title: route.params?.title ?? t('mobile:pubX.legal.title') })}
+      />
       <Stack.Screen name="LiveTracking" component={LiveTracking} options={title('LiveTracking')} />
       <Stack.Screen name="SignIn" component={SignIn} options={{ ...title('SignIn'), presentation: 'modal' }} />
       <Stack.Screen name="SignUp" component={SignUp} options={{ ...title('SignUp'), presentation: 'modal' }} />

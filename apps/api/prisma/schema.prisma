@@ -2252,6 +2252,9 @@ enum CommunityReportTargetType {
   message
   user
   group
+  /// A marketplace listing. Reports are raised from the app's product screens,
+  /// but they land in the same moderation queue as community content.
+  product
 }
 
 model CommunityGroup {

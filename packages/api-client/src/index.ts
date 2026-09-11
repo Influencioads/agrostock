@@ -542,9 +542,18 @@ export interface AdminCommunityAnalytics {
   messages: number;
   openReports: number;
 }
+/** What a Guideline 1.2 report can point at. `product` is a marketplace listing. */
+export type ApiReportTargetType = 'post' | 'message' | 'user' | 'group' | 'product';
+
+export interface ApiReportInput {
+  targetType: ApiReportTargetType;
+  targetId: string;
+  reason: string;
+}
+
 export interface AdminCommunityReport {
   id: string;
-  targetType: string;
+  targetType: ApiReportTargetType;
   targetId: string;
   reason: string | null;
   status: string;
@@ -1240,6 +1249,20 @@ export interface ApiAdminGateway extends ApiGateway {
   credentials: Record<string, string | null>;
   callbackUrls: { kind: string; url: string }[];
   updatedAt: string | null;
+}
+
+/** Live obligations that block self-service account deletion (Guideline 5.1.1(v)). */
+export type ApiDeletionBlockerCode =
+  | 'wallet_balance'
+  | 'open_orders'
+  | 'escrow_held'
+  | 'live_auctions'
+  | 'live_bids';
+
+export interface ApiDeletionPreflight {
+  /** `count` is a row count, except for `wallet_balance` where it is minor units. */
+  blockers: { code: ApiDeletionBlockerCode; count: number }[];
+  canDelete: boolean;
 }
 
 export interface ApiQuotaRow {
@@ -2376,7 +2399,8 @@ export function createApiClient(opts: ApiClientOptions) {
   const post = async <T = unknown>(url: string, body?: unknown) => (await http.post<T>(url, body ?? {})).data;
   const put = async <T = unknown>(url: string, body?: unknown) => (await http.put<T>(url, body ?? {})).data;
   const patch = async <T = unknown>(url: string, body?: unknown) => (await http.patch<T>(url, body ?? {})).data;
-  const del = async <T = unknown>(url: string) => (await http.delete<T>(url)).data;
+  const del = async <T = unknown>(url: string, body?: unknown) =>
+    (await http.delete<T>(url, body === undefined ? undefined : { data: body })).data;
 
   return {
     http,
@@ -2969,7 +2993,8 @@ export function createApiClient(opts: ApiClientOptions) {
       profile: () => get<ApiPrivateProfile | null>('/me/profile'),
       updateProfile: (body: Partial<ApiPrivateProfile>) => put<ApiPrivateProfile>('/me/profile', body),
       /** Self-service account deletion — deactivates the account and revokes sessions. */
-      deleteAccount: () => del<{ ok: true }>('/me'),
+      deletionPreflight: () => get<ApiDeletionPreflight>('/me/deletion-preflight'),
+      deleteAccount: (password: string) => del<{ ok: true }>('/me', { password }),
       /** Persist the chosen UI locale so server-rendered notifications/push/email are localized. */
       setLocale: (locale: string) => put<{ id: string; locale: string }>('/me/locale', { locale }),
       /** Upload a profile photo; server converts to WebP and returns its public path. */
@@ -3258,7 +3283,7 @@ export function createApiClient(opts: ApiClientOptions) {
         ),
       savePost: (id: string) => post(`/community/posts/${id}/save`),
       unsavePost: (id: string) => del(`/community/posts/${id}/save`),
-      report: (body: Record<string, unknown>) => post('/community/report', body),
+      report: (body: ApiReportInput) => post('/community/report', body),
       block: (blockedId: string) => post('/community/block', { blockedId }),
       unblock: (blockedId: string) => post('/community/unblock', { blockedId }),
       admin: {
