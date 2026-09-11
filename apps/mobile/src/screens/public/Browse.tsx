@@ -72,7 +72,7 @@ export function Browse() {
     [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
 
-  const { data: cats = [] } = useQuery<ApiCategory[]>({
+  const { data: cats = [], isError: catsError, refetch: refetchCats } = useQuery<ApiCategory[]>({
     queryKey: ['categories'],
     queryFn: () => api.categories.list(),
     staleTime: 3600e3,
@@ -189,6 +189,8 @@ export function Browse() {
         applied={filters}
         onApply={setFilters}
         categories={cats}
+        categoriesError={catsError}
+        onRetryCategories={() => void refetchCats()}
       />
       <SortSheet
         visible={sortSheet}

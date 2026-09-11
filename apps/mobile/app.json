@@ -15,7 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.agrotraders.org",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.agrotraders.org",
@@ -30,10 +33,23 @@
     },
     "plugins": [
       "expo-font",
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       "expo-build-properties",
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "AgroTraders needs access to your photo library so you can attach product images, your profile photo, vehicle and equipment photos, and KYC verification documents.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-notifications",
         {

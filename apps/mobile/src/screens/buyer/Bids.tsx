@@ -72,7 +72,7 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
   // `Number('840,5')` is NaN, which would block submit forever.
   const setNum = (k: 'qtyValue' | 'moq' | 'targetPrice' | 'days') => (v: string) => setF((p) => ({ ...p, [k]: v.replace(',', '.') }));
 
-  const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
+  const { data: categories = [], isError: categoriesError, refetch: refetchCategories } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const attrFields = taxonomy.attrFields;
   const countries = countryOptions(lang);
 
@@ -168,6 +168,8 @@ function NewRequirementSheet({ onClose }: { onClose: () => void }) {
             visible={catSheet}
             onClose={() => setCatSheet(false)}
             categories={categories}
+            categoriesError={categoriesError}
+            onRetryCategories={() => void refetchCategories()}
             selection={taxonomy}
             onSelect={setTaxonomy}
           />

@@ -149,7 +149,7 @@ export function Home() {
           )}
         </View>
 
-        <Pressable style={s.search} onPress={() => nav.navigate('Search', undefined)} accessibilityRole="search">
+        <Pressable style={s.search} onPress={() => nav.navigate('Search', { focus: true })} accessibilityRole="search">
           <Ionicons name="search" size={19} color={C.inkMuted} />
           <Text numberOfLines={1} style={s.searchHint}>{t('pubX.home.searchHint')}</Text>
         </Pressable>

@@ -16,4 +16,12 @@ config.resolver.nodeModulesPaths = [
 ];
 config.resolver.disableHierarchicalLookup = true;
 
+// Claude Code's worktrees under .claude/ each carry a full node_modules copy;
+// watching them blows up the file crawler on Windows.
+const prev = config.resolver.blockList;
+config.resolver.blockList = [
+  ...(Array.isArray(prev) ? prev : prev ? [prev] : []),
+  /[\\/]\.claude[\\/]/,
+];
+
 module.exports = config;

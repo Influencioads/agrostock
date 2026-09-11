@@ -362,9 +362,6 @@ importers:
       expo-build-properties:
         specifier: ~1.0.10
         version: 1.0.10(expo@54.0.35)
-      expo-camera:
-        specifier: ~17.0.10
-        version: 17.0.10(expo@54.0.35)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@react-native-community/cli@13.6.9)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)
       expo-clipboard:
         specifier: ~8.0.8
         version: 8.0.8(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.7)(@react-native-community/cli@13.6.9)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)
@@ -3366,10 +3363,12 @@ packages:
   '@xmldom/xmldom@0.8.13':
     resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xmldom/xmldom@0.9.10':
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
     engines: {node: '>=14.6'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xtuc/ieee754@1.2.0':
     resolution: {integrity: sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA==}
@@ -4388,6 +4387,7 @@ packages:
   eslint@9.39.4:
     resolution: {integrity: sha512-XoMjdBOwe/esVgEvLmNsD3IRHkm7fbKIUGvrleloJXUZgDHig2IPWNniv+GwjyJXzuNqVjlr5+4yVUZjycJwfQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -4466,17 +4466,6 @@ packages:
     resolution: {integrity: sha512-mFCZbrbrv0AP5RB151tAoRzwRJelqM7bCJzCkxpu+owOyH+p/rFC/q7H5q8B9EpVWj8etaIuszR+gKwohpmu1Q==}
     peerDependencies:
       expo: '*'
-
-  expo-camera@17.0.10:
-    resolution: {integrity: sha512-w1RBw83mAGVk4BPPwNrCZyFop0VLiVSRE3c2V9onWbdFwonpRhzmB4drygG8YOUTl1H3wQvALJHyMPTbgsK1Jg==}
-    peerDependencies:
-      expo: '*'
-      react: '*'
-      react-native: '*'
-      react-native-web: '*'
-    peerDependenciesMeta:
-      react-native-web:
-        optional: true
 
   expo-clipboard@8.0.8:
     resolution: {integrity: sha512-VKoBkHIpZZDJTB0jRO4/PZskHdMNOEz3P/41tmM6fDuODMpqhvyWK053X0ebspkxiawJX9lX33JXHBCvVsTTOA==}
@@ -12453,15 +12442,6 @@ snapshots:
       ajv: 8.20.0
       expo: 54.0.35(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.29.7)(@react-native-community/cli@13.6.9)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
       semver: 7.8.5
-
-  expo-camera@17.0.10(expo@54.0.35)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@react-native-community/cli@13.6.9)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0):
-    dependencies:
-      expo: 54.0.35(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.29.7)(@react-native-community/cli@13.6.9)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
-      invariant: 2.2.4
-      react: 19.1.0
-      react-native: 0.81.5(@babel/core@7.29.7)(@react-native-community/cli@13.6.9)(@types/react@18.3.31)(react@19.1.0)
-    optionalDependencies:
-      react-native-web: 0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
   expo-clipboard@8.0.8(expo@54.0.35)(react-native@0.81.5(@babel/core@7.29.7)(@react-native-community/cli@13.6.9)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0):
     dependencies:
