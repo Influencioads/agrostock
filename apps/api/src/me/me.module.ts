@@ -286,6 +286,14 @@ export class MeService {
       }),
       this.prisma.refreshSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date(), revokedReason: 'account_deleted' } }),
       this.prisma.deviceToken.deleteMany({ where: { userId } }),
+      // Identity documents are the most sensitive thing the account holds and are
+      // NOT a trade record, so they go on this path too — the hard-delete path
+      // already dropped them, and leaving them here meant the one account most in
+      // need of erasure (a user who only ever uploaded ID) kept its passport scan.
+      // KycDocument.record is onDelete: Cascade, so the documents go with it.
+      // The rows go; the bytes behind KycDocument.storageKey still need a
+      // private-store sweep, which belongs to a real erasure job.
+      this.prisma.kycRecord.deleteMany({ where: { userId } }),
     ]);
     return { ok: true as const, erased: 'anonymized' as const };
   }

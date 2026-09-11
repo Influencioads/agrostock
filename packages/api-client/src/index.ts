@@ -2994,7 +2994,7 @@ export function createApiClient(opts: ApiClientOptions) {
       updateProfile: (body: Partial<ApiPrivateProfile>) => put<ApiPrivateProfile>('/me/profile', body),
       /** Self-service account deletion — deactivates the account and revokes sessions. */
       deletionPreflight: () => get<ApiDeletionPreflight>('/me/deletion-preflight'),
-      deleteAccount: (password: string) => del<{ ok: true }>('/me', { password }),
+      deleteAccount: (password: string) => del<{ ok: true; erased: 'deleted' | 'anonymized' }>('/me', { password }),
       /** Persist the chosen UI locale so server-rendered notifications/push/email are localized. */
       setLocale: (locale: string) => put<{ id: string; locale: string }>('/me/locale', { locale }),
       /** Upload a profile photo; server converts to WebP and returns its public path. */

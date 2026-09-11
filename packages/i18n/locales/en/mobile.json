@@ -1543,11 +1543,8 @@
       "title": "Checkout"
     },
     "deleteAccount": {
-      "title": "Delete account",
-      "body": "This deletes your account and your personal details, and releases your email address so it can be used again. If you have past orders or invoices, those records are kept for your trading partners and for tax purposes — but stripped of your name and contact details. This cannot be undone.",
-      "signIn": "Sign in to manage your account.",
-      "blockedTitle": "Finish these first",
       "blockedBody": "Other people are still relying on these. Settle them and come back — your account will be ready to delete.",
+      "blockedTitle": "Finish these first",
       "blocker": {
         "wallet_balance": "Withdraw your wallet balance of {{amount}}",
         "open_orders_one": "{{count}} order still in progress",
@@ -1559,14 +1556,21 @@
         "live_bids_one": "{{count}} live bid you have placed",
         "live_bids_other": "{{count}} live bids you have placed"
       },
-      "confirmPassword": "Confirm it's you",
-      "passwordHint": "Enter your password to confirm this request.",
-      "passwordPlaceholder": "Your password",
-      "cta": "Delete my account",
-      "confirmTitle": "Delete your account?",
+      "body": "This deletes your account and your personal details, and releases your email address so it can be used again. If you have past orders or invoices, those records are kept for your trading partners and for tax purposes — but stripped of your name and contact details. This cannot be undone.",
       "confirmBody": "Your personal details will be erased and you will be signed out everywhere. This cannot be undone.",
       "confirmCta": "Delete",
-      "failed": "Could not delete your account. Please try again."
+      "confirmPassword": "Confirm it's you",
+      "confirmTitle": "Delete your account?",
+      "cta": "Delete my account",
+      "doneAnonymized": "Your personal details have been erased and you've been signed out. Records tied to past orders and invoices are kept for tax purposes, without your name or contact details.",
+      "doneDeleted": "Your account and personal details have been deleted. You've been signed out.",
+      "doneTitle": "Account deleted",
+      "failed": "Could not delete your account. Please try again.",
+      "passwordHint": "Enter your password to confirm this request.",
+      "passwordPlaceholder": "Your password",
+      "preflightFailed": "We couldn't check your account just now. You can still continue — anything outstanding will be reported when you confirm.",
+      "signIn": "Sign in to manage your account.",
+      "title": "Delete account"
     },
     "dir": {
       "availableNow": "Available now",

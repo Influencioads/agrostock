@@ -200,4 +200,14 @@ describe('account deletion (Guideline 5.1.1(v))', () => {
     });
     expect((updates.user as { name: string }).name).toBe('Deleted user');
   });
+
+  it('erases KYC identity documents on BOTH paths, not just the hard delete', async () => {
+    // The anonymize path originally skipped KYC entirely, so the account most in
+    // need of erasure — one that only ever uploaded a passport scan — kept it.
+    for (const counts of [{}, { footprint: true }]) {
+      const { svc, deleted } = await serviceFor(counts);
+      await svc.deleteAccount('u1', { password: PASSWORD });
+      expect(deleted, `KYC survived for ${JSON.stringify(counts)}`).toContain('kycRecord');
+    }
+  });
 });

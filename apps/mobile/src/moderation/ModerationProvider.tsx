@@ -58,20 +58,41 @@ export function ModerationProvider({ children }: { children: ReactNode }) {
     setError('');
   }, []);
 
-  const promptReport = useCallback((next: ModerationTarget) => {
-    setReason('');
-    setDetail('');
-    setError('');
-    setTarget(next);
-  }, []);
+  const promptReport = useCallback(
+    (next: ModerationTarget) => {
+      // Guests see the affordance (see ModerationButton) but the endpoint is
+      // authenticated, so without this the sheet opened and submit died on a 401.
+      if (!user) {
+        Alert.alert(t('moderation.signInTitle'), t('moderation.signInBody'));
+        return;
+      }
+      setReason('');
+      setDetail('');
+      setError('');
+      setTarget(next);
+    },
+    [user, t],
+  );
 
   const doBlock = useCallback(
     async (userId: string) => {
       await api.community.block(userId);
       // Blocked authors drop out of the feed, group rooms, DM list and search on
       // the server, so every cached list has to be refetched rather than patched.
-      await qc.invalidateQueries({ queryKey: ['community'] });
-      await qc.invalidateQueries({ queryKey: ['products'] });
+      //
+      // A prefix key does NOT work here: React Query compares key elements one by
+      // one, and the community caches are keyed ['community-feed', lang] /
+      // ['community-groups', lang] / ['community-my', lang] — 'community' is not
+      // equal to 'community-feed', so `queryKey: ['community']` matched nothing and
+      // the blocked author stayed on screen until the app was restarted. Match on
+      // the key's first segment instead, which covers every current community cache
+      // and any later one that follows the same naming.
+      await qc.invalidateQueries({
+        predicate: (q) => {
+          const head = q.queryKey[0];
+          return typeof head === 'string' && (head.startsWith('community') || head === 'products' || head === 'public-profile');
+        },
+      });
     },
     [qc],
   );
@@ -189,6 +210,33 @@ export function ModerationProvider({ children }: { children: ReactNode }) {
       </Sheet>
     </ModerationCtx.Provider>
   );
+}
+
+/**
+ * Long-press actions for a chat message: report, and block the sender.
+ *
+ * Chat bubbles carry no visible "⋯", so long-press is the only entry point — and
+ * wiring it straight to `promptReport` left group rooms and DMs with no way to
+ * block anyone, which is half of what Guideline 1.2 asks for.
+ */
+export function useMessageActions() {
+  const { t } = useI18n();
+  const { promptReport, promptBlock } = useModeration();
+  return (target: ModerationTarget) => {
+    const author = target.authorId;
+    const options: Parameters<typeof Alert.alert>[2] = [
+      { text: t('moderation.reportAction'), style: 'destructive', onPress: () => promptReport(target) },
+    ];
+    if (author) {
+      options.push({
+        text: t('moderation.blockAction'),
+        style: 'destructive',
+        onPress: () => promptBlock(author, target.authorName),
+      });
+    }
+    options.push({ text: t('common:cancel'), style: 'cancel' });
+    Alert.alert(t('moderation.menuTitle'), undefined, options);
+  };
 }
 
 export function useModeration(): Ctx {

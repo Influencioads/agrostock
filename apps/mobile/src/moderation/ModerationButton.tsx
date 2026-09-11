@@ -27,7 +27,12 @@ export function ModerationButton({
   const { promptReport, promptBlock } = useModeration();
 
   const author = target.authorId ?? (target.type === 'user' ? target.id : undefined);
-  if (!user || (author && author === user.id)) return null;
+  // Only your OWN content hides the affordance. A signed-out viewer still gets it:
+  // guests can browse the whole catalog and the public feed, so hiding report from
+  // them left the most-visited surfaces with no way to flag anything — and a
+  // reviewer who looks before signing in would see exactly that. Reporting itself
+  // needs an account, so the sheet sends them to sign in rather than 401-ing.
+  if (author && user && author === user.id) return null;
 
   const open = () => {
     const options: Parameters<typeof Alert.alert>[2] = [

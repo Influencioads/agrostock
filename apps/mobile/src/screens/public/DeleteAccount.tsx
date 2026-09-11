@@ -44,7 +44,13 @@ export function DeleteAccount() {
   }
 
   const blockers = preflight.data?.blockers ?? [];
-  const canDelete = preflight.data?.canDelete === true;
+  // A failed preflight must NOT wedge the screen: `canDelete` used to be
+  // `data?.canDelete === true`, so any network error left the button disabled with
+  // nothing on screen explaining why and no way to retry — an account that could
+  // not be deleted because a GET failed. The preflight is an explanation, not the
+  // enforcement; the server re-checks every blocker on DELETE. So on error we let
+  // the request through and surface whatever the server says.
+  const canDelete = preflight.isError || preflight.data?.canDelete === true;
 
   const confirmAndDelete = () => {
     // The OS dialog is the point of no return, so it carries the plain-language
@@ -61,7 +67,14 @@ export function DeleteAccount() {
             setBusy(true);
             setError('');
             try {
-              await api.me.deleteAccount(password);
+              const res = await api.me.deleteAccount(password);
+              // Say it plainly first. `logout()` nulls `user`, at which point this
+              // screen falls through to its "sign in to manage your account" empty
+              // state — which, arriving unannounced, reads like the delete failed.
+              Alert.alert(
+                t('pubX.deleteAccount.doneTitle'),
+                t(res?.erased === 'anonymized' ? 'pubX.deleteAccount.doneAnonymized' : 'pubX.deleteAccount.doneDeleted'),
+              );
               // Tears down the session and unregisters the push token, so the
               // device stops receiving notifications for the dead account.
               await logout();
@@ -88,6 +101,10 @@ export function DeleteAccount() {
 
       {preflight.isLoading ? (
         <Card style={s.mt12}><SkeletonRows /></Card>
+      ) : preflight.isError ? (
+        <Card style={s.mt12}>
+          <Txt variant="small" color={C.inkSoft}>{t('pubX.deleteAccount.preflightFailed')}</Txt>
+        </Card>
       ) : blockers.length > 0 ? (
         <Card style={s.blockCard}>
           <Txt variant="label" color={C.error}>{t('pubX.deleteAccount.blockedTitle')}</Txt>

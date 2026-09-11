@@ -18,7 +18,7 @@ import type { Socket } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { ModerationButton } from '../../moderation/ModerationButton';
-import { useModeration } from '../../moderation/ModerationProvider';
+import { useMessageActions } from '../../moderation/ModerationProvider';
 import { useChatSocket } from '../../chat/useChatSocket';
 import { useChatStrings } from '../../chat/strings';
 import { useI18n } from '../../i18n';
@@ -80,7 +80,7 @@ function BubbleBody({ m, mine }: { m: AnyRec; mine: boolean }) {
 /* ── Chat room (realtime) ─────────────────────────────────────────── */
 function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | null; onBack: () => void; s: S }) {
   const { user } = useAuth();
-  const { promptReport } = useModeration();
+  const promptMessageActions = useMessageActions();
   const { lang } = useI18n();
   const [displayGroup, setDisplayGroup] = useState<AnyRec>(group);
   const [messages, setMessages] = useState<AnyRec[]>([]);
@@ -171,7 +171,7 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
                   onLongPress={
                     mine
                       ? undefined
-                      : () => promptReport({ type: 'message', id: String(m.id), authorId: m.sender?.id, authorName: m.sender?.name })
+                      : () => promptMessageActions({ type: 'message', id: String(m.id), authorId: m.sender?.id, authorName: m.sender?.name })
                   }
                   delayLongPress={350}
                   style={{
@@ -241,7 +241,7 @@ function Room({ group, socket, onBack, s }: { group: AnyRec; socket: Socket | nu
 function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: string; draft?: string }; socket: Socket | null; onBack: () => void; s: S }) {
   const { t, lang } = useI18n();
   const { user } = useAuth();
-  const { promptReport } = useModeration();
+  const promptMessageActions = useMessageActions();
   const [messages, setMessages] = useState<AnyRec[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
   // Seeded from the opener (an order card passes "About order #…"), so the
@@ -330,7 +330,7 @@ function DmRoom({ peer, socket, onBack, s }: { peer: { userId: string; name: str
                   onLongPress={
                     mine
                       ? undefined
-                      : () => promptReport({ type: 'message', id: String(m.id), authorId: peer.userId, authorName: peer.name })
+                      : () => promptMessageActions({ type: 'message', id: String(m.id), authorId: peer.userId, authorName: peer.name })
                   }
                   delayLongPress={350}
                   style={{
