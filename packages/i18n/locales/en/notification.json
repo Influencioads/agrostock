@@ -359,6 +359,10 @@
       "title": "What {{paidPlan}} would add to your account",
       "body": "{{paidPlan}} gives you {{perk}}, so the people looking for what you do can find you and reach you directly. It is {{price}} and you can cancel any time — everything you have already published stays exactly as it is either way."
     },
+    "upgrade_benefits_quota": {
+      "title": "What {{paidPlan}} would add to your account",
+      "body": "Room to grow: your cap on {{quota}} goes from {{limit}} to {{paidLimit}}. It is {{price}} and you can cancel any time — your data and everything you have already published stay exactly as they are either way."
+    },
     "upgrade_final": {
       "title": "Last note about upgrading",
       "body": "This is the last email we will send you about plans. Your free {{plan}} account carries on unchanged. If its cap of {{limit}} on {{quota}} ever gets in the way, {{paidPlan}} is {{price}} and takes a minute to start."
@@ -367,6 +371,10 @@
       "title": "Last note about upgrading",
       "body": "This is the last email we will send you about plans. Your free {{plan}} account carries on unchanged. If you ever want {{perk}}, {{paidPlan}} is {{price}} and takes a minute to start."
     },
+    "upgrade_final_quota": {
+      "title": "Last note about upgrading",
+      "body": "This is the last email we will send you about plans. Your free {{plan}} account carries on unchanged. If its cap of {{limit}} on {{quota}} ever gets in the way, {{paidPlan}} is {{price}} and takes a minute to start."
+    },
     "upgrade_intro": {
       "title": "Your free plan caps {{quota}} at {{limit}}",
       "body": "You are on {{plan}}, which caps {{quota}} at {{limit}}. {{paidPlan}} raises that to {{paidLimit}} and adds {{perk}} — {{price}}, cancel any time."
@@ -374,6 +382,10 @@
     "upgrade_intro_feature": {
       "title": "Your free plan does not include {{perk}}",
       "body": "You are on {{plan}}, and {{perk}} is not part of it. {{paidPlan}} adds it for {{price}} — cancel any time."
+    },
+    "upgrade_intro_quota": {
+      "title": "Your free plan caps {{quota}} at {{limit}}",
+      "body": "You are on {{plan}}, which caps {{quota}} at {{limit}}. {{paidPlan}} raises that to {{paidLimit}} — {{price}}, cancel any time."
     }
   }
 }

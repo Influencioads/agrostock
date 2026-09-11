@@ -37,6 +37,33 @@ const MARKETPLACE: {
 
 /* ── Menu building blocks ─────────────────────────────────────────── */
 
+/**
+ * Directories and public boards — shown to guests as well as signed-in accounts.
+ *
+ * Every destination here is deliberately guest-tolerant (Requirements hides only its
+ * post button, Services gates only the chat action, Directory gates only DM/hire) and
+ * every backing endpoint is public. But the guest branch below used to return early
+ * before this band rendered, so an anonymous visitor could reach no directory, no
+ * services list and neither board — the whole supply side of the marketplace was
+ * invisible until you had an account, which is exactly backwards for a signup funnel.
+ */
+function MarketplaceGroup({ nav, t }: { nav: Nav; t: (k: string) => string }) {
+  return (
+    <Group title={t('hub.marketplace')}>
+      {MARKETPLACE.map((m, i) => (
+        <MenuRow
+          key={m.labelKey}
+          icon={m.icon}
+          label={t(m.labelKey)}
+          last={i === MARKETPLACE.length - 1}
+          onPress={() => m.go(nav, t(m.labelKey))}
+        />
+      ))}
+    </Group>
+  );
+}
+
+
 /** A white band of rows under an optional eyebrow label. */
 function Group({ title, children }: { title?: string; children: ReactNode }) {
   return (
@@ -110,6 +137,8 @@ export function MoreHub() {
               <Button full title={t('guest.createAccount')} variant="outline" onPress={() => nav.navigate('SignUp')} />
             </View>
           </View>
+          {/* Browse the marketplace before deciding to sign up. */}
+          <MarketplaceGroup nav={nav} t={t} />
           {/* Guests must be able to pick a language before they ever sign in. */}
           <LanguageGroup />
         </ScrollView>
@@ -162,17 +191,7 @@ export function MoreHub() {
         </Group>
 
         {/* marketplace directories & boards (all roles) */}
-        <Group title={t('hub.marketplace')}>
-          {MARKETPLACE.map((m, i) => (
-            <MenuRow
-              key={m.labelKey}
-              icon={m.icon}
-              label={t(m.labelKey)}
-              last={i === MARKETPLACE.length - 1}
-              onPress={() => m.go(nav, t(m.labelKey))}
-            />
-          ))}
-        </Group>
+        <MarketplaceGroup nav={nav} t={t} />
 
         <Group title={t('hub.account')}>
           <MenuRow icon="briefcase-outline" label={t('hub.myHires')} onPress={() => nav.navigate('Hires')} />

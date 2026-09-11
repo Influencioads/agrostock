@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiHireRequest } from '@agrotraders/api-client';
-import { hireBlockForService, hireFieldByKey } from '@agrotraders/types';
+import { canReceiveHires, hireBlockForService, hireFieldByKey } from '@agrotraders/types';
 import { api } from '../lib/api';
 import { useAuth } from '../auth/AuthProvider';
 import { Badge, Button, Card, EmptyState, Row, Segmented, Txt } from '../ui';
@@ -109,7 +109,9 @@ export function HiresScreen() {
   const { roles } = useAuth();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<TargetFilter>('all');
-  const isProvider = roles.some((r) => ['transporter', 'loaderco', 'worker'].includes(r));
+  // See the web twin: `workerco` and the service roles can be hired, so they have an
+  // incoming queue. The list this replaced left them staring at an empty screen.
+  const isProvider = canReceiveHires(roles);
 
   const incoming = useQuery({ queryKey: ['hires-incoming'], queryFn: () => api.hires.incoming(), enabled: isProvider });
   // The server filters `mine` by target type, so the key carries the filter.

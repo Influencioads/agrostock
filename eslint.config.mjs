@@ -17,6 +17,15 @@ export default tseslint.config(
       'apps/api/prisma/migrations/**',
       'design/**',
       '**/*.config.{js,cjs,mjs,ts}',
+      // Agent worktrees are full checkouts of the repo living INSIDE it. Git
+      // knows to skip them; ESLint does not, so it lints a second (often stale)
+      // copy of every file and `pnpm lint` fails on code nobody is editing —
+      // 230 errors from two abandoned worktrees, drowning the 7 real warnings.
+      '.claude/worktrees/**',
+      // Playwright's per-run output: traces, screenshots and error-context.md.
+      '**/test-results/**',
+      '**/playwright-report/**',
+      '.e2e-probe/**',
     ],
   },
   js.configs.recommended,

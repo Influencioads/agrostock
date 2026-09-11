@@ -201,6 +201,13 @@ export const EMAIL_TEMPLATES: TemplateDef[] = [
   evt('marketing.upgrade_benefits_feature', 'Upgrade nudge 2 — feature ladder', 'marketing', 'Second of three on the feature ladder.', '', ['plan', 'paidPlan', 'price', 'perk'], 'See plans and prices'),
   evt('marketing.upgrade_final_feature', 'Upgrade nudge 3 — feature ladder, last one', 'marketing', 'Final message on the feature ladder; nothing promotional follows it.', '', ['plan', 'paidPlan', 'price', 'perk'], 'See plans and prices'),
 
+  // Quota ladder WITHOUT a perk. Same three steps as the quota ladder above, minus
+  // the "…and you get {{perk}}" clause: for a role whose paid plan raises a quota
+  // but adds no feature, naming a perk means inventing one.
+  evt('marketing.upgrade_intro_quota', 'Upgrade nudge 1 — quota only', 'marketing', 'First of three, for roles whose paid plan raises a quota but adds no feature.', '', ['plan', 'paidPlan', 'price', 'quota', 'limit', 'paidLimit'], 'See what changes'),
+  evt('marketing.upgrade_benefits_quota', 'Upgrade nudge 2 — quota only', 'marketing', 'Second of three on the quota-only ladder.', '', ['plan', 'paidPlan', 'price', 'quota', 'limit', 'paidLimit'], 'See plans and prices'),
+  evt('marketing.upgrade_final_quota', 'Upgrade nudge 3 — quota only, last one', 'marketing', 'Final message on the quota-only ladder; nothing promotional follows it.', '', ['plan', 'paidPlan', 'price', 'quota', 'limit'], 'See plans and prices'),
+
   /* ── Account & verification ──────────────────────────────────────── */
   evt('kyc.verified', 'Identity verified', 'account', 'KYC approved.', 'Account', []),
   evt('kyc.rejected', 'Verification needs attention', 'account', 'KYC rejected.', 'Account', []),

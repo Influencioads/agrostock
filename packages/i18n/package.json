@@ -24,7 +24,9 @@
   },
   "typesVersions": {
     "*": {
-      "notifications": ["./src/notifications.ts"]
+      "notifications": [
+        "./src/notifications.ts"
+      ]
     }
   },
   "scripts": {
@@ -32,7 +34,8 @@
     "check-hardcoded": "node scripts/check-hardcoded.mjs",
     "check-usage": "node scripts/check-usage.mjs",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "i18next": "^23.16.8"
