@@ -17,6 +17,7 @@
   "scripts": {
     "gen": "node scripts/gen-geo.mjs",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   }
 }
