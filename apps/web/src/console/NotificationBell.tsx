@@ -8,7 +8,7 @@ import { api } from '../lib/api';
 import { useI18n } from '../i18n';
 import { useAuth } from '../auth/AuthContext';
 import { useChatSocket } from '../chat/useChatSocket';
-import { enableWebPush, disableWebPush } from '../lib/webPush';
+import { enableWebPush } from '../lib/webPush';
 
 interface Notif {
   id: string;
@@ -83,12 +83,8 @@ export function NotificationBell() {
     });
   }, [user, qc]);
 
-  // Clean up this browser's push token on logout.
-  const prevUser = useRef(user);
-  useEffect(() => {
-    if (prevUser.current && !user) disableWebPush();
-    prevUser.current = user;
-  }, [user]);
+  // Logout de-registration lives in AuthContext.logout, not here: this component
+  // only mounts inside /console, so it never saw a sign-out from the site header.
 
   // Close on outside click.
   useEffect(() => {

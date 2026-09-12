@@ -21,6 +21,12 @@ const ROLES: { id: string; icon: IconName }[] = [
   { id: 'seller', icon: 'store' },
   { id: 'transporter', icon: 'truck' },
   { id: 'loaderco', icon: 'worker' },
+  // `workerco` runs the loaderco console verbatim (ConsolePage sets
+  // `NAV.workerco = NAV.loaderco`, and every section branch already tests for it).
+  // Leaving it out of THIS list was the whole bug: `myRoles` filters ROLES by what
+  // the account holds, so a labour company had no chip to switch back to and its
+  // console became unreachable the moment it selected any other role.
+  { id: 'workerco', icon: 'worker' },
   { id: 'worker', icon: 'gauge' },
   { id: 'accountant', icon: 'file' },
   { id: 'packer', icon: 'box' },
@@ -163,7 +169,7 @@ export function ConsoleLayout({
       ctaBtn(t('console.nav.add'), () => onSelect('add'))
     ) : activeRole === 'transporter' ? (
       ctaBtn(t('console.findLoads'), () => onSelect('requests'))
-    ) : activeRole === 'loaderco' ? (
+    ) : activeRole === 'loaderco' || activeRole === 'workerco' ? (
       ctaBtn(t('console.assignWorkers'), () => onSelect('activejobs'))
     ) : activeRole === 'admin' ? (
       ctaBtn(t('console.reviewQueue'), () => onSelect('kyc'))
