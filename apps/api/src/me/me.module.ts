@@ -13,9 +13,11 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import * as bcrypt from 'bcryptjs';
+import { randomUUID } from 'node:crypto';
 import { uploadLimits } from '../uploads/upload-limits';
 import { ApiBearerAuth, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { OrderStatus, Prisma, ProductStatus, Role } from '@prisma/client';
 import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { LOCALES } from '@agrotraders/i18n';
 import { PrismaService } from '../prisma/prisma.service';
@@ -26,6 +28,12 @@ import { UploadsService } from '../uploads/uploads.service';
 import { EARNING_TYPES, WalletService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
+import {
+  ACCOUNT_FOOTPRINT_SELECT,
+  FK_CONSTRAINT_VIOLATION,
+  hasFootprint,
+  personalRowDeletions,
+} from '../common/account-erasure';
 
 /** Roles a user may request self-service (admin is never requestable). */
 export const REQUESTABLE_ROLES = ['buyer', 'seller', 'transporter', 'loaderco', 'workerco', 'worker', 'accountant', 'packer', 'processor', 'fulfillment_partner', 'finance_partner', 'legal_advisor'] as const;
@@ -100,6 +108,14 @@ export class UpdateProfileDto {
 
 /** Persist the user's chosen UI locale so server-rendered content (notifications,
  * push, email) reaches them in the right language across devices and sessions. */
+export class DeleteAccountDto {
+  /** Re-authentication: the account's current password. */
+  @ApiProperty()
+  @IsString()
+  @MaxLength(200)
+  password!: string;
+}
+
 export class SetLocaleDto {
   @ApiProperty({ enum: LOCALES })
   @IsIn(LOCALES as unknown as string[])
@@ -161,26 +177,140 @@ export class MeService {
   ) {}
 
   /**
-   * Self-service account deletion (Phase I feature gap). Soft-deletes: the account
-   * is deactivated (which blocks login and, via the per-request DB re-read in
-   * jwt.strategy, invalidates any live access token), all refresh sessions are
-   * revoked, and push tokens are dropped so the device stops receiving
-   * notifications. A soft delete (not a hard row delete) preserves order/wallet/
-   * audit FK integrity and any legal retention obligations; a hard purge is a
-   * separate, policy-gated back-office job. Refuses if the wallet still holds a
-   * balance, so a user can't abandon funds.
+   * Live obligations that must clear before an account can be deleted. Each one
+   * is money or a commitment a counterparty is still relying on, so deleting
+   * would strand somebody. Returned as a list (not a single opaque refusal) so
+   * the client can name what to settle. Guideline 5.1.1(v) requires deletion to
+   * be genuinely reachable, so this stays deliberately narrow: only in-flight
+   * money and live auction commitments block. Past orders, delivered trades and
+   * settled escrow never do.
    */
-  async deleteAccount(userId: string) {
-    const wallet = await this.prisma.wallet.findUnique({ where: { userId }, select: { balanceCents: true } });
-    if ((wallet?.balanceCents ?? 0) > 0) {
-      throw new BadRequestException('Withdraw your remaining wallet balance before deleting your account.');
+  async deletionBlockers(userId: string) {
+    const IN_FLIGHT: OrderStatus[] = ['quote', 'processing', 'paid', 'packed', 'dispatched', 'shipped', 'in_transit', 'dispute'];
+    const liveAuction = { isAuction: true, auctionSettledAt: null, auctionEndsAt: { gt: new Date() } };
+    const [wallet, openOrders, escrowHeld, liveAuctions, liveBids] = await Promise.all([
+      this.prisma.wallet.findUnique({ where: { userId }, select: { balanceCents: true } }),
+      this.prisma.order.count({ where: { status: { in: IN_FLIGHT }, OR: [{ buyerId: userId }, { sellerId: userId }] } }),
+      this.prisma.escrowHold.count({ where: { status: 'held', OR: [{ buyerId: userId }, { sellerId: userId }] } }),
+      this.prisma.product.count({ where: { sellerId: userId, ...liveAuction } }),
+      this.prisma.auctionBid.count({ where: { bidderId: userId, product: liveAuction } }),
+    ]);
+    const blockers: { code: string; count: number }[] = [];
+    const warnings: { code: string; count: number }[] = [];
+    const balance = wallet?.balanceCents ?? 0;
+    // A wallet balance WARNS, it does not block. Withdrawal UI exists for
+    // sellers, transporters, workers and loader companies but NOT for buyers, so
+    // refusing here made deletion permanently impossible for a whole role — and
+    // Apple is explicit that an app which "makes it unnecessarily difficult for a
+    // user to delete their account will not pass review". The user is told what
+    // they are giving up and decides; every other entry below is a live
+    // obligation to a counterparty and resolves on its own as the trade closes.
+    if (balance > 0) warnings.push({ code: 'wallet_balance', count: balance });
+    if (openOrders > 0) blockers.push({ code: 'open_orders', count: openOrders });
+    if (escrowHeld > 0) blockers.push({ code: 'escrow_held', count: escrowHeld });
+    if (liveAuctions > 0) blockers.push({ code: 'live_auctions', count: liveAuctions });
+    if (liveBids > 0) blockers.push({ code: 'live_bids', count: liveBids });
+    return { blockers, warnings, canDelete: blockers.length === 0 };
+  }
+
+  /**
+   * Self-service account deletion (App Store Guideline 5.1.1(v)).
+   *
+   * Apple is explicit that "only offering to temporarily deactivate or disable
+   * an account is insufficient" — so an account that can be dropped IS dropped,
+   * row and all. That is always true of a brand-new account, which is what an
+   * App Review tester deletes.
+   *
+   * An account carrying trade, financial, support or community history cannot
+   * have its row removed: invoices, orders and the wallet ledger point at it and
+   * carry statutory retention duties, and Postgres would SET NULL on the
+   * nullable FKs, orphaning that history rather than refusing. Those are
+   * anonymized instead — every piece of personal data stripped, the email
+   * address released so it can be registered again, the password replaced with
+   * an unguessable value, sessions revoked (which, with the per-request DB
+   * re-read in jwt.strategy, also kills any live access token), push tokens
+   * dropped, and live listings archived so nobody can order from an account that
+   * can no longer fulfil. What survives is a numbered shell attached to records
+   * the law requires us to keep.
+   *
+   * Both paths are preceded by a password re-auth and a `deletionBlockers` check.
+   */
+  async deleteAccount(userId: string, dto: DeleteAccountDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, ...ACCOUNT_FOOTPRINT_SELECT },
+    });
+    if (!user) throw new BadRequestException('Account not found.');
+    // An unattended or stolen session must not be able to destroy the account.
+    // Mirrors the current-password check in admin.updateOwnPassword.
+    const ok = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!ok) throw new BadRequestException('Password is incorrect.');
+
+    const { blockers } = await this.deletionBlockers(userId);
+    if (blockers.length > 0) {
+      throw new BadRequestException(`Settle these before deleting your account: ${blockers.map((b) => b.code).join(', ')}`);
     }
+
+    if (!hasFootprint(user)) {
+      try {
+        await this.prisma.$transaction(personalRowDeletions(this.prisma, userId));
+        return { ok: true as const, erased: 'deleted' as const };
+      } catch (e) {
+        // Held by a relation the footprint check doesn't count (an empty DM
+        // thread the other party is in, say). The user asked to be deleted, so
+        // fall through to anonymization rather than refuse.
+        if ((e as { code?: string }).code !== FK_CONSTRAINT_VIOLATION) throw e;
+      }
+    }
+
+    // Unguessable — nobody, including us, can log back in as this account.
+    const deadHash = await bcrypt.hash(randomUUID(), 10);
     await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: userId }, data: { active: false } }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          active: false,
+          // Tombstone address: unique (the column demands it) and undeliverable,
+          // while freeing the real address for a fresh signup.
+          email: `deleted+${userId}@deleted.invalid`,
+          name: 'Deleted user',
+          passwordHash: deadHash,
+          country: null,
+          locale: null,
+          notificationPrefs: Prisma.DbNull,
+        },
+      }),
+      this.prisma.profile.updateMany({
+        where: { userId },
+        data: {
+          bio: null, location: null, avatarUrl: null, avatarEmoji: null,
+          phone: null, whatsapp: null, contactEmail: null,
+          listApproved: false,
+        },
+      }),
+      this.prisma.product.updateMany({
+        where: { sellerId: userId, status: { in: [ProductStatus.live, ProductStatus.pending] } },
+        data: { status: ProductStatus.archived },
+      }),
       this.prisma.refreshSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date(), revokedReason: 'account_deleted' } }),
       this.prisma.deviceToken.deleteMany({ where: { userId } }),
+      // Identity documents are the most sensitive thing the account holds and are
+      // NOT a trade record, so they go on this path too — the hard-delete path
+      // already dropped them, and leaving them here meant the one account most in
+      // need of erasure (a user who only ever uploaded ID) kept its passport scan.
+      // Same orphan problem as the hard-delete path, one level down: the Worker
+      // row keeps the person's name and phone whether or not the account row
+      // survives, so it has to be scrubbed here too.
+      this.prisma.worker.updateMany({
+        where: { userId },
+        data: { name: 'Deleted user', phone: null, skill: null, originCity: null, originCountry: null },
+      }),
+      // KycDocument.record is onDelete: Cascade, so the documents go with it.
+      // The rows go; the bytes behind KycDocument.storageKey still need a
+      // private-store sweep, which belongs to a real erasure job.
+      this.prisma.kycRecord.deleteMany({ where: { userId } }),
     ]);
-    return { ok: true as const };
+    return { ok: true as const, erased: 'anonymized' as const };
   }
 
   /** Stores the photo as a local WebP and points the profile at it. */
@@ -491,10 +621,16 @@ export class MeController {
     return this.svc.moneySeries(u);
   }
 
-  /** Self-service account deletion (Phase I). Soft-deletes + revokes sessions. */
+  /** What still blocks deletion, so the client can explain before asking to confirm. */
+  @Get('deletion-preflight')
+  deletionPreflight(@CurrentUser() u: AuthUser) {
+    return this.svc.deletionBlockers(u.id);
+  }
+
+  /** Self-service account deletion (Guideline 5.1.1(v)): re-auth, then anonymize. */
   @Delete()
-  deleteAccount(@CurrentUser() u: AuthUser) {
-    return this.svc.deleteAccount(u.id);
+  deleteAccount(@CurrentUser() u: AuthUser, @Body() dto: DeleteAccountDto) {
+    return this.svc.deleteAccount(u.id, dto);
   }
 
   @Get('profile')

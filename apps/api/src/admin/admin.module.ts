@@ -29,6 +29,12 @@ import { slugifyName } from '../common/slug';
 import { WalletService, EscrowService } from '../wallet/wallet.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { monthlySeries, EARNED_STATUSES, orderDollars } from '../me/me.module';
+import {
+  ACCOUNT_FOOTPRINT_SELECT,
+  FK_CONSTRAINT_VIOLATION,
+  hasFootprint,
+  personalRowDeletions,
+} from '../common/account-erasure';
 import { StatementsModule, StatementsService } from '../statements/statements.module';
 import { assertLegacyFinancialWritesEnabled } from '../common/legacy-finance.guard';
 import { toUnit } from '@agrotraders/types';
@@ -495,78 +501,19 @@ export class AdminService {
     // that carries a business/financial/support footprint, and only ever hard-delete
     // clean accounts (fresh signups, spam, abandoned test users). Everything with
     // weight is deactivated instead.
-    const footprint = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        _count: {
-          select: {
-            products: true,
-            buyerOrders: true,
-            sellerOrders: true,
-            auctionBids: true,
-            buyerBids: true,
-            sellerBids: true,
-            transportRequests: true,
-            transportQuotes: true,
-            trips: true,
-            vehicles: true,
-            routes: true,
-            drivers: true,
-            workers: true,
-            teams: true,
-            loaderJobsCreated: true,
-            loaderJobsManaged: true,
-            payoutRequests: true,
-            hireRequestsMade: true,
-            hireRequestsReceived: true,
-            invoicesIssued: true,
-            invoicesReceived: true,
-            reviewsAuthored: true,
-            reviewsReceived: true,
-            adCampaigns: true,
-            supportTickets: true,
-          },
-        },
-        wallet: { select: { balanceCents: true, _count: { select: { txns: true } } } },
-      },
-    });
-    const counts: Record<string, number> = footprint?._count ?? {};
-    const hasFootprint =
-      Object.values(counts).some((n) => (n ?? 0) > 0) ||
-      (footprint?.wallet ? footprint.wallet._count.txns > 0 || footprint.wallet.balanceCents !== 0 : false);
-    if (hasFootprint)
+    const footprint = await this.prisma.user.findUnique({ where: { id }, select: { ...ACCOUNT_FOOTPRINT_SELECT } });
+    if (hasFootprint(footprint))
       throw new ConflictException(
         'This user has trade, financial or support records and cannot be permanently deleted. Deactivate the account instead.',
       );
 
     try {
-      // Clean account: remove the personal satellite rows the FK graph won't cascade
-      // (profile, empty wallet, notifications, community membership, role/session
-      // tokens), then the user — atomically. The P2003 catch is a backstop for any
-      // relation not covered by the footprint check above.
-      await this.prisma.$transaction([
-        this.prisma.roleRequest.deleteMany({ where: { userId: id } }),
-        this.prisma.communityMessageReaction.deleteMany({ where: { userId: id } }),
-        this.prisma.communitySavedPost.deleteMany({ where: { userId: id } }),
-        this.prisma.communityGroupMember.deleteMany({ where: { userId: id } }),
-        this.prisma.notification.deleteMany({ where: { userId: id } }),
-        this.prisma.deviceToken.deleteMany({ where: { userId: id } }),
-        this.prisma.refreshSession.deleteMany({ where: { userId: id } }),
-        this.prisma.wallet.deleteMany({ where: { userId: id } }),
-        // KYC is personal data, not a trade record, so the footprint check above
-        // deliberately does NOT count it as a reason to keep the account. It was
-        // missing here though, and `KycRecord.user` restricts, so the delete hit
-        // P2003 and came back as "records that prevent deletion" — meaning the
-        // one account you most want to be able to erase, the one that only ever
-        // uploaded ID documents, was the one that could not be.
-        // ponytail: the rows go, the files behind `KycDocument.storageKey` do
-        // not — a private-store sweep belongs with a real erasure job.
-        this.prisma.kycRecord.deleteMany({ where: { userId: id } }),
-        this.prisma.profile.deleteMany({ where: { userId: id } }),
-        this.prisma.user.delete({ where: { id } }),
-      ]);
+      // Clean account: remove the personal satellite rows the FK graph won't
+      // cascade, then the user — atomically, and from the same list the user's
+      // own in-app deletion uses, so the two can never drift apart.
+      await this.prisma.$transaction(personalRowDeletions(this.prisma, id));
     } catch (e) {
-      if ((e as { code?: string }).code === 'P2003')
+      if ((e as { code?: string }).code === FK_CONSTRAINT_VIOLATION)
         throw new ConflictException(
           'This user has records that prevent deletion. Deactivate the account instead.',
         );

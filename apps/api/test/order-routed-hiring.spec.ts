@@ -12,6 +12,9 @@ import { HiresService } from '../src/hires/hires.module';
 
 function directoryService() {
   const prisma = {
+    // create() now refuses a hire between blocked users (Guideline 1.2), so the
+    // mock needs the lookup; null = not blocked.
+    communityUserBlock: { findFirst: vi.fn(async () => null) },
     user: { findMany: vi.fn(async () => []) },
     worker: { findMany: vi.fn(async () => []) },
   };
@@ -102,7 +105,7 @@ const ORDER = {
   buyer: { country: 'United Arab Emirates' },
 };
 
-function hiresService(order: Record<string, unknown> | null = ORDER) {
+function hiresService(order: Record<string, unknown> | null = ORDER, blocked = false) {
   const create = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
     ...data,
     id: 'h1',
@@ -112,11 +115,13 @@ function hiresService(order: Record<string, unknown> | null = ORDER) {
   const prisma = {
     hireRequest: { findUnique: vi.fn(async () => null), create },
     user: { findFirst: vi.fn(async () => ({ id: 't1', role: 'transporter', roles: [] })) },
+    // create() refuses a hire between blocked users (Guideline 1.2).
+    communityUserBlock: { findFirst: vi.fn(async () => (blocked ? { id: 'b1' } : null)) },
     order: { findUnique: vi.fn(async () => order) },
     $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn({ hireRequest: { create } })),
   };
   const noop = { notify: vi.fn(), create: vi.fn(), debit: vi.fn(), localizeRows: vi.fn(async (r: unknown) => r) };
-  return { svc: new HiresService(prisma as never, noop as never, noop as never, noop as never, noop as never), create };
+  return { svc: new HiresService(prisma as never, noop as never, noop as never, noop as never, noop as never), create, prisma };
 }
 
 describe('order-linked hire', () => {
@@ -177,5 +182,29 @@ describe('order-linked hire', () => {
     await svc.create({ id: 'seller1' } as never, { targetType: 'transporter', targetUserId: 't1' } as never);
 
     expect(create.mock.calls[0][0].data).toMatchObject({ fromCity: null, toCity: null, cargo: null, location: null });
+  });
+
+  it('refuses a hire request between blocked users, in both directions', async () => {
+    // Guideline 1.2 asks for the ability to block abusive users. community.sendDm
+    // already refused a blocked pair, but a hire request carries the requester's
+    // free text straight into the target's inbox — so without this the block
+    // looked enforced while leaving a direct channel wide open.
+    const { svc, create } = hiresService(ORDER, true);
+
+    await expect(
+      svc.create({ id: 'seller1' } as never, { targetType: 'transporter', targetUserId: 't1', orderId: 'o1' } as never),
+    ).rejects.toThrow(/blocked/i);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('checks the block BOTH ways, so blocking is mutual silence rather than a one-way mute', async () => {
+    const { svc, prisma } = hiresService(ORDER, false);
+    await svc.create({ id: 'seller1' } as never, { targetType: 'transporter', targetUserId: 't1', orderId: 'o1' } as never);
+
+    const where = prisma.communityUserBlock.findFirst.mock.calls[0][0].where;
+    expect(where.OR).toEqual([
+      { blockerId: 'seller1', blockedId: 't1' },
+      { blockerId: 't1', blockedId: 'seller1' },
+    ]);
   });
 });

@@ -22,6 +22,11 @@ export const SCREEN_PATHS = {
   OtpSignIn: 'otp',
   Notifications: 'notifications',
   NotificationSettings: 'notifications/settings',
+  // Account deletion and the legal documents both have to be reachable for App
+  // Review (Guidelines 5.1.1(v) and 5.1.1(i)); a direct link also lets support
+  // point someone straight at them.
+  DeleteAccount: 'account/delete',
+  LegalPage: 'legal/:slug',
   Offices: 'offices',
   SafeDeal: 'safe-deal',
   Kyc: 'kyc',

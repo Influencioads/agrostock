@@ -5,6 +5,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Card, EmptyState, RatingStars, Row, Screen, Txt } from '../../ui';
+import { ModerationButton } from '../../moderation/ModerationButton';
 import { C } from '../../theme/tokens';
 
 /** Ratings & reviews left on the worker's completed jobs. */
@@ -38,7 +39,15 @@ export function WorkerReviews() {
           <Card key={r.id}>
             <Row style={{ justifyContent: 'space-between' }}>
               <Txt variant="title">{r.rater?.name ?? t('mobile2.reviews.clientFallback')}</Txt>
-              <RatingStars n={r.stars} />
+              <Row gap={10}>
+                <RatingStars n={r.stars} />
+                {/* These are reviews about YOU — the surface where being able to
+                    flag an abusive one matters most. */}
+                <ModerationButton
+                  size={16}
+                  target={{ type: 'review', id: String(r.id), authorId: r.rater?.id, authorName: r.rater?.name }}
+                />
+              </Row>
             </Row>
             {r.text ? <Txt variant="body" style={{ marginTop: 4 }}>{r.text}</Txt> : null}
             <Txt variant="muted" style={{ marginTop: 4 }}>{new Date(r.createdAt).toLocaleDateString()}</Txt>

@@ -101,6 +101,18 @@ export function CommunityModerationPage() {
                       {t('communityMod.delete')}
                     </Button>
                   )}
+                  {r.targetType === 'post' && (
+                    <Button size="sm" variant="danger" leftIcon={<Icon name="x" size={14} />} onClick={() => api.community.admin.deletePost(r.targetId).then(() => resolve(r.id, 'actioned'))}>
+                      {t('communityMod.delete')}
+                    </Button>
+                  )}
+                  {/* Listings report into this same queue, so the takedown has to
+                      be reachable from here too or a product report is unactionable. */}
+                  {r.targetType === 'product' && (
+                    <Button size="sm" variant="danger" leftIcon={<Icon name="x" size={14} />} onClick={() => api.admin.deleteProduct(r.targetId).then(() => resolve(r.id, 'actioned'))}>
+                      {t('communityMod.takedown')}
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => resolve(r.id, 'actioned')}>
                     {t('communityMod.action')}
                   </Button>

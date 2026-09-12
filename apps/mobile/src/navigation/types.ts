@@ -18,6 +18,9 @@ export type RootStackParamList = {
   OtpSignIn: undefined;
   Notifications: undefined;
   NotificationSettings: undefined;
+  DeleteAccount: undefined;
+  /** Public CMS page — `terms` and `privacy` are the legal ones. */
+  LegalPage: { slug: string; title?: string };
   Offices: undefined;
   SafeDeal: undefined;
   Kyc: undefined;
