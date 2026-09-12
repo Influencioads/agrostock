@@ -5,6 +5,7 @@ import { api, setApiActiveRole, setApiToken, setApiRefreshToken, setAuthFailureL
 import { storage } from '../lib/storage';
 import { unregisterForPush } from '../lib/push';
 import { queryClient } from '../lib/queryClient';
+import { setRoutingRole } from '../navigation/navigationRef';
 
 const USER_KEY = 'agrotraders_user';
 const ACTIVE_KEY = 'agrotraders_active_role';
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const role = savedRole && roles.includes(savedRole) ? savedRole : u.role;
           setActiveRoleState(role);
           setApiActiveRole(role);
+          setRoutingRole(role);
         } catch {
           /* ignore corrupt cache */
         }
@@ -87,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setAuthFailureListener(() => {
       setApiActiveRole(null);
+      setRoutingRole(null);
       setUser(null);
       setActiveRoleState(null);
       void storage.del(USER_KEY);
@@ -104,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!effectiveRoles(user).includes(role)) return;
       setActiveRoleState(role);
       setApiActiveRole(role);
+      setRoutingRole(role);
       void storage.set(ACTIVE_KEY, role);
       // F27: the active-role header changes with the switch — drop cached
       // role-scoped data so screens refetch as the newly-selected role.
@@ -149,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setApiToken(token);
     setApiRefreshToken(refresh);
     setApiActiveRole(u.role);
+    setRoutingRole(u.role);
     setUser(u);
     setActiveRoleState(u.role);
     await Promise.all([
@@ -214,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setApiToken(null);
       setApiRefreshToken(null);
       setApiActiveRole(null);
+      setRoutingRole(null);
     });
     // F39: revoke the refresh session server-side. /auth/logout authenticates on
     // the refresh token in the body, not the access token, so it is safe to fire
