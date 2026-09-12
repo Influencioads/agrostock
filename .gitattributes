@@ -1,0 +1,24 @@
+# Keep LF in the repo and in every working tree.
+#
+# Without this, a Windows editor can rewrite the whole tree to CRLF. That is not
+# cosmetic here: Prisma stores a checksum of every applied migration, so changing
+# the bytes of an already-applied migration.sql makes `prisma migrate deploy`
+# fail against production with "migration was modified after it was applied".
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
+*.ttf  binary
+*.otf  binary
+*.woff  binary
+*.woff2 binary
+*.mp4  binary
+*.zip  binary
+*.tgz  binary
+*.dump binary
