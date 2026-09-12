@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, Card, Icon, Input, Modal } from '@agrotraders/ui';
 import type { ApiHireRequest } from '@agrotraders/api-client';
-import { hireBlockForService, hireFieldByKey } from '@agrotraders/types';
+import { canReceiveHires, hireBlockForService, hireFieldByKey } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 import { useI18n } from '../../i18n';
@@ -133,7 +133,11 @@ export function HiresSection() {
   const { roles } = useAuth();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<TargetFilter>('all');
-  const isProvider = roles.some((r) => ['transporter', 'loaderco', 'worker'].includes(r));
+  // Shared with the directories, the public profiles and the hire modals: whoever can
+  // be a hire TARGET can receive one. The hardcoded list this replaced omitted
+  // `workerco` and every service role, so those accounts were never shown a request
+  // the API had already granted them.
+  const isProvider = canReceiveHires(roles);
 
   const incoming = useQuery({
     queryKey: ['hires-incoming'],

@@ -120,6 +120,21 @@ export function hireTargetForRoles(roles: readonly (string | null | undefined)[]
 }
 
 /**
+ * Whether an account can be hired, and so has an incoming-hires queue to show.
+ *
+ * The mirror of `hireTargetForRoles`: if a role can be a hire TARGET, it can receive
+ * requests, so the two answers must come from one list. They did not — the hires
+ * screens on both platforms carried a sixth hardcoded copy, `['transporter',
+ * 'loaderco', 'worker']`, which omitted `workerco` and all five service roles even
+ * though the API grants them the endpoint (`@Roles(...)` on `/hires/incoming`).
+ * A labour company or an accountant could be hired and was simply never shown the
+ * request — it sat pending until it expired.
+ */
+export function canReceiveHires(roles: readonly (string | null | undefined)[]): boolean {
+  return hireTargetForRoles(roles) !== null;
+}
+
+/**
  * How a provider's price is measured.
  *
  * The first five are the original set and are already stored on
