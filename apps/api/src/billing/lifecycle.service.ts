@@ -82,14 +82,33 @@ const PERK_PRIORITY = [
 
 const DAY_MS = 86_400_000;
 
-/** Which copy a role's plan ladder can honestly support. See `pitchFor`. */
-type NudgeVariant = 'quota' | 'feature';
+/**
+ * Which copy a role's plan ladder can honestly support. See `pitchFor`.
+ *
+ * `quota_only` is the buyer case: a quota the paid plan really raises, but no feature
+ * it adds. It exists because the alternative — reusing `quota`, whose copy ends
+ * "…and you get {{perk}}" — has to name a perk, and a ladder with none can only do
+ * that by inventing one.
+ */
+type NudgeVariant = 'quota' | 'quota_only' | 'feature';
 
 /** The sequence, in order. Step 3 is the last promotional mail an account gets. */
 const NUDGE_STEPS: Record<NudgeVariant, string>[] = [
-  { quota: 'marketing.upgrade_intro', feature: 'marketing.upgrade_intro_feature' },
-  { quota: 'marketing.upgrade_benefits', feature: 'marketing.upgrade_benefits_feature' },
-  { quota: 'marketing.upgrade_final', feature: 'marketing.upgrade_final_feature' },
+  {
+    quota: 'marketing.upgrade_intro',
+    quota_only: 'marketing.upgrade_intro_quota',
+    feature: 'marketing.upgrade_intro_feature',
+  },
+  {
+    quota: 'marketing.upgrade_benefits',
+    quota_only: 'marketing.upgrade_benefits_quota',
+    feature: 'marketing.upgrade_benefits_feature',
+  },
+  {
+    quota: 'marketing.upgrade_final',
+    quota_only: 'marketing.upgrade_final_quota',
+    feature: 'marketing.upgrade_final_feature',
+  },
 ];
 
 /** Kopecks → the string the recipient will recognise from the price card. */
@@ -127,20 +146,37 @@ export function tightestLimit(
   return best;
 }
 
-/** First feature by {@link PERK_PRIORITY} that the paid plan adds over the free one. */
-export function topPerk(freeFeatures: PlanFeatures, paidFeatures: PlanFeatures): string {
+/**
+ * First feature by {@link PERK_PRIORITY} that the paid plan adds over the free one,
+ * or null when the paid plan adds no feature at all.
+ *
+ * Null is a real answer, not a failure. This used to fall back to `'searchPriority'`
+ * on the reasoning that a plan always has *something* to sell — but the buyer ladder
+ * is a counter-example the seed already contained: `buyer_basic` and `buyer_business`
+ * both carry `{ apiAccess: false }` and differ only in quotas. The fallback made the
+ * pitch tell every free buyer that Business "adds top search priority", which
+ * `buyer_business` does not grant. Same failure mode `tightestLimit` is careful to
+ * avoid on the quota side, and the same cost: an invented fact in a marketing email.
+ *
+ * Callers must handle null by dropping the perk clause — see `pitchFor`.
+ */
+export function topPerk(freeFeatures: PlanFeatures, paidFeatures: PlanFeatures): string | null {
   for (const key of PERK_PRIORITY) {
     const paid = paidFeatures?.[key];
     if (paid === undefined || paid === false || paid === 'none') continue;
     if (paid === freeFeatures?.[key]) continue;
     return key;
   }
-  // Only reached when a plan grants no flags at all — pitchFor already refuses a
-  // plan that raises no quota, so there is always something else to say.
-  const fallback = Object.keys(paidFeatures ?? {}).find(
-    (k) => isPlanFeatureKey(k) && paidFeatures[k] !== freeFeatures?.[k],
-  );
-  return fallback ?? 'searchPriority';
+  // A feature key outside PERK_PRIORITY is still a true thing to say — but only if
+  // the paid plan actually GRANTS it. Without the truthiness test a plan that
+  // withdraws a flag (paid false, free true) would be advertised as adding it.
+  const fallback = Object.keys(paidFeatures ?? {}).find((k) => {
+    if (!isPlanFeatureKey(k)) return false;
+    const paid = paidFeatures[k];
+    if (paid === undefined || paid === false || paid === 'none') return false;
+    return paid !== freeFeatures?.[k];
+  });
+  return fallback ?? null;
 }
 
 @Injectable()
@@ -463,14 +499,16 @@ export class LifecycleService {
       plan: free.name,
       paidPlan: paid.name,
       price: `${rub(monthly.amountMinor)}${monthly.cycle === 'monthly' ? '/mo' : ''}`,
-      perk: { enum: 'plan_feature', value: perk },
+      ...(perk ? { perk: { enum: 'plan_feature', value: perk } } : {}),
     };
 
     const floor = tightestLimit(free.limits as PlanLimits, paid.limits as PlanLimits);
-    if (!floor) return { variant: 'feature', params: common };
+    // No quota raised and no feature added: the ladder has nothing true to advertise,
+    // so send nothing. Silence beats a mail that has to make something up.
+    if (!floor) return perk ? { variant: 'feature', params: common } : null;
 
     return {
-      variant: 'quota',
+      variant: perk ? 'quota' : 'quota_only',
       params: {
         ...common,
         quota: { enum: 'plan_limit', value: floor.key },
