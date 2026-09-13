@@ -141,7 +141,7 @@ export class WalletService {
       data: { balanceCents: { decrement: cents } },
     });
     if (applied.count === 0) {
-      throw new BadRequestException('Insufficient wallet balance. Add funds to your wallet first.');
+      throw new BadRequestException('Insufficient wallet balance.');
     }
     const fresh = await this.writeTx(wallet.id, -cents, type, note, idempotencyKey, db);
     if (!fresh) {

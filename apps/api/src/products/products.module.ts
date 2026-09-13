@@ -1332,6 +1332,16 @@ export class ProductsService {
       data.safeDeal !== undefined || data.isAuction !== undefined
         ? { safeDeal: willBeAuction ? requireSafeDeal(data.safeDeal) : data.safeDeal ?? existing.safeDeal }
         : {};
+    // Creation holds a listing at approved:false/status:'pending', but an edit
+    // wrote neither — so an approved listing could be rewritten into anything
+    // and stay live, walking through the human review that is our only control
+    // on regulated goods. Any edit to a MODERATED field returns it to the queue;
+    // price, stock and auction timing are not moderated and stay published.
+    const remoderate = ['name', 'description', 'notes', 'images', 'categoryId', 'subcategoryId', 'attributes'].some(
+      (f) => (data as Record<string, unknown>)[f] !== undefined,
+    )
+      ? { approved: false, status: 'pending' as const }
+      : {};
     const product = await this.prisma.product.update({
       where: { id },
       data: {
@@ -1346,6 +1356,7 @@ export class ProductsService {
         ...imagePatch,
         ...attrPatch,
         ...(auctionEndsAt !== undefined ? { auctionEndsAt: auctionEndsAt ? new Date(auctionEndsAt) : null } : {}),
+        ...remoderate,
       },
     });
     this.events.emit(PRODUCT_UPSERTED, { id: product.id } satisfies ContentUpsertedEvent);

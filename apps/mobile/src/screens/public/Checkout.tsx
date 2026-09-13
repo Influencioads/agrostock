@@ -398,10 +398,8 @@ export function Checkout() {
           </View>
         ) : null}
 
-        <View style={s.safe}>
-          <Ionicons name="shield-checkmark" size={18} color={C.dark} />
-          <Text style={s.safeText}>{t('pubX.checkout.protected')}</Text>
-        </View>
+        {/* "Protected by Safe Deal escrow" sat directly above Place order while
+            order escrow is disabled server-side. Removed until it operates. */}
       </ScrollView>
 
       {orderable.length > 0 ? (

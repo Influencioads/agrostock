@@ -287,12 +287,8 @@ export function ProductDetail() {
                 ) : null}
               </View>
             ) : null}
-            {p.safeDeal !== false ? (
-              <View style={s.escrowRow}>
-                <Ionicons name="shield-checkmark-outline" size={15} color={C.green} />
-                <Text style={s.escrowText}>{t('pubX.pd.escrowNote')}</Text>
-              </View>
-            ) : null}
+            {/* Escrow note removed: order escrow does not operate on production
+                (legacy-finance.guard). See Home.tsx for the same removal. */}
           </View>
         </View>
 

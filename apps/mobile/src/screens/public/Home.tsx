@@ -193,17 +193,9 @@ export function Home() {
           </Pressable>
         )}
 
-        {/* Safe-Deal escrow, which opens the escrow screen. */}
-        <Pressable onPress={() => nav.navigate('SafeDeal')} style={s.safeWrap}>
-          <LinearGradient colors={[C.evergreen, C.dark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.safe}>
-            <View style={s.safeIcon}><Ionicons name="shield-checkmark" size={20} color={C.white} /></View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.safeTitle}>{t('pubX.home.safeDealTitle')}</Text>
-              <Text style={s.safeBody}>{t('pubX.home.safeDealBody')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={C.mint} />
-          </LinearGradient>
-        </Pressable>
+        {/* Order escrow is disabled at the server (legacy-finance.guard), so the
+            "funds held until you confirm delivery" card promised a protection
+            that does not operate. Restore it when order escrow actually ships. */}
 
         {/* Offers rail — hidden entirely when there are none. */}
         {offersLoading || offers.length > 0 ? (

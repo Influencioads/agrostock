@@ -8,6 +8,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Card, Row, Txt } from '../../ui';
 import { C, font, radius, space, type } from '../../theme/tokens';
 import { BidPanel } from '../components/BidPanel';
+import { ModerationButton } from '../../moderation/ModerationButton';
 import { useI18n } from '../../i18n';
 
 function useCountdown(end: string | null) {
@@ -84,7 +85,15 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
 
         {/* title + seller + chips */}
         <View style={{ gap: 8 }}>
-          <Txt variant="h2">{product.name}</Txt>
+          <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: space.sm }}>
+            <Txt variant="h2" style={{ flex: 1 }}>{product.name}</Txt>
+            {/* Guideline 1.2: a lot is user-generated content. ProductDetail
+                early-returns into this screen above its own report button, so
+                without this one an auction lot has no report path at all. */}
+            <ModerationButton
+              target={{ type: 'product', id: String(product.id), authorId: product.seller?.id, authorName: product.seller?.name }}
+            />
+          </Row>
           <Txt variant="muted">{product.flag} {product.seller?.name} · {t('auction.biddersN', { count: auction?.bidCount ?? 0 })}</Txt>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {/* The metric the price is quoted in — the old "min increment"
