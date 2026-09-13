@@ -32,7 +32,8 @@
     "prewarm:text": "ts-node prisma/prewarm-text.ts",
     "backfill:taxonomy": "ts-node prisma/backfill-taxonomy.ts",
     "backfill:product-leaf": "ts-node prisma/backfill-product-leaf.ts",
-    "import:ru-markets": "ts-node prisma/import-ru-markets.ts"
+    "import:ru-markets": "ts-node prisma/import-ru-markets.ts",
+    "appstore:prep": "node prisma/appstore-prep.mjs"
   },
   "dependencies": {
     "@agrotraders/i18n": "workspace:^",

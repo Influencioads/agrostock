@@ -66,3 +66,6 @@ apps/api/prisma/seeds/missing-ru-translations.txt
 
 # Local Claude Code settings — per-machine, never shared.
 .claude/settings.local.json
+
+# Local archive of the repo — never upload it to a build.
+agrostock.zip

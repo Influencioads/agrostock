@@ -348,7 +348,7 @@ export class EntitlementsService {
     throw new ForbiddenException({
       statusCode: 403,
       code: 'QUOTA_EXCEEDED',
-      message: `Your plan allows ${limit} — you are using ${used}. Upgrade for more.`,
+      message: `Your plan allows ${limit} — you are using ${used}.`,
       quota: { key, limit, used, adding, role },
     });
   }
@@ -388,7 +388,7 @@ export class EntitlementsService {
     throw new ForbiddenException({
       statusCode: 403,
       code: 'QUOTA_EXCEEDED',
-      message: `Your plan allows ${limit} — you selected ${nextLength}. Upgrade for more.`,
+      message: `Your plan allows ${limit} — you selected ${nextLength}.`,
       quota: { key, limit, used: nextLength, adding: 0, role },
     });
   }
