@@ -11,6 +11,11 @@ function serviceForUsers() {
     communityMessageReaction: deleteMany(),
     communitySavedPost: deleteMany(),
     communityGroupMember: deleteMany(),
+    // Blocks the account raised or received — required FKs, so they must go first.
+    communityUserBlock: deleteMany(),
+    // Worker.userId is a nullable FK, so it would SET NULL into an orphan holding
+    // the person's name and phone — personalRowDeletions drops it instead.
+    worker: deleteMany(),
     notification: deleteMany(),
     deviceToken: deleteMany(),
     refreshSession: { deleteMany: vi.fn(async () => ({ count: 0 })), updateMany: vi.fn(async () => ({ count: 0 })) },

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ApiBillingCycle, ApiBillingOverview, ApiGateway, ApiPlan, ApiQuotaRow } from '@agrotraders/api-client';
 import { BILLING_CYCLES } from '@agrotraders/types';
@@ -18,7 +18,22 @@ import { useI18n } from '../../i18n';
  * the confirmation URL opens in the system browser and the user returns via the
  * web return page. Pull-to-refresh (or simply revisiting) picks up the state
  * once the webhook lands — nothing here decides that a payment succeeded.
+ *
+ * …except on iOS. App Store Guideline 3.1.1 requires unlocking features inside
+ * an app to go through In-App Purchase, and forbids buttons or links steering
+ * to any other purchasing mechanism. Since a plan upgrade here unlocks in-app
+ * quota, the whole purchase path — upgrade list, gateway buttons, resume —
+ * is compiled out on iOS (`PURCHASES_BLOCKED`). What stays is read-only:
+ * current plan, quota meters, payment history, and cancellation, none of which
+ * initiates a charge. The explanatory note deliberately names no website and
+ * carries no link, because that would itself be the prohibited call to action.
  */
+
+/**
+ * iOS builds may not sell quota unlocks outside In-App Purchase (Guideline
+ * 3.1.1). Android and web keep the existing gateway checkout.
+ */
+const PURCHASES_BLOCKED = Platform.OS === 'ios';
 
 function Meter({ row }: { row: ApiQuotaRow }) {
   const { t } = useI18n();
@@ -79,13 +94,20 @@ export function BillingScreen() {
 
   const { data: overview, isLoading } = useQuery<ApiBillingOverview>({ queryKey: ['billing-overview'], queryFn: () => api.billing.overview() });
   const { data: plans = [] } = useQuery<ApiPlan[]>({ queryKey: ['plans', role], queryFn: () => api.billing.plans({ role }) });
-  const { data: gateways = [] } = useQuery<ApiGateway[]>({ queryKey: ['gateways'], queryFn: () => api.billing.gateways() });
+  const { data: gateways = [] } = useQuery<ApiGateway[]>({
+    queryKey: ['gateways'],
+    queryFn: () => api.billing.gateways(),
+    enabled: !PURCHASES_BLOCKED,
+  });
 
   const current = overview?.subscriptions.find((sub) => sub.role === role);
   const entitlement = overview?.entitlements[role];
   const meters = overview?.usage[role] ?? [];
   const upgrades = useMemo(
-    () => plans.filter((p) => p.active && p.tier > (entitlement?.tier ?? 0) && p.prices.length > 0).sort((a, b) => a.tier - b.tier),
+    () =>
+      PURCHASES_BLOCKED
+        ? []
+        : plans.filter((p) => p.active && p.tier > (entitlement?.tier ?? 0) && p.prices.length > 0).sort((a, b) => a.tier - b.tier),
     [plans, entitlement],
   );
 
@@ -137,7 +159,9 @@ export function BillingScreen() {
         {current && current.status !== 'expired' && (
           <Row gap={8} style={s.mt12} wrap>
             {current.cancelAtPeriodEnd ? (
-              <Button title={t('billing.resume')} size="sm" variant="outline" onPress={() => resume.mutate()} />
+              PURCHASES_BLOCKED ? null : (
+                <Button title={t('billing.resume')} size="sm" variant="outline" onPress={() => resume.mutate()} />
+              )
             ) : (
               <Button title={t('billing.cancelPlan')} size="sm" variant="outline" onPress={() => cancel.mutate()} />
             )}
@@ -160,6 +184,16 @@ export function BillingScreen() {
           {meters.map((row) => (
             <Meter key={row.key} row={row} />
           ))}
+        </Card>
+      )}
+
+      {/* Guideline 3.1.1: no upgrade UI on iOS. This note states a fact about
+          the build — it names no website and offers no link, because a call to
+          action pointing at another purchasing mechanism is itself prohibited. */}
+      {PURCHASES_BLOCKED && (
+        <Card style={s.mt12}>
+          <Txt variant="h3">{t('billing.iosUpgradeTitle')}</Txt>
+          <Txt variant="small" color={C.inkSoft}>{t('billing.iosUpgradeBody')}</Txt>
         </Card>
       )}
 
@@ -198,7 +232,7 @@ export function BillingScreen() {
         </Card>
       )}
 
-      {chosen && (
+      {chosen && !PURCHASES_BLOCKED && (
         <Card style={s.mt12}>
           <Txt variant="h3">{t('billing.confirmTitle', { plan: chosen.name, cycle: t(`billing.cycle.${cycle}`) })}</Txt>
           <Txt variant="small" color={C.inkSoft}>

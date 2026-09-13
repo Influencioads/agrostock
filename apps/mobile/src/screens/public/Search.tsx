@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -109,7 +109,12 @@ export function Search() {
             onSubmitEditing={() => setDebounced(q)}
             placeholder={t('pubX.search.placeholder')}
             placeholderTextColor={C.inkMuted}
-            autoFocus
+            // Only the search pill asks for the keyboard. Every other way in —
+            // a category chip, "see all", the hero — is a browse intent, and
+            // auto-focusing those threw the keyboard over the results grid the
+            // tap had just asked for, which reads as the tap doing nothing.
+            // Mount-only, so the in-screen rows below dismiss it themselves.
+            autoFocus={route.params?.focus === true}
             returnKeyType="search"
             style={s.searchInput}
           />
@@ -127,7 +132,14 @@ export function Search() {
             error={isError}
             onRetry={() => refetch()}
             onOpen={(p) => nav.navigate('ProductDetail', { slug: p.slug })}
-            empty={{ title: t('pubX.search.noMatchTitle'), body: t('pubX.search.noMatchBody', { q: debounced }) }}
+            empty={{
+              title: t('pubX.search.noMatchTitle'),
+              // Browsing a category carries no search term, so quoting one back
+              // would read "No results for ''".
+              body: debounced.trim()
+                ? t('pubX.search.noMatchBody', { q: debounced })
+                : t('pubX.browse.emptyBody'),
+            }}
           />
         ) : (
           <View style={{ paddingHorizontal: space.lg, paddingTop: space.lg }}>
@@ -141,7 +153,14 @@ export function Search() {
                 </View>
                 <View style={{ marginBottom: space.xl }}>
                   {recent.map((term) => (
-                    <Pressable key={term} onPress={() => setQ(term)} style={s.recentRow}>
+                    <Pressable
+                      key={term}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setQ(term);
+                      }}
+                      style={s.recentRow}
+                    >
                       <Ionicons name="time-outline" size={18} color={C.inkMuted} />
                       <Text numberOfLines={1} style={s.recentText}>{term}</Text>
                       <Pressable onPress={() => removeRecent(term)} hitSlop={10}>
@@ -160,7 +179,15 @@ export function Search() {
                   {cats.slice(0, 8).map((c) => (
                     <Pressable
                       key={c.id}
-                      onPress={() => nav.navigate('Search', { categoryId: c.id })}
+                      // Same-route navigate: it swaps the params without
+                      // remounting, so autoFocus never re-runs and the keyboard
+                      // would otherwise stay up over the results it just loaded.
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setQ('');
+                        setDebounced('');
+                        nav.navigate('Search', { categoryId: c.id });
+                      }}
                       style={s.trendChip}
                     >
                       <Ionicons name="trending-up" size={15} color={C.green} />

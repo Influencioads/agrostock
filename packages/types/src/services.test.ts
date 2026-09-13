@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  allowedCategories, capacityLabel, categoriesForRole, hireTargetForRoles, isServiceRole,
+  allowedCategories, canReceiveHires, capacityLabel, categoriesForRole, hireTargetForRoles, isServiceRole,
   ROLE_CATEGORIES, SERVICE_CATEGORIES, SERVICE_GROUPS, SERVICE_ROLES,
 } from './services';
 
@@ -103,5 +103,19 @@ describe('hireTargetForRoles', () => {
   it('has nothing to hire for a buyer or seller', () => {
     expect(hireTargetForRoles(['buyer', 'seller'])).toBeNull();
     expect(hireTargetForRoles([null, undefined])).toBeNull();
+  });
+
+  it('lets every hireable role see its incoming queue', () => {
+    // The API grants /hires/incoming to exactly these; the clients used to check
+    // only the first three, so workerco and the service roles saw nothing.
+    for (const role of ['transporter', 'loaderco', 'workerco', 'worker', ...SERVICE_ROLES]) {
+      expect(canReceiveHires([role]), role).toBe(true);
+    }
+  });
+
+  it('gives a buyer or seller no incoming-hires queue', () => {
+    expect(canReceiveHires(['buyer'])).toBe(false);
+    expect(canReceiveHires(['seller'])).toBe(false);
+    expect(canReceiveHires([])).toBe(false);
   });
 });

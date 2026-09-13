@@ -238,8 +238,8 @@
     "fEmoji": "Эмодзи",
     "fName": "Имя",
     "glance": "Сообщество вкратце",
-    "groupsCount": "Группы ({{count}})",
     "groupStats": "{{members}} участников · {{posts}} публикаций · {{messages}} сообщений",
+    "groupsCount": "Группы ({{count}})",
     "inGroup": "в {{name}}",
     "metric": {
       "groups": "Группы",
@@ -261,6 +261,7 @@
       "groups": "группы",
       "reports": "отчеты"
     },
+    "takedown": "Снять с публикации",
     "unpin": "Открепить"
   },
   "companies": {

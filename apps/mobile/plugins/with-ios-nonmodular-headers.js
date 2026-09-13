@@ -27,11 +27,39 @@ const path = require('path');
  *     "declaration of 'RCTPromiseRejectBlock' must be imported from module
  *     'RNFBApp.RNFBAppModule'".
  *
- * All four were attempted on EAS. The practical way out is to stop using
- * react-native-maps on iOS — it is imported in exactly one screen
- * (src/screens/public/LiveTracking.tsx) — either by moving to `expo-maps`, which
- * is built for this toolchain, or by loading the map lazily on Android only.
- * That is a product decision, so it is written down here rather than guessed at.
+ * All four were attempted on EAS, and (1)-(3) were reproduced locally on Xcode 26.5.
+ *
+ * RESOLVED — react-native-maps is no longer in the iOS build.
+ * The four failures above are kept so nobody retries them. What was actually done:
+ *
+ *  - react-native.config.js excludes react-native-maps from iOS autolinking, so
+ *    neither AirMaps nor AirGoogleMaps is compiled or linked on iOS.
+ *  - app.config.js no longer injects `ios.config.googleMapsApiKey`. That key is what
+ *    made prebuild add the `react-native-google-maps` pod in the first place.
+ *  - src/screens/public/TrackingMap.ios.tsx renders nothing, so the iOS bundle never
+ *    imports the module. The Live Tracking screen still shows route, distance, ETA
+ *    and status on iOS — only the map itself is gone.
+ *
+ * Android is unchanged and still uses Google Maps. If iOS needs a map again, use
+ * `expo-maps`; re-enabling react-native-maps means re-fighting the Firebase conflict.
+ *
+ * WALL 2 — @react-native-firebase, which was HIDDEN behind the maps failure.
+ * Once maps stopped failing first, RNFBMessaging failed with:
+ *   "declaration of 'RCTPromiseRejectBlock' must be imported from module
+ *    'RNFBApp.RNFBAppModule' before it is required"
+ * This is NOT a missing import — RNFBMessaging+AppDelegate.h already imports
+ * <React/RCTBridgeModule.h>. React-Core headers get textually included into two
+ * different Clang modules, so the declaration ends up owned by RNFBApp rather than
+ * React, and CLANG_ALLOW_NON_MODULAR_INCLUDES (which IS applied) is simply the wrong
+ * diagnostic for it.
+ *
+ * Also tried and FAILED: `$RNFirebaseAsStaticFramework = true` *together with*
+ * `use_frameworks! :static`. pod install succeeds, but the compile error is
+ * unchanged. (Note this is a different experiment from the one in (1), which used
+ * that flag *instead of* useFrameworks and died at pod install.)
+ *
+ * FIXED by CLANG_ENABLE_MODULES = NO, scoped to the RNFB* pod targets only — see the
+ * snippet below for why that scoping is load-bearing.
  */
 const MARKER = 'AgroTraders: iOS pod build settings';
 
@@ -40,6 +68,14 @@ const POST_INSTALL_SNIPPET = `
     installer.pods_project.targets.each do |pod_target|
       pod_target.build_configurations.each do |pod_config|
         pod_config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        # @react-native-firebase only. Its ObjC sources contain no \`@import\`, so
+        # turning Clang modules off for these targets is safe and is what stops
+        # React-Core declarations being attributed to the RNFBApp module. Do NOT
+        # widen this to every pod: react-native-maps DOES use \`@import\` and fails
+        # with "use of '@import' when modules are disabled" (workaround 3 below).
+        if pod_target.name.start_with?('RNFB')
+          pod_config.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
+        end
       end
     end
 `;

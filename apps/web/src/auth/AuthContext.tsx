@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { isPendingVerification, type ApiUser, type RegisterResult } from '@agrotraders/api-client';
 import { api } from '../lib/api';
+import { disableWebPush } from '../lib/webPush';
 
 interface AuthContextValue {
   user: ApiUser | null;
@@ -165,6 +166,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    // Drop this browser's push subscription FIRST: unregisterDevice is an
+    // authenticated call, so it has to go out while the token is still in
+    // localStorage. This used to live in the console's NotificationBell, which is
+    // only mounted inside /console — so signing out from the site header left the
+    // device registered and it kept receiving push for the account that had left.
+    void disableWebPush();
     // F39: revoke the session server-side (the API reads the refresh cookie and
     // clears it, F38) so it can't be reused. Best-effort — the local session is
     // cleared regardless of the network call.

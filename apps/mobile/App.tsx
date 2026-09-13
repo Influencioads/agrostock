@@ -23,6 +23,7 @@ import { CurrencyProvider } from './src/currency/CurrencyContext';
 import { ChatBadgeProvider } from './src/chat/ChatBadgeContext';
 import { BasketProvider } from './src/basket/BasketContext';
 import { DeliverToProvider } from './src/lib/deliverTo';
+import { ModerationProvider } from './src/moderation/ModerationProvider';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { flushPendingNotificationRoute, navigationRef } from './src/navigation/navigationRef';
 import { linking } from './src/navigation/linking';
@@ -78,10 +79,15 @@ export default function App() {
                 <ChatBadgeProvider>
                   <BasketProvider>
                     <DeliverToProvider>
-                      <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingNotificationRoute}>
-                        <StatusBar style="dark" />
-                        <Gate />
-                      </NavigationContainer>
+                      {/* Guideline 1.2: report/block has to reach posts, chat,
+                          DMs, listings and profiles, so the sheet lives above
+                          the navigator rather than in any one screen. */}
+                      <ModerationProvider>
+                        <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingNotificationRoute}>
+                          <StatusBar style="dark" />
+                          <Gate />
+                        </NavigationContainer>
+                      </ModerationProvider>
                     </DeliverToProvider>
                   </BasketProvider>
                 </ChatBadgeProvider>

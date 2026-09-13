@@ -37,6 +37,61 @@ const MARKETPLACE: {
 
 /* ── Menu building blocks ─────────────────────────────────────────── */
 
+/**
+ * Directories and public boards — shown to guests as well as signed-in accounts.
+ *
+ * Every destination here is deliberately guest-tolerant (Requirements hides only its
+ * post button, Services gates only the chat action, Directory gates only DM/hire) and
+ * every backing endpoint is public. But the guest branch below used to return early
+ * before this band rendered, so an anonymous visitor could reach no directory, no
+ * services list and neither board — the whole supply side of the marketplace was
+ * invisible until you had an account, which is exactly backwards for a signup funnel.
+ */
+/**
+ * Terms of Service and Privacy Policy — shown to guests as well as signed-in accounts.
+ *
+ * This is a component for the same reason MarketplaceGroup is one: the guest branch
+ * returns early, and a legal band declared only in the signed-in tree is invisible to
+ * anyone who has not signed in. Guidelines 5.1.1(i) and 1.2 both expect these to be
+ * reachable, and a reviewer commonly looks before creating an account — the signup
+ * screen's links are not enough on their own, because reaching them means starting a
+ * flow the reviewer may not want to start.
+ */
+function LegalGroup({ nav, t }: { nav: Nav; t: (k: string) => string }) {
+  return (
+    <Group title={t('hub.legal')}>
+      <MenuRow
+        icon="document-text-outline"
+        label={t('pubX.legal.terms')}
+        onPress={() => nav.navigate('LegalPage', { slug: 'terms', title: t('pubX.legal.terms') })}
+      />
+      <MenuRow
+        icon="shield-checkmark-outline"
+        label={t('pubX.legal.privacy')}
+        last
+        onPress={() => nav.navigate('LegalPage', { slug: 'privacy', title: t('pubX.legal.privacy') })}
+      />
+    </Group>
+  );
+}
+
+function MarketplaceGroup({ nav, t }: { nav: Nav; t: (k: string) => string }) {
+  return (
+    <Group title={t('hub.marketplace')}>
+      {MARKETPLACE.map((m, i) => (
+        <MenuRow
+          key={m.labelKey}
+          icon={m.icon}
+          label={t(m.labelKey)}
+          last={i === MARKETPLACE.length - 1}
+          onPress={() => m.go(nav, t(m.labelKey))}
+        />
+      ))}
+    </Group>
+  );
+}
+
+
 /** A white band of rows under an optional eyebrow label. */
 function Group({ title, children }: { title?: string; children: ReactNode }) {
   return (
@@ -110,8 +165,12 @@ export function MoreHub() {
               <Button full title={t('guest.createAccount')} variant="outline" onPress={() => nav.navigate('SignUp')} />
             </View>
           </View>
+          {/* Browse the marketplace before deciding to sign up. */}
+          <MarketplaceGroup nav={nav} t={t} />
           {/* Guests must be able to pick a language before they ever sign in. */}
           <LanguageGroup />
+          {/* ...and read what they would be agreeing to before they sign up. */}
+          <LegalGroup nav={nav} t={t} />
         </ScrollView>
       </SafeAreaView>
     );
@@ -162,22 +221,14 @@ export function MoreHub() {
         </Group>
 
         {/* marketplace directories & boards (all roles) */}
-        <Group title={t('hub.marketplace')}>
-          {MARKETPLACE.map((m, i) => (
-            <MenuRow
-              key={m.labelKey}
-              icon={m.icon}
-              label={t(m.labelKey)}
-              last={i === MARKETPLACE.length - 1}
-              onPress={() => m.go(nav, t(m.labelKey))}
-            />
-          ))}
-        </Group>
+        <MarketplaceGroup nav={nav} t={t} />
 
         <Group title={t('hub.account')}>
           <MenuRow icon="briefcase-outline" label={t('hub.myHires')} onPress={() => nav.navigate('Hires')} />
           <MenuRow icon="id-card-outline" label={t('hub.myProfile')} onPress={() => nav.navigate('ProfileForm')} />
-          <MenuRow icon="git-branch-outline" label={t('hub.rolesAccess')} last onPress={() => nav.navigate('RolesAccess')} />
+          <MenuRow icon="git-branch-outline" label={t('hub.rolesAccess')} onPress={() => nav.navigate('RolesAccess')} />
+          {/* Guideline 5.1.1(v): deletion must be reachable from inside the app. */}
+          <MenuRow icon="trash-outline" label={t('hub.deleteAccount')} danger last onPress={() => nav.navigate('DeleteAccount')} />
         </Group>
 
         {/* role-specific sections */}
@@ -200,6 +251,8 @@ export function MoreHub() {
         </Group>
 
         <LanguageGroup />
+
+        <LegalGroup nav={nav} t={t} />
 
         <Group>
           <MenuRow icon="notifications-outline" label={t('hub.notifications')} onPress={() => nav.navigate('Notifications')} />

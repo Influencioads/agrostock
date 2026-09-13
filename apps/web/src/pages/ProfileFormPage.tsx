@@ -85,6 +85,7 @@ export function ProfileForm() {
   const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
   const [f, setF] = useState({
     bio: '', location: '', availableFrom: '', availableTo: '', timezone: '', languages: '',
     avatarEmoji: '', marketId: '', phone: '', whatsapp: '', contactEmail: '',
@@ -332,17 +333,26 @@ export function ProfileForm() {
         {saved && <span className="text-sm font-semibold text-status-success">✓ {t('page.profileForm.saved')}</span>}
       </div>
 
-      {/* Phase I: self-service account deletion (soft delete + session revocation). */}
+      {/* Self-service account deletion: re-auth, then anonymize (Guideline 5.1.1(v)). */}
       <Card className="border border-status-error/30">
         <h3 className="font-display font-bold text-status-error">{t('page.profileForm.dangerZone')}</h3>
         <p className="mt-1 text-xs text-ink-soft">{t('page.profileForm.deleteBody')}</p>
+        <Input
+          label={t('page.profileForm.deletePassword')}
+          type="password"
+          className="mt-3"
+          autoComplete="current-password"
+          value={deletePassword}
+          onChange={(e) => setDeletePassword(e.target.value)}
+        />
         <Button
           variant="danger"
           className="mt-3"
+          disabled={!deletePassword}
           onClick={async () => {
             if (!window.confirm(t('page.profileForm.confirmDelete'))) return;
             try {
-              await api.me.deleteAccount();
+              await api.me.deleteAccount(deletePassword);
               logout();
             } catch (e) {
               setError(e instanceof Error ? e.message : t('page.profileForm.deleteError'));

@@ -50,13 +50,16 @@ interface Group {
  * mirrors automatically under RTL — so the rail correctly becomes the right
  * pane in Arabic and Persian with no extra work.
  */
-export function FilterSheet({ visible, onClose, applied, onApply, categories }: {
+export function FilterSheet({ visible, onClose, applied, onApply, categories, categoriesError, onRetryCategories }: {
   visible: boolean;
   onClose: () => void;
   /** The currently committed filters — the draft is seeded from these each open. */
   applied: Filters;
   onApply: (next: Filters) => void;
   categories: ApiCategory[];
+  /** Passed straight through to the picker — see `CategorySheet`. */
+  categoriesError?: boolean;
+  onRetryCategories?: () => void;
 }) {
   const { t, lang } = useI18n();
   const [draft, setDraft] = useState<Filters>(applied);
@@ -348,17 +351,30 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories }: 
             {renderPane()}
           </ScrollView>
         </View>
-      </Sheet>
 
-      {/* The 5-level drill-down is reused wholesale rather than flattened into
-          the rail — the taxonomy is far too deep for a single list. */}
-      <CategorySheet
-        visible={catSheet}
-        onClose={() => setCatSheet(false)}
-        categories={categories}
-        selection={draft.selection}
-        onSelect={setSelection}
-      />
+        {/* The 5-level drill-down is reused wholesale rather than flattened into
+            the rail — the taxonomy is far too deep for a single list.
+
+            It has to render INSIDE this sheet, not beside it. An iOS <Modal>
+            presents from the nearest UIViewController above it in the view
+            hierarchy: as a sibling it resolved to the Browse screen's
+            controller, which is already presenting this sheet, so UIKit refused
+            the second presentation outright — the picker never opened and every
+            tap on the category row looked dead. Nested, it presents from the
+            filter sheet's own controller, which is presenting nothing. Android
+            stacks dialogs either way, which is why this only ever showed on iOS.
+            The modal host view is absolutely positioned, so it costs the
+            two-pane row no layout. */}
+        <CategorySheet
+          visible={catSheet}
+          onClose={() => setCatSheet(false)}
+          categories={categories}
+          categoriesError={categoriesError}
+          onRetryCategories={onRetryCategories}
+          selection={draft.selection}
+          onSelect={setSelection}
+        />
+      </Sheet>
     </>
   );
 }

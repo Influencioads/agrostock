@@ -3,8 +3,11 @@ export type RootStackParamList = {
   App: undefined;
   ProductDetail: { slug: string };
   /** Filter by category ID, never by name: `ApiCategory.name` is localized and
-   *  the API matches the filter against the canonical English column. */
-  Search: { q?: string; categoryId?: string } | undefined;
+   *  the API matches the filter against the canonical English column.
+   *  `focus` opens the keyboard, and ONLY the search pill sets it: every other
+   *  route in (a category chip, a "see all", the hero) is a browse intent, and
+   *  auto-focusing those buries the results under the keyboard. */
+  Search: { q?: string; categoryId?: string; focus?: boolean } | undefined;
   Cart: undefined;
   /** `qty`/`unit` carry the buyer's pick from the listing into the review screen. */
   /** The basket is the subject; `intent` only decides which button leads. */
@@ -15,6 +18,9 @@ export type RootStackParamList = {
   OtpSignIn: undefined;
   Notifications: undefined;
   NotificationSettings: undefined;
+  DeleteAccount: undefined;
+  /** Public CMS page — `terms` and `privacy` are the legal ones. */
+  LegalPage: { slug: string; title?: string };
   Offices: undefined;
   SafeDeal: undefined;
   Kyc: undefined;

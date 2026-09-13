@@ -7,6 +7,7 @@ import { api, assetUrl } from '../../lib/api';
 import { errMessage } from '../../lib/format';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { Badge, Button, Card, Row, SkeletonRows, Txt } from '../../ui';
+import { ModerationButton } from '../../moderation/ModerationButton';
 import { C, radius, space, type } from '../../theme/tokens';
 import { BuyerBidPanel } from '../components/BuyerBidPanel';
 import { useI18n } from '../../i18n';
@@ -152,6 +153,12 @@ export function BuyerBidRoom({ id }: { id: string }) {
             ) : null}
           </Row>
           {!!bid.notes && <Txt variant="muted">{bid.notes}</Txt>}
+          {/* Title and notes are the buyer's own prose, same as a listing's. */}
+          <Row style={{ justifyContent: 'flex-end' }}>
+            <ModerationButton
+              target={{ type: 'buyer_bid', id: String(bid.id), authorId: bid.buyer?.id, authorName: bid.buyer?.name }}
+            />
+          </Row>
         </View>
 
         {/* What the buyer actually specified. Without this a seller on mobile is

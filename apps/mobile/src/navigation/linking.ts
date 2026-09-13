@@ -1,6 +1,7 @@
 import type { LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import type { RootStackParamList } from './types';
+import { SCREEN_PATHS } from './linkingPaths';
 
 /**
  * F33: URL/deep-link routing for the root native stack.
@@ -33,34 +34,8 @@ export const linking: LinkingOptions<RootStackParamList> = {
     // Checkout draw their own AppBar (headerShown: false) so they never get the
     // stack's guarded BackButton.
     initialRouteName: 'App',
-    screens: {
-      // The role tabs live under "App" and own the root URL.
-      App: '',
-      ProductDetail: 'product/:slug',
-      Search: 'search',
-      Cart: 'cart',
-      Checkout: 'checkout',
-      SignIn: 'signin',
-      SignUp: 'signup',
-      ForgotPassword: 'forgot-password',
-      OtpSignIn: 'otp',
-      Notifications: 'notifications',
-      NotificationSettings: 'notifications/settings',
-      Offices: 'offices',
-      SafeDeal: 'safe-deal',
-      Kyc: 'kyc',
-      LiveTracking: 'tracking',
-      RolesAccess: 'roles',
-      Community: 'community',
-      Support: 'support',
-      Directory: 'directory/:type',
-      PublicProfile: 'u/:userId',
-      AuctionsBoard: 'auctions',
-      BuyerBidsBoard: 'bids',
-      BuyerBidRoom: 'bid/:id',
-      Requirements: 'requirements',
-      ProfileForm: 'profile/edit',
-      Section: 'console/:role/:section',
-    },
+    // The paths live in linkingPaths.ts, which imports nothing native so the
+    // parity test can read them; see that file.
+    screens: { ...SCREEN_PATHS },
   },
 };

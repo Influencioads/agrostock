@@ -45,6 +45,38 @@ describe('upgrade pitch', () => {
     expect(topPerk(free, paid)).toBe('searchPriority');
   });
 
+  /**
+   * The buyer ladder in PLAN_SEED is the live example: `buyer_basic` and
+   * `buyer_business` both carry `{ apiAccess: false }`. topPerk used to answer
+   * `'searchPriority'` here — a feature buyer_business does not grant — so the
+   * upgrade mail told every free buyer it "adds top search priority".
+   */
+  it('names no perk when the paid plan adds no feature', () => {
+    expect(topPerk({ apiAccess: false }, { apiAccess: false })).toBeNull();
+    expect(topPerk({}, {})).toBeNull();
+  });
+
+  it('never sells a feature the paid plan withdraws', () => {
+    // Different from free, but the paid plan has LESS. Naming it would invert the pitch.
+    expect(topPerk({ apiAccess: true }, { apiAccess: false })).toBeNull();
+  });
+
+  /**
+   * Roles whose paid tier currently has NOTHING the platform enforces to sell.
+   *
+   * `buyer_business` (₽1,900/mo) differs from `buyer_basic` only in `savedSearches`
+   * (3 → 25) and `teamMembers` (1 → 5) — both in UNENFORCED_LIMIT_KEYS — while both
+   * plans carry `{ apiAccess: false }`. So there is no enforced quota raised and no
+   * feature added, and `pitchFor` correctly declines to mail these accounts at all
+   * rather than invent a benefit.
+   *
+   * This is a PRODUCT gap, not a code one: buyer_business needs a real entitlement
+   * (or a price of zero). Listed here so the gap is visible and CI stays honest —
+   * when buyers get something real, delete the entry and the assertion below will
+   * confirm the ladder became sellable.
+   */
+  const UNSELLABLE_LADDERS: string[] = ['buyer'];
+
   it('produces a true, complete pitch for every seeded role', () => {
     const roles = [...new Set(PLAN_SEED.map((p) => p.role))];
     let featureLadders = 0;
@@ -65,14 +97,37 @@ describe('upgrade pitch', () => {
         featureLadders++;
       }
 
-      expect(paid.features[perk as keyof typeof paid.features], `${role}: perk not granted`).toBeTruthy();
-      expect(paid.features[perk as keyof typeof paid.features]).not.toBe(
-        free.features[perk as keyof typeof free.features],
-      );
+      // A perk is optional — the buyer ladder raises quotas and adds no feature —
+      // but a NAMED perk must be one the paid plan really grants, and really adds.
+      if (perk) {
+        expect(paid.features[perk as keyof typeof paid.features], `${role}: perk not granted`).toBeTruthy();
+        expect(paid.features[perk as keyof typeof paid.features]).not.toBe(
+          free.features[perk as keyof typeof free.features],
+        );
+      } else if (!UNSELLABLE_LADDERS.includes(role)) {
+        // No perk to name leaves the quota as the only honest thing to sell, so a
+        // ladder with neither would drop out of the flow silently.
+        expect(pick, `${role}: nothing true to advertise — no quota raised and no perk added`).toBeTruthy();
+      }
     }
     // The worker ladder sells visibility and has no quotas; if that ever changes,
     // the feature-led copy has lost its only caller.
     expect(featureLadders).toBeGreaterThan(0);
+  });
+
+  /**
+   * The other half of the exception above: every ladder NOT on the list must have
+   * something real, and every ladder ON it must still have nothing. Without this a
+   * stale entry would quietly suppress a role that had since become sellable.
+   */
+  it('the unsellable-ladder list matches the seed exactly', () => {
+    const unsellable = [...new Set(PLAN_SEED.map((p) => p.role))].filter((role) => {
+      const free = PLAN_SEED.find((p) => p.role === role && p.tier === 0);
+      const paid = PLAN_SEED.find((p) => p.role === role && p.tier === 1);
+      if (!free || !paid) return false;
+      return !tightestLimit(free.limits, paid.limits) && !topPerk(free.features, paid.features);
+    });
+    expect(unsellable.sort()).toEqual([...UNSELLABLE_LADDERS].sort());
   });
 });
 
@@ -126,6 +181,9 @@ describe('catalog coverage', () => {
     'marketing.upgrade_intro_feature',
     'marketing.upgrade_benefits_feature',
     'marketing.upgrade_final_feature',
+    'marketing.upgrade_intro_quota',
+    'marketing.upgrade_benefits_quota',
+    'marketing.upgrade_final_quota',
   ];
 
   it('every message renders in English and Russian, and has an editable template', () => {
@@ -208,6 +266,32 @@ describe('catalog coverage', () => {
       paidPlan: 'Pro',
       price: '490 ₽/mo',
       perk: { enum: 'plan_feature', value: 'directoryVisible' },
+    },
+    // No `perk` on purpose: the whole point of this ladder is that there is none,
+    // so the copy must read correctly without it.
+    'marketing.upgrade_intro_quota': {
+      plan: 'Basic',
+      paidPlan: 'Business',
+      price: '1 900 ₽/mo',
+      quota: { enum: 'plan_limit', value: 'savedSearches' },
+      limit: 3,
+      paidLimit: 25,
+    },
+    'marketing.upgrade_benefits_quota': {
+      plan: 'Basic',
+      paidPlan: 'Business',
+      price: '1 900 ₽/mo',
+      quota: { enum: 'plan_limit', value: 'savedSearches' },
+      limit: 3,
+      paidLimit: { enum: 'plan_value', value: 'unlimited' },
+    },
+    'marketing.upgrade_final_quota': {
+      plan: 'Basic',
+      paidPlan: 'Business',
+      price: '1 900 ₽/mo',
+      quota: { enum: 'plan_limit', value: 'savedSearches' },
+      limit: 3,
+      paidLimit: 25,
     },
   };
 

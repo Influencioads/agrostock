@@ -1,0 +1,127 @@
+Last updated: 12 September 2026
+
+These Terms of Service ("Terms") are a binding agreement between you and AgroTraders ("AgroTraders", "we", "us"). They govern your use of the AgroTraders mobile application, website and related services (together, the "Service"). By creating an account, or by using the Service without an account, you agree to these Terms. If you do not agree, do not use the Service.
+
+1. WHAT AGROTRADERS IS
+
+AgroTraders is a marketplace that connects participants in the agricultural trade: producers and sellers of agricultural produce and equipment, buyers, transport operators, loading and labour contractors, individual workers, and providers of agricultural services. The Service lets users publish listings, search and browse them, negotiate by message, respond to requests and auctions, and coordinate transport and delivery.
+
+AgroTraders is a venue. We are not a party to any agreement between users. We do not own, sell, inspect, store, or take possession of any goods listed on the Service. We do not act as a broker, agent, auctioneer, freight forwarder, insurer, or financial institution for any user.
+
+2. ELIGIBILITY
+
+You must be at least 18 years old and legally able to enter into contracts to use the Service. If you use the Service on behalf of a business, you confirm that you are authorised to bind that business, and "you" includes that business.
+
+3. ACCOUNTS
+
+Browsing the marketplace does not require an account. To publish listings, send messages, place bids, or place orders you must register an account and confirm your email address.
+
+You are responsible for the accuracy of the information you provide, for keeping your password confidential, and for all activity under your account. Tell us immediately if you believe your account has been compromised. You may not transfer your account to anyone else, or create an account on behalf of another person without their authorisation.
+
+You may delete your account at any time from within the app, at Account → Delete account. Deletion is described in section 13.
+
+4. USER CONTENT
+
+"User Content" means anything you submit to the Service: listings and their photographs, prices and descriptions, bids and offers, requests to buy, community posts, chat and direct messages, reviews and ratings, profile and company information, and any documents you upload.
+
+You keep ownership of your User Content. You grant AgroTraders a worldwide, non-exclusive, royalty-free licence to host, store, reproduce, translate, adapt for display, and distribute your User Content for the purpose of operating, improving and promoting the Service. This licence ends when you delete the content or your account, except for copies retained in backups, or where we must keep records to comply with law or to resolve a dispute.
+
+You are solely responsible for your User Content. You confirm that you have the rights to submit it, and that it does not infringe anyone else's rights or break any law.
+
+5. ZERO TOLERANCE FOR OBJECTIONABLE CONTENT AND ABUSIVE BEHAVIOUR
+
+AgroTraders has no tolerance for objectionable content or abusive users. You must not post, send, or upload content that:
+
+- is unlawful, fraudulent, deceptive, or misrepresents what is being offered;
+- harasses, threatens, bullies, stalks, or intimidates any person;
+- is hateful, or attacks or demeans a person or group on the basis of race, ethnicity, national origin, religion, caste, sex, gender, gender identity, sexual orientation, disability, age, or immigration status;
+- is sexually explicit, pornographic, or sexualises minors in any way;
+- depicts or promotes graphic violence, self-harm, cruelty to animals, or terrorism;
+- is spam, a scam, a pyramid or advance-fee scheme, a phishing attempt, or bulk unsolicited advertising;
+- impersonates another person, business, or AgroTraders itself;
+- discloses another person's private information without their consent;
+- contains malware, or attempts to interfere with the Service or gain unauthorised access to it.
+
+You must not offer any item whose sale is restricted or prohibited where you or your counterparty are located, and you must hold every licence, registration, or permit that applies to what you offer. This includes, without limitation, plant protection products, agrochemicals and pesticides; veterinary medicines; live animals; seed and propagating material; fertilisers; fuel; alcohol and tobacco; and anything requiring a phytosanitary, export, or import authorisation. Where a product carries a registration number in your jurisdiction, you must state it in the listing.
+
+We may remove any content, refuse or take down any listing, limit visibility, suspend or terminate any account, and report conduct to the authorities, at our discretion and without notice, where we believe these Terms have been broken.
+
+6. MODERATION, REPORTING AND BLOCKING
+
+Listings are reviewed by a human moderator before they become publicly visible. Community posts, messages, and reviews publish immediately and are moderated after the fact.
+
+Every listing, post, profile, review, and chat message in the app carries a Report control. Reports go to a staffed moderation queue. We aim to review every report and act on it within 24 hours, by removing content, restricting or suspending the account responsible, or dismissing the report where no rule was broken.
+
+You can also block any other user from their profile or from any of their content. Blocking hides that person's listings, posts and messages from you, and prevents them from contacting you.
+
+Using the reporting tools in bad faith — to suppress a competitor, for example — is itself a breach of these Terms.
+
+7. LISTINGS, ORDERS AND DELIVERY
+
+A listing is an invitation to deal, not a binding offer, unless you state otherwise. When a buyer places an order, or a bid is accepted, a contract is formed directly between buyer and seller on the terms they agree. AgroTraders is not a party to it.
+
+Sellers are responsible for the accuracy of descriptions, quantities, quality, grading, origin, packing, and documentation, and for having the right to sell. Buyers are responsible for satisfying themselves as to what they are buying. Transport operators and labour contractors are responsible for performing the services they accept, and for their own licences, vehicles, insurance and personnel.
+
+Quality, weight, inspection, acceptance and rejection are matters between the trading parties.
+
+8. PAYMENT
+
+AgroTraders does not process, hold, transfer, or take custody of payment between users, and the app does not collect any payment instrument. Buyers and sellers settle directly with each other by whatever means they agree, outside the Service.
+
+Where a subscription plan is offered for the use of the Service itself, its price and billing terms are shown before you subscribe. Plan upgrades are not sold inside the iOS application.
+
+9. VERIFICATION BADGES
+
+You may optionally upload business documents to obtain a verification badge. A badge means that we have been shown a document; it is not a guarantee of a user's identity, solvency, licensing, honesty, or ability to perform. Do not treat a badge as a substitute for your own due diligence.
+
+10. DISPUTES BETWEEN USERS
+
+Disputes over goods, payment, delivery, or performance are between the users concerned. You may report a dispute to us and we may, at our discretion, provide records, mediate informally, or act against an account. We are under no obligation to resolve, adjudicate, or compensate any dispute.
+
+11. INTELLECTUAL PROPERTY
+
+The Service, including its software, design, text, and marks, belongs to AgroTraders and its licensors. You may not copy, modify, reverse engineer, scrape, resell, or create derivative works from the Service, or use it to build a competing product.
+
+If you believe content on the Service infringes your intellectual property, contact us at legal@agrotraders.org with enough detail to identify the content and your right in it, and we will investigate and remove infringing material where appropriate.
+
+12. PRIVACY
+
+Our Privacy Policy explains what personal data we collect, why, and what rights you have. It forms part of these Terms and is available in the app at Account → Privacy Policy.
+
+13. SUSPENSION, TERMINATION AND DELETION
+
+You may stop using the Service at any time, and may delete your account from within the app at Account → Delete account. Deleting your account erases your personal details and signs you out on every device. Where records must be kept because of a completed transaction, a legal obligation, or an unresolved dispute, those records are anonymised so that they no longer identify you.
+
+We may suspend or terminate your access, with or without notice, if you break these Terms, if we are required to by law, or if your use presents a risk to other users or to the Service.
+
+14. DISCLAIMERS
+
+The Service is provided "as is" and "as available". To the fullest extent permitted by law, we disclaim all warranties, express or implied, including merchantability, fitness for a particular purpose, non-infringement, and any warranty as to the accuracy, legality, quality, safety, or availability of any listing, user, or content.
+
+We do not verify users or content except as described in these Terms, and we do not guarantee that any transaction will complete or that any user will perform.
+
+Nothing in the Service is legal, financial, agronomic, or veterinary advice.
+
+15. LIMITATION OF LIABILITY
+
+To the fullest extent permitted by law, AgroTraders is not liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, lost trades, lost data, or loss of goodwill, arising from your use of the Service. Our total liability for any claim relating to the Service is limited to the greater of the amount you paid us for the Service in the twelve months before the claim, or one hundred United States dollars.
+
+Some jurisdictions do not allow these limitations, in which case they apply to the extent permitted.
+
+16. INDEMNITY
+
+You will indemnify AgroTraders against claims, losses, and reasonable legal costs arising from your User Content, your use of the Service, your transactions with other users, or your breach of these Terms or of any law.
+
+17. CHANGES
+
+We may amend these Terms. Where a change is material we will give notice in the app or by email before it takes effect. Continuing to use the Service after a change takes effect means you accept the amended Terms.
+
+18. GENERAL
+
+If a provision of these Terms is held unenforceable, the rest remains in force. Our failure to enforce a provision is not a waiver of it. You may not assign these Terms; we may assign them to a successor in connection with a merger, acquisition, or sale of assets.
+
+19. CONTACT
+
+Questions about these Terms: legal@agrotraders.org
+Reports of abuse or objectionable content: abuse@agrotraders.org
+General support: support@agrotraders.org

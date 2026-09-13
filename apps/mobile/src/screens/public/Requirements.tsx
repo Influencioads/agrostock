@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { schemaName, type ApiCategory } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { Badge, Button, Card, EmptyState, Input, Row, SkeletonRows, Txt } from '../../ui';
+import { ModerationButton } from '../../moderation/ModerationButton';
 import { C, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { CountryField } from '../components/GeoFields';
+import { PickerField } from '../components/PickerSheet';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyRec = Record<string, any>;
@@ -54,7 +57,13 @@ export function RequirementsBoard() {
         ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="clipboard-outline" title={t('pubX.req.empty')} />}
         renderItem={({ item: r }) => (
           <Card style={{ gap: 8 }}>
-            <Txt variant="title">{r.title}</Txt>
+            <Row style={{ justifyContent: 'space-between' }} gap={8}>
+              <Txt variant="title" style={{ flex: 1 }}>{r.title}</Txt>
+              {/* A requirement is buyer-authored free text on a public board. */}
+              <ModerationButton
+                target={{ type: 'requirement', id: String(r.id), authorId: r.author?.id, authorName: r.author?.name }}
+              />
+            </Row>
             <Row gap={6} style={{ flexWrap: 'wrap' }}>
               <Badge label={`${r.quantity} ${r.unit} · ${r.productName}`} tone="green" />
               {r.budget ? <Badge label={t('pubX.req.budget', { value: r.budget })} tone="mango" /> : null}
@@ -78,11 +87,23 @@ export function RequirementsBoard() {
 
 function PostRequirement({ onDone }: { onDone: () => void }) {
   const { t } = useI18n();
-  const [f, setF] = useState({ title: '', productCategory: 'Corn', productName: '', quantity: '', unit: 'MT', budget: '', destinationCountry: '' });
+  // `productCategory` used to be hardcoded to 'Corn' with no control to change
+  // it, so every requirement posted from the app was filed under Corn whatever
+  // the buyer actually wanted — and the board filters on this exact string.
+  const [f, setF] = useState({ title: '', productCategory: '', productName: '', quantity: '', unit: 'MT', budget: '', destinationCountry: '' });
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+  const { data: categories = [] } = useQuery<ApiCategory[]>({
+    queryKey: ['categories'],
+    queryFn: () => api.categories.list(),
+    staleTime: 3600e3,
+  });
+  // Stored canonically in English because the board matches this column as a
+  // plain string; the label stays localized so the buyer reads their own language.
+  const categoryOptions = categories.map((c) => ({ value: schemaName(c), label: c.name }));
+  const categoryLabel = categories.find((c) => schemaName(c) === f.productCategory)?.name;
   const submit = async () => {
-    if (!f.title || !f.productName || !f.quantity) return;
+    if (!f.title || !f.productName || !f.quantity || !f.productCategory) return;
     setBusy(true);
     try {
       await api.community.createRequirement({ ...f, budget: f.budget || undefined });
@@ -95,6 +116,13 @@ function PostRequirement({ onDone }: { onDone: () => void }) {
     <View style={{ flex: 1, backgroundColor: C.bg, padding: space.lg, gap: 12 }}>
       <Txt variant="h3">{t('pubX.req.newTitle')}</Txt>
       <Input label={t('pubX.req.fTitle')} placeholder={t('pubX.ph.reqTitle')} value={f.title} onChangeText={set('title')} />
+      <PickerField
+        label={t('pubX.req.fCategory')}
+        value={f.productCategory}
+        displayValue={categoryLabel}
+        options={categoryOptions}
+        onChange={set('productCategory')}
+      />
       <Input label={t('pubX.req.fProduct')} placeholder={t('pubX.ph.reqProduct')} value={f.productName} onChangeText={set('productName')} />
       <Row gap={10}>
         <View style={{ flex: 1 }}><Input label={t('pubX.req.fQuantity')} placeholder="500" keyboardType="numeric" value={f.quantity} onChangeText={set('quantity')} /></View>
