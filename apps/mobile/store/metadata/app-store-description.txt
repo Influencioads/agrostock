@@ -1,0 +1,45 @@
+A bulk agricultural trade runs on a chain of phone calls. One broker to find the produce, another to argue the price, a transporter you used last season, a crew to load the truck.
+
+AgroTraders puts that chain in one app. Source it, negotiate it, ship it, track it — from a single account.
+
+Browse the marketplace without an account. Sign in when you're ready to transact.
+
+SOURCE
+• Search and filter listings by category, origin country, market, city and grade.
+• Each lot carries a photo gallery, verified and grade badges, origin market, minimum order quantity, specs and buyer reviews.
+• A quantity stepper converts units, so you can order in tonnes from a seller quoting per kilo.
+• Put lots from several suppliers into one RFQ basket, grouped by supplier. Send each group out as its own request for quote, or check out in one pass — you name the destination once, each seller gets their own order and reference, and no seller sees what you bought elsewhere. Prices and stock are re-read at checkout.
+
+NEGOTIATE
+• Live ascending auctions with a countdown, the current highest bid, a masked bid history and a proxy ceiling that bids for you. No forced minimum raise.
+• Reverse auctions: post what you need — product, quantity, deadline — and let sellers underbid each other. Competitors see only the count and the best price. Award the winner and it becomes an order.
+• Public boards for both, refreshed live. Sellers turn a listing into a lot and see real names in their own bid book.
+
+CONTROL THE HANDOVER
+• Orders move through clear stages, and each party holds only its own code. The seller shows a pickup code, you show a delivery code, and the carrier enters both to open and close the trip.
+• Raise a dispute from the order if something is wrong. Both sides review each other once it lands.
+• Account balance with transaction history, PDF or CSV statements, an invoice centre, earnings with a withdraw request, and plan usage meters.
+• Goods are settled directly between buyer and seller. The app collects no card or bank details.
+
+SHIP AND STAFF
+• Post freight requests and compare carrier quotes, or hire a transporter from inside an order so dispatch and the code handshake keep working.
+• Shipment detail shows carrier, vehicle, driver and handshake timestamps, with origin, destination, road distance and ETA.
+• Hire loading crews and labourers by city, with published rates and a question set for the job.
+• Engage accountants, packers, processors, customs, finance and legal partners. A budget you commit to a hired provider is held until the work is confirmed complete.
+
+RUN YOUR SIDE OF THE TRADE
+One account can hold several roles, and the whole app changes when you switch consoles.
+• Seller: publish listings, run offers and ads, open auctions, dispatch with a pickup code, take payouts.
+• Transporter: quote on open loads, work trips through their stages, keep vehicles, drivers and routes.
+• Loading and labour companies: publish what you supply and charge, assign teams, run daily attendance.
+• Independent workers: accept shifts, check in and out, track earnings.
+• Service providers: publish per-service prices and answer enquiries that arrive with the buyer's brief.
+
+BUILT FOR CROSS-BORDER TRADE
+• English and Russian throughout. Prices shown in 20 currencies at live rates, with the seller's quoted unit price preserved.
+• Chat that translates incoming messages into your language, plus a community feed, groups and a support desk.
+• Sign in with a password or a six-digit code emailed to you. Push notifications open the order, bid or shipment they refer to.
+• Optional business verification and verified badges. Contact details stay masked, so both sides talk inside the app.
+
+WHO IT IS FOR
+Buyers, importers and wholesalers sourcing in bulk. Growers, traders and exporters selling. Freight carriers, loading companies, labour contractors and independent workers. Accountants, packers, processors and service partners.
