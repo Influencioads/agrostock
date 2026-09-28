@@ -17,7 +17,7 @@ import { isServiceRole, SERVICE_ROLES } from '@agrotraders/types';
 export const CONSOLE_ROLES = ['seller', 'transporter', 'loaderco', 'workerco', 'worker'] as const;
 export type ConsoleRole = (typeof CONSOLE_ROLES)[number];
 
-/** True when `role` lands on the shop tabs (Home / Offers / Browse / Orders / Account). */
+/** True when `role` lands on the shop tabs (Home / Offers / Browse / Auctions & Bids / Account). */
 export function isShopRole(role: string | null): boolean {
   return !(role && (CONSOLE_ROLES as readonly string[]).includes(role)) && !isServiceRole(role);
 }
@@ -32,6 +32,8 @@ export interface MenuItem {
 export const ROLE_MENU: Record<string, MenuItem[]> = {
   buyer: [
     { id: 'dashboard', icon: 'speedometer-outline' },
+    // Was a shop tab until Auctions & Bids took its slot.
+    { id: 'orders', icon: 'cube-outline' },
     { id: 'bids', icon: 'pricetags-outline' },
     { id: 'auctions', icon: 'hammer-outline' },
     { id: 'saved', icon: 'heart-outline' },

@@ -181,6 +181,30 @@ export function filterFields(fields: AttrField[]): AttrField[] {
   return fields.filter((f) => FILTERABLE_TYPES.includes(f.type));
 }
 
+/**
+ * Splits one multi-value filter param ("a,b,c") the way every layer must: on
+ * commas OUTSIDE parentheses only. Option values such as
+ * "Mature (brown, husked)" carry commas inside their parenthetical, and a plain
+ * `split(',')` turned them into two values that match nothing. Trims, drops
+ * empties, keeps first-seen order, dedupes.
+ */
+export function splitFilterValues(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const out: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of raw) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+    if (ch === ',' && depth === 0) {
+      out.push(cur);
+      cur = '';
+    } else cur += ch;
+  }
+  out.push(cur);
+  return [...new Set(out.map((s) => s.trim()).filter(Boolean))];
+}
+
 /** Display text for one option value, honouring the locale overlay. */
 export function optionLabel(field: AttrField, value: string): string {
   const i = field.options?.indexOf(value) ?? -1;

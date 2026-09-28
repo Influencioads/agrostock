@@ -84,11 +84,20 @@ function subtree(request: APIRequestContext, categoryId: string): Promise<TaxonN
  * A ProductCard carries two anchors to the same `/product/:slug` (the image and
  * the title), so dedupe while preserving order. The header and footer hold no
  * product links, which is what makes a page-wide query safe here.
+ *
+ * An empty result is answered with a "similar products" region under the empty
+ * state — those cards are NOT matches, so they are read separately.
  */
-async function renderedSlugs(page: Page): Promise<string[]> {
+async function renderedSlugs(page: Page, from: 'results' | 'similar' = 'results'): Promise<string[]> {
   const hrefs = await page
     .locator('a[href^="/product/"]')
-    .evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href') ?? ''));
+    .evaluateAll(
+      (els, similar) =>
+        els
+          .filter((e) => Boolean(e.closest('section[aria-labelledby="market-similar"]')) === similar)
+          .map((e) => (e as HTMLAnchorElement).getAttribute('href') ?? ''),
+      from === 'similar',
+    );
   const out: string[] = [];
   for (const href of hrefs) {
     const slug = href.slice('/product/'.length);
@@ -265,7 +274,11 @@ test.describe('marketplace browse', () => {
     await gotoMarket(page, `search=${enc(`zzq-no-such-listing-${Date.now()}`)}`);
     await expect(page.getByText('Your searched product is not available').first()).toBeVisible();
     await expect(page.getByText('No products match these filters.').first()).toBeVisible();
-    expect(await renderedSlugs(page), 'the empty state still rendered listings').toEqual([]);
+    // Not a dead end: the closest listings follow, labelled as not-a-match.
+    if (all.total > 0) {
+      await expect(page.getByRole('region', { name: /similar products|the newest listings/ })).toBeVisible();
+    }
+    expect(await renderedSlugs(page), 'the empty state still rendered listings as results').toEqual([]);
 
     await page.getByRole('button', { name: 'Clear filters' }).click();
     await expect(page).not.toHaveURL(/search=/);
@@ -282,7 +295,7 @@ test.describe('marketplace browse', () => {
     expect(prices, 'price_asc did not come back ascending').toEqual([...prices].sort((a, b) => a - b));
 
     await gotoMarket(page);
-    await page.getByLabel('Sort: Relevance').selectOption('price_asc');
+    await page.getByLabel('Sort by').selectOption('price_asc');
     await expect(page).toHaveURL(/sort=price_asc/);
     // keepPreviousData leaves the old order on screen until the refetch lands.
     await expect
@@ -290,7 +303,7 @@ test.describe('marketplace browse', () => {
       .toBe(asc.items.map((p) => p.slug).join(','));
 
     const desc = await products(request, `page=1&pageSize=${PAGE_SIZE}&sort=price_desc`);
-    await page.getByLabel('Sort: Relevance').selectOption('price_desc');
+    await page.getByLabel('Sort by').selectOption('price_desc');
     await expect
       .poll(async () => (await renderedSlugs(page)).join(','), { timeout: 10_000 })
       .toBe(desc.items.map((p) => p.slug).join(','));
@@ -328,11 +341,16 @@ test.describe('marketplace browse', () => {
     }
     test.skip(!found, 'no top-level listed subcategory has an empty child branch to drill into');
     const { listing, node, child } = found!;
-    const label = (n: TaxonNode) => (n.emoji ? `${n.emoji} ${n.name}` : n.name);
+    // A drill row reads "<emoji> <name> <count>" once its facet lands; anchor on
+    // the name and let the count follow, the way the checkbox lists are matched.
+    const row = (n: TaxonNode) =>
+      page.getByRole('button', {
+        name: new RegExp(`^${escapeRe(n.emoji ? `${n.emoji} ${n.name}` : n.name)}(\\s\\d+)?$`),
+      });
 
     // The drill-down only appears with exactly one category ticked.
     await gotoMarket(page, `categoryId=${enc(listing.categoryId!)}`);
-    const nodeButton = page.getByRole('button', { name: label(node), exact: true });
+    const nodeButton = row(node);
     await expect(nodeButton, `"${node.name}" is missing from the subcategory drill-down`).toBeVisible();
     await nodeButton.click();
 
@@ -342,14 +360,16 @@ test.describe('marketplace browse', () => {
       .poll(async () => (await renderedSlugs(page)).includes(listing.slug), { timeout: 10_000 })
       .toBe(true);
 
-    await page.getByRole('button', { name: label(child), exact: true }).click();
+    await row(child).click();
     await expect(page).toHaveURL(new RegExp(`subcategoryId=${escapeRe(child.id)}`));
 
     // Nothing is listed this deep, so the API climbs to the parent branch and
     // the page offers that stock instead of a dead end.
     await expect(page.getByText(`Nothing is listed under "${child.name}" right now.`).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: `Similar products from ${node.name}` })).toBeVisible();
-    expect(await renderedSlugs(page), 'the fallback did not offer the parent branch stock').toContain(listing.slug);
+    expect(await renderedSlugs(page, 'similar'), 'the fallback did not offer the parent branch stock').toContain(
+      listing.slug,
+    );
   });
 
   test('a leaf subcategory renders the attribute facets the API defines for it', async ({ page, request }) => {

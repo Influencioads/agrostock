@@ -3,12 +3,14 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, TextInput, View } from
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import {
+  browseAttrFields,
   resolveAttrFields,
   schemaName,
   buildSubcategoryTree,
   flattenSubcategoryTree,
   type ApiCategory,
   type ApiSubcategory,
+  type ProductQuery,
   type SubcategoryNode,
 } from '@agrotraders/api-client';
 import { QueryError, Row, Txt } from '../../ui';
@@ -58,6 +60,14 @@ const hit = (taxon: { name: string; nameEn?: string }, needle: string) =>
   taxon.name.toLowerCase().includes(needle) ||
   (taxon.nameEn ? taxon.nameEn.toLowerCase().includes(needle) : false);
 
+/** A branch with no listings under the current filters stays tappable, just quieter. */
+const dim = (n: number | undefined) => (n === 0 ? { opacity: 0.45 } : null);
+
+/** A row's listing count, when the sheet is browsing. */
+function Count({ n }: { n: number | undefined }) {
+  return n == null ? null : <Txt variant="small" color={C.inkSoft}>{n}</Txt>;
+}
+
 export function CategorySheet({
   visible,
   onClose,
@@ -66,6 +76,7 @@ export function CategorySheet({
   onRetryCategories,
   selection,
   onSelect,
+  browse,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -80,6 +91,13 @@ export function CategorySheet({
   selection: CategorySelection;
   /** Commit a selection. `EMPTY_SELECTION` clears everything. */
   onSelect: (next: CategorySelection) => void;
+  /**
+   * Set when a BUYER is browsing (not a seller classifying a listing), with the
+   * rest of their filter query. Rows then show how many listings each branch
+   * holds under those filters, dimmed at zero, and the selection carries the
+   * browse facets (`browseAttrFields`) instead of every field a seller must fill.
+   */
+  browse?: { query: ProductQuery };
 }) {
   const { t } = useI18n();
   // The category being drilled into (null = show the category list).
@@ -103,6 +121,18 @@ export function CategorySheet({
     if (!next) setQ('');
   };
 
+  // Reopening lands inside the category already picked, one tap from its
+  // subcategories, rather than back at the top list. The home category chips
+  // rely on this: tapping "Nuts" opens straight onto Almond, Cashew, …
+  useEffect(() => {
+    if (!visible || !selection.categoryId) return;
+    const picked = categories.find((c) => c.id === selection.categoryId);
+    if (picked) {
+      setDrill(picked);
+      setStack([]);
+    }
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // One fetch per category, covering every level below it.
   const { data: subs = [], isFetching, isError, refetch } = useQuery<ApiSubcategory[]>({
     queryKey: ['category-subtree', drill?.id],
@@ -110,6 +140,32 @@ export function CategorySheet({
     enabled: Boolean(drill?.id),
     staleTime: 5 * 60 * 1000,
   });
+
+  // Branch counts. The taxonomy is stripped from the query — the counts answer
+  // "what would picking THIS node return", and attributes belong to the old
+  // node. Level 1 comes from the category facet, the drilled level from the
+  // subcategory facet scoped to that category; both are branch-inclusive.
+  const countBase = useMemo<ProductQuery | undefined>(
+    () => (browse ? { ...browse.query, categoryId: undefined, subcategoryId: undefined, attrs: undefined } : undefined),
+    [browse],
+  );
+  const drillQuery = countBase && drill ? { ...countBase, categoryId: drill.id } : undefined;
+  const { data: topFacets } = useQuery({
+    queryKey: ['product-facets', countBase],
+    queryFn: () => api.products.facets(countBase!),
+    enabled: visible && !!countBase,
+    staleTime: 30e3,
+  });
+  const { data: drillFacets } = useQuery({
+    queryKey: ['product-facets', drillQuery],
+    queryFn: () => api.products.facets(drillQuery!),
+    enabled: visible && !!drillQuery,
+    staleTime: 30e3,
+  });
+  const catCounts = useMemo(() => topFacets && new Map(topFacets.categories.map((o) => [o.value, o.count])), [topFacets]);
+  const subCounts = useMemo(() => drillFacets && new Map(drillFacets.subcategories.map((o) => [o.value, o.count])), [drillFacets]);
+  /** Undefined until counted (or outside browse), so nothing dims on a guess. */
+  const countOf = (counts: Map<string, number> | undefined, id: string) => (counts ? (counts.get(id) ?? 0) : undefined);
 
   const tree = useMemo(() => buildSubcategoryTree(subs), [subs]);
   const current = stack.length ? stack[stack.length - 1] : null;
@@ -184,7 +240,7 @@ export function CategorySheet({
       subcategoryId: leaf?.id ?? '',
       subcategoryName: leaf?.name ?? '',
       trail: [category.name, ...path.map((n) => n.name)],
-      attrFields: resolveAttrFields(path),
+      attrFields: browse ? browseAttrFields(path, leaf ? leaf.children : tree) : resolveAttrFields(path),
     });
     close();
   };
@@ -317,6 +373,7 @@ export function CategorySheet({
               <Txt style={{ flex: 1, fontWeight: '700' }}>
                 {t('pubX.browse.allOf')} {current?.name ?? drill.name}
               </Txt>
+              <Count n={current ? countOf(subCounts, current.id) : countOf(catCounts, drill.id)} />
               {selection.categoryId === drill.id && selection.subcategoryId === (current?.id ?? '') && (
                 <Ionicons name="checkmark" size={20} color={C.green} />
               )}
@@ -330,11 +387,12 @@ export function CategorySheet({
             filteredCats.map((c) => {
               const active = c.id === selection.categoryId;
               return (
-                <Pressable key={c.id} onPress={() => openCategory(c)} style={rowStyle}>
+                <Pressable key={c.id} onPress={() => openCategory(c)} style={[rowStyle, dim(countOf(catCounts, c.id))]}>
                   <Txt style={{ fontSize: 18 }}>{c.emoji ?? '📦'}</Txt>
                   <Txt style={{ flex: 1, fontWeight: active ? '800' : '600', color: active ? C.green : C.ink }}>
                     {c.name}
                   </Txt>
+                  <Count n={countOf(catCounts, c.id)} />
                   {active && <Ionicons name="checkmark" size={20} color={C.green} />}
                   <Ionicons name={forwardChevron()} size={18} color={C.inkSoft} />
                 </Pressable>
@@ -366,7 +424,7 @@ export function CategorySheet({
           {/* search results across every level of the drilled category */}
           {showRows &&
             matches?.rows.map(({ node, path }) => (
-              <Pressable key={node.id} onPress={() => commit(drill, path)} style={{ ...rowStyle, alignItems: 'flex-start' }}>
+              <Pressable key={node.id} onPress={() => commit(drill, path)} style={[rowStyle, { alignItems: 'flex-start' }, dim(countOf(subCounts, node.id))]}>
                 <View style={{ flex: 1 }}>
                   <Txt style={{ fontWeight: selection.subcategoryId === node.id ? '800' : '600', color: selection.subcategoryId === node.id ? C.green : C.ink }}>
                     {node.name}
@@ -375,6 +433,7 @@ export function CategorySheet({
                     {path.map((n) => n.name).join(trailSeparator)}
                   </Txt>
                 </View>
+                <Count n={countOf(subCounts, node.id)} />
               </Pressable>
             ))}
 
@@ -396,12 +455,13 @@ export function CategorySheet({
                     if (hasChildren) setStack((st) => [...st, node]);
                     else commit(drill, [...stack, node]);
                   }}
-                  style={rowStyle}
+                  style={[rowStyle, dim(countOf(subCounts, node.id))]}
                 >
                   {node.emoji ? <Txt style={{ fontSize: 16 }}>{node.emoji}</Txt> : null}
                   <Txt style={{ flex: 1, fontWeight: active ? '800' : '600', color: active ? C.green : C.ink }}>
                     {node.name}
                   </Txt>
+                  <Count n={countOf(subCounts, node.id)} />
                   {active && <Ionicons name="checkmark" size={20} color={C.green} />}
                   {/* A parent drills in; the "All of …" row above selects it outright. */}
                   {hasChildren && <Ionicons name={forwardChevron()} size={18} color={C.inkSoft} />}

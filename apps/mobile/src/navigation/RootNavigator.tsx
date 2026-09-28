@@ -6,6 +6,7 @@ import { RoleRouter } from './RoleRouter';
 import { SectionScreen } from './SectionScreen';
 import { ProductDetail } from '../screens/public/ProductDetail';
 import { Search } from '../screens/public/Search';
+import { Browse } from '../screens/public/Browse';
 import { Offices } from '../screens/public/Offices';
 import { RfqBasket } from '../screens/public/RfqBasket';
 import { Checkout } from '../screens/public/Checkout';
@@ -60,6 +61,7 @@ export function RootNavigator() {
       {/* Screens rendering their own <AppBar> must hide the stack header, or the
           two stack up with duplicate titles and back chevrons. */}
       <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
+      <Stack.Screen name="Products" component={Browse} options={{ headerShown: false }} />
       <Stack.Screen name="Offices" component={Offices} options={title('Offices')} />
       <Stack.Screen name="SafeDeal" component={BuyerSafeDeal} options={title('SafeDeal')} />
       {/* Route id stays `Cart` — it is the basket icon's target across the app. */}

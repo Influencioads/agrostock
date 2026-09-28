@@ -1,32 +1,45 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, type NativeScrollEvent, type NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import type { ApiCategory, ApiProduct } from '@agrotraders/api-client';
+import { SYMBOLS, type ApiCategory, type ApiMarket, type ApiProduct } from '@agrotraders/api-client';
+import { countryLabel } from '@agrotraders/geo';
 import { api } from '../../lib/api';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { AppBar, FilterBar, SearchBar } from '../../ui';
 import { AppliedFilters } from '../../ui/FilterBar';
 import { C, space, type } from '../../theme/tokens';
-import { ProductGrid } from '../components/ProductGrid';
+import { ProductGrid, SimilarProducts } from '../components/ProductGrid';
 import { FilterSheet, SortSheet } from '../components/FilterSheet';
 import {
+  ATTR_PREFIX,
   EMPTY_FILTERS,
   FLAG_IDS,
+  SORTS,
+  LIST_GROUPS,
   clearGroup,
   countActive,
+  filtersFromParams,
   toQuery,
+  toggleValue,
   type Filters,
+  type ListGroup,
 } from '../components/filterState';
 import { useI18n } from '../../i18n';
 import { useBasketAction } from '../../basket/useBasketAction';
 import type { RootStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+/** The shop tab mounts this too, as `Browse`, with no params. */
+type ProductsRoute = RouteProp<RootStackParamList, 'Products'>;
 
-/** Display labels come from `pubX.browse.sort.<id>`. */
-const SORTS = ['relevance', 'price_asc', 'price_desc', 'rating'];
+/** A deep link (agrotraders.org/market?...) carries only strings in web's param names, never a Filters object. */
+const paramFilters = (p: ProductsRoute['params']): Filters =>
+  p?.filters && typeof p.filters === 'object' ? p.filters : p ? filtersFromParams(p) : EMPTY_FILTERS;
+/** Web's /market calls the search text `search`. */
+const paramQ = (p: ProductsRoute['params']) => p?.q ?? p?.search ?? '';
 
 /**
  * The product listing page.
@@ -38,15 +51,37 @@ const SORTS = ['relevance', 'price_asc', 'price_desc', 'rating'];
  */
 export function Browse() {
   const nav = useNavigation<Nav>();
-  const { t } = useI18n();
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('relevance');
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const route = useRoute<ProductsRoute>();
+  const params = route.params;
+  const { t, lang } = useI18n();
+  const { rate, displayCurrency } = useCurrency();
+  // `typed` is the box; `search` is the settled term the query runs on, so a
+  // word typed is one fetch rather than one per keystroke.
+  const [typed, setTyped] = useState(paramQ(params));
+  const [search, setSearch] = useState(typed);
+  const [sort, setSort] = useState(params?.sort ?? 'relevance');
+  const [filters, setFilters] = useState<Filters>(paramFilters(params));
   const [filterSheet, setFilterSheet] = useState(false);
   const [sortSheet, setSortSheet] = useState(false);
   const basketAction = useBasketAction();
 
-  const query = useMemo(() => toQuery(filters, search, sort), [filters, search, sort]);
+  // The home hero can navigate here again with new params while this screen is
+  // still mounted, and a `useState` initialiser only runs once. The shop tab
+  // passes none, so its own state is left alone.
+  useEffect(() => {
+    if (!params) return;
+    setFilters(paramFilters(params));
+    setTyped(paramQ(params));
+    setSearch(paramQ(params));
+    setSort(params.sort ?? 'relevance');
+  }, [params]);
+
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(typed), 300);
+    return () => clearTimeout(id);
+  }, [typed]);
+
+  const query = useMemo(() => toQuery(filters, search, sort, rate), [filters, search, sort, rate]);
 
   // The whole committed query is the cache key, so a repeated filter
   // combination is served from cache; `keepPreviousData` stops the grid
@@ -60,7 +95,8 @@ export function Browse() {
     placeholderData: keepPreviousData,
   });
   const products: ApiProduct[] = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
-  const total = data?.pages[0]?.total ?? 0;
+  const firstPage = data?.pages[0];
+  const total = firstPage?.total ?? 0;
 
   // Fetch the next page when the grid scrolls within ~600px of the bottom.
   const onScroll = useCallback(
@@ -78,7 +114,20 @@ export function Browse() {
     staleTime: 3600e3,
   });
 
+  // Only for the market chips' names; the sheet itself lists markets from facets.
+  const { data: markets = [] } = useQuery<ApiMarket[]>({
+    queryKey: ['markets'],
+    queryFn: () => api.markets.list(),
+    staleTime: 3600e3,
+    enabled: filters.market.length > 0,
+  });
+
   const activeCount = countActive(filters);
+  const clearAll = () => {
+    setFilters(EMPTY_FILTERS);
+    setTyped('');
+    setSearch('');
+  };
   // The picker carries the resolved, localized field definitions, so a facet
   // chip can show the field's real label instead of guessing it from the key.
   const attrLabel = useCallback(
@@ -86,7 +135,7 @@ export function Browse() {
     [filters.selection.attrFields],
   );
 
-  /** One removable chip per applied filter, in the order the sheet lists them. */
+  /** One removable chip per applied filter, per value for the lists, as on web. */
   const chips = useMemo(() => {
     const out: { key: string; label: string; onRemove: () => void }[] = [];
     const drop = (group: string) => () => setFilters((f) => clearGroup(f, group));
@@ -97,6 +146,29 @@ export function Browse() {
         onRemove: drop('category'),
       });
     }
+    for (const [key, values] of Object.entries(filters.attrs)) {
+      if (values.length) {
+        out.push({ key: ATTR_PREFIX + key, label: `${attrLabel(key)} · ${values.length}`, onRemove: drop(ATTR_PREFIX + key) });
+      }
+    }
+    // Chips carry names, not stored values: a market slug or an English
+    // country name reads as a bug to a Russian buyer.
+    const valueLabel: Record<ListGroup, (v: string) => string> = {
+      grade: (v) => v,
+      country: (v) => countryLabel(v, lang),
+      city: (v) => v,
+      market: (v) => markets.find((m) => m.slug === v)?.name ?? v,
+      supplyCountry: (v) => `${t('pubX.filter.groups.supplyCountry')}: ${countryLabel(v, lang)}`,
+    };
+    for (const g of LIST_GROUPS) {
+      for (const v of filters[g]) {
+        out.push({ key: `${g}:${v}`, label: valueLabel[g](v), onRemove: () => setFilters((f) => toggleValue(f, g, v)) });
+      }
+    }
+    if (filters.minPrice || filters.maxPrice) {
+      const unit = SYMBOLS[displayCurrency] ?? displayCurrency;
+      out.push({ key: 'price', label: `${unit}${filters.minPrice || '0'} – ${filters.maxPrice || '∞'}`, onRemove: drop('price') });
+    }
     for (const id of FLAG_IDS) {
       if (filters.flags[id]) {
         out.push({
@@ -106,26 +178,21 @@ export function Browse() {
         });
       }
     }
-    if (filters.minPrice || filters.maxPrice) {
-      out.push({ key: 'price', label: `${filters.minPrice || '0'} – ${filters.maxPrice || '∞'}`, onRemove: drop('price') });
-    }
-    if (filters.country) out.push({ key: 'country', label: filters.country, onRemove: drop('country') });
-    if (filters.city) out.push({ key: 'city', label: filters.city, onRemove: drop('city') });
-    if (filters.grade) out.push({ key: 'grade', label: filters.grade, onRemove: drop('grade') });
-    if (filters.market) out.push({ key: 'market', label: filters.market, onRemove: drop('market') });
-    for (const [key, values] of Object.entries(filters.attrs)) {
-      if (values.length) out.push({ key, label: `${attrLabel(key)} · ${values.length}`, onRemove: drop(key) });
-    }
     return out;
-  }, [filters, t, attrLabel]);
+  }, [filters, t, lang, attrLabel, markets, displayCurrency]);
 
   // No 'top' edge: AppBar applies the status-bar inset itself. Adding it here
   // too would leave an empty band above the header.
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={[]}>
-      <AppBar title={t('pubX.browse.title')} actions={[basketAction]}>
+      <AppBar
+        title={t('pubX.browse.title')}
+        actions={[basketAction]}
+        // Pushed over the tabs as `Products` it needs a way back; as a tab it is the root.
+        onBack={route.name === 'Products' ? () => nav.goBack() : undefined}
+      >
         <View style={{ paddingHorizontal: space.lg }}>
-          <SearchBar value={search} onChangeText={setSearch} placeholder={t('pubX.browse.searchPlaceholder')} />
+          <SearchBar value={typed} onChangeText={setTyped} placeholder={t('pubX.browse.searchPlaceholder')} />
         </View>
       </AppBar>
 
@@ -163,10 +230,14 @@ export function Browse() {
           empty={{
             title: t('pubX.browse.emptyTitle'),
             body: t('pubX.browse.emptyBody'),
-            action: activeCount ? t('pubX.plp.clearFilters') : undefined,
-            onAction: () => setFilters(EMPTY_FILTERS),
+            // A search term alone can empty the grid too, so it counts as something to clear.
+            action: activeCount || search ? t('pubX.plp.clearFilters') : undefined,
+            onAction: clearAll,
           }}
         />
+        {products.length === 0 && !isLoading && !isError ? (
+          <SimilarProducts result={firstPage} onOpen={(p) => nav.navigate('ProductDetail', { slug: p.slug })} />
+        ) : null}
 
         {isFetchingNextPage ? (
           <View style={{ paddingVertical: space.lg }}>
@@ -188,6 +259,7 @@ export function Browse() {
         onClose={() => setFilterSheet(false)}
         applied={filters}
         onApply={setFilters}
+        search={search}
         categories={cats}
         categoriesError={catsError}
         onRetryCategories={() => void refetchCats()}

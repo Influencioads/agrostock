@@ -1,3 +1,4 @@
+import { schemaName, type ApiCategory } from '@agrotraders/api-client';
 import type { AttrField } from '@agrotraders/types';
 
 /**
@@ -39,3 +40,12 @@ export const EMPTY_SELECTION: CategorySelection = {
   trail: [],
   attrFields: [],
 };
+
+/** A whole top-level category, no node below it — what a category chip picks. */
+export const categoryOnly = (c: ApiCategory): CategorySelection => ({
+  ...EMPTY_SELECTION,
+  categoryId: c.id,
+  categoryName: c.name,
+  categoryNameEn: schemaName(c),
+  trail: [c.name],
+});

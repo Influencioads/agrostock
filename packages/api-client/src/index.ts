@@ -2139,15 +2139,30 @@ export interface ProductListResult {
   page: number;
   pageSize: number;
   /**
-   * Present only when a subcategory drill-down matched NOTHING: the listings
-   * from the nearest ancestor that has any, with every other filter still
-   * applied. Sellers list at whatever depth suits them, so an exact meeting at
-   * level 5 is luck — this is what to show instead of a blank grid.
+   * Present only when page 1 matched NOTHING: the closest listings the API
+   * could find by loosening the query step by step (see `relaxed`). A buyer
+   * asking for a size or grade nobody lists sees the nearest alternatives
+   * instead of a blank grid — the search never dead-ends.
    */
   similar?: ApiProduct[];
-  /** The ancestor `similar` was taken from, for the "showing X instead" line. */
-  similarFrom?: { id: string; name: string };
+  /**
+   * The taxonomy node `similar` was widened to, when the fallback had to climb
+   * the tree — for the "showing X instead" line. Absent when the taxonomy
+   * selection was kept (or there was none).
+   */
+  similarFrom?: { id: string; name: string; kind: 'subcategory' | 'category' };
+  /** The filter groups the fallback dropped to find `similar`, in the order it dropped them. */
+  relaxed?: ProductRelaxStep[];
 }
+
+/**
+ * One rung of the similar-products ladder: `attributes` (attr_*), `grade`,
+ * `price`, `place` (market/city/country/ships-to), `flags` (verified, deal,
+ * pricing, listing type), `taxonomy` (climbed to a parent node or the
+ * category), `search` (term loosened to any word, then dropped), `all`
+ * (nothing matched at all — newest listings).
+ */
+export type ProductRelaxStep = 'attributes' | 'grade' | 'price' | 'place' | 'flags' | 'taxonomy' | 'search' | 'all';
 
 /**
  * A multi-select facet on the wire: one comma-separated param rather than a
@@ -2155,6 +2170,8 @@ export interface ProductListResult {
  * shared URL stays legible. Empty selections drop out entirely.
  */
 function multi(v: MultiFilter | undefined): string | undefined {
+  // Values may carry commas inside parentheses ("Mature (brown, husked)"); the
+  // API splits with `splitFilterValues`, which leaves those intact.
   if (Array.isArray(v)) {
     const picked = v.map((s) => s.trim()).filter(Boolean);
     return picked.length ? picked.join(',') : undefined;
@@ -2238,6 +2255,11 @@ export interface ApiFacetOption {
   count: number;
 }
 
+/** A taxonomy-node facet: `count` includes every descendant's listings. */
+export interface ApiSubcategoryFacet extends ApiFacetOption {
+  parentId: string | null;
+}
+
 /** Listing counts for the on/off filter groups. */
 export interface ApiFacetFlags {
   safe: number;
@@ -2255,8 +2277,15 @@ export interface ApiFacetFlags {
  * holds are the same set by construction.
  */
 export interface ApiProductFacets {
+  /** Listings matching the WHOLE query — the "Show N results" number. */
+  total: number;
   categories: ApiFacetOption[];
-  subcategories: ApiFacetOption[];
+  /**
+   * Every taxonomy node with at least one listing in its BRANCH (the node or
+   * any descendant), counted branch-inclusively — exactly what selecting it
+   * returns. Nodes absent from the list would return 0.
+   */
+  subcategories: ApiSubcategoryFacet[];
   markets: ApiFacetOption[];
   countries: ApiFacetOption[];
   cities: ApiFacetOption[];

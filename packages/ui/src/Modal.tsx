@@ -91,7 +91,10 @@ export function Modal({ open, onClose, title, children, footer, className, close
           // `items-end` on phones: a tall dialog centred in a short viewport gets
           // clipped at BOTH ends with no way to scroll to its footer. Anchored to
           // the bottom it reads as a sheet and the panel's own scroller takes over.
-          className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-brand-evergreen/40 p-0 sm:items-center sm:p-4"
+          // z-[75]: above the floating chat/support buttons (z-[60]) and the chat
+          // drawer (z-[70]) — at z-50 the support button sat on the hero Filters
+          // drawer's "Show N results" footer. HireModal (z-[80]) still wins.
+          className="fixed inset-0 z-[75] flex items-end justify-center overflow-y-auto bg-brand-evergreen/40 p-0 sm:items-center sm:p-4"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -7,16 +7,21 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApiCategory, ApiHomeBanners, ApiProduct } from '@agrotraders/api-client';
+import { countryLabel } from '@agrotraders/geo';
 import { api } from '../../lib/api';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { ProduceMark, SkeletonCard } from '../../ui';
+import { BrandLogo } from '../../ui/BrandLogo';
 import { ProductCard } from '../components';
 import { ProductGrid } from '../components/ProductGrid';
+import { FilterSheet, SortSheet } from '../components/FilterSheet';
+import { EMPTY_FILTERS, SORTS, countActive, toggleValue, type Filters } from '../components/filterState';
+import { EMPTY_SELECTION, categoryOnly } from '../components/categorySelection';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useBasketAction } from '../../basket/useBasketAction';
-import { DeliverToSheet, useDeliverTo } from '../../lib/deliverTo';
+import { useChatBadge } from '../../chat/ChatBadgeContext';
 import { isShopRole } from '../../navigation/menu';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -72,16 +77,133 @@ function SectionRow({ title, seeAll, onSeeAll }: { title: string; seeAll: string
   );
 }
 
+/**
+ * The web hero's search card, for the app: Buy/Sell, a query, the full
+ * category drill and every filter the listing page has, plus quick filters.
+ * Every chip is a real API filter — the web's "100 MT" and "Export-ready"
+ * chips are free-text searches that match nothing, so they are not copied here.
+ *
+ * The query it composes lives in Home, which also opens the same filter sheet
+ * from the category chips below the hero; this only reports what was tapped.
+ */
+function HeroSearch({ categories, q, onQ, draft, onDraft, sort, onSort, onSearch, onOpen }: {
+  categories: ApiCategory[];
+  q: string;
+  onQ: (q: string) => void;
+  draft: Filters;
+  /** The quick chips toggle their filter on the draft, as web's quick picks do. */
+  onDraft: (next: Filters) => void;
+  sort: string;
+  onSort: () => void;
+  onSearch: () => void;
+  /** Open the filter sheet — straight onto the category drill for `category`. */
+  onOpen: (sheet: 'category' | 'filters') => void;
+}) {
+  const nav = useNavigation<Nav>();
+  const { t, lang } = useI18n();
+  const { user, role } = useAuth();
+
+  // Web's Sell tab: sellers go straight to a new listing; everyone else needs a
+  // seller account first.
+  const sell = () => {
+    if (role === 'seller') nav.navigate('Section', { role: 'seller', section: 'add', title: t('dash.addProduct') });
+    else if (user) nav.navigate('RolesAccess');
+    else nav.navigate('SignUp');
+  };
+  // Structured filters, not search words: "Russia" as text only matches a
+  // listing that spells it out, and the Russian word matched nothing at all.
+  // They toggle on the draft rather than navigate, so they compose with the
+  // query, category and filters, and a second tap takes one back off.
+  const grain = categories.find((c) => c.slug === 'grain');
+  const grainOn = !!grain && draft.selection.categoryId === grain.id;
+  const verifiedOn = !!draft.flags.verified;
+  const chips: { label: string; active: boolean; next: Filters }[] = [
+    ...(grain
+      ? [{ label: grain.name, active: grainOn, next: { ...draft, selection: grainOn ? EMPTY_SELECTION : categoryOnly(grain), attrs: {} } }]
+      : []),
+    { label: countryLabel('Russia', lang), active: draft.country.includes('Russia'), next: toggleValue(draft, 'country', 'Russia') },
+    { label: t('pubX.home.chipVerified'), active: verifiedOn, next: { ...draft, flags: { ...draft.flags, verified: !verifiedOn } } },
+  ];
+  const picked = draft.selection.trail[draft.selection.trail.length - 1];
+  const active = countActive(draft);
+
+  return (
+    <View style={s.card}>
+      <View style={s.seg}>
+        <View style={[s.segBtn, s.segOn]}><Text style={[s.segText, { color: C.white }]}>{t('pubX.home.link.buy')}</Text></View>
+        <Pressable style={s.segBtn} onPress={sell} accessibilityRole="button">
+          <Text style={s.segText}>{t('pubX.home.sell')}</Text>
+        </Pressable>
+      </View>
+      <View style={s.input}>
+        <Ionicons name="search" size={18} color={C.inkMuted} />
+        <TextInput
+          value={q}
+          onChangeText={onQ}
+          onSubmitEditing={onSearch}
+          returnKeyType="search"
+          placeholder={t('pubX.home.heroSearchHint')}
+          placeholderTextColor={C.inkMuted}
+          style={s.inputText}
+        />
+      </View>
+      <View style={s.cardRow}>
+        <Pressable style={s.select} onPress={() => onOpen('category')} accessibilityRole="button">
+          <Ionicons name="grid-outline" size={16} color={picked ? C.green : C.inkSoft} />
+          <Text numberOfLines={1} style={s.selectText}>{picked ?? t('pubX.home.heroCategories')}</Text>
+          <Ionicons name="chevron-down" size={15} color={C.inkSoft} />
+        </Pressable>
+        <Pressable style={s.searchBtn} onPress={onSearch} accessibilityRole="button">
+          <Text numberOfLines={1} style={s.searchBtnText}>{t('common:search')}</Text>
+        </Pressable>
+      </View>
+      <View style={s.heroChips}>
+        {/* The whole filter panel, one tap from the hero. It leads the chips so
+            it reads as the way to narrow further, not as another shortcut. */}
+        <Pressable onPress={() => onOpen('filters')} style={[s.heroChip, s.filterChip]} accessibilityRole="button">
+          <Ionicons name="options-outline" size={15} color={C.green} />
+          <Text style={[s.heroChipText, { color: C.green }]}>{t('pubX.plp.filters')}</Text>
+          {active ? <View style={s.filterCount}><Text style={s.filterCountText}>{active}</Text></View> : null}
+        </Pressable>
+        <Pressable onPress={onSort} style={[s.heroChip, s.filterChip]} accessibilityRole="button">
+          <Ionicons name="swap-vertical" size={15} color={C.green} />
+          <Text style={[s.heroChipText, { color: C.green }]}>
+            {sort === 'relevance' ? t('pubX.plp.sort') : t('pubX.browse.sort.' + sort)}
+          </Text>
+        </Pressable>
+        {chips.map((c) => (
+          <Pressable
+            key={c.label}
+            onPress={() => onDraft(c.next)}
+            style={[s.heroChip, c.active && s.heroChipOn]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: c.active }}
+          >
+            <Text style={[s.heroChipText, c.active && { color: C.white }]}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export function Home() {
   const nav = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const { user, role } = useAuth();
   const basketAction = useBasketAction();
-  const { place } = useDeliverTo();
-  const [picker, setPicker] = useState(false);
+  const { unread: chatUnread, clear: clearChat } = useChatBadge();
+  // The hero's composed query. It lives here, not in the hero, because the
+  // category chips below open the same sheet, and it survives a trip to the
+  // results and back because Home stays mounted under the pushed screen.
+  const [heroQ, setHeroQ] = useState('');
+  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
+  const [sheet, setSheet] = useState<'category' | 'filters' | null>(null);
+  const [sort, setSort] = useState('relevance');
+  const [sortSheet, setSortSheet] = useState(false);
 
-  const { data: categories = [] } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
+  const { data: categories = [], isError: catsError, refetch: refetchCats } = useQuery<ApiCategory[]>({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const { data: offers = [], isLoading: offersLoading } = useQuery<ApiProduct[]>({ queryKey: ['products', 'offer'], queryFn: () => api.products.list({ offer: true }) });
   const { data: allProducts = [], isLoading: allLoading } = useQuery<ApiProduct[]>({ queryKey: ['products', 'all'], queryFn: () => api.products.list({}) });
   const { data: promoted = [] } = useQuery<ApiProduct[]>({ queryKey: ['ads', 'promoted'], queryFn: () => api.ads.promoted(8) });
@@ -109,35 +231,35 @@ export function Home() {
   // Guests have no profile to load — send them to sign in instead of the
   // profile form, which would otherwise hang on a /me call that never resolves.
   const openProfile = () => (user ? nav.navigate('ProfileForm') : nav.navigate('SignIn', {}));
-  // The ID, not `c.name`: category names arrive localized, and the API matches
-  // the `category` filter against the English column — so a Russian chip
-  // searched for "Овощи" and every result set came back empty.
-  const toSearch = (categoryId?: string) => nav.navigate('Search', categoryId ? { categoryId } : undefined);
+  const toSearch = () => nav.navigate('Search');
+  const showProducts = (filters: Filters) => nav.navigate('Products', { filters, q: heroQ.trim() || undefined, sort });
+  // A category chip asks the next question instead of landing on a flat
+  // category-wide list: the picker opens inside it (Almond, Cashew...), and the
+  // node picked there leads on to its attributes (raw or roasted...).
+  const pickIn = (c: ApiCategory) => {
+    setDraft((d) => ({ ...d, selection: categoryOnly(c), attrs: {} }));
+    setSheet('category');
+  };
   // "See all" lands on the matching tab where the shop tabs exist; other
-  // consoles have no Offers/Browse tab, so they get the search screen instead.
+  // consoles have no Offers/Browse tab, so they get the Products route instead.
   const shop = isShopRole(role);
-  const seeAllOffers = () => (shop ? nav.navigate('App', { screen: 'Offers' } as never) : toSearch());
-  const seeAllProducts = () => (shop ? nav.navigate('App', { screen: 'Browse' } as never) : toSearch());
+  const seeAllOffers = () =>
+    shop ? nav.navigate('App', { screen: 'Offers' } as never) : nav.navigate('Products', { filters: { ...EMPTY_FILTERS, flags: { offer: true } } });
+  const seeAllProducts = () => (shop ? nav.navigate('App', { screen: 'Browse' } as never) : nav.navigate('Products'));
   // The hero is the entry point for the top paid placement; with no live ad it
   // falls back to search rather than dead-ending.
   const heroOpen = () => (promoted[0] ? open(promoted[0]) : toSearch());
+  const heroOff = banners?.heroEnabled === false;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={[]}>
-      {/* Header — deliver-to, bell, basket, account, then the search pill. Owns
-          the status-bar inset. */}
+      {/* Header — logo, chat, bell, basket, account (plus the search pill when the
+          hero is off). Owns the status-bar inset. */}
       <View style={[s.header, { paddingTop: insets.top + 6 }]}>
         <View style={s.headerRow}>
-          <Pressable style={s.deliver} onPress={() => setPicker(true)} hitSlop={6} accessibilityRole="button" accessibilityLabel={t('pubX.home.deliverTo')}>
-            <View style={s.deliverIcon}><Ionicons name="location-outline" size={18} color={C.green} /></View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.deliverLabel}>{t('pubX.home.deliverTo')}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text numberOfLines={1} style={[s.deliverCity, { flexShrink: 1 }]}>{place?.label ?? t('pubX.home.deliverToUnset')}</Text>
-                <Ionicons name="chevron-down" size={15} color={C.ink} />
-              </View>
-            </View>
-          </Pressable>
+          <View style={{ flex: 1, alignItems: 'flex-start' }}><BrandLogo size={30} /></View>
+          {/* Chat sits on the home bar again, not only under Account. */}
+          <CircleBtn icon="chatbubbles-outline" badge={chatUnread} onPress={() => { clearChat(); nav.navigate('Community'); }} a11y={t('hub.community')} />
           <CircleBtn icon="notifications-outline" dot={(unread?.count ?? 0) > 0} onPress={() => nav.navigate('Notifications')} a11y={t('pubX.notif.title')} />
           <CircleBtn icon={basketAction.icon} badge={basketAction.badge} onPress={basketAction.onPress} a11y={basketAction.a11y} />
           {user ? (
@@ -149,19 +271,61 @@ export function Home() {
           )}
         </View>
 
-        <Pressable style={s.search} onPress={() => nav.navigate('Search', { focus: true })} accessibilityRole="search">
-          <Ionicons name="search" size={19} color={C.inkMuted} />
-          <Text numberOfLines={1} style={s.searchHint}>{t('pubX.home.searchHint')}</Text>
-        </Pressable>
+        {/* The hero carries the search; the pill only stands in when an admin
+            has switched the hero off. */}
+        {heroOff ? (
+          <Pressable style={s.search} onPress={() => nav.navigate('Search', { focus: true })} accessibilityRole="search">
+            <Ionicons name="search" size={19} color={C.inkMuted} />
+            <Text numberOfLines={1} style={s.searchHint}>{t('pubX.home.searchHint')}</Text>
+          </Pressable>
+        ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: space.xxl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: space.xxl }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Hero — the web's headline and search card. On/off, eyebrow, title and
+            CTA are Admin -> CMS overrides; the wholesale-only badge is not. */}
+        {heroOff ? null : (
+          <View style={s.heroWrap}>
+            <LinearGradient colors={[C.evergreen, C.dark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0.6 }} style={s.hero}>
+              <View style={s.heroCircle} />
+              {banners?.heroTag ? <Text style={[s.heroTag, microLabel()]}>{banners.heroTag}</Text> : null}
+              <View style={s.wholesale}>
+                <Ionicons name="cube-outline" size={14} color={C.mango} />
+                <Text style={s.wholesaleText}>{t('pubX.home.wholesaleOnly')}</Text>
+              </View>
+              <Text style={s.heroTitle}>
+                {banners?.heroTitle || (
+                  <>
+                    {t('pubX.home.heroTitle')} <Text style={{ color: C.mango }}>{t('pubX.home.heroTitleAccent')}</Text>
+                  </>
+                )}
+              </Text>
+              <HeroSearch
+                categories={categories}
+                q={heroQ}
+                onQ={setHeroQ}
+                draft={draft}
+                onDraft={setDraft}
+                sort={sort}
+                onSort={() => setSortSheet(true)}
+                onSearch={() => showProducts(draft)}
+                onOpen={setSheet}
+              />
+              {banners?.heroCta ? (
+                <Pressable onPress={heroOpen} style={s.heroBtn}>
+                  <Text numberOfLines={1} style={s.heroBtnText}>{banners.heroCta}</Text>
+                </Pressable>
+              ) : null}
+            </LinearGradient>
+          </View>
+        )}
+
         {/* The one category selector. */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRail}>
           {categories.map((c, i) => (
-            <CategoryChip key={c.id} cat={c} index={i} onPress={() => toSearch(c.id)} />
+            <CategoryChip key={c.id} cat={c} index={i} onPress={() => pickIn(c)} />
           ))}
-          <Pressable onPress={() => toSearch()} style={({ pressed }) => [s.chip, pressed && { opacity: 0.7 }]}>
+          <Pressable onPress={() => nav.navigate('Products')} style={({ pressed }) => [s.chip, pressed && { opacity: 0.7 }]}>
             <View style={[s.chipIcon, { backgroundColor: C.surface }]}><Ionicons name="grid-outline" size={16} color={C.green} /></View>
             <Text style={s.chipLabel}>{t('pubX.home.allCategories')}</Text>
           </Pressable>
@@ -178,18 +342,6 @@ export function Home() {
             </View>
             <View style={s.promoDivider} />
             <Text numberOfLines={1} style={s.promoCta}>{banners?.promoCta || t('pubX.home.promoCta')}</Text>
-          </Pressable>
-        )}
-
-        {/* Gradient hero — same admin controls as the promo strip. */}
-        {banners?.heroEnabled === false ? null : (
-          <Pressable onPress={heroOpen} style={s.heroWrap}>
-            <LinearGradient colors={[C.evergreen, C.dark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0.6 }} style={s.hero}>
-              <View style={s.heroCircle} />
-              <Text style={[s.heroTag, microLabel()]}>{banners?.heroTag || t('pubX.home.heroTag')}</Text>
-              <Text numberOfLines={2} style={s.heroTitle}>{banners?.heroTitle || t('pubX.home.heroTitle')}</Text>
-              <View style={s.heroBtn}><Text numberOfLines={1} style={s.heroBtnText}>{banners?.heroCta || t('pubX.home.heroCta')}</Text></View>
-            </LinearGradient>
           </Pressable>
         )}
 
@@ -224,7 +376,29 @@ export function Home() {
         </Pressable>
       </ScrollView>
 
-      <DeliverToSheet visible={picker} onClose={() => setPicker(false)} />
+      <FilterSheet
+        visible={sheet !== null}
+        pickCategory={sheet === 'category'}
+        // Closing keeps the draft: nothing is committed until Search anyway,
+        // and a category picked then dismissed should still read in the hero.
+        onClose={(d) => {
+          setDraft(d);
+          setSheet(null);
+        }}
+        applied={draft}
+        onApply={showProducts}
+        categories={categories}
+        categoriesError={catsError}
+        onRetryCategories={() => void refetchCats()}
+        search={heroQ}
+      />
+      <SortSheet
+        visible={sortSheet}
+        onClose={() => setSortSheet(false)}
+        options={SORTS.map((sv) => ({ id: sv, label: t('pubX.browse.sort.' + sv) }))}
+        value={sort}
+        onChange={setSort}
+      />
     </SafeAreaView>
   );
 }
@@ -232,10 +406,6 @@ export function Home() {
 const s = StyleSheet.create({
   header: { backgroundColor: C.page, paddingBottom: space.md, gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: space.lg },
-  deliver: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  deliverIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
-  deliverLabel: { ...type.caption, color: C.inkSoft },
-  deliverCity: { ...type.h3, fontSize: 15, color: C.ink },
   circleBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.white, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   circleDot: { position: 'absolute', top: 9, end: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: C.mango, borderWidth: 1.5, borderColor: C.white },
   badge: { position: 'absolute', top: -4, end: -4, minWidth: 19, height: 19, borderRadius: 10, paddingHorizontal: 5, backgroundColor: C.error, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.page },
@@ -262,12 +432,34 @@ const s = StyleSheet.create({
   promoDivider: { width: 1, height: 34, backgroundColor: '#E7C88A' },
   promoCta: { ...type.micro, fontSize: 12, color: C.gold, letterSpacing: 0.4 },
 
-  heroWrap: { marginHorizontal: space.lg, marginBottom: space.lg, borderRadius: radius.card, overflow: 'hidden' },
-  hero: { padding: 22, minHeight: 190, justifyContent: 'center' },
+  heroWrap: { marginHorizontal: space.lg, marginTop: space.lg, borderRadius: radius.card, overflow: 'hidden' },
+  hero: { padding: 20 },
   heroCircle: { position: 'absolute', right: -40, top: -20, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(255,255,255,0.06)' },
   heroTag: { ...type.micro, fontSize: 11, color: '#9ED8B0' },
-  heroTitle: { ...type.h1, fontSize: 26, color: C.white, marginTop: 8, maxWidth: '80%' },
-  heroBtn: { alignSelf: 'flex-start', marginTop: 18, backgroundColor: C.white, borderRadius: 22, paddingHorizontal: 20, height: 44, justifyContent: 'center' },
+  heroTitle: { ...type.h1, fontSize: 26, lineHeight: 31, color: C.white, marginTop: 12 },
+  wholesale: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8, backgroundColor: 'rgba(232,154,43,0.16)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5 },
+  wholesaleText: { ...type.title, fontSize: 12, lineHeight: 16, color: C.mango, flexShrink: 1 },
+
+  card: { marginTop: 18, backgroundColor: C.white, borderRadius: radius.card, padding: 12, gap: 10 },
+  seg: { flexDirection: 'row', backgroundColor: C.surface, borderRadius: 12, padding: 4 },
+  segBtn: { flex: 1, height: 38, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  segOn: { backgroundColor: C.green },
+  segText: { ...type.title, color: C.inkSoft },
+  input: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 46, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12 },
+  inputText: { flex: 1, ...type.body, color: C.ink, paddingVertical: 0 },
+  cardRow: { flexDirection: 'row', gap: 8 },
+  select: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 46, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12 },
+  selectText: { flex: 1, ...type.title, color: C.ink },
+  searchBtn: { height: 46, borderRadius: 12, backgroundColor: C.green, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' },
+  searchBtnText: { ...type.title, color: C.white },
+  heroChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  heroChip: { backgroundColor: C.surface, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
+  heroChipOn: { backgroundColor: C.green },
+  heroChipText: { ...type.title, fontSize: 13, color: C.inkSoft },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.white, borderWidth: 1, borderColor: C.green },
+  filterCount: { minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' },
+  filterCountText: { ...type.micro, fontSize: 12, lineHeight: 14, color: C.white },
+  heroBtn: { alignSelf: 'flex-start', marginTop: 14, backgroundColor: C.white, borderRadius: 22, paddingHorizontal: 20, height: 44, justifyContent: 'center' },
   heroBtnText: { ...type.title, fontSize: 14, color: C.evergreen },
 
   safeWrap: { marginHorizontal: space.lg, borderRadius: radius.card, overflow: 'hidden' },

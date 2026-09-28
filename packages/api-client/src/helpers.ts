@@ -44,7 +44,7 @@ export function parsePriceCents(price: string | null | undefined): number | null
 
 // Currencies + symbols live in @agrotraders/types: the API validates the
 // seller's quoted currency against the same list and cannot import this package.
-export { CURRENCIES, CURRENCY_SYMBOLS as SYMBOLS, type CurrencyCode } from '@agrotraders/types';
+export { CURRENCIES, CURRENCY_SYMBOLS as SYMBOLS, splitFilterValues, type CurrencyCode } from '@agrotraders/types';
 import { CURRENCY_SYMBOLS as SYMBOLS } from '@agrotraders/types';
 
 /** USD cents → target-currency amount (major units). */

@@ -86,11 +86,14 @@ export function ProductPage() {
   const attrRows = apiProduct?.attributeSpecs ?? [];
 
   // Related products: same category (and market when known), excluding this one.
+  // By id, not name: the joined category name is localized and the API matches
+  // English names only, so the section was empty in every other language.
+  const relatedCategoryId = apiProduct?.category && 'id' in apiProduct.category ? apiProduct.category.id : undefined;
   const { data: related = [] } = useQuery({
-    queryKey: ['related', product?.category, product?.marketSlug, product?.id],
+    queryKey: ['related', relatedCategoryId, product?.marketSlug, product?.id],
     queryFn: async () => {
       if (!product) return [];
-      const list = (await api.products.list({ category: product.category || undefined })).map(toCardProduct);
+      const list = (await api.products.list({ categoryId: relatedCategoryId })).map(toCardProduct);
       const sameMarket = list.filter((p) => p.id !== product.id && p.marketSlug && p.marketSlug === product.marketSlug);
       const rest = list.filter((p) => p.id !== product.id && !sameMarket.includes(p));
       return [...sameMarket, ...rest].slice(0, 4);

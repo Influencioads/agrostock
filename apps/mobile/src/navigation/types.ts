@@ -1,3 +1,5 @@
+import type { Filters } from '../screens/components/filterState';
+
 /** Root native-stack: role tabs live under "App"; everything else is pushed over it. */
 export type RootStackParamList = {
   App: undefined;
@@ -7,7 +9,13 @@ export type RootStackParamList = {
    *  `focus` opens the keyboard, and ONLY the search pill sets it: every other
    *  route in (a category chip, a "see all", the hero) is a browse intent, and
    *  auto-focusing those buries the results under the keyboard. */
-  Search: { q?: string; categoryId?: string; focus?: boolean } | undefined;
+  Search: { q?: string; categoryId?: string; focus?: boolean; verified?: boolean; country?: string } | undefined;
+  /** The full product listing — the shop's Browse tab as a root route, so every
+   *  role can reach it. `filters` is the committed filter state (plain data) as
+   *  the home hero composed it; a later navigate with new params re-applies.
+   *  A `market?…` deep link instead carries web's string params (`search`,
+   *  `categoryId`, `attr_*`…), which Browse maps into Filters. */
+  Products: { filters?: Filters; q?: string; search?: string; sort?: string } | undefined;
   Cart: undefined;
   /** `qty`/`unit` carry the buyer's pick from the listing into the review screen. */
   /** The basket is the subject; `intent` only decides which button leads. */

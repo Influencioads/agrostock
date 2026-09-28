@@ -49,7 +49,9 @@ export function BuyerOrders() {
   };
 
   return (
-    <Screen edges={['top']}>
+    // A pushed section (Account › Orders) since the shop tab became Auctions &
+    // Bids — the stack header owns the status-bar inset now.
+    <Screen>
       <Txt variant="h2">{t('buyerX.orders.screenTitle')}</Txt>
       {!!error && <Txt color={C.error} variant="small">{error}</Txt>}
       {!user ? (

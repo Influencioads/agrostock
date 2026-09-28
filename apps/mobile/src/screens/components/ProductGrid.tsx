@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native';
-import type { ApiProduct } from '@agrotraders/api-client';
-import { space } from '../../theme/tokens';
+import { StyleSheet, Text, View } from 'react-native';
+import type { ApiProduct, ProductListResult } from '@agrotraders/api-client';
+import { C, space, type } from '../../theme/tokens';
 import { EmptyState, ErrorState, SkeletonGrid } from '../../ui';
 import { useI18n } from '../../i18n';
 import { ProductCard } from '../components';
@@ -77,8 +77,44 @@ export function ProductGrid({ products, loading, error, onRetry, onOpen, empty, 
   );
 }
 
+/**
+ * What a query that matched nothing falls back to: the API's closest listings,
+ * headed by what it had to loosen to find them. Same wording rules as web's
+ * /market, so both platforms explain a fallback the same way. Renders nothing
+ * when none came back.
+ */
+export function SimilarProducts({ result, onOpen }: {
+  /** Page 1 of the `listPaged` envelope. */
+  result?: Pick<ProductListResult, 'similar' | 'similarFrom' | 'relaxed'>;
+  onOpen: (p: ApiProduct) => void;
+}) {
+  const { t } = useI18n();
+  if (!result?.similar?.length) return null;
+  const relaxed = result.relaxed ?? [];
+  const name = result.similarFrom?.name;
+  // `taxonomy` is said by the "in <node>" half, not listed as a dropped filter.
+  // Joined by hand: Hermes has no Intl.ListFormat.
+  const what = relaxed
+    .filter((r) => r !== 'taxonomy' && r !== 'all')
+    .map((r) => t('pubX.similar.step.' + r))
+    .join(', ');
+  const title = relaxed.includes('all')
+    ? t('pubX.similar.newest')
+    : what
+      ? name ? t('pubX.similar.noExactIn', { what, name }) : t('pubX.similar.noExact', { what })
+      : name ? t('pubX.similar.in', { name }) : t('pubX.similar.title');
+  return (
+    <View style={s.similar}>
+      <Text style={[s.pad, s.similarTitle]}>{title}</Text>
+      <ProductGrid products={result.similar} onOpen={onOpen} />
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   pad: { paddingHorizontal: space.lg },
+  similar: { gap: space.md, marginTop: space.sm },
+  similarTitle: { ...type.h3, color: C.ink },
   grid: { gap: space.md },
   row: { flexDirection: 'row', gap: space.md },
   cell: { flex: 1 },

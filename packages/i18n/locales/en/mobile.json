@@ -821,6 +821,12 @@
     "workersCount": "{{count}} workers",
     "workersOnsite": "Workers On-site"
   },
+  "firstRun": {
+    "title": "Welcome to AgroTraders",
+    "body": "Choose your language and currency for a better experience — prices and the whole app will follow your choice.",
+    "hint": "You can change both any time in Account.",
+    "continue": "Continue"
+  },
   "guest": {
     "body": "Sign in to track orders, place bids, and access your dashboard.",
     "createAccount": "Create account",
@@ -1477,6 +1483,9 @@
       "emptyTitle": "No products found",
       "filter": {
         "auction": "Auctions",
+        "direct": "Direct deal",
+        "fixed": "Fixed price",
+        "negotiable": "Negotiable",
         "offer": "Offers",
         "safe": "Safe Deal",
         "verified": "Verified"
@@ -1656,10 +1665,18 @@
         "country": "Country",
         "dealType": "Deal type",
         "grade": "Grade",
+        "listing": "Listing type",
         "market": "Market",
-        "price": "Price"
+        "price": "Price",
+        "pricing": "Pricing",
+        "seller": "Seller",
+        "supplyCountry": "Ships to"
       },
+      "noOptions": "Nothing to filter by here yet.",
       "searchOptions": "Search",
+      "showN_one": "Show {{count}} result",
+      "showN_other": "Show {{count}} results",
+      "showSimilar": "No exact match — show similar",
       "sortBy": "Sort by",
       "title": "Filters"
     },
@@ -1668,13 +1685,13 @@
       "cantFindBody": "Post an RFQ and get sealed quotes in hours.",
       "cantFindTitle": "Can't find your commodity?",
       "categories": "Shop by category",
-      "deliverTo": "Deliver to",
-      "deliverToUnset": "Choose a city",
+      "chipVerified": "Verified",
       "featured": "Featured",
       "freshArrivals": "Fresh arrivals",
-      "heroCta": "Explore lots",
-      "heroTag": "Harvest week",
-      "heroTitle": "Rabi wheat, direct from mandi",
+      "heroCategories": "Categories",
+      "heroSearchHint": "Search products, categories, countries…",
+      "heroTitle": "Trade Agricultural Products",
+      "heroTitleAccent": "Wholesale Worldwide",
       "link": {
         "auctions": "Auctions",
         "bids": "Bids",
@@ -1697,6 +1714,7 @@
       "safeDealTitle": "Safe Deal Escrow",
       "searchHint": "Search grains, pulses, oils…",
       "seeAll": "See all",
+      "sell": "Sell",
       "services": "Services",
       "svc": {
         "loaders": "Loaders",
@@ -1704,7 +1722,8 @@
         "safeDeal": "Safe Deal",
         "transport": "Transport"
       },
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "wholesaleOnly": "Wholesale only · minimum order quantities apply"
     },
     "kyc": {
       "doc": {
@@ -1917,6 +1936,21 @@
       "placeholder": "Search grains, pulses, oils…",
       "recent": "Recent searches",
       "trending": "Trending in your region"
+    },
+    "similar": {
+      "in": "Similar products from {{name}}",
+      "newest": "Nothing close to this yet — the newest listings",
+      "noExact": "No exact match for your {{what}} — similar products",
+      "noExactIn": "No exact match for your {{what}} — similar products in {{name}}",
+      "title": "Similar products",
+      "step": {
+        "attributes": "size or specifications",
+        "flags": "deal and seller options",
+        "grade": "grade",
+        "place": "location",
+        "price": "price range",
+        "search": "search words"
+      }
     }
   },
   "reviews": {

@@ -62,6 +62,16 @@ function navigateToTab(tab: string): boolean {
 }
 
 /**
+ * Push a console section — only when it really exists for this role: `Section`
+ * falls back to a Placeholder, which is a worse landing than the list.
+ */
+function openSection(section: string): boolean {
+  if (!routingRole || !hasSection(routingRole, section)) return false;
+  navigationRef.navigate('Section', { role: routingRole, section });
+  return true;
+}
+
+/**
  * F05: resolve a notification `linkUrl` to a concrete mobile screen for the
  * targets the app can render (currently product detail). Returns true when it
  * navigated, so callers can fall back to system-based routing otherwise.
@@ -77,7 +87,9 @@ export function navigateToLink(linkUrl: unknown): boolean {
   // sets actually have an `Orders` screen — transporter, loader/workerco, worker
   // and service do not, and for those the dispatch is a silent no-op. navigateToTab
   // bails out in that case so the caller's fallback runs instead.
-  if (/^\/orders\/[^/?#]+/.test(linkUrl)) return navigateToTab('Orders');
+  // Buyers have no Orders tab since Auctions & Bids took its slot; theirs is the
+  // Account › Orders section.
+  if (/^\/orders\/[^/?#]+/.test(linkUrl)) return navigateToTab('Orders') || openSection('orders');
 
   // Everything else the API links to lives under /console. The app renders those
   // through the generic `Section` screen, which needs the viewer's role — hence
@@ -94,14 +106,8 @@ export function navigateToLink(linkUrl: unknown): boolean {
       return true;
     }
     const tab = CONSOLE_TAB_ALIASES[path];
-    if (tab) return navigateToTab(tab);
-    // Only navigate when the section really exists for this role — `Section`
-    // falls back to a Placeholder, which is a worse landing than the list.
-    if (routingRole && hasSection(routingRole, path)) {
-      navigationRef.navigate('Section', { role: routingRole, section: path });
-      return true;
-    }
-    return false;
+    if (tab && navigateToTab(tab)) return true;
+    return openSection(path);
   }
   return false;
 }

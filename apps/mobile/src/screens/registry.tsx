@@ -7,6 +7,7 @@ import { SellerOffers } from './seller/Offers';
 import { SellerAnalytics } from './seller/Analytics';
 import { SellerPayouts } from './seller/Payouts';
 import { BuyerDashboard } from './buyer/Dashboard';
+import { BuyerOrders } from './buyer/Orders';
 import { BuyerBids } from './buyer/Bids';
 import { BuyerAuctions } from './buyer/Auctions';
 import { BuyerInvoices } from './buyer/Invoices';
@@ -74,6 +75,7 @@ export const sectionRegistry: Record<string, SectionComponent> = {
   'seller:hires': HiresScreen,
   // Buyer
   'buyer:dashboard': BuyerDashboard,
+  'buyer:orders': BuyerOrders,
   'buyer:bids': BuyerBids,
   'buyer:auctions': BuyerAuctions,
   'buyer:invoices': BuyerInvoices,

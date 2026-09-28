@@ -1,4 +1,5 @@
 import { ISO_COUNTRIES } from './countries.generated';
+import { COUNTRY_NAMES } from './countryNames.generated';
 
 /**
  * Country reference for every location picker on web, admin and mobile.
@@ -155,12 +156,16 @@ export function countryLabel(name?: string | null, locale = 'en'): string {
   const key = `${locale}|${country.iso2}`;
   const hit = labelCache.get(key);
   if (hit) return hit;
-  let label = country.name;
-  try {
-    label = new Intl.DisplayNames([locale], { type: 'region' }).of(country.iso2) || country.name;
-  } catch {
-    // No ICU region data for this locale — the English name is still truthful.
+  // The generated table first: Hermes (mobile) has no Intl.DisplayNames at all.
+  let label: string | undefined = COUNTRY_NAMES[locale]?.[country.iso2];
+  if (!label) {
+    try {
+      label = new Intl.DisplayNames([locale], { type: 'region' }).of(country.iso2);
+    } catch {
+      // No ICU region data for this locale — the English name is still truthful.
+    }
   }
+  label ||= country.name;
   labelCache.set(key, label);
   return label;
 }

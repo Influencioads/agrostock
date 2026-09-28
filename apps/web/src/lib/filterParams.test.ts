@@ -15,6 +15,10 @@ describe('splitValues', () => {
     expect(splitValues('')).toEqual([]);
     expect(splitValues(null)).toEqual([]);
   });
+
+  it('leaves a comma inside parentheses alone — that option is one value', () => {
+    expect(splitValues('Mature (brown, husked),Green')).toEqual(['Mature (brown, husked)', 'Green']);
+  });
 });
 
 describe('joinValues', () => {

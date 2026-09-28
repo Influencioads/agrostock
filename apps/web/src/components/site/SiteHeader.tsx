@@ -17,8 +17,8 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-surface-border bg-white/95 backdrop-blur">
-      {/* ribbon */}
-      <div className="bg-brand-evergreen text-mint">
+      {/* ribbon — desktop/tablet only; on a phone it cost two lines of a sticky header */}
+      <div className="hidden bg-brand-evergreen text-mint sm:block">
         {/* Separators are their own flex items: nesting them inside the following
             span made a wrapped line start with a stray "·". */}
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 py-1.5 text-center text-[11px] leading-snug sm:gap-x-3 sm:px-4 sm:text-[12.5px]">
@@ -41,18 +41,14 @@ export function SiteHeader() {
             what got crushed when translated labels grew (170px of mark squeezed
             into 130px). */}
         <Link to="/" className="min-w-0 shrink-0">
-          {/* Glyph only below `sm` — the same rule the rest of this bar follows:
-              icons on the row, words in the drawer. Scaling the type down was
-              tried and does not work: on a 375px row the hamburger, the cart and
-              the auth buttons leave ~40px for the name, and "Регистрация"
-              alone is 108px, so the whole row needed 425px and `overflow-x: clip`
-              was cutting the sign-up button off instead of showing a small
-              wordmark. The glyph's `alt` still announces the product name. */}
+          {/* The full wordmark shows at every width. It fits a phone row because
+              the logged-out Sign in / Sign up labels ("Регистрация" alone is
+              108px) collapse to one account icon below `sm` — see below. */}
           <BrandMark
             logoSrc={logoSrc}
             size="md"
             glyphClassName="shadow-cta"
-            wordmarkClassName="hidden sm:inline text-xl"
+            wordmarkClassName="text-lg sm:text-xl"
           />
         </Link>
 
@@ -128,13 +124,24 @@ export function SiteHeader() {
             </>
           ) : (
             <>
+              {/* Phones: one account icon, so the full logo fits the row in any
+                  language. Sign up stays one tap away in the drawer and on the
+                  sign-in page. */}
+              <Link
+                to="/login"
+                aria-label={t('common:signIn')}
+                title={t('common:signIn')}
+                className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-md border border-surface-border px-2 text-ink transition hover:border-brand-leaf hover:text-brand sm:hidden"
+              >
+                <Icon name="user" size={18} />
+              </Link>
               <button
                 onClick={() => navigate('/login')}
-                className="min-h-9 shrink-0 rounded-md px-2 text-sm font-bold text-ink transition hover:text-brand sm:px-3"
+                className="hidden min-h-9 shrink-0 rounded-md px-3 text-sm font-bold text-ink transition hover:text-brand sm:block"
               >
                 {t('common:signIn')}
               </button>
-              <Button size="sm" className="shrink-0 px-2.5 sm:px-3" onClick={() => navigate('/register')}>
+              <Button size="sm" className="hidden shrink-0 px-3 sm:inline-flex" onClick={() => navigate('/register')}>
                 {t('common:signUp')}
               </Button>
             </>

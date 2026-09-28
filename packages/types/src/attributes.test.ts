@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fieldsNotOnPath, nameStatesValue, type AttrField } from './attributes';
+import { fieldsNotOnPath, nameStatesValue, splitFilterValues, type AttrField } from './attributes';
 
 /**
  * The seller's option values and the buyer's taxonomy node names are two
@@ -53,5 +53,16 @@ describe('fieldsNotOnPath', () => {
 
   it('returns the same array when nothing drops', () => {
     expect(fieldsNotOnPath(fields, ['Artichoke'])).toBe(fields);
+  });
+});
+
+describe('splitFilterValues', () => {
+  it('keeps commas inside parentheses', () => {
+    expect(splitFilterValues('Mature (brown, husked),Raw')).toEqual(['Mature (brown, husked)', 'Raw']);
+  });
+  it('trims, drops empties and dedupes', () => {
+    expect(splitFilterValues(' a , ,b,a')).toEqual(['a', 'b']);
+    expect(splitFilterValues('')).toEqual([]);
+    expect(splitFilterValues(undefined)).toEqual([]);
   });
 });

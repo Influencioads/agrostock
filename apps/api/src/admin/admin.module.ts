@@ -274,6 +274,17 @@ export class UpsertMarketDto {
  */
 export class UpdateMarketDto extends PartialType(UpsertMarketDto) {}
 
+/**
+ * A market's name/city/country feed the product place filter (an insensitive
+ * EQUALITY) and its facet (which trims), so store them trimmed like a
+ * listing's FILTER_TEXT: "Mumbai " was counted under Mumbai yet never matched.
+ */
+function trimMarket<T extends Partial<UpsertMarketDto>>(dto: T): T {
+  let out = dto;
+  for (const k of ['name', 'city', 'country'] as const) if (typeof out[k] === 'string') out = { ...out, [k]: out[k]!.trim() };
+  return out;
+}
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -552,7 +563,8 @@ export class AdminService {
     });
   }
 
-  createMarket(dto: UpsertMarketDto) {
+  createMarket(raw: UpsertMarketDto) {
+    const dto = trimMarket(raw);
     // Transliterating — a Cyrillic name reduced to the empty slug here too.
     const slug = slugifyName(dto.name);
     return this.prisma.market.create({
@@ -588,7 +600,7 @@ export class AdminService {
   async updateMarket(id: string, dto: UpdateMarketDto) {
     const existing = await this.prisma.market.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Market not found');
-    return this.prisma.market.update({ where: { id }, data: dto });
+    return this.prisma.market.update({ where: { id }, data: trimMarket(dto) });
   }
 
   async deleteMarket(id: string) {

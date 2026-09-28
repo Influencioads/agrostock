@@ -14,6 +14,8 @@ export const SCREEN_PATHS = {
   App: '',
   ProductDetail: 'product/:slug',
   Search: 'search',
+  // Web's product listing lives at /market, so the same link opens the listing here.
+  Products: 'market',
   Cart: 'cart',
   Checkout: 'checkout',
   SignIn: 'signin',

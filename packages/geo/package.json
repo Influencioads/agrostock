@@ -15,7 +15,7 @@
     "typescript": "^5.5.4"
   },
   "scripts": {
-    "gen": "node scripts/gen-geo.mjs",
+    "gen": "node scripts/gen-geo.mjs && node scripts/gen-country-names.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

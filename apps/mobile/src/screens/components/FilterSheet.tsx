@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
-import type { ApiCategory, ApiMarket } from '@agrotraders/api-client';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { SYMBOLS, type ApiCategory } from '@agrotraders/api-client';
+import { countryLabel } from '@agrotraders/geo';
 import { filterFields, optionLabel, type AttrField } from '@agrotraders/types';
 import { api } from '../../lib/api';
-import { countryOptions } from '../../lib/countries';
+import { useCurrency } from '../../currency/CurrencyContext';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { Button, Input, Sheet } from '../../ui';
@@ -13,23 +14,18 @@ import { useI18n } from '../../i18n';
 import { CategorySheet } from './CategorySheet';
 import type { CategorySelection } from './categorySelection';
 import {
+  ATTR_PREFIX,
   EMPTY_FILTERS,
-  FLAG_IDS,
+  FLAG_GROUPS,
   clearGroup,
   countActive,
+  toQuery,
   toggleAttr,
+  toggleValue,
+  type FlagGroup,
   type Filters,
+  type ListGroup,
 } from './filterState';
-
-/** The grade chips map to the free-text `grade` values products carry. */
-const GRADES = ['premium', 'gradeA', 'organic', 'feed', 'milling'] as const;
-const GRADE_VALUE: Record<(typeof GRADES)[number], string> = {
-  premium: 'Premium',
-  gradeA: 'Grade A',
-  organic: 'Organic',
-  feed: 'Feed',
-  milling: 'Milling',
-};
 
 interface Group {
   id: string;
@@ -38,21 +34,60 @@ interface Group {
   count: number;
 }
 
+/** One tickable row. `count` is listings with every OTHER group applied; absent until counted. */
+interface Opt {
+  value: string;
+  label: string;
+  count?: number;
+}
+
+/** Value lists in rail order: quality first, then where it is, then where it goes. */
+const LIST_ORDER: ListGroup[] = ['grade', 'country', 'city', 'market', 'supplyCountry'];
+
+/** Settle time before a draft edit refetches the counts — typing a price is several edits. */
+const COUNT_DEBOUNCE_MS = 250;
+
+/**
+ * The first attribute question the buyer has not answered yet, as a rail id —
+ * so picking "Almond" lands on "Processing: raw / roasted" rather than back on
+ * the category they just chose.
+ */
+const nextQuestion = (f: Filters) => {
+  const field = filterFields(f.selection.attrFields).find((a) => !f.attrs[a.key]?.length);
+  return field ? ATTR_PREFIX + field.key : 'category';
+};
+
+/**
+ * Keeps a ticked value visible after the other filters counted it out, so it
+ * can still be unticked.
+ */
+const withSelected = (opts: Opt[], selected: string[], label: (v: string) => string = (v) => v): Opt[] => [
+  ...opts,
+  ...selected.filter((v) => !opts.some((o) => o.value === v)).map((v) => ({ value: v, label: label(v), count: 0 })),
+];
+
 /**
  * Full-screen, two-pane filter sheet: groups on the left, that group's options
- * on the right, CLEAR ALL / APPLY pinned at the bottom.
+ * on the right, CLEAR ALL / SHOW N RESULTS pinned at the bottom.
  *
  * Everything is edited as a DRAFT and handed back only on APPLY. The previous
  * inline filter stack re-ran the products query on every single tap; with a
  * draft, a user can set six facets and pay for one fetch.
  *
+ * Every option and every count comes from `/products/facets` for the draft —
+ * the same query the grid will run — so what is offered is what the catalog
+ * holds, and "Show N results" is the number the grid will show.
+ *
  * The two panes are laid out with `flexDirection: 'row'`, which React Native
  * mirrors automatically under RTL — so the rail correctly becomes the right
  * pane in Arabic and Persian with no extra work.
  */
-export function FilterSheet({ visible, onClose, applied, onApply, categories, categoriesError, onRetryCategories }: {
+export function FilterSheet({
+  visible, onClose, applied, onApply, categories, categoriesError, onRetryCategories, search = '', pickCategory = false,
+}: {
   visible: boolean;
-  onClose: () => void;
+  /** Handed the draft, so a caller that composes a query (the home hero) can keep it. */
+  onClose: (draft: Filters) => void;
   /** The currently committed filters — the draft is seeded from these each open. */
   applied: Filters;
   onApply: (next: Filters) => void;
@@ -60,8 +95,13 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories, ca
   /** Passed straight through to the picker — see `CategorySheet`. */
   categoriesError?: boolean;
   onRetryCategories?: () => void;
+  /** The search text the grid runs with, so the counts include it. */
+  search?: string;
+  /** Open straight onto the category picker (the home hero's category box). */
+  pickCategory?: boolean;
 }) {
   const { t, lang } = useI18n();
+  const { rate, displayCurrency } = useCurrency();
   const [draft, setDraft] = useState<Filters>(applied);
   const [group, setGroup] = useState('category');
   const [catSheet, setCatSheet] = useState(false);
@@ -72,222 +112,223 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories, ca
   useEffect(() => {
     if (visible) {
       setDraft(applied);
+      setGroup(nextQuestion(applied));
       setOptionSearch('');
+      // Opening is not an edit, so it skips the debounce: otherwise the first
+      // 250 ms show the LAST session's counts, and a quick tap applies a query
+      // whose result count differs from the label it pressed.
+      setCountQuery(toQuery(applied, search, undefined, rate));
     }
-  }, [visible, applied]);
+    // search/rate only seed the counts; a change to them must not wipe the draft.
+  }, [visible, applied]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { data: markets = [] } = useQuery<ApiMarket[]>({
-    queryKey: ['markets'],
-    queryFn: () => api.markets.list(),
-    staleTime: 3600e3,
+  const facetQuery = useMemo(() => toQuery(draft, search, undefined, rate), [draft, search, rate]);
+  const [countQuery, setCountQuery] = useState(facetQuery);
+  useEffect(() => {
+    const id = setTimeout(() => setCountQuery(facetQuery), COUNT_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [facetQuery]);
+  const { data: facets } = useQuery({
+    queryKey: ['product-facets', countQuery],
+    queryFn: () => api.products.facets(countQuery),
+    enabled: visible,
+    placeholderData: keepPreviousData,
+    staleTime: 30e3,
   });
 
-  // Attribute facets for the chosen (sub)category. The picker already resolved
-  // them along the path, inheritance included, so this is just the filterable subset.
-  const attrFields = useMemo(() => filterFields(draft.selection.attrFields), [draft.selection.attrFields]);
+  // The attribute questions for the chosen node: the browse facets the picker
+  // resolved (path and children rules applied), answered with the options the
+  // API counted. A field on only one side is either not filterable here or not
+  // one the API filters by, so it is not offered.
+  // A boolean field's options come back labelled with the raw "true"/"false".
+  const attrLabel = useCallback(
+    (field: AttrField, v: string) =>
+      field.type === 'boolean' ? t(v === 'true' ? 'common:yes' : 'common:no') : optionLabel(field, v),
+    [t],
+  );
+  const attrGroups = useMemo(
+    () =>
+      filterFields(draft.selection.attrFields).flatMap((field: AttrField) => {
+        const counted = facets?.attributes.find((a) => a.key === field.key);
+        if (!counted) return [];
+        const options: Opt[] =
+          field.type === 'boolean' ? counted.options.map((o) => ({ ...o, label: attrLabel(field, o.value) })) : counted.options;
+        return [{ field, options }];
+      }),
+    [draft.selection.attrFields, facets, attrLabel],
+  );
 
-  // Cities come from the geo dataset (~134k, server-side search), scoped to the
-  // country picked above. They used to be only the cities the loaded markets
-  // happened to cover, so a listing outside one could not be filtered to at all.
-  const cityTerm = optionSearch.trim();
-  const { data: cityOptions = [], isFetching: citiesLoading } = useQuery({
-    queryKey: ['geo-cities', draft.country, cityTerm],
-    queryFn: () => api.geo.cities(draft.country, cityTerm || undefined),
-    // Without a country there is nothing to browse — the search needs a term.
-    enabled: visible && (Boolean(draft.country) || cityTerm.length >= 2),
-    staleTime: 3600e3,
-    retry: 1,
-  });
-  // Every country, not only the ones the loaded markets cover.
-  const countries = countryOptions(lang);
+  const countryName = (v: string) => countryLabel(v, lang);
+  const lists: Record<ListGroup, Opt[] | undefined> = {
+    grade: facets?.grades,
+    country: facets?.countries.map((o) => ({ ...o, label: countryName(o.value) })),
+    city: facets?.cities,
+    market: facets?.markets.map((o) => ({ ...o, label: o.emoji ? `${o.emoji} ${o.label}` : o.label })),
+    supplyCountry: facets?.supplyCountries.map((o) => ({ ...o, label: countryName(o.value) })),
+  };
 
   const groups: Group[] = [
     { id: 'category', label: t('pubX.filter.groups.category'), count: draft.selection.categoryId ? 1 : 0 },
-    { id: 'dealType', label: t('pubX.filter.groups.dealType'), count: FLAG_IDS.filter((f) => draft.flags[f]).length },
+    ...attrGroups.map(({ field }) => ({
+      id: ATTR_PREFIX + field.key,
+      label: field.label,
+      count: (draft.attrs[field.key] ?? []).length,
+    })),
+    // A list the catalog has nothing for is noise — unless something in it is
+    // still ticked, which must stay removable.
+    ...LIST_ORDER.filter((g) => !facets || (lists[g]?.length ?? 0) > 0 || draft[g].length > 0).map((g) => ({
+      id: g,
+      label: t('pubX.filter.groups.' + g),
+      count: draft[g].length,
+    })),
     { id: 'price', label: t('pubX.filter.groups.price'), count: draft.minPrice || draft.maxPrice ? 1 : 0 },
-    { id: 'country', label: t('pubX.filter.groups.country'), count: draft.country ? 1 : 0 },
-    { id: 'city', label: t('pubX.filter.groups.city'), count: draft.city ? 1 : 0 },
-    { id: 'grade', label: t('pubX.filter.groups.grade'), count: draft.grade ? 1 : 0 },
-    ...(markets.length ? [{ id: 'market', label: t('pubX.filter.groups.market'), count: draft.market ? 1 : 0 }] : []),
-    ...attrFields.map((f: AttrField) => ({ id: f.key, label: f.label, count: (draft.attrs[f.key] ?? []).length })),
+    ...(Object.keys(FLAG_GROUPS) as FlagGroup[]).map((g) => ({
+      id: g,
+      label: t('pubX.filter.groups.' + g),
+      count: FLAG_GROUPS[g].filter((id) => draft.flags[id]).length,
+    })),
   ];
 
-  // A category change can retire the facet group currently in view.
+  // A category change can retire the facet group currently in view, and the
+  // attribute groups only exist once their counts arrive.
   const activeGroup = groups.some((g) => g.id === group) ? group : 'category';
 
   const setSelection = (next: CategorySelection) => {
     // Attribute picks belong to the old category; they can't survive a change.
-    setDraft((d) => ({ ...d, selection: next, attrs: {} }));
+    const nextDraft = { ...draft, selection: next, attrs: {} };
+    setDraft(nextDraft);
+    setGroup(nextQuestion(nextDraft));
     setCatSheet(false);
   };
 
-  const filterOptions = (opts: string[]) => {
+  /** A multi-select option list backed by checkboxes, with its listing counts. */
+  const renderChecks = (options: Opt[], selected: string[], onToggle: (v: string) => void) => {
     const needle = optionSearch.trim().toLowerCase();
-    return needle ? opts.filter((o) => o.toLowerCase().includes(needle)) : opts;
+    const shown = needle ? options.filter((o) => o.label.toLowerCase().includes(needle)) : options;
+    return (
+      <>
+        {options.length > 8 ? (
+          <View style={s.optionSearch}>
+            <Ionicons name="search" size={15} color={C.inkSoft} />
+            <TextInput
+              value={optionSearch}
+              onChangeText={setOptionSearch}
+              placeholder={t('pubX.filter.searchOptions')}
+              placeholderTextColor={C.inkMuted}
+              style={{ flex: 1, ...type.body, color: C.ink, paddingVertical: 0 }}
+            />
+          </View>
+        ) : null}
+        {options.length === 0 ? (
+          <Text style={s.remoteHint}>{facets ? t('pubX.filter.noOptions') : t('common:loading')}</Text>
+        ) : null}
+        {shown.map((o) => {
+          const on = selected.includes(o.value);
+          return (
+            <Pressable
+              key={o.value}
+              onPress={() => onToggle(o.value)}
+              // Zero stays tickable, as on web — it is only zero under the OTHER filters.
+              style={[s.option, o.count === 0 && !on && s.optionDim]}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }}
+            >
+              <Ionicons name={on ? 'checkbox' : 'square-outline'} size={19} color={on ? C.green : C.inkSoft} />
+              <Text numberOfLines={2} style={[s.optionLabel, on && s.optionLabelOn]}>{o.label}</Text>
+              {o.count != null ? <Text style={s.optionCount}>{o.count}</Text> : null}
+            </Pressable>
+          );
+        })}
+      </>
+    );
   };
 
-  /**
-   * A single-choice option list — picking the active value clears it.
-   *
-   * `remote` marks a list the API searches (cities): its box is always shown,
-   * because an empty result must still be typeable into.
-   */
-  const renderRadio = (
-    options: { value: string; label: string }[],
-    current: string,
-    onPick: (v: string) => void,
-    searchable = false,
-    remote?: { loading: boolean; empty: string },
-  ) => (
-    <>
-      {searchable && (remote || options.length > 8) ? (
-        <View style={s.optionSearch}>
-          <Ionicons name="search" size={15} color={C.inkSoft} />
-          <TextInput
-            value={optionSearch}
-            onChangeText={setOptionSearch}
-            placeholder={t('pubX.filter.searchOptions')}
-            placeholderTextColor={C.inkMuted}
-            style={{ flex: 1, ...type.body, color: C.ink, paddingVertical: 0 }}
+  function renderPane() {
+    if (activeGroup === 'category') {
+      return (
+        <View style={{ padding: space.lg, gap: space.md }}>
+          <Pressable onPress={() => setCatSheet(true)} style={s.catTrigger}>
+            <Ionicons name="grid-outline" size={18} color={draft.selection.categoryId ? C.green : C.inkSoft} />
+            <Text numberOfLines={2} style={{ ...type.title, flex: 1, color: draft.selection.categoryId ? C.ink : C.inkMuted }}>
+              {draft.selection.categoryId
+                ? draft.selection.trail.join('  ›  ')
+                : t('pubX.browse.allCategories')}
+            </Text>
+            <Ionicons name="chevron-forward" size={17} color={C.inkSoft} />
+          </Pressable>
+          <Text style={{ ...type.caption, color: C.inkMuted }}>{t('pubX.filter.categoryHint')}</Text>
+        </View>
+      );
+    }
+
+    if (activeGroup === 'price') {
+      // Typed in the currency the cards are priced in; `toQuery` converts.
+      const unit = SYMBOLS[displayCurrency] ?? displayCurrency;
+      return (
+        <View style={{ padding: space.lg, gap: space.md }}>
+          <Input
+            label={`${t('pubX.browse.minPrice')}, ${unit}`}
+            value={draft.minPrice}
+            onChangeText={(v) => setDraft((d) => ({ ...d, minPrice: v }))}
+            keyboardType="numeric"
+            placeholder="0"
+          />
+          <Input
+            label={`${t('pubX.browse.maxPrice')}, ${unit}`}
+            value={draft.maxPrice}
+            onChangeText={(v) => setDraft((d) => ({ ...d, maxPrice: v }))}
+            keyboardType="numeric"
+            placeholder="—"
           />
         </View>
-      ) : null}
-      {remote && options.length === 0 ? (
-        <Text style={s.remoteHint}>{remote.loading ? t('common:loading') : remote.empty}</Text>
-      ) : null}
-      {options.map((o) => {
-        const on = current === o.value;
-        return (
-          <Pressable key={o.value} onPress={() => onPick(on ? '' : o.value)} style={s.option}>
-            <Ionicons
-              name={on ? 'radio-button-on' : 'radio-button-off'}
-              size={19}
-              color={on ? C.green : C.inkSoft}
-            />
-            <Text numberOfLines={2} style={[s.optionLabel, on && s.optionLabelOn]}>{o.label}</Text>
-          </Pressable>
-        );
-      })}
-    </>
-  );
-
-  /** A multi-select option list backed by checkboxes. */
-  const renderChecks = (options: { value: string; label: string }[], selected: string[], onToggle: (v: string) => void) =>
-    options.map((o) => {
-      const on = selected.includes(o.value);
-      return (
-        <Pressable key={o.value} onPress={() => onToggle(o.value)} style={s.option}>
-          <Ionicons name={on ? 'checkbox' : 'square-outline'} size={19} color={on ? C.green : C.inkSoft} />
-          <Text numberOfLines={2} style={[s.optionLabel, on && s.optionLabelOn]}>{o.label}</Text>
-        </Pressable>
       );
-    });
-
-  function renderPane() {
-    switch (activeGroup) {
-      case 'category':
-        return (
-          <View style={{ padding: space.lg, gap: space.md }}>
-            <Pressable onPress={() => setCatSheet(true)} style={s.catTrigger}>
-              <Ionicons name="grid-outline" size={18} color={draft.selection.categoryId ? C.green : C.inkSoft} />
-              <Text numberOfLines={2} style={{ ...type.title, flex: 1, color: draft.selection.categoryId ? C.ink : C.inkMuted }}>
-                {draft.selection.categoryId
-                  ? draft.selection.trail.join('  ›  ')
-                  : t('pubX.browse.allCategories')}
-              </Text>
-              <Ionicons name="chevron-forward" size={17} color={C.inkSoft} />
-            </Pressable>
-            <Text style={{ ...type.caption, color: C.inkMuted }}>{t('pubX.filter.categoryHint')}</Text>
-          </View>
-        );
-
-      case 'dealType':
-        return renderChecks(
-          FLAG_IDS.map((f) => ({ value: f, label: t('pubX.browse.filter.' + f) })),
-          FLAG_IDS.filter((f) => draft.flags[f]),
-          (v) => setDraft((d) => ({ ...d, flags: { ...d.flags, [v]: !d.flags[v] } })),
-        );
-
-      case 'price':
-        return (
-          <View style={{ padding: space.lg, gap: space.md }}>
-            <Input
-              label={t('pubX.browse.minPrice')}
-              value={draft.minPrice}
-              onChangeText={(v) => setDraft((d) => ({ ...d, minPrice: v }))}
-              keyboardType="numeric"
-              placeholder="0"
-            />
-            <Input
-              label={t('pubX.browse.maxPrice')}
-              value={draft.maxPrice}
-              onChangeText={(v) => setDraft((d) => ({ ...d, maxPrice: v }))}
-              keyboardType="numeric"
-              placeholder="—"
-            />
-          </View>
-        );
-
-      case 'country':
-        return renderRadio(
-          countries.filter((c) => c.label.toLowerCase().includes(optionSearch.trim().toLowerCase())),
-          draft.country,
-          // A city belongs to its country, so changing it invalidates the pick.
-          (v) => setDraft((d) => ({ ...d, country: v, city: '' })),
-          true,
-        );
-
-      case 'city':
-        // Already filtered by the API — filtering again locally would hide the
-        // tail of a long result page.
-        return renderRadio(
-          cityOptions,
-          draft.city,
-          (v) => setDraft((d) => ({ ...d, city: v })),
-          true,
-          {
-            loading: citiesLoading,
-            empty: draft.country || cityTerm.length >= 2 ? t('common:geo.noCities') : t('common:geo.typeToSearch'),
-          },
-        );
-
-      case 'grade':
-        return renderRadio(
-          GRADES.map((g) => ({ value: GRADE_VALUE[g], label: t(`pubX.browse.grades.${g}`) })),
-          draft.grade,
-          (v) => setDraft((d) => ({ ...d, grade: v })),
-        );
-
-      case 'market':
-        return renderRadio(
-          markets.map((m) => ({ value: m.slug, label: `${m.flag ?? ''} ${m.name}`.trim() })),
-          draft.market,
-          (v) => setDraft((d) => ({ ...d, market: v })),
-          true,
-        );
-
-      default: {
-        const field = attrFields.find((f: AttrField) => f.key === activeGroup);
-        if (!field) return null;
-        const selected = draft.attrs[field.key] ?? [];
-        // Booleans are a single "yes" checkbox rather than a two-value list.
-        const options =
-          field.type === 'boolean'
-            ? [{ value: 'true', label: t('common:yes') }]
-            // Values stay canonical English — they are what the API filters on.
-            : filterOptions(field.options ?? []).map((o) => ({ value: o, label: optionLabel(field, o) }));
-        return renderChecks(options, selected, (v) => setDraft((d) => toggleAttr(d, field.key, v)));
-      }
     }
+
+    if (activeGroup in FLAG_GROUPS) {
+      const ids = FLAG_GROUPS[activeGroup as FlagGroup];
+      return renderChecks(
+        ids.map((id) => ({ value: id, label: t('pubX.browse.filter.' + id), count: facets?.flags[id] })),
+        ids.filter((id) => draft.flags[id]),
+        (v) => setDraft((d) => ({ ...d, flags: { ...d.flags, [v]: !d.flags[v] } })),
+      );
+    }
+
+    if (activeGroup.startsWith(ATTR_PREFIX)) {
+      const entry = attrGroups.find((a) => ATTR_PREFIX + a.field.key === activeGroup);
+      if (!entry) return null;
+      const { field, options } = entry;
+      const selected = draft.attrs[field.key] ?? [];
+      // Values stay canonical English — they are what the API filters on.
+      return renderChecks(
+        withSelected(options, selected, (v) => attrLabel(field, v)),
+        selected,
+        (v) => setDraft((d) => toggleAttr(d, field.key, v)),
+      );
+    }
+
+    const g = activeGroup as ListGroup;
+    return renderChecks(
+      withSelected(lists[g] ?? [], draft[g], g === 'country' || g === 'supplyCountry' ? countryName : undefined),
+      draft[g],
+      (v) => setDraft((d) => toggleValue(d, g, v)),
+    );
   }
 
   const activeCount = countActive(draft);
+  const total = facets?.total;
+  const applyLabel =
+    total == null
+      ? activeCount ? t('pubX.filter.applyN', { count: activeCount }) : t('pubX.filter.apply')
+      // Zero is not a dead end: the grid falls back to the closest listings.
+      : total > 0 ? t('pubX.filter.showN', { count: total }) : t('pubX.filter.showSimilar');
+  const close = () => onClose(draft);
 
   return (
     <>
       <Sheet
         visible={visible}
-        onClose={onClose}
+        onClose={close}
+        onShow={() => pickCategory && setCatSheet(true)}
         fullScreen
         scroll={false}
         title={t('pubX.filter.title')}
@@ -298,16 +339,19 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories, ca
                 full
                 title={t('pubX.filter.clearAll')}
                 variant="outline"
-                onPress={() => setDraft(EMPTY_FILTERS)}
+                onPress={() => {
+                  setDraft(EMPTY_FILTERS);
+                  setGroup('category');
+                }}
               />
             </View>
             <View style={{ flex: 1 }}>
               <Button
                 full
-                title={activeCount ? t('pubX.filter.applyN', { count: activeCount }) : t('pubX.filter.apply')}
+                title={applyLabel}
                 onPress={() => {
                   onApply(draft);
-                  onClose();
+                  close();
                 }}
               />
             </View>
@@ -364,7 +408,8 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories, ca
             filter sheet's own controller, which is presenting nothing. Android
             stacks dialogs either way, which is why this only ever showed on iOS.
             The modal host view is absolutely positioned, so it costs the
-            two-pane row no layout. */}
+            two-pane row no layout. `pickCategory` opens it from `onShow` for
+            the same reason: only once this sheet has finished presenting. */}
         <CategorySheet
           visible={catSheet}
           onClose={() => setCatSheet(false)}
@@ -373,6 +418,7 @@ export function FilterSheet({ visible, onClose, applied, onApply, categories, ca
           onRetryCategories={onRetryCategories}
           selection={draft.selection}
           onSelect={setSelection}
+          browse={{ query: facetQuery }}
         />
       </Sheet>
     </>
@@ -439,6 +485,8 @@ const s = StyleSheet.create({
   option: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: space.lg },
   optionLabel: { ...type.body, color: C.ink, flex: 1 },
   optionLabelOn: { ...type.title },
+  optionDim: { opacity: 0.45 },
+  optionCount: { ...type.caption, color: C.inkMuted },
 
   optionSearch: {
     flexDirection: 'row',

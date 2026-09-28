@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { C, elevation, type } from '../theme/tokens';
 import { MotiView, useReduceMotion } from '../ui';
 import { useI18n } from '../i18n';
@@ -10,7 +10,7 @@ import { MoreHub } from '../screens/MoreHub';
 import { Home } from '../screens/public/Home';
 import { Offers } from '../screens/public/Offers';
 import { Browse } from '../screens/public/Browse';
-import { BuyerOrders } from '../screens/buyer/Orders';
+import { AuctionsBids } from '../screens/public/AuctionsBids';
 // BuyerDashboard is reached through the More hub (registry key `buyer:dashboard`).
 import { SellerDashboard } from '../screens/seller/Dashboard';
 import { SellerInventory } from '../screens/seller/Inventory';
@@ -28,7 +28,13 @@ import { ServiceDashboard, ServiceEnquiries } from '../screens/service/ServicePr
 
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ name, color, size, focused }: { name: keyof typeof Ionicons.glyphMap; color: string; size: number; focused: boolean }) {
+/**
+ * Ionicons has no auction gavel (its `hammer` reads as a tool), so that one
+ * glyph comes from MaterialCommunityIcons — the same mark the web uses.
+ */
+type TabGlyph = keyof typeof Ionicons.glyphMap | 'gavel';
+
+function TabIcon({ name, color, size, focused }: { name: TabGlyph; color: string; size: number; focused: boolean }) {
   const reduce = useReduceMotion();
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -49,13 +55,17 @@ function TabIcon({ name, color, size, focused }: { name: keyof typeof Ionicons.g
         animate={{ scale: reduce ? 1 : focused ? 1.08 : 1 }}
         transition={{ type: 'spring', stiffness: 400, damping: 18 }}
       >
-        <Ionicons name={name} size={size} color={color} />
+        {name === 'gavel' ? (
+          <MaterialCommunityIcons name="gavel" size={size} color={color} />
+        ) : (
+          <Ionicons name={name} size={size} color={color} />
+        )}
       </MotiView>
     </View>
   );
 }
 
-function icon(name: keyof typeof Ionicons.glyphMap) {
+function icon(name: TabGlyph) {
   return ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
     <TabIcon name={name} color={color} size={size} focused={focused} />
   );
@@ -141,7 +151,7 @@ function useHubTabOptions(name: keyof typeof Ionicons.glyphMap, labelKey: string
  */
 function useTabOptions() {
   const { t } = useI18n();
-  return (name: keyof typeof Ionicons.glyphMap, labelKey: string) => ({
+  return (name: TabGlyph, labelKey: string) => ({
     tabBarIcon: icon(name),
     tabBarLabel: tabLabel(t(`nav:tab.${labelKey}`)),
   });
@@ -155,7 +165,8 @@ export function ShopTabs() {
       <Tab.Screen name="Home" component={Home} options={tab('home', 'Home')} />
       <Tab.Screen name="Offers" component={Offers} options={tab('pricetags', 'Offers')} />
       <Tab.Screen name="Browse" component={Browse} options={tab('grid', 'Browse')} />
-      <Tab.Screen name="Orders" component={BuyerOrders} options={tab('cube', 'Orders')} />
+      {/* Auctions & Bids took Orders' slot; buyer orders are Account › Orders. */}
+      <Tab.Screen name="AuctionsBids" component={AuctionsBids} options={tab('gavel', 'AuctionsBids')} />
       <Tab.Screen name="Account" component={MoreHub} options={hub} />
     </Tab.Navigator>
   );

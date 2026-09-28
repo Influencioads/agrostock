@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_FILTERS, clearGroup, countActive, toQuery, toggleAttr, type Filters } from './filterState';
+import { EMPTY_FILTERS, clearGroup, countActive, filtersFromParams, toQuery, toggleAttr, type Filters } from './filterState';
 
 const withCategory: Filters = {
   ...EMPTY_FILTERS,
@@ -30,6 +30,14 @@ describe('countActive', () => {
     expect(countActive(f)).toBe(1);
   });
 
+  it('ignores an unparseable price, as the API does', () => {
+    expect(countActive({ ...EMPTY_FILTERS, minPrice: 'abc' })).toBe(0);
+  });
+
+  it('counts a value list once however many values it holds', () => {
+    expect(countActive({ ...EMPTY_FILTERS, country: ['Russia', 'Ukraine'] })).toBe(1);
+  });
+
   it('counts each boolean flag separately', () => {
     expect(countActive({ ...EMPTY_FILTERS, flags: { verified: true, offer: true } })).toBe(2);
   });
@@ -52,8 +60,18 @@ describe('clearGroup', () => {
   });
 
   it('leaves other groups untouched', () => {
-    const f: Filters = { ...withCategory, grade: 'Premium', city: 'Odesa' };
-    expect(clearGroup(f, 'grade')).toMatchObject({ city: 'Odesa', grade: '' });
+    const f: Filters = { ...withCategory, grade: ['Premium'], city: ['Odesa'] };
+    expect(clearGroup(f, 'grade')).toMatchObject({ city: ['Odesa'], grade: [] });
+  });
+
+  it('clears only the flags of its own group', () => {
+    const f: Filters = { ...EMPTY_FILTERS, flags: { safe: true, direct: true, verified: true } };
+    expect(clearGroup(f, 'dealType').flags).toEqual({ verified: true });
+  });
+
+  it('tells an attribute keyed like a list group apart by its prefix', () => {
+    const f: Filters = { ...toggleAttr(EMPTY_FILTERS, 'grade', 'Extra'), grade: ['Premium'] };
+    expect(clearGroup(f, 'attr:grade')).toMatchObject({ attrs: {}, grade: ['Premium'] });
   });
 
   it('treats an unknown group as an attribute field key', () => {
@@ -73,7 +91,31 @@ describe('toQuery', () => {
   it('promotes set flags to top-level booleans', () => {
     const q = toQuery({ ...EMPTY_FILTERS, flags: { verified: true, offer: false } }, '', 'relevance');
     expect(q).toMatchObject({ verified: true });
-    expect('offer' in q).toBe(false);
+    expect(q.offer).toBeUndefined();
+  });
+
+  it('turns a pair of opposite boxes into a tri-state boolean', () => {
+    const q = (flags: Record<string, boolean>) => toQuery({ ...EMPTY_FILTERS, flags }, '');
+    expect(q({ safe: true }).safe).toBe(true);
+    expect(q({ direct: true }).safe).toBe(false);
+    expect(q({ safe: true, direct: true }).safe).toBeUndefined();
+    expect(q({ fixed: true }).negotiable).toBe(false);
+  });
+
+  it('converts a display-currency price to USD cents', () => {
+    // 9,000 at 90 per dollar is $100.
+    expect(toQuery({ ...EMPTY_FILTERS, minPrice: '9000' }, '', undefined, 90).minPrice).toBe(10000);
+  });
+
+  it('sends value lists as arrays and drops empty ones', () => {
+    const q = toQuery({ ...EMPTY_FILTERS, country: ['Russia', 'Ukraine'] }, '');
+    expect(q.country).toEqual(['Russia', 'Ukraine']);
+    expect(q.grade).toBeUndefined();
+  });
+
+  it('only sends attributes together with the node that types them', () => {
+    expect(toQuery(toggleAttr(EMPTY_FILTERS, 'processing', 'Raw'), '').attrs).toBeUndefined();
+    expect(toQuery(toggleAttr(withCategory, 'processing', 'Raw'), '').attrs).toEqual({ processing: ['Raw'] });
   });
 
   it('sends both category and subcategory ids so the API can filter branch-inclusively', () => {
@@ -84,5 +126,41 @@ describe('toQuery', () => {
       search: 'wheat',
       sort: 'price_asc',
     });
+  });
+});
+
+describe('filtersFromParams', () => {
+  it('reads a web /market link into the same API query', () => {
+    const f = filtersFromParams({
+      search: 'ignored here',
+      categoryId: 'cat1,cat2',
+      category: 'Grains',
+      subcategoryId: 'sub9',
+      subcategory: 'Durum',
+      country: 'India,Turkey',
+      grade: 'A',
+      deal: 'safe',
+      listing: 'offer,auction',
+      verified: 'true',
+      attr_colour: 'Mature (brown, husked),Green',
+      minPrice: '10',
+    });
+    expect(f.selection.trail).toEqual(['Grains', 'Durum']);
+    expect(toQuery(f, '')).toMatchObject({
+      categoryId: 'cat1',
+      subcategoryId: 'sub9',
+      country: ['India', 'Turkey'],
+      grade: ['A'],
+      safe: true,
+      offer: true,
+      auction: true,
+      verified: true,
+      minPrice: 1000,
+      attrs: { colour: ['Mature (brown, husked)', 'Green'] },
+    });
+  });
+
+  it('is empty for a link with no filter params', () => {
+    expect(countActive(filtersFromParams({ q: 'rice', sort: 'rating' }))).toBe(0);
   });
 });

@@ -44,6 +44,7 @@ const OWN_KEYS = [
   'seller:invoices',
   'seller:hires',
   'buyer:dashboard',
+  'buyer:orders',
   'buyer:bids',
   'buyer:auctions',
   'buyer:invoices',

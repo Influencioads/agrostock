@@ -25,6 +25,7 @@ import { BasketProvider } from './src/basket/BasketContext';
 import { DeliverToProvider } from './src/lib/deliverTo';
 import { ModerationProvider } from './src/moderation/ModerationProvider';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { FirstRunGate } from './src/onboarding/FirstRunPrefs';
 import { flushPendingNotificationRoute, navigationRef } from './src/navigation/navigationRef';
 import { linking } from './src/navigation/linking';
 import { registerForPush, unregisterForPush } from './src/lib/push';
@@ -60,7 +61,9 @@ function Gate() {
   return (
     <>
       <PushManager />
-      <RootNavigator />
+      <FirstRunGate>
+        <RootNavigator />
+      </FirstRunGate>
     </>
   );
 }

@@ -12,7 +12,7 @@ import { C, elevation, radius, space, type } from '../theme/tokens';
  * the filter sheet, where a two-pane layout needs the whole viewport.
  */
 export function Sheet({
-  visible, onClose, title, children, footer, fullScreen = false, onBack, scroll = true,
+  visible, onClose, title, children, footer, fullScreen = false, onBack, scroll = true, onShow,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -24,10 +24,12 @@ export function Sheet({
   onBack?: () => void;
   /** Set false when the body manages its own scrolling (e.g. a two-pane layout). */
   scroll?: boolean;
+  /** Fires once the sheet is on screen — the safe moment to present a modal nested in it. */
+  onShow?: () => void;
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} onShow={onShow} statusBarTranslucent>
       {/* iOS does not resize a modal for the keyboard, so a short bottom-anchored
           sheet (ReviewSheet is ~340pt) ends up entirely underneath it — field and
           footer button both unreachable, and the only way out is the backdrop,

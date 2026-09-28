@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { splitFilterValues } from '@agrotraders/api-client';
 
 /**
  * URL-backed multi-select filter state.
@@ -33,11 +34,13 @@ const PRESERVED_ON_CLEAR = ['sort', 'view'] as const;
  */
 const ID_TWIN: Record<string, string> = { category: 'categoryId', subcategory: 'subcategoryId' };
 
-/** `"a,b"` → `['a','b']`; blanks and duplicates dropped. */
-export function splitValues(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  return [...new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))];
-}
+/**
+ * `"a,b"` → `['a','b']`; blanks and duplicates dropped. Commas inside
+ * parentheses stay put — an attribute option like "Mature (brown, husked)" is
+ * ONE value, and splitting it made that box untickable. Same splitter the API
+ * uses, so both ends read a param identically.
+ */
+export const splitValues = splitFilterValues;
 
 /** `['a','b']` → `"a,b"`; an empty selection is `null`, i.e. drop the param. */
 export function joinValues(values: string[]): string | null {
@@ -105,7 +108,67 @@ export function useFilterParams(): FilterParams {
     (next: URLSearchParams) => setParams(next, { replace: true }),
     [setParams],
   );
+  return useFilterParamsOn(params, commit);
+}
 
+/**
+ * The same interface over a private draft instead of the URL — for a panel that
+ * is filled in first and applied later (the home hero). Its params are already
+ * the /market query string, so applying is `navigate('/market?' + params)`.
+ */
+export function useLocalFilterParams(initial?: string | URLSearchParams): FilterParams {
+  const [params, setParams] = useState(() => new URLSearchParams(initial));
+  return useFilterParamsOn(params, setParams);
+}
+
+/**
+ * A text box bound to one param, written ~300 ms after the last keystroke.
+ * Writing on every key refetched the grid AND the facets per character, which
+ * on a slow line reads as the box lagging and under the API's rate limit
+ * surfaced as an error state. Outside writes (Clear all, a removed chip) still
+ * flow back into the box.
+ */
+export function useDebouncedParam(
+  state: FilterParams,
+  key: string,
+  delay = 300,
+): [string, (text: string) => void, () => void] {
+  const committed = state.value(key);
+  const [text, setText] = useState(committed);
+  // The echo of our own write is not an outside change. The write commits a
+  // render later than the keystrokes (default vs. discrete priority), so a key
+  // typed in between would be overwritten by the older value we just wrote.
+  const lastWritten = useRef<string | null>(null);
+  useEffect(() => {
+    const echo = committed === lastWritten.current;
+    lastWritten.current = null;
+    if (!echo) setText(committed);
+  }, [committed]);
+  // Through a ref: `setValue` changes identity on every param write, and
+  // restarting the timer on those would let an unrelated tick swallow typing.
+  const setValue = useRef(state.setValue);
+  setValue.current = state.setValue;
+  const write = useCallback(
+    (next: string) => {
+      lastWritten.current = next;
+      setValue.current(key, next || null);
+    },
+    [key],
+  );
+  useEffect(() => {
+    if (text === committed) return;
+    const id = setTimeout(() => write(text), delay);
+    return () => clearTimeout(id);
+  }, [text, committed, write, delay]);
+  // For `onBlur`: a value typed straight before clicking Apply must not be
+  // lost to the timer — blur lands (and re-renders) before the click does.
+  const flush = useCallback(() => {
+    if (text !== committed) write(text);
+  }, [text, committed, write]);
+  return [text, setText, flush];
+}
+
+function useFilterParamsOn(params: URLSearchParams, commit: (next: URLSearchParams) => void): FilterParams {
   /**
    * Any filter write resets to page 1. Landing on page 4 of a result set that
    * just shrank to one page is a blank grid that looks like "no matches".

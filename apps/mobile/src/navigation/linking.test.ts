@@ -61,6 +61,7 @@ describe('deep links', () => {
       PublicProfile: 'u/:userId',
       Checkout: 'checkout',
       Services: 'services',
+      Products: 'market',
     };
     for (const [screen, path] of Object.entries(shared)) {
       expect(screens[screen], `${screen} lost its deep link`).toBe(path);

@@ -1,10 +1,9 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import type { ApiCategory } from '@agrotraders/api-client';
-import { Badge, Button, Card, Icon, Reveal, Stagger, StaggerItem } from '@agrotraders/ui';
-import { filterFields, optionLabel } from '@agrotraders/types';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { countryLabel, type ApiCategory } from '@agrotraders/api-client';
+import { Badge, Button, Card, Icon, Modal, Reveal, Stagger, StaggerItem } from '@agrotraders/ui';
 import { useI18n } from '../../i18n';
 // WEB-01: `community`, `insights`, `intl` and `officesPreview` were fabricated
 // datasets rendered as real marketplace content; those sections are gone and
@@ -13,7 +12,10 @@ import { useI18n } from '../../i18n';
 import { safeSteps } from '../../mock/data';
 import { ProductCard } from './ProductCard';
 import { api, assetUrl, toCardProduct } from '../../lib/api';
-import { browseAttrFields, buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
+import { buildSubcategoryTree, findSubcategoryPath, flattenSubcategoryTree, type SubcategoryNode } from '@agrotraders/api-client';
+import { ActiveFilterChips, FilterGroup } from './FilterPanel';
+import { MarketFilterFields, SortSelect, useMarketFilters, type MarketFilters } from './MarketFilterFields';
+import { useDebouncedParam, useLocalFilterParams } from '../../lib/filterParams';
 
 /* ── helpers ───────────────────────────────────────────────────── */
 
@@ -147,17 +149,21 @@ function HeroGlobe() {
 }
 
 /* ── Categories mega-menu (hero search) ─────────────────────────────
- * A cascading, three-column category picker. It is fully CLICK-DRIVEN —
+ * A cascading, two-column category picker. It is fully CLICK-DRIVEN —
  * columns only change on an explicit click, never on hover — so moving
- * the pointer diagonally toward a deeper column can never reset the one
- * you were aiming at. Column 1 lists every category; clicking one shows
- * its subcategories (column 2); clicking a subcategory shows its lead
- * attribute options as a third "sub-subcategory" column. Every leaf
- * deep-links into /market with the matching filters applied.
+ * the pointer diagonally toward the deeper column can never reset the one
+ * you were aiming at. Column 1 lists every category; column 2 drills its
+ * subtree to any depth (all five levels).
+ *
+ * Picking a node does not navigate: it SETS the hero's draft and opens the
+ * Filters drawer, because a category is where the questions start, not where
+ * they end — "Nuts › Almond" still has to ask raw or roasted, which size,
+ * which variety. The old third column offered one attribute of a leaf and
+ * then dropped the buyer on /market; everything after the category went
+ * unasked.
  */
-function CategoryMegaMenu() {
+function CategoryMegaMenu({ filters, onPicked }: { filters: MarketFilters; onPicked: () => void }) {
   const { t } = useI18n();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [catId, setCatId] = useState<string | null>(null);
   const [subId, setSubId] = useState<string | null>(null);
@@ -185,7 +191,7 @@ function CategoryMegaMenu() {
       const mobile = window.innerWidth < 640;
 
       // On a phone there is never enough room beside or below the trigger for a
-      // three-column picker, and the flip-up/flip-down maths just produced a
+      // two-column picker, and the flip-up/flip-down maths just produced a
       // ~200px-tall sliver. Pin it to the bottom edge as a sheet instead, so it
       // always gets 72vh regardless of where the trigger sits on the page.
       if (mobile) {
@@ -193,7 +199,7 @@ function CategoryMegaMenu() {
         return;
       }
 
-      const panelWidth = Math.min(660, window.innerWidth - margin * 2);
+      const panelWidth = Math.min(480, window.innerWidth - margin * 2);
       // Clamp the anchor into the viewport first. On a short viewport (landscape
       // phone) an off-screen trigger yielded a negative offset and pushed the
       // panel below the fold, where `position: fixed` makes it unreachable.
@@ -230,14 +236,8 @@ function CategoryMegaMenu() {
   }, [open]);
 
   // Categories come from the live catalogue (same source as the marketplace
-  // filter and admin), so anything an admin adds/edits shows up here too. The
-  const { data: liveCats = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => api.categories.list(),
-    staleTime: 3600e3,
-    retry: 1,
-  });
-  const menuCategories = liveCats;
+  // filter and admin), so anything an admin adds/edits shows up here too.
+  const menuCategories = filters.catData;
   const activeCat = menuCategories.find((c) => c.id === catId) ?? null;
   const { data: deepSubs } = useQuery({
     queryKey: ['category-subtree', activeCat?.id],
@@ -250,100 +250,100 @@ function CategoryMegaMenu() {
     () => buildSubcategoryTree(deepSubs ?? activeCat?.subcategories ?? []),
     [activeCat?.subcategories, deepSubs],
   );
-  const flatSubs = useMemo(() => flattenSubcategoryTree(subTree), [subTree]);
-  const selectedSub = flatSubs.find(({ node }) => node.id === subId)?.node ?? null;
-  const selectedSubPath = useMemo(() => {
-    if (!selectedSub) return [] as SubcategoryNode[];
-    const walk = (nodes: SubcategoryNode[], path: SubcategoryNode[] = []): SubcategoryNode[] | null => {
-      for (const node of nodes) {
-        const next = [...path, node];
-        if (node.id === selectedSub.id) return next;
-        const found = walk(node.children, next);
-        if (found) return found;
-      }
-      return null;
-    };
-    return walk(subTree) ?? [];
-  }, [selectedSub, subTree]);
+  const selectedSub = useMemo(
+    () => flattenSubcategoryTree(subTree).find(({ node }) => node.id === subId)?.node ?? null,
+    [subTree, subId],
+  );
+  const selectedSubPath = useMemo(
+    () => (selectedSub ? findSubcategoryPath(subTree, selectedSub.id) : ([] as SubcategoryNode[])),
+    [selectedSub, subTree],
+  );
   const visibleSubs = selectedSub ? selectedSub.children : subTree;
   const parentSub = selectedSubPath.length > 1 ? selectedSubPath[selectedSubPath.length - 2] : null;
-  // Keep drilling through the taxonomy until a leaf is reached. Only then show
-  // attribute refinements, so the buyer can walk category -> sub -> sub-sub ->
-  // deeper children without the options column looking like the final stop early.
-  const selectedSubIsLeaf = Boolean(selectedSub && selectedSub.children.length === 0);
-  /**
-   * The facets a node offers, inherited from its nearest field-owning ancestor.
-   * A deep leaf now surfaces its parent's facets instead of dropping the buyer
-   * straight into unfiltered results — the old lookup could only see level-2
-   * nodes, so it returned nothing for anything deeper.
-   *
-   * Minus whatever the path or the node's own children already ask, so column 3
-   * never re-offers as chips the choices column 2 is already listing as nodes.
-   */
-  const facetsOf = (node: SubcategoryNode) =>
-    filterFields(browseAttrFields(findSubcategoryPath(subTree, node.id), node.children));
-  const leadField = selectedSub && selectedSubIsLeaf ? facetsOf(selectedSub)[0] : undefined;
+
+  // Counts for what a click HERE would select: the draft's other filters, with
+  // its taxonomy swapped for the category being browsed. Picking a node drops
+  // the old node's attributes, so they must not narrow these counts either.
+  const menuQuery = useMemo(() => {
+    const { categoryId: _c, category: _cn, subcategoryId: _s, subcategory: _sn, attrs: _a, sort: _o, ...rest } = filters.query;
+    return activeCat ? { ...rest, categoryId: activeCat.id } : rest;
+  }, [filters.query, activeCat]);
+  const { data: menuFacets, isPlaceholderData } = useQuery({
+    queryKey: ['product-facets', menuQuery],
+    queryFn: () => api.products.facets(menuQuery),
+    enabled: open,
+    placeholderData: keepPreviousData,
+    retry: 1,
+  });
+  // Unknown until this query's own counts land — never dim on a stale guess.
+  const counted = menuFacets && !isPlaceholderData ? menuFacets : null;
+  const nodeCounts = useMemo(() => new Map((counted?.subcategories ?? []).map((s) => [s.value, s.count])), [counted]);
+  const catCount = (id: string) => (counted ? counted.categories.find((c) => c.value === id)?.count ?? 0 : undefined);
+  const nodeCount = (id: string) => (counted ? nodeCounts.get(id) ?? 0 : undefined);
+
   const toggle = () => {
-    // Reset the drill-down each time the panel is (re)opened.
+    // Each open starts at the draft's own category, so a buyer refining a pick
+    // is not sent back to the top of 24 categories.
     setOpen((o) => {
-      if (!o) { setCatId(null); setSubId(null); }
+      if (!o) { setCatId(filters.drillCategory?.id ?? null); setSubId(null); }
       return !o;
     });
   };
-  const go = (category: ApiCategory, subcategory?: SubcategoryNode, extra: Record<string, string> = {}) => {
-    const q: Record<string, string> = {
-      category: category.name,
-      categoryId: category.id,
-      ...(subcategory ? { subcategory: subcategory.name } : {}),
-      ...(subcategory ? { subcategoryId: subcategory.id } : {}),
-      ...extra,
-    };
+  const select = (category: ApiCategory | null, node: SubcategoryNode | null = null) => {
+    filters.selectTaxon(category, node);
+    // The focused menu item unmounts in this same commit; parked on the
+    // trigger first, it is where the drawer opened next restores focus to,
+    // instead of <body>.
+    btnRef.current?.focus();
     setOpen(false);
-    navigate(`/market?${new URLSearchParams(q).toString()}`);
+    if (category) onPicked();
   };
   const pickCategory = (id: string) => {
     setCatId(id);
     setSubId(null);
   };
-  const pickSub = (node: SubcategoryNode) => {
-    // Parent nodes always drill deeper first. Leaf nodes either expose their
-    // attribute filters or, when there are no attributes, go straight to results.
-    if (node.children.length > 0 || facetsOf(node).length > 0) {
-      setSubId(node.id);
-    } else if (activeCat) {
-      go(activeCat, node);
-    }
-  };
+  // A node with children drills; a leaf is the pick.
+  const pickSub = (node: SubcategoryNode) => (node.children.length > 0 ? setSubId(node.id) : select(activeCat, node));
   const goBackSub = () => setSubId(parentSub?.id ?? null);
+
+  // The button names the draft's pick as a trail, so the choice made two
+  // levels down is still readable after the menu closes.
+  const picked = filters.drillCategory
+    ? [filters.drillCategory, ...filters.selectedSubcategoryPath].map((n) => n.name).join(' › ')
+    : filters.selectedCategories.map((c) => c.name).join(', ');
 
   const colBtn =
     'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-start text-sm transition';
   const colHead =
     'sticky top-0 z-10 border-b border-surface-border bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-ink-soft';
   const placeholder = 'flex min-h-0 flex-1 items-center justify-center p-4 text-center text-xs text-ink-soft';
+  // Empty branches stay pickable (the results page answers them with similar
+  // listings) but read as empty before the click.
+  const dim = (count: number | undefined) => (count === 0 ? ' opacity-55' : '');
+  const countTag = (count: number | undefined) =>
+    count == null ? null : <span className="shrink-0 text-xs font-normal text-ink-soft">{count}</span>;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-0">
       <button
         ref={btnRef}
         type="button"
         onClick={toggle}
         aria-haspopup="true"
         aria-expanded={open}
+        title={picked || undefined}
         className={
-          // Full-width, labelled field on phones. It used to hide its label
-          // below `sm`, leaving a bare grid icon that nobody read as
-          // "Categories" — the single most-reported homepage complaint.
-          'flex h-10 w-full items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition sm:w-auto ' +
-          (open
+          // A full-width, labelled field. It used to hide its label below `sm`,
+          // leaving a bare grid icon that nobody read as "Categories" — the
+          // single most-reported homepage complaint.
+          'flex h-10 w-full items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition ' +
+          (open || picked
             ? 'border-brand-leaf bg-brand-surface text-brand-dark'
             : 'border-surface-border text-ink-soft hover:border-brand-leaf hover:text-brand-dark')
         }
       >
         <Icon name="grid" size={16} className="shrink-0" />
-        <span className="min-w-0 flex-1 truncate text-start sm:flex-none">
-          {t('hero.categories', { defaultValue: 'Categories' })}
-        </span>
+        <span className="min-w-0 flex-1 truncate text-start">{picked || t('hero.categories')}</span>
         <Icon name="chevronDown" size={14} className={'shrink-0 ' + (open ? 'rotate-180 transition' : 'transition')} />
       </button>
 
@@ -351,35 +351,37 @@ function CategoryMegaMenu() {
         <div
           ref={panelRef}
           style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, right: pos.right, zIndex: 60 }}
-          className="overflow-hidden rounded-t-2xl border border-surface-border bg-white text-ink shadow-[0_-12px_60px_rgba(11,61,46,0.28)] sm:rounded-xl sm:shadow-[0_24px_60px_rgba(11,61,46,0.22)] sm:w-[min(92vw,660px)]"
+          className="overflow-hidden rounded-t-2xl border border-surface-border bg-white text-ink shadow-[0_-12px_60px_rgba(11,61,46,0.28)] sm:rounded-xl sm:shadow-[0_24px_60px_rgba(11,61,46,0.22)] sm:w-[min(92vw,480px)]"
         >
-          {/* Fixed 3-column grid, height-capped so the last rows stay reachable. */}
-          <div className="grid grid-cols-1 overflow-y-auto sm:grid-cols-3 sm:overflow-hidden" style={{ height: pos.height }}>
+          {/* Fixed 2-column grid, height-capped so the last rows stay reachable. */}
+          <div className="grid grid-cols-1 overflow-y-auto sm:grid-cols-2 sm:overflow-hidden" style={{ height: pos.height }}>
             {/* Column 1 — categories */}
             <div className="flex min-h-0 flex-col border-b border-surface-border sm:border-b-0 sm:border-e">
-              <div className={colHead}>{t('hero.colCategory', { defaultValue: 'Categories' })}</div>
+              <div className={colHead}>{t('hero.colCategory')}</div>
               <div className="flex-1 overflow-y-auto p-1.5">
                 {/* "Any" leads every level, the specific choices sit under it. */}
                 <button
                   type="button"
-                  onClick={() => { setOpen(false); navigate('/market'); }}
+                  onClick={() => select(null)}
                   className={colBtn + ' mb-1 font-semibold text-brand-dark hover:bg-brand-surface/60'}
                 >
                   <Icon name="check" size={14} />
-                  <span className="flex-1 truncate">{t('page.market.allCategories', { defaultValue: 'All categories' })}</span>
+                  <span className="flex-1 truncate">{t('page.market.allCategories')}</span>
                 </button>
                 {menuCategories.map((c) => {
                   const active = c.id === catId;
+                  const count = catCount(c.id);
                   return (
                     <button
                       key={c.id}
                       type="button"
                       onClick={() => pickCategory(c.id)}
                       aria-current={active}
-                      className={colBtn + (active ? ' bg-brand-surface font-bold text-brand-dark' : ' text-ink hover:bg-brand-surface/60')}
+                      className={colBtn + (active ? ' bg-brand-surface font-bold text-brand-dark' : ' text-ink hover:bg-brand-surface/60') + dim(count)}
                     >
                       <span className="text-base">{c.emoji ?? '📦'}</span>
-                      <span className="flex-1 truncate">{c.name}</span>
+                      <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                      {countTag(count)}
                       <Icon name="chevronRight" size={14} className={active ? 'text-brand-dark' : 'text-ink-soft/50'} />
                     </button>
                   );
@@ -387,93 +389,51 @@ function CategoryMegaMenu() {
               </div>
             </div>
 
-            {/* Column 2 — subcategories.
+            {/* Column 2 — subcategories, any depth.
                 Stacked (not side-by-side) below `sm`, so an empty placeholder
                 column would just be dead scroll: hide it until it has content. */}
-            <div
-              className={
-                'min-h-0 flex-col border-b border-surface-border sm:flex sm:border-b-0 sm:border-e ' +
-                (activeCat ? 'flex' : 'hidden')
-              }
-            >
+            <div className={'min-h-0 flex-col sm:flex ' + (activeCat ? 'flex' : 'hidden')}>
               <div className={colHead + ' flex items-center justify-between gap-2'}>
-                <span className="min-w-0 truncate">{selectedSub ? selectedSub.name : activeCat ? activeCat.name : t('hero.colSubcategory', { defaultValue: 'Subcategory' })}</span>
+                <span className="min-w-0 truncate">{selectedSub ? selectedSub.name : activeCat ? activeCat.name : t('hero.colSubcategory')}</span>
                 {selectedSub && (
                   <button type="button" onClick={goBackSub} className="shrink-0 text-[11px] font-bold text-brand-dark">
-                    Back
+                    {t('page.market.back')}
                   </button>
                 )}
               </div>
               {!activeCat ? (
-                <p className={placeholder}>{t('hero.pickCategory', { defaultValue: 'Pick a category to see its subcategories' })}</p>
+                <p className={placeholder}>{t('hero.pickCategory')}</p>
               ) : (
                 <div className="flex-1 overflow-y-auto p-1.5">
                   <button
                     type="button"
-                    onClick={() => selectedSub ? go(activeCat, selectedSub) : go(activeCat)}
+                    onClick={() => select(activeCat, selectedSub)}
                     className={colBtn + ' mb-1 font-semibold text-brand-dark hover:bg-brand-surface/60'}
                   >
                     <Icon name="check" size={14} />
-                    <span className="flex-1 truncate">{t('hero.allOf', { defaultValue: 'All' })} {selectedSub ? selectedSub.name : activeCat.name}</span>
+                    <span className="min-w-0 flex-1 truncate">{t('hero.allOf')} {selectedSub ? selectedSub.name : activeCat.name}</span>
+                    {countTag(selectedSub ? nodeCount(selectedSub.id) : catCount(activeCat.id))}
                   </button>
                   {visibleSubs.length === 0 ? (
                     // A leaf has nothing below it — saying "pick a category" here
                     // was answering a question the buyer had already answered twice.
-                    <p className={placeholder}>{t('page.market.noChildCategories', { defaultValue: 'No more child categories' })}</p>
+                    <p className={placeholder}>{t('page.market.noChildCategories')}</p>
                   ) : visibleSubs.map((node) => {
-                    const active = node.id === subId;
-                    const hasOptions = facetsOf(node).length > 0;
+                    const count = nodeCount(node.id);
                     return (
                       <button
                         key={node.id}
                         type="button"
                         onClick={() => pickSub(node)}
-                        aria-current={active}
-                        className={colBtn + (active ? ' bg-brand-surface font-bold text-brand-dark' : ' text-ink hover:bg-brand-surface/60')}
+                        className={colBtn + ' text-ink hover:bg-brand-surface/60' + dim(count)}
                       >
                         <span className="min-w-0 flex-1 truncate">{node.emoji ? `${node.emoji} ` : ''}{node.name}</span>
-                        {(node.children.length > 0 || hasOptions) ? (
-                          <Icon name="chevronRight" size={14} className={active ? 'text-brand-dark' : 'text-ink-soft/50'} />
-                        ) : null}
+                        {countTag(count)}
+                        {node.children.length > 0 && <Icon name="chevronRight" size={14} className="text-ink-soft/50" />}
                       </button>
                     );
                   })}
                 </div>
-              )}
-            </div>
-
-            {/* Column 3 — final leaf attribute options */}
-            <div
-              className={
-                'min-h-0 flex-col sm:flex ' + (activeCat && selectedSub && leadField ? 'flex' : 'hidden')
-              }
-            >
-              <div className={colHead}>
-                {selectedSub && leadField ? leadField.label : t('hero.colOptions', { defaultValue: 'Options' })}
-              </div>
-              {activeCat && selectedSub && leadField ? (
-                <div className="flex-1 overflow-y-auto p-1.5">
-                  <button
-                    type="button"
-                    onClick={() => go(activeCat, selectedSub)}
-                    className={colBtn + ' font-semibold text-brand-dark hover:bg-brand-surface/60'}
-                  >
-                    <Icon name="check" size={14} />
-                    <span className="flex-1 truncate">{t('hero.allOf', { defaultValue: 'All' })} {selectedSub.name}</span>
-                  </button>
-                  {(leadField.options ?? []).map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => go(activeCat, selectedSub, { [`attr_${leadField.key}`]: opt })}
-                      className={colBtn + ' text-ink hover:bg-brand-surface/60'}
-                    >
-                      <span className="flex-1 truncate">{optionLabel(leadField, opt)}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className={placeholder}>{t('hero.pickSubcategory', { defaultValue: 'Pick a subcategory to refine' })}</p>
               )}
             </div>
           </div>
@@ -485,17 +445,50 @@ function CategoryMegaMenu() {
 }
 
 export function Hero() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'buy' | 'sell'>('buy');
-  const [q, setQ] = useState('');
-  // WEB-02: carry the typed query into the market page. Previously every entry
-  // point here navigated to a bare /market, so the user's search term was
-  // silently discarded and they had to retype it.
-  const goSearch = (term: string) => {
-    const trimmed = term.trim();
-    navigate(trimmed ? `/market?search=${encodeURIComponent(trimmed)}` : '/market');
+  // The whole search card is ONE draft of the /market query string — search
+  // term, taxonomy path, attributes and every facet — applied in one go. It
+  // used to be three controls that each navigated on their own, so whichever
+  // was used last silently dropped the others (search OR category, never both).
+  const draft = useLocalFilterParams();
+  const filters = useMarketFilters(draft);
+  const [q, setQ] = useDebouncedParam(draft, 'search');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const { categoryIds, countries, verified } = filters.selections;
+
+  // The typed term is taken as-is rather than after the debounce, so Enter
+  // straight after typing still carries it.
+  const go = () => {
+    const next = new URLSearchParams(draft.params);
+    if (q.trim()) next.set('search', q.trim());
+    else next.delete('search');
+    const qs = next.toString();
+    navigate(qs ? `/market?${qs}` : '/market');
   };
+
+  // Quick picks are real filters on the draft, not search text: "Grains" as a
+  // search term matched nothing (search never looks at category names) and
+  // "Россия" never matched the English country column.
+  const grain = filters.catData.find((c) => c.slug === 'grain');
+  const quickPicks = [
+    ...(grain ? [{ key: 'grain', label: grain.name, active: categoryIds.includes(grain.id), onToggle: () => filters.toggleCategory(grain.id) }] : []),
+    { key: 'russia', label: countryLabel('Russia', lang), active: countries.includes('Russia'), onToggle: () => draft.toggle('country', 'Russia') },
+    { key: 'verified', label: t('page.market.chipVerified'), active: verified, onToggle: () => draft.setValue('verified', verified ? null : 'true') },
+  ];
+  // The search box has its own field; the badge counts what is behind the button.
+  const filterCount = filters.chips.filter((c) => c.key !== 'search').length;
+  // No number while the previous draft's facets are still on screen — they
+  // counted another selection, and "Show 5" for a draft that returns 0 lies.
+  const total = filters.facetsStale ? undefined : filters.facets?.total;
+  // The drawer's Clear all: it neither shows nor counts the search term, so it
+  // must not wipe it. (The chips row, which does show it, clears everything.)
+  const clearFilters = () =>
+    draft.patch((next) => {
+      for (const k of [...next.keys()]) if (!['search', 'sort', 'view'].includes(k)) next.delete(k);
+    });
+  const showLabel =
+    total == null ? t('page.market.showResults') : total === 0 ? t('hero.showSimilar') : t('hero.showResults', { count: total });
 
   const trust = [
     { icon: 'shield' as const, label: t('hero.trust.verifiedSellers') },
@@ -526,9 +519,15 @@ export function Hero() {
         {/* ── left ── */}
         <Stagger onView={false} className="min-w-0">
           <StaggerItem>
-          <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-3 py-1 text-xs font-semibold text-mint">
-            {t('hero.trustedBy')}
-          </span>
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-3 py-1 text-xs font-semibold text-mint">
+              {t('hero.trustedBy')}
+            </span>
+            {/* The platform is wholesale-only; the hero must always say so. */}
+            <span className="inline-flex items-center gap-1.5 rounded-pill bg-mango/15 px-3 py-1 text-xs font-bold text-mango">
+              <Icon name="box" size={13} /> {t('hero.wholesaleOnly')}
+            </span>
+          </div>
           </StaggerItem>
           <StaggerItem>
           <h1 className="mt-5 max-w-full break-words font-display text-4xl font-extrabold leading-[1.08] sm:text-5xl lg:text-6xl">
@@ -543,50 +542,77 @@ export function Hero() {
           {/* buy / sell search card */}
           <StaggerItem>
           <div className="mt-7 w-full max-w-xl rounded-xl bg-white p-4 text-ink shadow-card">
+            {/* Buy is where this card already is; Sell is a different journey. */}
             <div className="mb-3 grid grid-cols-2 gap-1 rounded-lg bg-brand-surface p-1">
-              {(['buy', 'sell'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => (m === 'sell' ? navigate('/register') : setMode(m))}
-                  className={
-                    'rounded-md py-2 text-sm font-bold transition ' +
-                    (mode === m ? 'bg-brand-gradient text-white shadow-cta' : 'text-ink-soft hover:text-ink')
-                  }
-                >
-                  {m === 'buy' ? t('hero.buy') : t('hero.sell')}
-                </button>
-              ))}
+              <button type="button" aria-pressed="true" className="rounded-md bg-brand-gradient py-2 text-sm font-bold text-white shadow-cta">
+                {t('hero.buy')}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                className="rounded-md py-2 text-sm font-bold text-ink-soft transition hover:text-ink"
+              >
+                {t('hero.sell')}
+              </button>
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <label className="flex min-w-0 items-center gap-2 rounded-md border border-surface-border px-3">
-                <Icon name="search" size={18} className="text-ink-soft" />
+                <Icon name="search" size={18} className="shrink-0 text-ink-soft" />
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && goSearch(q)}
+                  onKeyDown={(e) => e.key === 'Enter' && go()}
                   placeholder={t('hero.searchPlaceholder')}
-                  className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-ink-soft"
+                  className="h-10 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-ink-soft"
                 />
               </label>
-              {/* Stacked full-width on phones (side-by-side leaves each ~150px,
-                  too narrow for a translated label); `sm:contents` hands both
-                  children back to the parent grid on wider screens. */}
-              <div className="grid min-w-0 grid-cols-1 gap-2 sm:contents">
-                <CategoryMegaMenu />
-                <Button className="w-full sm:w-auto" onClick={() => goSearch(q)}>{t('common:search')}</Button>
-              </div>
+              <Button onClick={go}>{t('common:search')}</Button>
+            </div>
+            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <CategoryMegaMenu filters={filters} onPicked={() => setFiltersOpen(true)} />
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                aria-haspopup="dialog"
+                className={
+                  'flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold transition ' +
+                  (filterCount > 0
+                    ? 'border-brand-leaf bg-brand-surface text-brand-dark'
+                    : 'border-surface-border text-ink-soft hover:border-brand-leaf hover:text-brand-dark')
+                }
+              >
+                <Icon name="filter" size={16} className="shrink-0" />
+                {t('page.market.filters')}
+                {filterCount > 0 && (
+                  <span className="rounded-pill bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">{filterCount}</span>
+                )}
+              </button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {(t('hero.chips', { returnObjects: true }) as string[]).map((c) => (
+              {quickPicks.map((c) => (
                 <button
-                  key={c}
-                  onClick={() => goSearch(c)}
-                  className="rounded-pill bg-brand-surface px-3 py-1 text-xs font-semibold text-ink-soft transition hover:bg-brand-surface/70 hover:text-brand-dark"
+                  key={c.key}
+                  type="button"
+                  onClick={c.onToggle}
+                  aria-pressed={c.active}
+                  className={
+                    'rounded-pill px-3 py-1 text-xs font-semibold transition ' +
+                    (c.active
+                      ? 'bg-brand text-white'
+                      : 'bg-brand-surface text-ink-soft hover:bg-brand-surface/70 hover:text-brand-dark')
+                  }
                 >
-                  {c}
+                  {c.label}
                 </button>
               ))}
             </div>
+            {/* What the draft holds, each one click to undo — a size picked
+                three groups down the drawer is still visible here. */}
+            {filters.chips.length > 0 && (
+              <div className="mt-3 border-t border-surface-border pt-3">
+                <ActiveFilterChips chips={filters.chips} onClearAll={draft.clearAll} />
+              </div>
+            )}
           </div>
           </StaggerItem>
 
@@ -632,6 +658,36 @@ export function Hero() {
               fabricated market activity presented as real — so it is gone. */}
         </div>
       </div>
+
+      {/* Portaled: the Stagger wrappers animate `transform`, which would pin a
+          `fixed` dialog to them instead of the viewport. Right-hand panel on
+          desktop, full-screen sheet on phones — the panel is several screens
+          tall and a centred card clipped it at both ends. */}
+      {createPortal(
+        <Modal
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          title={t('page.market.filters')}
+          closeLabel={t('common:close')}
+          className="max-sm:h-[100dvh] max-sm:max-h-none max-sm:rounded-none sm:ms-auto sm:max-h-none sm:max-w-md sm:self-stretch"
+          footer={
+            <>
+              {filterCount > 0 && (
+                <Button variant="outline" onClick={clearFilters}>{t('page.market.clearAll')}</Button>
+              )}
+              {/* Zero is not a dead end: /market answers it with the closest
+                  listings, and the label says so before the click. */}
+              <Button onClick={go}>{showLabel}</Button>
+            </>
+          }
+        >
+          <MarketFilterFields filters={filters} />
+          <FilterGroup title={t('page.market.sortBy')}>
+            <SortSelect state={draft} className="w-full" />
+          </FilterGroup>
+        </Modal>,
+        document.body,
+      )}
 
       {/* trust strip */}
       <div className="relative border-t border-white/10 bg-black/10">
