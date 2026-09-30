@@ -24,6 +24,21 @@ interface CurrencyContextValue {
 
 const Ctx = createContext<CurrencyContextValue | null>(null);
 
+/**
+ * Minor units → hundredths, the scale formatMoney divides by 100. Not every
+ * currency has two decimals: App Store payments are stored in yen for JPY (0)
+ * and in fils for KWD (3).
+ */
+function minorToCents(amountMinor: number, currency: string): number {
+  let digits = 2;
+  try {
+    digits = new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2;
+  } catch {
+    // Unknown currency code: assume two decimals.
+  }
+  return (amountMinor * 100) / 10 ** digits;
+}
+
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   // Currency symbol placement and digit grouping are locale-dependent, so the
   // active language has to reach Intl.NumberFormat.
@@ -87,12 +102,13 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     (amountMinor: number | null | undefined, sourceCurrency = 'RUB') => {
       if (amountMinor == null) return '—';
       const src = sourceCurrency.toUpperCase();
-      if (src === displayCurrency) return formatMoney(amountMinor, src, 1, lang);
+      const cents = minorToCents(amountMinor, src);
+      if (src === displayCurrency) return formatMoney(cents, src, 1, lang);
       const srcRate = src === 'USD' ? 1 : fx?.rates?.[src];
-      if (!srcRate || srcRate <= 0) return formatMoney(amountMinor, src, 1, lang);
-      // amountMinor is in the source currency's minor units; rate converts the
-      // whole amount at once, so the minor-unit scale carries through unchanged.
-      return formatMoney(amountMinor, displayCurrency, rate / srcRate, lang);
+      if (!srcRate || srcRate <= 0) return formatMoney(cents, src, 1, lang);
+      // `cents` is in hundredths of the source currency; rate converts the
+      // whole amount at once, so that scale carries through unchanged.
+      return formatMoney(cents, displayCurrency, rate / srcRate, lang);
     },
     [displayCurrency, rate, lang, fx?.rates],
   );

@@ -217,12 +217,16 @@ export function BillingSection() {
           </div>
 
           <div className="flex gap-2">
-            {current && current.cancelAtPeriodEnd && (
+            {/* Apple owns an App Store plan's renewal; the API refuses to cancel or resume it. */}
+            {current?.provider === 'apple' && current.status !== 'expired' && (
+              <p className="self-center text-sm text-ink-soft">{t('billing.appStoreManaged')}</p>
+            )}
+            {current && current.provider !== 'apple' && current.cancelAtPeriodEnd && (
               <Button variant="ghost" disabled={resume.isPending} onClick={() => resume.mutate()}>
                 {t('billing.resume')}
               </Button>
             )}
-            {current && !current.cancelAtPeriodEnd && current.status !== 'expired' && (
+            {current && current.provider !== 'apple' && !current.cancelAtPeriodEnd && current.status !== 'expired' && (
               <Button variant="ghost" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
                 {t('billing.cancelPlan')}
               </Button>
@@ -234,9 +238,10 @@ export function BillingSection() {
         </div>
 
         {current?.status === 'past_due' && (
+          // Apple retries its own renewals against the Apple ID's payment method.
           <div className="mt-3 rounded-lg border border-mango bg-mango/5 p-3">
-            <p className="font-semibold text-ink">{t('billing.pastDueTitle')}</p>
-            <p className="text-sm text-ink-soft">{t('billing.pastDueBody')}</p>
+            <p className="font-semibold text-ink">{current.provider === 'apple' ? t('billing.pastDueAppleTitle') : t('billing.pastDueTitle')}</p>
+            <p className="text-sm text-ink-soft">{current.provider === 'apple' ? t('billing.pastDueAppleBody') : t('billing.pastDueBody')}</p>
           </div>
         )}
       </Card>

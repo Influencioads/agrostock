@@ -15,6 +15,7 @@ import { HireModal, type HireTarget } from '../components/HireModal';
 import { rateLabel } from '../components/LabourOfferings';
 import type { RootStackParamList } from '../../navigation/types';
 import { forwardChevron } from '../../lib/rtl';
+import { useFabClearance } from '../../ui/fab';
 import { capacityLabel, hireTargetForRoles, isServiceRole, servicePriceLabel, unitSuffix } from '@agrotraders/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -28,6 +29,7 @@ export function PublicProfile() {
   const { user: me } = useAuth();
   const { fmtPrice, fmtCents } = useCurrency();
   const [hire, setHire] = useState<HireTarget | null>(null);
+  const fabClearance = useFabClearance();
 
   const { data: p, isLoading, isError, refetch } = useQuery({
     queryKey: ['public-profile', params.userId],
@@ -76,7 +78,7 @@ export function PublicProfile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: fabClearance }}>
         <Card style={{ gap: 10 }}>
           <Row gap={12}>
             <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' }}>

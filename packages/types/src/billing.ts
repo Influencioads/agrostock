@@ -72,7 +72,13 @@ export function isPlanLimitKey(v: string): v is PlanLimitKey {
  * one: "your plan allows 1 team member" is a promise about a feature nobody can
  * use, which is the difference between marketing and a false claim.
  */
-export const UNENFORCED_LIMIT_KEYS: readonly PlanLimitKey[] = ['savedSearches', 'teamMembers'];
+export const UNENFORCED_LIMIT_KEYS: readonly PlanLimitKey[] = [
+  'savedSearches',
+  'teamMembers',
+  // Counted, but nothing refuses a hire/enquiry past the cap. Remove it once
+  // hire/enquiry creation is gated with `assertWithin(…, 'enquiriesPerMonth')`.
+  'enquiriesPerMonth',
+];
 
 /**
  * Quota keys counted inside the current billing period rather than as live rows.
@@ -425,6 +431,28 @@ export const PAYMENT_PROVIDER_LABELS: Record<PaymentProviderKey, string> = {
   yookassa: 'YooKassa',
   tbank: 'T-Bank',
 };
+
+/* ── Apple In-App Purchase ──────────────────────────────────────── */
+
+/**
+ * App Store product ID for one plan on one cycle. Derived rather than stored,
+ * so a plan needs no Apple column: the App Store Connect products are created
+ * with exactly these IDs, one subscription group per role.
+ */
+export function appleProductId(planCode: string, cycle: BillingCycle): string {
+  return `${planCode}_${cycle}`;
+}
+
+/** Inverse of `appleProductId`; null for anything that is not a plan product. */
+export function parseAppleProductId(productId: string): { planCode: string; cycle: BillingCycle } | null {
+  // Plan codes contain underscores themselves (`buyer_business`), so the cycle
+  // is whatever follows the LAST one.
+  const i = productId.lastIndexOf('_');
+  if (i <= 0) return null;
+  const cycle = productId.slice(i + 1);
+  if (!(BILLING_CYCLES as readonly string[]).includes(cycle)) return null;
+  return { planCode: productId.slice(0, i), cycle: cycle as BillingCycle };
+}
 
 /* ── helpers shared by clients and API ──────────────────────────── */
 

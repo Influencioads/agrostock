@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Global,
+  HttpCode,
   Module,
   Param,
   Patch,
@@ -35,8 +36,12 @@ import { LifecycleService } from './lifecycle.service';
 import { BillingInvoicesService } from './billing-invoices.service';
 import { RevenueService } from './revenue.service';
 import { FxModule } from '../fx/fx.module';
+import { AppleIapService } from './apple/apple-iap.service';
+import { appleAccountToken } from './apple/apple-account-token';
 import { apiBaseUrl, webBaseUrl } from './billing-urls';
 import {
+  AppleNotificationDto,
+  AppleTransactionDto,
   BuyAddonDto,
   CancelSubscriptionDto,
   CreatePlanDto,
@@ -65,6 +70,7 @@ export class BillingPublicController {
     private plans: PlansService,
     private gateways: GatewaysService,
     private payments: PaymentsService,
+    private apple: AppleIapService,
   ) {}
 
   /** The pricing page. Public and unauthenticated by design — a price behind a login does not get sold. */
@@ -127,6 +133,20 @@ export class BillingPublicController {
     return this.handleCallback(provider, req, res);
   }
 
+  /**
+   * App Store Server Notifications V2 (renewals, cancellations, refunds of iOS
+   * plan subscriptions). Public and throttle-exempt like the gateway webhooks;
+   * authentication is Apple's signature on the payload. Anything but a 2xx makes
+   * Apple retry, which is what we want for a payload that failed verification.
+   */
+  @SkipThrottle()
+  @Post('apple/notifications')
+  @HttpCode(200)
+  async appleNotification(@Body() dto: AppleNotificationDto) {
+    await this.apple.handleNotification(dto.signedPayload);
+    return { ok: true };
+  }
+
   private async handleCallback(provider: string, req: Request, res: Response) {
     const key = assertProvider(provider);
     // Form-encoded (Robokassa) and JSON (YooKassa, T-Bank) both land in req.body;
@@ -175,6 +195,7 @@ export class MeBillingController {
     private entitlements: EntitlementsService,
     private payments: PaymentsService,
     private subscriptions: SubscriptionsService,
+    private apple: AppleIapService,
   ) {}
 
   /** Everything the console's Billing section renders: plan, meters, history. */
@@ -238,6 +259,8 @@ export class MeBillingController {
         paidAt: p.paidAt,
         confirmationUrl: p.status === 'pending' ? p.confirmationUrl : null,
       })),
+      // The iOS app passes this as StoreKit's appAccountToken on every purchase.
+      appleAccountToken: appleAccountToken(user.id),
     };
   }
 
@@ -278,6 +301,13 @@ export class MeBillingController {
       provider: dto.provider,
       idempotencyKey: dto.idempotencyKey ? `addon:${user.id}:${dto.idempotencyKey}` : undefined,
     });
+  }
+
+  /** The iOS app hands over each StoreKit transaction it sees; verified with Apple before anything is granted. */
+  @Post('apple/transactions')
+  @HttpCode(200)
+  appleTransaction(@CurrentUser() user: AuthUser, @Body() dto: AppleTransactionDto) {
+    return this.apple.submitTransaction(user.id, dto.signedTransaction);
   }
 
   /** Poll target for the return page: has the webhook landed yet? */
@@ -526,7 +556,8 @@ export class AdminBillingController {
     BillingInvoicesService,
     RevenueService,
     LifecycleService,
+    AppleIapService,
   ],
-  exports: [EntitlementsService, PlansService, GatewaysService, PaymentsService, SubscriptionsService, LifecycleService],
+  exports: [EntitlementsService, PlansService, GatewaysService, PaymentsService, SubscriptionsService, LifecycleService, AppleIapService],
 })
 export class BillingModule {}

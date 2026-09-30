@@ -90,6 +90,18 @@ export class TopupIntentDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(64) idempotencyKey?: string;
 }
 
+/* ── Apple In-App Purchase ──────────────────────────────────────── */
+
+export class AppleTransactionDto {
+  /** StoreKit 2 signed transaction (JWS), verified server-side against Apple's roots. */
+  @ApiProperty() @IsString() @MaxLength(20000) signedTransaction!: string;
+}
+
+export class AppleNotificationDto {
+  /** App Store Server Notification V2 envelope; it nests two more JWS, hence the headroom. */
+  @ApiProperty() @IsString() @MaxLength(100000) signedPayload!: string;
+}
+
 /* ── admin ──────────────────────────────────────────────────────── */
 
 export class CreatePlanDto {

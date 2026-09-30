@@ -10,6 +10,7 @@ import { C, font, radius, space, type } from '../../theme/tokens';
 import { BidPanel } from '../components/BidPanel';
 import { ModerationButton } from '../../moderation/ModerationButton';
 import { useI18n } from '../../i18n';
+import { useFabClearance } from '../../ui/fab';
 
 function useCountdown(end: string | null) {
   const [now, setNow] = useState(() => Date.now());
@@ -45,6 +46,7 @@ function TimeBox({ value, label, danger }: { value: string; label: string; dange
 export function AuctionRoom({ slug, product }: { slug: string; product: ApiProduct }) {
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
+  const fabClearance = useFabClearance();
   const { data: auction } = useQuery<ApiAuctionDetail>({
     queryKey: ['auction', slug], queryFn: () => api.auctions.detail(slug), refetchInterval: 4000,
   });
@@ -56,7 +58,7 @@ export function AuctionRoom({ slug, product }: { slug: string; product: ApiProdu
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         {/* countdown header */}
         <View style={{ backgroundColor: C.evergreen, borderRadius: radius.xl, padding: space.lg, alignItems: 'center', gap: 12 }}>
           <Row style={{ alignSelf: 'stretch', justifyContent: 'space-between' }}>

@@ -6,9 +6,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import type { ApiCategory, ApiHomeBanners, ApiProduct } from '@agrotraders/api-client';
+import type { ApiBillingOverview, ApiCategory, ApiHomeBanners, ApiProduct } from '@agrotraders/api-client';
 import { countryLabel } from '@agrotraders/geo';
 import { api } from '../../lib/api';
+import { IAP_AVAILABLE } from '../../lib/iap';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { ProduceMark, SkeletonCard } from '../../ui';
@@ -16,8 +17,10 @@ import { BrandLogo } from '../../ui/BrandLogo';
 import { ProductCard } from '../components';
 import { ProductGrid } from '../components/ProductGrid';
 import { FilterSheet, SortSheet } from '../components/FilterSheet';
+import { useFabClearance } from '../../ui/fab';
 import { EMPTY_FILTERS, SORTS, countActive, toggleValue, type Filters } from '../components/filterState';
 import { EMPTY_SELECTION, categoryOnly } from '../components/categorySelection';
+import { IAP_HIDDEN_LADDERS } from '../components/planLadder';
 import { useI18n } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
 import { useBasketAction } from '../../basket/useBasketAction';
@@ -187,9 +190,45 @@ function HeroSearch({ categories, q, onQ, draft, onDraft, sort, onSort, onSearch
   );
 }
 
+/**
+ * Free-plan marker: a lock and an upgrade CTA into Plan & billing, shown until
+ * the active role is on a paid plan. On iOS the plan is bought in-app through
+ * the App Store, so the banner shows there too — except for a role whose own
+ * ladder iOS does not sell (IAP_HIDDEN_LADDERS), which has nothing to buy.
+ */
+function FreePlanBanner() {
+  const nav = useNavigation<Nav>();
+  const { t } = useI18n();
+  const { user, role } = useAuth();
+  // Same key as BillingScreen, so a finished checkout clears the banner too.
+  const { data } = useQuery<ApiBillingOverview>({
+    queryKey: ['billing-overview'],
+    queryFn: () => api.billing.overview(),
+    enabled: !!user,
+  });
+  // Hidden until the overview loads: never flash an upsell at a paying account.
+  if (!user || !role || !data || (data.entitlements[role]?.tier ?? 0) > 0) return null;
+  if (IAP_AVAILABLE && IAP_HIDDEN_LADDERS.includes(role)) return null;
+  return (
+    <Pressable
+      style={({ pressed }) => [s.plan, pressed && { opacity: 0.8 }]}
+      onPress={() => nav.navigate('Section', { role, section: 'billing', title: t('nav:section.billing') })}
+      accessibilityRole="button"
+    >
+      <View style={s.planIcon}><Ionicons name="lock-closed" size={18} color={C.gold} /></View>
+      <View style={{ flex: 1 }}>
+        <Text style={s.planTitle}>{t('billing.freeBannerTitle')}</Text>
+        <Text style={s.planBody}>{t('billing.freeBannerBody')}</Text>
+      </View>
+      <View style={s.planBtn}><Text numberOfLines={1} style={s.planBtnText}>{t('billing.upgradeNow')}</Text></View>
+    </Pressable>
+  );
+}
+
 export function Home() {
   const nav = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const fabClearance = useFabClearance();
   const { t } = useI18n();
   const { user, role } = useAuth();
   const basketAction = useBasketAction();
@@ -281,7 +320,9 @@ export function Home() {
         ) : null}
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: space.xxl }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingBottom: fabClearance }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <FreePlanBanner />
+
         {/* Hero — the web's headline and search card. On/off, eyebrow, title and
             CTA are Admin -> CMS overrides; the wholesale-only badge is not. */}
         {heroOff ? null : (
@@ -467,6 +508,13 @@ const s = StyleSheet.create({
   safeIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
   safeTitle: { ...type.h3, fontSize: 15, color: C.white },
   safeBody: { ...type.caption, color: C.mint, marginTop: 1 },
+
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: space.lg, marginTop: space.lg, backgroundColor: C.mangoSoft, borderWidth: 1, borderColor: '#E7C88A', borderRadius: radius.card, paddingVertical: 12, paddingHorizontal: 14 },
+  planIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FBE7C2', alignItems: 'center', justifyContent: 'center' },
+  planTitle: { ...type.title, fontSize: 14, color: '#7A5A12' },
+  planBody: { ...type.caption, color: '#9A7A32', marginTop: 1 },
+  planBtn: { backgroundColor: C.mango, borderRadius: 20, paddingHorizontal: 14, height: 36, justifyContent: 'center' },
+  planBtnText: { ...type.title, fontSize: 13, color: C.white },
 
   rfq: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: space.lg, marginTop: space.xl, backgroundColor: C.white, borderWidth: StyleSheet.hairlineWidth, borderColor: C.border, borderRadius: radius.card, padding: 16 },
   rfqIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },

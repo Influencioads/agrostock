@@ -25,6 +25,8 @@ type Counts = {
   fkViolation?: boolean;
   /** A subscription/payment exists — must route to anonymization, never a drop. */
   billing?: boolean;
+  /** App Store subscription rows the account holds. */
+  appleSubs?: { provider: string; status: string; currentPeriodEnd: Date }[];
 };
 
 async function serviceFor(counts: Counts = {}) {
@@ -71,6 +73,7 @@ async function serviceFor(counts: Counts = {}) {
       }),
     },
     auctionBid: { count: vi.fn(async () => counts.liveBids ?? 0) },
+    subscription: { findMany: vi.fn(async () => counts.appleSubs ?? []) },
     profile: {
       ...del('profile'),
       updateMany: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
@@ -155,6 +158,27 @@ describe('account deletion (Guideline 5.1.1(v))', () => {
     expect(warnings).toContainEqual({ code: 'wallet_balance', count: 2500 });
     await expect(svc.deleteAccount('u1', { password: PASSWORD })).resolves.toMatchObject({ ok: true });
     expect(prisma.$transaction).toHaveBeenCalled();
+  });
+
+  it('warns about an App Store subscription Apple still bills, but does NOT refuse', async () => {
+    const DAY = 864e5;
+    const { svc, prisma } = await serviceFor({
+      appleSubs: [
+        { provider: 'apple', status: 'active', currentPeriodEnd: new Date(Date.now() + 20 * DAY) },
+        // In Apple's billing retry: past its end, still charged if the card recovers.
+        { provider: 'apple', status: 'past_due', currentPeriodEnd: new Date(Date.now() - 10 * DAY) },
+        // Retry window over: Apple has given up.
+        { provider: 'apple', status: 'past_due', currentPeriodEnd: new Date(Date.now() - 61 * DAY) },
+      ],
+    });
+    const { blockers, warnings, canDelete } = await svc.deletionBlockers('u1');
+    expect(blockers).toEqual([]);
+    expect(canDelete).toBe(true);
+    expect(warnings).toContainEqual({ code: 'apple_subscription', count: 2 });
+    // A canceled one renews no more, so it is not asked for at all.
+    expect(prisma.subscription.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'u1', provider: 'apple', status: { in: ['active', 'past_due'] } } }),
+    );
   });
 
   it('lists every outstanding obligation at once, not just the first', async () => {

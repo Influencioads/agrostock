@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n';
 import { useApiError } from '../lib/useApiError';
 import { useCurrency } from '../currency/CurrencyContext';
+import { useFabClearance } from '../ui/fab';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -108,6 +109,7 @@ export function HiresScreen() {
   const { t } = useI18n();
   const { roles } = useAuth();
   const qc = useQueryClient();
+  const fabClearance = useFabClearance();
   const [filter, setFilter] = useState<TargetFilter>('all');
   // See the web twin: `workerco` and the service roles can be hired, so they have an
   // incoming queue. The list this replaced left them staring at an empty screen.
@@ -135,7 +137,7 @@ export function HiresScreen() {
       style={{ flex: 1, backgroundColor: C.bg }}
       data={sections}
       keyExtractor={(s) => s.title}
-      contentContainerStyle={{ padding: space.lg, gap: 12 }}
+      contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 12 }}
       renderItem={({ item: s }) => (
         <View style={{ gap: 10 }}>
           <Txt variant="label">{s.title}</Txt>

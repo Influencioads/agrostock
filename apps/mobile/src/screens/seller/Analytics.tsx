@@ -10,6 +10,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, KeyValue, ProgressBar, Row, SkeletonStats, StatStrip, Txt } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { DashSection } from '../components/dash-parts';
 import { C, space } from '../../theme/tokens';
 
@@ -21,6 +22,7 @@ export function SellerAnalytics() {
   const orderLabel = useOrderLabel();
   const { fmtCompactCents } = useCurrency();
   const { user } = useAuth();
+  const fabClearance = useFabClearance();
   const { data: products = [], isLoading } = useQuery<SellerProduct[]>({
     queryKey: ['products', 'mine'], queryFn: () => api.products.mine() as Promise<SellerProduct[]>, enabled: !!user,
   });
@@ -42,7 +44,7 @@ export function SellerAnalytics() {
   // body starts straight into the numbers.
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={[]}>
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         <DashSection padded={false}>
           {isLoading ? (
             <View style={{ paddingHorizontal: space.lg }}><SkeletonStats /></View>

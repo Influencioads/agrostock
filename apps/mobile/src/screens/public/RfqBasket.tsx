@@ -10,6 +10,7 @@ import { toUnit } from '@agrotraders/types';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/AuthProvider';
 import { Button, EmptyState, SkeletonRows } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { ProductRow } from '../components';
@@ -38,6 +39,7 @@ export function RfqBasket() {
   const { user } = useAuth();
   const basket = useBasket();
   const [sent, setSent] = useState<string[]>([]);
+  const fabClearance = useFabClearance();
 
   // Prices and availability are re-read rather than trusted from storage.
   const results = useQueries({
@@ -136,7 +138,7 @@ export function RfqBasket() {
           <SkeletonRows count={basket.count} height={72} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingTop: space.lg, paddingBottom: space.xl, gap: space.md }}>
+        <ScrollView contentContainerStyle={{ paddingTop: space.lg, paddingBottom: fabClearance, gap: space.md }}>
           {groups.map((g) => (
             <View key={g.id} style={s.group}>
               <View style={s.groupHead}>

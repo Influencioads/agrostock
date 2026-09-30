@@ -6,6 +6,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { Badge, Button, KeyValue, Row, Txt } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { DashHeader, DashSection, StatCards } from '../components/dash-parts';
 import { C, space } from '../../theme/tokens';
 
@@ -14,6 +15,7 @@ export function WorkerDashboard() {
   const { fmtCents } = useCurrency();
   const qc = useQueryClient();
   const { user } = useAuth();
+  const fabClearance = useFabClearance();
   const { data: dash } = useQuery({ queryKey: ['me-dashboard'], queryFn: () => api.me.dashboard(), enabled: !!user });
   const kpis = dash?.kpis ?? {};
   const available = dash?.available ?? false;
@@ -25,7 +27,7 @@ export function WorkerDashboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         <DashHeader
           name={t('dash.welcome', { name: (user?.name ?? t('dash.nameFallback')).split(' ')[0] })}
           sub={t('dash.workerSub')}

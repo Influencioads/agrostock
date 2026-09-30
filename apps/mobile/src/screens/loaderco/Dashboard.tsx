@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { BarChart } from '../../ui/charts';
 import { KeyValue, ProgressBar, Row, Txt } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { DashHeader, DashSection, StatCards } from '../components/dash-parts';
 import { C, space } from '../../theme/tokens';
 
@@ -19,6 +20,7 @@ export function LoaderDashboard() {
   const { t } = useI18n();
   const { fmtCompactCents } = useCurrency();
   const { user } = useAuth();
+  const fabClearance = useFabClearance();
   const { data: mine = [] } = useQuery<ApiLoaderJob[]>({ queryKey: ['jobs', 'mine'], queryFn: () => api.loaders.myJobs(), enabled: !!user });
   const { data: open = [] } = useQuery<ApiLoaderJob[]>({ queryKey: ['jobs', 'open'], queryFn: () => api.loaders.openJobs(), enabled: !!user });
   const { data: workers = [] } = useQuery<ApiLoaderWorker[]>({ queryKey: ['workers'], queryFn: () => api.loaders.workers(), enabled: !!user });
@@ -34,7 +36,7 @@ export function LoaderDashboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         <DashHeader
           name={t('dash.welcome', { name: (user?.name ?? t('dash.nameFallback')).split(' ')[0] })}
           sub={t('dash.loaderSub')}

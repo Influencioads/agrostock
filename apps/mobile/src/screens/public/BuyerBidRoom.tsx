@@ -11,6 +11,7 @@ import { ModerationButton } from '../../moderation/ModerationButton';
 import { C, radius, space, type } from '../../theme/tokens';
 import { BuyerBidPanel } from '../components/BuyerBidPanel';
 import { useI18n } from '../../i18n';
+import { useFabClearance } from '../../ui/fab';
 
 function useCountdown(end: string | null) {
   const [now, setNow] = useState(() => Date.now());
@@ -51,6 +52,7 @@ export function BuyerBidRoom({ id }: { id: string }) {
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
   const qc = useQueryClient();
+  const fabClearance = useFabClearance();
   const [error, setError] = useState('');
 
   const { data: bid, isLoading } = useQuery<ApiBuyerBidDetail>({
@@ -100,7 +102,7 @@ export function BuyerBidRoom({ id }: { id: string }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         {/* countdown header */}
         <View style={{ backgroundColor: C.evergreen, borderRadius: radius.xl, padding: space.lg, alignItems: 'center', gap: 12 }}>
           <Row style={{ alignSelf: 'stretch', justifyContent: 'space-between' }}>

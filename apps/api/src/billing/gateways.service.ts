@@ -35,6 +35,8 @@ const LABELS: Record<PaymentProviderKey, string> = {
   robokassa: 'Robokassa',
   yookassa: 'YooKassa',
   tbank: 'T-Bank',
+  // Never a checkout gateway (not in PROVIDERS); labels Apple-billed rows only.
+  apple: 'App Store',
 };
 
 /**

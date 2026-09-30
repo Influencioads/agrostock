@@ -11,6 +11,14 @@ import { EntitlementsService } from './entitlements.service';
 import { addMonths, PaymentsService } from './payments.service';
 import { webhookUrl } from './billing-urls';
 import { BillingInvoicesService } from './billing-invoices.service';
+import { appleStillBilling } from './apple/apple-still-billing';
+
+/** App Store subscriptions are managed on the iPhone; we have no mandate to change them. */
+function assertNotApple(sub: Pick<Subscription, 'provider'>): void {
+  if (sub.provider === 'apple') {
+    throw new BadRequestException("This plan is billed by the App Store. Manage it in your iPhone's subscription settings.");
+  }
+}
 
 /**
  * Subscription lifecycle: switching plans, cancelling, and the unattended
@@ -92,6 +100,7 @@ export class SubscriptionsService {
     const sub = await this.prisma.subscription.findUnique({ where: { userId_role: { userId, role } }, include: { plan: true } });
     if (!sub) throw new NotFoundException('No subscription to cancel for this role.');
     if (sub.status === 'expired') throw new BadRequestException('That subscription has already ended.');
+    assertNotApple(sub);
 
     if (immediately) {
       await this.moveToFree(userId, role, 'downgrade');
@@ -118,6 +127,7 @@ export class SubscriptionsService {
   async resume(userId: string, role: Role): Promise<Subscription> {
     const sub = await this.prisma.subscription.findUnique({ where: { userId_role: { userId, role } } });
     if (!sub) throw new NotFoundException('No subscription for this role.');
+    assertNotApple(sub);
     if (sub.currentPeriodEnd.getTime() < Date.now()) throw new BadRequestException('That period has already ended — subscribe again.');
     const updated = await this.prisma.subscription.update({
       where: { id: sub.id },
@@ -135,6 +145,14 @@ export class SubscriptionsService {
     const plan = await this.plans.byId(input.planId);
     const now = new Date();
     const periodEnd = addMonths(now, input.months ?? CYCLE_MONTHS[input.cycle]);
+
+    // Apple would keep billing a live App Store plan (or one in its billing retry)
+    // under the comp; a lapsed one becomes a plain comp rather than a row renewals
+    // and self-serve skip.
+    const existing = await this.prisma.subscription.findUnique({ where: { userId_role: { userId: input.userId, role: plan.role } } });
+    if (appleStillBilling(existing, now.getTime())) {
+      throw new BadRequestException('This account has a live App Store subscription for that role; it cannot be granted over.');
+    }
 
     const sub = await this.prisma.subscription.upsert({
       where: { userId_role: { userId: input.userId, role: plan.role } },
@@ -156,6 +174,7 @@ export class SubscriptionsService {
         cancelAtPeriodEnd: false,
         canceledAt: null,
         dunningAttempts: 0,
+        ...(existing?.provider === 'apple' ? { provider: null, appleOriginalTransactionId: null } : {}),
       },
     });
     this.entitlements.invalidate(input.userId);
@@ -185,7 +204,13 @@ export class SubscriptionsService {
   async renewDue(): Promise<{ renewed: number; dunned: number; expired: number }> {
     const now = new Date();
     const due = await this.prisma.subscription.findMany({
-      where: { status: { in: ['active', 'past_due', 'canceled'] }, currentPeriodEnd: { lte: now } },
+      where: {
+        status: { in: ['active', 'past_due', 'canceled'] },
+        currentPeriodEnd: { lte: now },
+        // The App Store renews its own subscriptions. Spelled as an OR because
+        // `provider: { not: 'apple' }` alone would also drop NULL-provider rows.
+        OR: [{ provider: null }, { provider: { not: 'apple' } }],
+      },
       include: { plan: true },
       take: 200,
     });
@@ -210,6 +235,9 @@ export class SubscriptionsService {
       where: { id: subscriptionId },
       include: { plan: true },
     });
+    // Apple renews, retries and expires its own subscriptions; dunning one here
+    // would drop a customer the App Store is still billing.
+    if (sub.provider === 'apple') throw new BadRequestException('This subscription is billed and renewed by the App Store.');
     const settings = await this.settings();
 
     // A cancellation that has reached its period end simply lapses.

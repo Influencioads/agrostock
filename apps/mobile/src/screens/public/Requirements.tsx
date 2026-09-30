@@ -10,6 +10,7 @@ import { C, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { CountryField } from '../components/GeoFields';
 import { PickerField } from '../components/PickerSheet';
+import { useFabClearance } from '../../ui/fab';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyRec = Record<string, any>;
@@ -22,6 +23,7 @@ export function RequirementsBoard() {
   const { user, roles } = useAuth();
   const { t } = useI18n();
   const qc = useQueryClient();
+  const fabClearance = useFabClearance();
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
@@ -53,7 +55,7 @@ export function RequirementsBoard() {
       <FlatList
         data={reqs}
         keyExtractor={(r) => String(r.id)}
-        contentContainerStyle={{ padding: space.lg, gap: 12 }}
+        contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 12 }}
         ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="clipboard-outline" title={t('pubX.req.empty')} />}
         renderItem={({ item: r }) => (
           <Card style={{ gap: 8 }}>

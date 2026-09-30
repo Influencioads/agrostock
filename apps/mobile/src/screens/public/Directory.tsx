@@ -22,6 +22,7 @@ import { HireModal, type HireTarget } from '../components/HireModal';
 import { CityField } from '../components/GeoFields';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
+import { useFabClearance } from '../../ui/fab';
 
 export type DirectoryType = 'sellers' | 'transporters' | 'loaders' | 'workers';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -57,6 +58,7 @@ export function Directory({ type }: { type: DirectoryType }) {
   const { user } = useAuth();
   const { t } = useI18n();
   const { fmtCents } = useCurrency();
+  const fabClearance = useFabClearance();
   const [search, setSearch] = useState('');
   const [market, setMarket] = useState('');
   const [verified, setVerified] = useState(false);
@@ -229,7 +231,7 @@ export function Directory({ type }: { type: DirectoryType }) {
       <FlatList
         data={entries}
         keyExtractor={(e) => e.id}
-        contentContainerStyle={{ padding: space.lg, gap: 12 }}
+        contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 12 }}
         ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="search-outline" title={t('pubX.dir.emptyFilters')} />}
         renderItem={({ item: e }) => {
           const isWorker = type === 'workers';

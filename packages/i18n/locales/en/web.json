@@ -66,6 +66,7 @@
       "promote_home": "Promote to homepage"
     },
     "addonsTitle": "Your add-ons",
+    "appStoreManaged": "Billed through the App Store — manage it on your iPhone.",
     "autoRenews": "Renews automatically",
     "cancelAnytime": "Cancel any time — your plan runs to the end of the period you paid for.",
     "cancelPlan": "Cancel plan",
@@ -106,6 +107,8 @@
     "noGatewaysTitle": "No payment method available yet",
     "noRedirect": "The payment provider did not return a payment page. Please try another provider.",
     "overLimit": "Over your plan limit — existing items are untouched, but you cannot add more until you upgrade.",
+    "pastDueAppleBody": "Update the payment method in your Apple ID settings to restore it.",
+    "pastDueAppleTitle": "The App Store couldn't renew your plan",
     "pastDueBody": "We will retry over the next few days. Your plan stays active in the meantime — update your payment method to keep it.",
     "pastDueTitle": "We could not charge your card",
     "payment": {

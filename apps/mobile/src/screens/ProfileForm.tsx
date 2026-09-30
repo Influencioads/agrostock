@@ -12,6 +12,7 @@ import { PickerField } from './components/PickerSheet';
 import { CityField } from './components/GeoFields';
 import { C, space } from '../theme/tokens';
 import { useI18n } from '../i18n';
+import { useFabClearance } from '../ui/fab';
 
 /**
  * Upload a real profile photo. The server re-encodes it to WebP under
@@ -73,6 +74,7 @@ export function ProfileForm() {
   const { t } = useI18n();
   const { roles, user } = useAuth();
   const qc = useQueryClient();
+  const fabClearance = useFabClearance();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [f, setF] = useState({
@@ -120,7 +122,7 @@ export function ProfileForm() {
   if (isLoading) return <View style={{ flex: 1, backgroundColor: C.bg }}><Loading label={t('compX.profile.loading')} /></View>;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: fabClearance }} keyboardShouldPersistTaps="handled">
       <Card style={{ gap: 12 }}>
         <Txt variant="h3">{t('compX.profile.publicTitle')}</Txt>
         <Txt variant="muted">{t('compX.profile.publicSub')}</Txt>

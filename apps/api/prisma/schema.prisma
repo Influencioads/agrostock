@@ -2991,6 +2991,9 @@ enum PaymentProviderKey {
   robokassa
   yookassa
   tbank
+  /// iOS In-App Purchase. Never a checkout gateway: it has no PaymentGatewayConfig
+  /// row and only ever appears on subscriptions/payments the App Store billed.
+  apple
 }
 
 /// Pay-as-you-go items, available to any account including free tier. This is
@@ -3101,6 +3104,11 @@ model Subscription {
   /// Robokassa PreviousInvoiceID.
   provider      PaymentProviderKey?
   providerToken String?
+
+  /// The App Store's originalTransactionId, which identifies one Apple
+  /// subscription through renewals and upgrades — it is how App Store server
+  /// notifications find this row. Null for gateway-billed subscriptions.
+  appleOriginalTransactionId String? @unique
 
   /// Failed-renewal counter. Reset on every success; at BillingSettings.dunningRetries
   /// the subscription expires down to free rather than suspending the account.

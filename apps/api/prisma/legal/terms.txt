@@ -1,4 +1,4 @@
-Last updated: 12 September 2026
+Last updated: 29 September 2026
 
 These Terms of Service ("Terms") are a binding agreement between you and AgroTraders ("AgroTraders", "we", "us"). They govern your use of the AgroTraders mobile application, website and related services (together, the "Service"). By creating an account, or by using the Service without an account, you agree to these Terms. If you do not agree, do not use the Service.
 
@@ -66,9 +66,11 @@ Quality, weight, inspection, acceptance and rejection are matters between the tr
 
 8. PAYMENT
 
-AgroTraders does not process, hold, transfer, or take custody of payment between users, and the app does not collect any payment instrument. Buyers and sellers settle directly with each other by whatever means they agree, outside the Service.
+AgroTraders does not process, hold, transfer, or take custody of payment between users, and AgroTraders does not itself collect card details. Buyers and sellers settle directly with each other by whatever means they agree, outside the Service.
 
-Where a subscription plan is offered for the use of the Service itself, its price and billing terms are shown before you subscribe. Plan upgrades are not sold inside the iOS application.
+Where a subscription plan is offered for the use of the Service itself, its price and billing terms are shown before you subscribe.
+
+In the iOS application, plans are sold as auto-renewable subscriptions through Apple In-App Purchase, and payment is charged to your Apple ID. A subscription renews automatically at the same price and for the same period unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage or cancel it in your Apple ID settings, at Settings → [your name] → Subscriptions. Refunds for App Store purchases are handled by Apple.
 
 9. VERIFICATION BADGES
 

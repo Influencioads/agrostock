@@ -12,6 +12,7 @@ import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { BarChart } from '../../ui/charts';
 import { KeyValue, ProgressBar, Row, Txt } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { DashHeader, DashSection, QuickGrid, StatCards } from '../components/dash-parts';
 import { C, space } from '../../theme/tokens';
 
@@ -20,6 +21,7 @@ export function BuyerDashboard() {
   const { fmtCents, fmtCompactCents } = useCurrency();
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
+  const fabClearance = useFabClearance();
   const { data: dash } = useQuery<{ kpis: Record<string, number> }>({ queryKey: ['me-dashboard'], queryFn: () => api.me.dashboard(), enabled: !!user });
   const { data: wallet } = useQuery<{ balanceCents: number }>({ queryKey: ['me-wallet'], queryFn: () => api.me.wallet() as Promise<{ balanceCents: number }>, enabled: !!user });
   const { data: series } = useQuery({ queryKey: ['me-series'], queryFn: () => api.me.series(), enabled: !!user });
@@ -32,7 +34,7 @@ export function BuyerDashboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         <DashHeader
           name={t('dash.welcome', { name: (user?.name ?? t('dash.nameFallback')).split(' ')[0] })}
           sub={t('dash.buyerSub')}

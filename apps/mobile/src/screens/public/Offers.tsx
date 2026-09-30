@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ApiProduct } from '@agrotraders/api-client';
 import { api } from '../../lib/api';
 import { AppBar } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { C, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
 import { ProductGrid } from '../components/ProductGrid';
@@ -19,6 +20,7 @@ export function Offers() {
   const nav = useNavigation<Nav>();
   const { t } = useI18n();
   const basketAction = useBasketAction();
+  const fabClearance = useFabClearance();
   const { data: offers = [], isLoading, isError, refetch } = useQuery<ApiProduct[]>({
     queryKey: ['products', 'offer'],
     queryFn: () => api.products.list({ offer: true }),
@@ -28,7 +30,7 @@ export function Offers() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={[]}>
       <AppBar title={t('pubX.offers.title')} actions={[basketAction]} />
-      <ScrollView contentContainerStyle={{ paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         <View style={s.head}>
           <Text style={[s.sub, microLabel()]}>{t('pubX.offers.sub')}</Text>
         </View>

@@ -3,6 +3,7 @@ import type { Role } from '@prisma/client';
 import {
   isPeriodLimit,
   PLAN_LIMIT_KEYS,
+  UNENFORCED_LIMIT_KEYS,
   type PlanFeatureKey,
   type PlanFeatures,
   type PlanLimitKey,
@@ -312,7 +313,9 @@ export class EntitlementsService {
           used: used ?? 0,
           limit: base === null || base === undefined ? null : base + addon,
           addon,
-          enforced: used !== null,
+          // Counted is not the same as enforced: a key with a counter but no gate
+          // (enquiriesPerMonth) must not render as a bar that can turn red.
+          enforced: used !== null && !UNENFORCED_LIMIT_KEYS.includes(key),
         };
       }),
     );

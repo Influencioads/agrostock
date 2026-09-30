@@ -14,6 +14,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { BarChart } from '../../ui/charts';
 import { Button, Input, ProgressBar, Row, Txt } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { DashHeader, DashSection, StatCards } from '../components/dash-parts';
 import { PickerField } from '../components/PickerSheet';
 import { C, elevation, radius, space, type } from '../../theme/tokens';
@@ -27,6 +28,7 @@ export function SellerDashboard() {
   const { fmtCompactCents } = useCurrency();
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
+  const fabClearance = useFabClearance();
   const { data: products = [] } = useQuery<SellerProduct[]>({ queryKey: ['products', 'mine'], queryFn: () => api.products.mine() as Promise<SellerProduct[]>, enabled: !!user });
   const { data: orders = [] } = useQuery<ApiOrder[]>({ queryKey: ['orders', 'incoming'], queryFn: () => api.orders.incoming() as Promise<ApiOrder[]>, enabled: !!user });
   const { data: series } = useQuery({ queryKey: ['me-series'], queryFn: () => api.me.series(), enabled: !!user });
@@ -52,7 +54,7 @@ export function SellerDashboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         <DashHeader
           name={user?.name ?? t('dash.nameFallback')}
           sub={t('dash.sellerSub')}

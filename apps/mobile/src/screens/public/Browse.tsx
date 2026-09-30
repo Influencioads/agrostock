@@ -10,6 +10,7 @@ import { api } from '../../lib/api';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { AppBar, FilterBar, SearchBar } from '../../ui';
 import { AppliedFilters } from '../../ui/FilterBar';
+import { useFabClearance } from '../../ui/fab';
 import { C, space, type } from '../../theme/tokens';
 import { ProductGrid, SimilarProducts } from '../components/ProductGrid';
 import { FilterSheet, SortSheet } from '../components/FilterSheet';
@@ -64,6 +65,7 @@ export function Browse() {
   const [filterSheet, setFilterSheet] = useState(false);
   const [sortSheet, setSortSheet] = useState(false);
   const basketAction = useBasketAction();
+  const fabClearance = useFabClearance();
 
   // The home hero can navigate here again with new params while this screen is
   // still mounted, and a `useState` initialiser only runs once. The shop tab
@@ -197,7 +199,7 @@ export function Browse() {
       </AppBar>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: space.lg }}
+        contentContainerStyle={{ paddingBottom: fabClearance }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}

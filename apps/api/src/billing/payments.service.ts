@@ -12,6 +12,7 @@ import { EntitlementsService } from './entitlements.service';
 import { BillingInvoicesService } from './billing-invoices.service';
 import { returnUrl, webhookUrl } from './billing-urls';
 import type { VerifiedEvent } from './providers/provider';
+import { appleStillBilling } from './apple/apple-still-billing';
 
 export interface IntentResult {
   paymentId: string;
@@ -172,6 +173,12 @@ export class PaymentsService {
     // not just to renewals, or the early-adopter offer would only start biting
     // a month later.
     const sub = await this.prisma.subscription.findUnique({ where: { userId_role: { userId: input.userId, role: input.role } } });
+    // A live App Store subscription keeps renewing on Apple's side, and so does
+    // one in Apple's billing retry (up to 60 days past due); a card checkout on
+    // top of either would bill the customer twice for one plan.
+    if (appleStillBilling(sub)) {
+      throw new BadRequestException('This plan is billed by the App Store on your iPhone. Change it there.');
+    }
     const amountMinor = this.discounted(price.amountMinor, sub);
 
     return this.open({
@@ -406,6 +413,8 @@ export class PaymentsService {
         canceledAt: null,
         dunningAttempts: 0,
         provider: payment.provider,
+        // Card-paid now: a stale Apple id would still mark this row as an App Store holder.
+        appleOriginalTransactionId: null,
         // Keep the existing binding when this charge did not produce a new one.
         ...(bindingToken ? { providerToken: this.encryptBinding(bindingToken) } : {}),
         lastPaymentAt: now,

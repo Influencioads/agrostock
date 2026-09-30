@@ -9,6 +9,7 @@ import { Button, Card, EmptyState, Input, Row, Screen, SkeletonRows, Txt } from 
 import { C, radius, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import { errMessage } from '../../lib/format';
+import { IAP_AVAILABLE, manageSubscriptions } from '../../lib/iap';
 import { useCurrency } from '../../currency/CurrencyContext';
 
 /**
@@ -128,16 +129,35 @@ export function DeleteAccount() {
       {warnings.length > 0 && (
         <Card style={s.warnCard}>
           <Txt variant="label">{t('pubX.deleteAccount.warnTitle')}</Txt>
-          {warnings.map((w) => (
-            <Row key={w.code} gap={8} style={s.blockRow}>
-              <Ionicons name="wallet-outline" size={16} color={C.inkSoft} />
-              <Txt variant="small" style={s.grow}>
-                {w.code === 'wallet_balance'
-                  ? t('pubX.deleteAccount.warn.wallet_balance', { amount: fmtMinor(w.count, 'USD') })
-                  : t(`pubX.deleteAccount.blocker.${w.code}`, { count: w.count })}
-              </Txt>
-            </Row>
-          ))}
+          {warnings.map((w) => {
+            // Compared as a plain string: ApiDeletionBlockerCode does not list it yet.
+            const apple = w.code === 'apple_subscription';
+            return (
+              <Row key={w.code} gap={8} style={s.blockRow}>
+                <Ionicons name={apple ? 'card-outline' : 'wallet-outline'} size={16} color={C.inkSoft} />
+                <View style={s.grow}>
+                  <Txt variant="small">
+                    {w.code === 'wallet_balance'
+                      ? t('pubX.deleteAccount.warn.wallet_balance', { amount: fmtMinor(w.count, 'USD') })
+                      : apple
+                        ? t('pubX.deleteAccount.warn.apple_subscription')
+                        : t(`pubX.deleteAccount.blocker.${w.code}`, { count: w.count })}
+                  </Txt>
+                  {/* Deleting the account cannot stop Apple billing; only the App Store can. */}
+                  {apple && IAP_AVAILABLE ? (
+                    <Row style={s.mt8}>
+                      <Button
+                        title={t('billing.manageInAppStore')}
+                        size="sm"
+                        variant="outline"
+                        onPress={() => void manageSubscriptions().catch(() => {})}
+                      />
+                    </Row>
+                  ) : null}
+                </View>
+              </Row>
+            );
+          })}
         </Card>
       )}
 

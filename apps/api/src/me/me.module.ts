@@ -22,6 +22,7 @@ import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Matches,
 import { LOCALES } from '@agrotraders/i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import { EntitlementsService } from '../billing/entitlements.service';
+import { appleStillBilling } from '../billing/apple/apple-still-billing';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, type AuthUser } from '../auth/current-user.decorator';
 import { UploadsService } from '../uploads/uploads.service';
@@ -188,12 +189,17 @@ export class MeService {
   async deletionBlockers(userId: string) {
     const IN_FLIGHT: OrderStatus[] = ['quote', 'processing', 'paid', 'packed', 'dispatched', 'shipped', 'in_transit', 'dispute'];
     const liveAuction = { isAuction: true, auctionSettledAt: null, auctionEndsAt: { gt: new Date() } };
-    const [wallet, openOrders, escrowHeld, liveAuctions, liveBids] = await Promise.all([
+    const [wallet, openOrders, escrowHeld, liveAuctions, liveBids, appleSubs] = await Promise.all([
       this.prisma.wallet.findUnique({ where: { userId }, select: { balanceCents: true } }),
       this.prisma.order.count({ where: { status: { in: IN_FLIGHT }, OR: [{ buyerId: userId }, { sellerId: userId }] } }),
       this.prisma.escrowHold.count({ where: { status: 'held', OR: [{ buyerId: userId }, { sellerId: userId }] } }),
       this.prisma.product.count({ where: { sellerId: userId, ...liveAuction } }),
       this.prisma.auctionBid.count({ where: { bidderId: userId, product: liveAuction } }),
+      // Canceled ones are left out: Apple bills those no more.
+      this.prisma.subscription.findMany({
+        where: { userId, provider: 'apple', status: { in: ['active', 'past_due'] } },
+        select: { provider: true, status: true, currentPeriodEnd: true },
+      }),
     ]);
     const blockers: { code: string; count: number }[] = [];
     const warnings: { code: string; count: number }[] = [];
@@ -210,6 +216,10 @@ export class MeService {
     if (escrowHeld > 0) blockers.push({ code: 'escrow_held', count: escrowHeld });
     if (liveAuctions > 0) blockers.push({ code: 'live_auctions', count: liveAuctions });
     if (liveBids > 0) blockers.push({ code: 'live_bids', count: liveBids });
+    // Deleting the account does not stop the App Store charging: only the user
+    // can cancel it on the iPhone. Told, never blocked (Guideline 5.1.1(v)).
+    const appleBilling = appleSubs.filter((s) => appleStillBilling(s)).length;
+    if (appleBilling > 0) warnings.push({ code: 'apple_subscription', count: appleBilling });
     return { blockers, warnings, canDelete: blockers.length === 0 };
   }
 

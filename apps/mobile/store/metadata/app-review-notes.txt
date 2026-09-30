@@ -1,4 +1,4 @@
-AgroTraders — App Review Information (v0.2.1 build 6)
+AgroTraders — App Review Information (v0.2.8 build 8)
 
 DEMO ACCOUNTS (pre-confirmed, no email step)
 appreview@agrotraders.org / 8b7m-Dkcx-ByJp-HRz2 (buyer + seller)
@@ -12,7 +12,7 @@ A B2B marketplace for agriculture: sellers of produce and equipment, buyers, tra
 Browse: Home and Browse tabs (no account)
 Order: listing > Buy Now > Checkout > Place order
 Report/Block: "..." menu on any listing, auction lot, community post, profile, requirement or review; long-press any chat message
-Billing (read-only on iOS): Account > Billing
+Plan & billing: Account/More > Plan & billing — auto-renewable In-App Purchase subscriptions; Restore Purchases on the same screen. Buyer and worker plans are not offered on iOS.
 Terms/Privacy: Account > Legal (visible signed out)
 Delete account: Account > Delete account
 
@@ -25,7 +25,7 @@ No analytics, crash-reporting, advertising, attribution, third-party sign-in, pa
 Consistent everywhere: no geo-gating, country list, IP geolocation or region-specific content. English and Russian, following device language, changeable anywhere. Display currency is a presentation preference only. Most sellers are currently in Russia, so the catalogue is weighted that way.
 
 6. PAYMENTS AND IAP
-No card or bank detail is collected — no such field exists — and the app takes no payment. All trade is physical goods or real-world services (3.1.5(a)); parties settle directly. Every core function — browsing, buying, selling, messaging, reporting, blocking, deletion — is identical on the free plan. Paid plans raise limits (listings 5/50/unlimited, photos 3/10/15, seats 1/3/10) and add a verified badge, search placement and analytics. Because that unlocks in-app functionality we do not sell it on iOS at all: plan list, prices, gateways and checkout are compiled out of the build, with no link to any other purchase route. Billing on iOS is read-only. Balances are funded only via our website through licensed acquirers.
+Plans are sold through In-App Purchase, one subscription group per role. They only raise quotas: on the demo account, Account > Plan & billing lists the Seller plans (no role switch needed); buying Seller Standard raises the active-listing limit from 5 to 50. Every core function — browsing, buying, selling, messaging, reporting, blocking, deletion — is identical on the free plan. The app takes no other payment and has no card or bank field. All trade is physical goods or real-world services (3.1.3(e)); parties settle directly. Balances are topped up only on our website, via licensed acquirers.
 
 7. UGC AND REGULATED GOODS
 UGC is trade content only: listings with product photos, buyer requirements ("100 tonnes of rice wanted"), reviews and B2B messages. No general media sharing, video or social posting. Report and block are on every user-authored surface; reports reach a staffed queue within 24 hours. Blocking hides that person's content and stops contact. Deletion re-authenticates with the password, is immediate and permanent, and revokes all sessions and push tokens. Verification is optional; documents are stored privately and reviewed by staff, with no identity-verification vendor. Agrochemicals are listed by users, not by us; every new listing and every edit to its name, description, images, category or attributes is reviewed by a person before publication. Our Terms require sellers to hold every applicable licence.

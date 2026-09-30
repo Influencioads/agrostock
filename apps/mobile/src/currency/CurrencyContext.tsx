@@ -38,6 +38,21 @@ function stripUnit(price: string): string {
   return price.replace(/\s*\/\s*[A-Za-z]+\s*$/, '');
 }
 
+/**
+ * Minor units → hundredths, the scale formatMoney divides by 100. Not every
+ * currency has two decimals: App Store payments are stored in yen for JPY (0)
+ * and in fils for KWD (3).
+ */
+function minorToCents(amountMinor: number, currency: string): number {
+  let digits = 2;
+  try {
+    digits = new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2;
+  } catch {
+    // Unknown code or no Intl currency data: assume two decimals.
+  }
+  return (amountMinor * 100) / 10 ** digits;
+}
+
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   // Currency symbol placement and digit grouping are locale-dependent, so the
   // active language has to reach Intl.NumberFormat.
@@ -127,11 +142,12 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     (amountMinor: number | null | undefined, sourceCurrency = 'RUB') => {
       if (amountMinor == null) return '—';
       const src = sourceCurrency.toUpperCase();
-      if (src === currency) return formatMoney(amountMinor, src, 1, lang);
+      const cents = minorToCents(amountMinor, src);
+      if (src === currency) return formatMoney(cents, src, 1, lang);
       const srcRate = src === 'USD' ? 1 : fx?.rates?.[src];
       const dstRate = currency === 'USD' ? 1 : fx?.rates?.[currency];
-      if (!srcRate || srcRate <= 0 || !dstRate || dstRate <= 0) return formatMoney(amountMinor, src, 1, lang);
-      return formatMoney(amountMinor, currency, dstRate / srcRate, lang);
+      if (!srcRate || srcRate <= 0 || !dstRate || dstRate <= 0) return formatMoney(cents, src, 1, lang);
+      return formatMoney(cents, currency, dstRate / srcRate, lang);
     },
     [currency, fx, lang],
   );

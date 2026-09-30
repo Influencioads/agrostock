@@ -132,7 +132,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     void sync();
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') void sync();
+      if (s !== 'active') return;
+      void sync();
+      // Plan checkout finishes in the system browser; coming back is the moment
+      // the plan may have changed (Home's free-plan banner reads this key).
+      void queryClient.invalidateQueries({ queryKey: ['billing-overview'] });
     });
     return () => sub.remove();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps

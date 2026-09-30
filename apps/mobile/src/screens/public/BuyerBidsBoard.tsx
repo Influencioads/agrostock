@@ -11,6 +11,7 @@ import { Badge, Button, Card, EmptyState, Row, SkeletonRows, Txt } from '../../u
 import { C, radius, space } from '../../theme/tokens';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
+import { useFabClearance } from '../../ui/fab';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -33,6 +34,7 @@ export function BuyerBidsBoard() {
   const nav = useNavigation<Nav>();
   const { fmtCents } = useCurrency();
   const { t } = useI18n();
+  const fabClearance = useFabClearance();
   const [, setTick] = useState(0);
   useEffect(() => { const id = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(id); }, []);
   const { data: list = [], isLoading } = useQuery<ApiBuyerBid[]>({
@@ -46,7 +48,7 @@ export function BuyerBidsBoard() {
       <FlatList
         data={list}
         keyExtractor={(b) => String(b.id)}
-        contentContainerStyle={{ padding: space.lg, gap: 12 }}
+        contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 12 }}
         ListHeaderComponent={
           <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.surface }}>
             <Ionicons name="eye-off-outline" size={20} color={C.dark} />

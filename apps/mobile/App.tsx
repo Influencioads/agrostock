@@ -21,6 +21,7 @@ import { AuthProvider, useAuth } from './src/auth/AuthProvider';
 import { I18nProvider } from './src/i18n';
 import { CurrencyProvider } from './src/currency/CurrencyContext';
 import { ChatBadgeProvider } from './src/chat/ChatBadgeContext';
+import { ChatFab } from './src/chat/ChatFab';
 import { BasketProvider } from './src/basket/BasketContext';
 import { DeliverToProvider } from './src/lib/deliverTo';
 import { ModerationProvider } from './src/moderation/ModerationProvider';
@@ -29,6 +30,7 @@ import { FirstRunGate } from './src/onboarding/FirstRunPrefs';
 import { flushPendingNotificationRoute, navigationRef } from './src/navigation/navigationRef';
 import { linking } from './src/navigation/linking';
 import { registerForPush, unregisterForPush } from './src/lib/push';
+import { IapSync } from './src/lib/IapSync';
 import { C } from './src/theme/tokens';
 import { useAppFonts } from './src/theme/fonts';
 import { ErrorBoundary } from './src/ui/ErrorBoundary';
@@ -61,8 +63,10 @@ function Gate() {
   return (
     <>
       <PushManager />
+      <IapSync />
       <FirstRunGate>
         <RootNavigator />
+        <ChatFab />
       </FirstRunGate>
     </>
   );

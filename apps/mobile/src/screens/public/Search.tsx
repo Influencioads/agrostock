@@ -12,6 +12,7 @@ import { api } from '../../lib/api';
 import { storage } from '../../lib/storage';
 import { C, radius, space, type } from '../../theme/tokens';
 import { microLabel } from '../../theme/casing';
+import { useFabClearance } from '../../ui/fab';
 import { ProductGrid, SimilarProducts } from '../components/ProductGrid';
 import { EMPTY_FILTERS } from '../components/filterState';
 import { EMPTY_SELECTION, categoryOnly } from '../components/categorySelection';
@@ -44,6 +45,7 @@ export function Search() {
   // Typing shouldn't fire a request per keystroke; the query runs on the settled value.
   const [debounced, setDebounced] = useState(q);
   const [recent, setRecent] = useState<string[]>([]);
+  const fabClearance = useFabClearance();
   const { categoryId, verified, country } = route.params ?? {};
 
   useEffect(() => {
@@ -169,7 +171,7 @@ export function Search() {
         </View>
       ) : null}
 
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: space.xl }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: fabClearance }}>
         {active ? (
           <ProductGrid
             products={results}

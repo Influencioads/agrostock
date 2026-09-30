@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useI18n } from '../../i18n';
 import { BarChart } from '../../ui/charts';
 import { KeyValue, ProgressBar, Row, Txt } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { DashHeader, DashSection, StatCards } from '../components/dash-parts';
 import { C, radius, space, type } from '../../theme/tokens';
 
@@ -19,6 +20,7 @@ export function TransporterDashboard() {
   const { t } = useI18n();
   const { fmtCompactCents } = useCurrency();
   const { user } = useAuth();
+  const fabClearance = useFabClearance();
   const { data: trips = [] } = useQuery<Trip[]>({ queryKey: ['trips', 'mine'], queryFn: () => api.transport.myTrips() as Promise<Trip[]>, enabled: !!user });
   const { data: vehicles = [] } = useQuery<unknown[]>({ queryKey: ['vehicles'], queryFn: () => api.transport.vehicles() as Promise<unknown[]>, enabled: !!user });
   const { data: drivers = [] } = useQuery<ApiDriver[]>({ queryKey: ['my-drivers'], queryFn: () => api.drivers.mine(), enabled: !!user });
@@ -32,7 +34,7 @@ export function TransporterDashboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         <DashHeader
           name={user?.name ?? t('dash.nameFallback')}
           sub={t('dash.transporterSub')}

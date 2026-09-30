@@ -16,6 +16,7 @@ import { microLabel } from '../theme/casing';
 import { CurrencyChips, useCurrency } from '../currency/CurrencyContext';
 import { useChatBadge } from '../chat/ChatBadgeContext';
 import { forwardChevron } from '../lib/rtl';
+import { useFabClearance } from '../ui/fab';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -153,11 +154,12 @@ export function MoreHub() {
   const { currency } = useCurrency();
   const { unread, clear } = useChatBadge();
   const menu = role ? ROLE_MENU[role] ?? [] : [];
+  const fabClearance = useFabClearance();
 
   if (!user) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-        <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }}>
+        <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }}>
           <View style={{ backgroundColor: C.white }}>
             <EmptyState icon="person-outline" title={t('guest.heading')} body={t('guest.body')} />
             <View style={s.guestActions}>
@@ -180,7 +182,7 @@ export function MoreHub() {
   const kycApproved = user.kycStatus === 'verified';
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.page }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: space.xl }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ gap: space.sm, paddingBottom: fabClearance }} showsVerticalScrollIndicator={false}>
         {/* evergreen identity header — avatar, name, role + KYC pills */}
         <LinearGradient colors={['#0B3D2E', '#146B3A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.identity}>
           <Pressable onPress={() => nav.navigate('ProfileForm')} style={s.identityRow}>

@@ -19,6 +19,7 @@ import { useBasket } from '../../basket/BasketContext';
 import { useI18n } from '../../i18n';
 import type { RootStackParamList } from '../../navigation/types';
 import { forwardChevron } from '../../lib/rtl';
+import { useFabClearance } from '../../ui/fab';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type R = RouteProp<RootStackParamList, 'ProductDetail'>;
@@ -116,6 +117,7 @@ export function ProductDetail() {
   // web both use it, and a 0.5 MT MOQ must read the same on all three.
   const minQty = minOrderQty(p?.moq, listingUnit, buyerUnit);
   useEffect(() => setQty((q) => Math.max(q, minQty)), [minQty]);
+  const fabClearance = useFabClearance();
 
   // F28: a failed load shows a retryable error instead of a spinner that never
   // clears (isLoading is false once the request settles, error or not).
@@ -165,7 +167,7 @@ export function ProductDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.page }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: space.lg, gap: space.sm }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: fabClearance, gap: space.sm }} showsVerticalScrollIndicator={false}>
         <Gallery photos={photos} />
 
         {/* headline block — trust pills, then title, then rating + origin line */}

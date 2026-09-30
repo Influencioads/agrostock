@@ -17,6 +17,7 @@ import { Badge, Button, Card, Chip, EmptyState, Input, Row, SkeletonRows, Txt } 
 import { C, space } from '../../theme/tokens';
 import { PickerField } from '../components/PickerSheet';
 import { errMessage } from '../../lib/format';
+import { useFabClearance } from '../../ui/fab';
 
 /**
  * The service provider console — one set of screens for every service role,
@@ -83,6 +84,7 @@ function errText(error: unknown, fallback: string): string {
  */
 export function ServiceEnquiries() {
   const { t } = useI18n();
+  const fabClearance = useFabClearance();
   const qc = useQueryClient();
   const { fmtCents } = useCurrency();
 
@@ -103,7 +105,7 @@ export function ServiceEnquiries() {
   const tone = (s: string) => (s === 'accepted' ? 'green' : s === 'pending' ? 'mango' : 'slate');
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.lg, gap: 12 }}>
+    <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 12 }}>
       <View>
         <Txt variant="title">{t('service.enquiries')}</Txt>
         <Txt variant="muted">{t('service.enquiriesSub')}</Txt>
@@ -174,6 +176,7 @@ type OfferKey = (typeof OFFER_KEYS)[number];
 /** What buyers see. Until `listed` is on, the provider is invisible in the directory. */
 export function ServiceProfile() {
   const { t } = useI18n();
+  const fabClearance = useFabClearance();
   const qc = useQueryClient();
   const role = useServiceRole();
 
@@ -236,7 +239,7 @@ export function ServiceProfile() {
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.lg, gap: 14 }}>
+    <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 14 }}>
       <View>
         <Txt variant="title">{t('service.profileTitle')}</Txt>
         <Txt variant="muted">{t('service.profileSub')}</Txt>
@@ -369,6 +372,7 @@ export function ServiceProfile() {
 /** Landing tab: the numbers that matter, then straight into enquiries. */
 export function ServiceDashboard() {
   const { t } = useI18n();
+  const fabClearance = useFabClearance();
   const role = useServiceRole();
   const { data: hires = [] } = useQuery<ApiHireRequest[]>({
     queryKey: ['service-enquiries'],
@@ -382,7 +386,7 @@ export function ServiceDashboard() {
   const count = (s: string) => hires.filter((h) => h.status === s).length;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.lg, gap: 12 }}>
+    <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 12 }}>
       <Txt variant="h3">{role ? t(`enums:serviceRole.${role}`) : t('service.providers')}</Txt>
 
       {/* Not listed is the one thing worth interrupting for — nothing else here
@@ -433,6 +437,7 @@ function leavesOf(nodes: ApiServiceNode[], trail: string[] = []): { id: string; 
  */
 export function ServicePrices() {
   const { t } = useI18n();
+  const fabClearance = useFabClearance();
   const qc = useQueryClient();
   const role = useServiceRole();
   const { fmtCents } = useCurrency();
@@ -494,7 +499,7 @@ export function ServicePrices() {
   const canAdd = !!draft.serviceNodeId && !!draft.pricingBasis && (onRequest || draft.min.trim() !== '');
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.lg, gap: 14 }}>
+    <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 14 }}>
       <View>
         <Txt variant="title">{t('service.pricesTitle')}</Txt>
         <Txt variant="muted">{t('service.pricesSub')}</Txt>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyDiscount, cycleSavingPercent, perMonthMinor, PLAN_SEED } from './billing';
+import { appleProductId, applyDiscount, BILLING_CYCLES, cycleSavingPercent, parseAppleProductId, perMonthMinor, PLAN_SEED } from './billing';
 
 /** The published card's own per-month figures, in rubles. */
 const PUBLISHED: [string, 'quarterly' | 'yearly', number][] = [
@@ -66,5 +66,24 @@ describe('the published price card', () => {
     expect(applyDiscount(10000, 0)).toBe(10000);
     expect(applyDiscount(10000, 150)).toBe(0);
     expect(applyDiscount(10000, -20)).toBe(10000);
+  });
+});
+
+describe('apple product ids', () => {
+  it('round-trips every published plan and cycle, underscores in codes included', () => {
+    for (const plan of PLAN_SEED) {
+      for (const cycle of BILLING_CYCLES) {
+        const id = appleProductId(plan.code, cycle);
+        // App Store Connect accepts only alphanumerics, underscores and periods.
+        expect(id).toMatch(/^[A-Za-z0-9_.]+$/);
+        expect(parseAppleProductId(id)).toEqual({ planCode: plan.code, cycle });
+      }
+    }
+  });
+
+  it('rejects ids that are not plan products', () => {
+    expect(parseAppleProductId('addon_kyc_badge')).toBeNull();
+    expect(parseAppleProductId('yearly')).toBeNull();
+    expect(parseAppleProductId('_yearly')).toBeNull();
   });
 });

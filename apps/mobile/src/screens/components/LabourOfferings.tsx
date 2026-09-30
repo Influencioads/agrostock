@@ -15,6 +15,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { useCurrency } from '../../currency/CurrencyContext';
 import { useI18n } from '../../i18n';
 import { Badge, Button, Card, EmptyState, Row, SkeletonRows, Txt } from '../../ui';
+import { useFabClearance } from '../../ui/fab';
 import { C, space } from '../../theme/tokens';
 
 /**
@@ -30,6 +31,7 @@ const BLANK = { rateBasis: 'per_hour' as LabourRateBasis, rateMin: '', rateMax: 
 
 export function LabourOfferings() {
   const { t } = useI18n();
+  const fabClearance = useFabClearance();
   const { user } = useAuth();
   const { fmtCents } = useCurrency();
   const qc = useQueryClient();
@@ -103,7 +105,7 @@ export function LabourOfferings() {
   const errText = (add.error as { response?: { data?: { message?: string } } })?.response?.data?.message;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space.lg, gap: 14 }}>
+    <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 14 }}>
       <View>
         <Txt variant="title">{t('labour.title')}</Txt>
         <Txt variant="muted">{isCompany ? t('labour.subCompany') : t('labour.subWorker')}</Txt>

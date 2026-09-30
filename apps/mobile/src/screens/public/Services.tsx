@@ -15,6 +15,7 @@ import { C, space } from '../../theme/tokens';
 import { HireModal, type HireTarget } from '../components/HireModal';
 import { forwardChevron } from '../../lib/rtl';
 import type { RootStackParamList } from '../../navigation/types';
+import { useFabClearance } from '../../ui/fab';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,6 +33,7 @@ export function Services() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { fmtCents } = useCurrency();
+  const fabClearance = useFabClearance();
   const [category, setCategory] = useState('');
   const [hire, setHire] = useState<HireTarget | null>(null);
 
@@ -66,7 +68,7 @@ export function Services() {
       <FlatList
         data={providers}
         keyExtractor={(p) => p.id}
-        contentContainerStyle={{ padding: space.lg, gap: 12 }}
+        contentContainerStyle={{ padding: space.lg, paddingBottom: fabClearance, gap: 12 }}
         ListEmptyComponent={isLoading ? <SkeletonRows /> : <EmptyState icon="briefcase-outline" title={t('service.none')} />}
         renderItem={({ item: p }) => {
           const name = p.companyName || p.user.name;

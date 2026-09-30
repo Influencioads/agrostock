@@ -270,6 +270,9 @@ export class LifecycleService {
         // card" notices is both confusing and the definition of spam.
         status: { in: ['active', 'canceled'] },
         currentPeriodEnd: { gt: now, lte: new Date(now.getTime() + NOTICE_DAYS * DAY_MS) },
+        // The App Store sends its own renewal notices and we never charge those
+        // plans. OR, not `not`, so rows with no provider (unpaid, granted) stay in.
+        OR: [{ provider: null }, { provider: { not: 'apple' } }],
       },
       include: { plan: true },
       take: 500,

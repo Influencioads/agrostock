@@ -18,6 +18,7 @@ import { microLabel } from '../theme/casing';
 import type { Tone } from '../lib/format';
 import { useI18n } from '../i18n';
 import { forwardChevron } from '../lib/rtl';
+import { useFabClearance } from './fab';
 import { AnimatedNumber, AnimatedProgress, PressableScale, Reveal, Stagger, MotiView, useReduceMotion } from './motion';
 
 export {
@@ -87,6 +88,7 @@ export function Screen({
   /** Sticky bar pinned below the content, above the tab bar (PDP buy bar, basket total). */
   footer?: ReactNode;
 }) {
+  const fabClearance = useFabClearance();
   const showPad = padded && !edgeToEdge;
   const pad = showPad ? { padding: space.lg } : edgeToEdge ? { paddingVertical: space.lg } : undefined;
   const gap = padded ? { gap: space.lg } : undefined;
@@ -102,7 +104,8 @@ export function Screen({
       {scroll ? (
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={[{ paddingBottom: footer ? 16 : 32 }, pad]}
+          // Room for the last row to scroll clear of the floating chat button.
+          contentContainerStyle={[{ paddingBottom: fabClearance }, pad]}
           showsVerticalScrollIndicator={false}
           // Without this, RN's default swallows the first tap on any button while
           // the keyboard is up (it goes to dismissing the keyboard instead) — on

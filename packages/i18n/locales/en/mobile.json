@@ -97,6 +97,7 @@
     }
   },
   "billing": {
+    "addRole": "Add the {{role}} role to choose this plan",
     "addon": {
       "auction_lot": "Extra auction lot",
       "category_banner": "Category banner",
@@ -106,7 +107,16 @@
       "promote_home": "Promote to homepage"
     },
     "addonsTitle": "Your add-ons",
+    "allPlans": "All plans",
+    "allPlansHint": "What every plan includes.",
+    "appStoreManaged": "Billed through the App Store — manage it on your iPhone.",
+    "autoRenewNote": "Payment is charged to your Apple ID when you confirm. Subscriptions renew automatically at the same price unless cancelled at least 24 hours before the current period ends. Manage or cancel them in your App Store account settings.",
     "autoRenews": "Renews automatically",
+    "billedEvery": {
+      "monthly": "Billed every month",
+      "quarterly": "Billed every 3 months",
+      "yearly": "Billed every year"
+    },
     "cancelAnytime": "Cancel any time — your plan runs to the end of the period you paid for.",
     "cancelPlan": "Cancel plan",
     "chargedInRubles": "Charged in Russian rubles, VAT included.",
@@ -122,11 +132,26 @@
     },
     "cycleUnavailable": "Not offered on this billing cycle.",
     "endsOn": "Ends {{date}}",
+    "feature": {
+      "analytics": "Analytics",
+      "apiAccess": "API access",
+      "bulkImport": "Bulk price import",
+      "directHireRequests": "Receive direct hire requests",
+      "directoryPlacement": "Directory placement",
+      "directoryVisible": "Appear in the worker directory",
+      "dispatchBoard": "Dispatch board + shift assignment",
+      "payoutReports": "Earnings & payout reports",
+      "routePriority": "Priority on route match",
+      "searchPriority": "Search priority",
+      "verifiedBadge": "Verified badge"
+    },
     "finishPayment": "Finish payment",
     "free": "Free",
+    "freeBannerBody": "Upgrade and get full benefits",
+    "freeBannerTitle": "Free plan — limited features",
+    "freeForever": "No card needed",
     "historyTitle": "Payment history",
-    "iosUpgradeBody": "Plan upgrades aren't available in the iOS app. Your current plan and usage are shown above.",
-    "iosUpgradeTitle": "Plan upgrades",
+    "iapFailed": "The App Store purchase didn't go through. Please try again.",
     "limit": {
       "activeListings": "active listings",
       "auctionLotsPerMonth": "auction lots per month",
@@ -144,10 +169,23 @@
       "vehicles": "vehicles in your profile"
     },
     "loading": "Loading your plan…",
+    "manageInAppStore": "Manage in App Store",
+    "mostPopular": "Most popular",
     "noGatewaysBody": "Online payments are not switched on for this platform yet. Please contact support to arrange payment.",
     "noGatewaysTitle": "No payment method available yet",
     "noRedirect": "The payment provider did not return a payment page. Please try another provider.",
+    "nothingToRestore": "No App Store subscriptions to restore.",
+    "option": {
+      "basic": "Basic",
+      "categoryTop": "Category top",
+      "full": "Full + export",
+      "sectionTop": "Section top",
+      "standard": "Standard",
+      "top": "Top"
+    },
     "overLimit": "Over your plan limit — existing items are untouched, but you cannot add more until you upgrade.",
+    "pastDueAppleBody": "Update the payment method in your Apple ID settings to restore it.",
+    "pastDueAppleTitle": "The App Store couldn't renew your plan",
     "pastDueBody": "We will retry over the next few days. Your plan stays active in the meantime — update your payment method to keep it.",
     "pastDueTitle": "We could not charge your card",
     "payNow": "Continue to payment",
@@ -160,6 +198,37 @@
     "perMonth": "per month",
     "perMonthEquivalent": "{{amount}} / month",
     "permanent": "Permanent",
+    "planLimit": {
+      "activeListings_one": "active listing",
+      "activeListings_other": "active listings",
+      "auctionLotsPerMonth_one": "auction lot per month",
+      "auctionLotsPerMonth_other": "auction lots per month",
+      "driverAccounts_one": "driver sub-account",
+      "driverAccounts_other": "driver sub-accounts",
+      "enquiriesPerMonth_one": "enquiry received per month",
+      "enquiriesPerMonth_other": "enquiries received per month",
+      "hireResponsesPerMonth_one": "response to hire requests per month",
+      "hireResponsesPerMonth_other": "responses to hire requests per month",
+      "managedWorkers_one": "managed worker",
+      "managedWorkers_other": "managed workers",
+      "operatingRegions_one": "operating region",
+      "operatingRegions_other": "operating regions",
+      "photosPerListing_one": "photo per listing",
+      "photosPerListing_other": "photos per listing",
+      "pricedServices_one": "priced service",
+      "pricedServices_other": "priced services",
+      "rfqsPerMonth_one": "buy request per month",
+      "rfqsPerMonth_other": "buy requests per month",
+      "savedSearches_one": "saved search with alerts",
+      "savedSearches_other": "saved searches with alerts",
+      "serviceAreas_one": "service area",
+      "serviceAreas_other": "service areas",
+      "teamMembers_one": "team member",
+      "teamMembers_other": "team members",
+      "vehicles_one": "vehicle in your profile",
+      "vehicles_other": "vehicles in your profile"
+    },
+    "purchasePending": "Waiting for approval — your plan starts as soon as the purchase is approved.",
     "purpose": {
       "addon": "Add-on",
       "subscription": "Subscription",
@@ -168,6 +237,9 @@
     "quotaExceeded": "You have reached your plan limit ({{used}} of {{limit}}). Upgrade for more.",
     "redirecting": "Redirecting…",
     "renewsOn": "Renews {{date}}",
+    "restore": "Restore purchases",
+    "restoreFailed": "Couldn't restore purchases. Please try again.",
+    "restored": "Purchases restored.",
     "resume": "Keep my plan",
     "returnFailed": "Payment not completed",
     "returnFailedBody": "Nothing was charged. You can try again or choose a different payment method.",
@@ -180,6 +252,7 @@
     "returnToBilling": "Go to billing",
     "returnToPricing": "Back to plans",
     "returnUnknown": "We could not find that payment.",
+    "save": "Save {{percent}}%",
     "status": {
       "active": "Active",
       "canceled": "Cancelling",
@@ -187,10 +260,17 @@
       "free": "Free plan",
       "past_due": "Payment failed"
     },
+    "storeUnavailable": "Not available in the App Store yet.",
+    "successFee": {
+      "auction": "on a won auction lot — paid by the seller",
+      "buyerBid": "added on an awarded buy request — paid by the buyer",
+      "pct": "{{pct}}%"
+    },
     "testMode": "Test mode",
     "unlimited": "Unlimited",
     "until": "until {{date}}",
     "upgradeCta": "See plans",
+    "upgradeNow": "Upgrade",
     "upgradeTitle": "Upgrade",
     "usageTitle": "Your usage",
     "usedOf": "{{used}} of {{limit}} used"
@@ -1581,6 +1661,7 @@
       "signIn": "Sign in to manage your account.",
       "title": "Delete account",
       "warn": {
+        "apple_subscription": "Your App Store subscription keeps billing through Apple until you cancel it — deleting your account does not cancel it.",
         "wallet_balance": "Your wallet still holds {{amount}}. Deleting your account gives it up — withdraw it first if you want to keep it."
       },
       "warnTitle": "Before you go"

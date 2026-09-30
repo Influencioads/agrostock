@@ -1189,6 +1189,8 @@ export interface ApiTranslationOverview {
 
 export type ApiBillingCycle = 'monthly' | 'quarterly' | 'yearly';
 export type ApiPaymentProvider = 'robokassa' | 'yookassa' | 'tbank';
+/** Who billed a subscription or payment: a checkout gateway, or Apple for iOS In-App Purchases. */
+export type ApiBillingSource = ApiPaymentProvider | 'apple';
 export type ApiPaymentStatus = 'pending' | 'succeeded' | 'canceled' | 'failed';
 export type ApiSubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'expired' | 'free';
 export type ApiAddonKind =
@@ -1265,7 +1267,9 @@ export type ApiDeletionBlockerCode =
   | 'open_orders'
   | 'escrow_held'
   | 'live_auctions'
-  | 'live_bids';
+  | 'live_bids'
+  /** A warning, not a blocker: Apple keeps billing until the user cancels in the App Store. */
+  | 'apple_subscription';
 
 export interface ApiDeletionPreflight {
   /** Live obligations to a counterparty. Deletion is refused while any remain. */
@@ -1317,7 +1321,7 @@ export interface ApiSubscription {
   cancelAtPeriodEnd: boolean;
   discountPercent: number;
   discountUntil: string | null;
-  provider: ApiPaymentProvider | null;
+  provider: ApiBillingSource | null;
   hasSavedCard: boolean;
 }
 
@@ -1335,7 +1339,7 @@ export interface ApiAddonPurchase {
 
 export interface ApiPaymentRow {
   id: string;
-  provider: ApiPaymentProvider;
+  provider: ApiBillingSource;
   purpose: 'subscription' | 'addon' | 'wallet_topup';
   status: ApiPaymentStatus;
   amountMinor: number;
@@ -1352,6 +1356,8 @@ export interface ApiBillingOverview {
   subscriptions: ApiSubscription[];
   addons: ApiAddonPurchase[];
   payments: ApiPaymentRow[];
+  /** UUID to pass as StoreKit `appAccountToken`, so the API can tie an Apple purchase to this account. */
+  appleAccountToken: string;
 }
 
 export interface ApiPaymentIntent {
@@ -3417,6 +3423,8 @@ export function createApiClient(opts: ApiClientOptions) {
       /** Real, gateway-backed wallet top-up (the legacy one is a blocked mock). */
       topupIntent: (body: { amountMinor: number; currency?: string; provider: ApiPaymentProvider; idempotencyKey?: string }) =>
         post<ApiPaymentIntent>('/me/wallet/topup-intent', body),
+      /** Hand a StoreKit 2 signed transaction (JWS) to the API, which verifies it with Apple and applies the plan. */
+      appleTransaction: (body: { signedTransaction: string }) => post<{ ok: true }>('/me/billing/apple/transactions', body),
     },
 
     attachments: {
